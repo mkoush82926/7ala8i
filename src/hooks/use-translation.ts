@@ -12,8 +12,8 @@ const translations: Record<string, TranslationKeys> = { en, ar };
  *   t.sidebar.dashboard → "Dashboard" | "لوحة التحكم"
  */
 export function useTranslation(): TranslationKeys {
-    const locale = useThemeStore((s) => s.locale);
-    return translations[locale] || en;
+  const locale = useThemeStore((s) => s.locale);
+  return translations[locale] || en;
 }
 
 /**
@@ -22,10 +22,10 @@ export function useTranslation(): TranslationKeys {
  *   interpolate("Hello {name}", { name: "Ahmad" }) → "Hello Ahmad"
  */
 export function interpolate(
-    template: string,
-    vars: Record<string, string | number>
+  template: string,
+  vars: Record<string, string | number>,
 ): string {
-    return template.replace(/\{(\w+)\}/g, (_, key) =>
-        vars[key] !== undefined ? String(vars[key]) : `{${key}}`
-    );
+  return template.replace(/\{(\w+)\}/g, (_, key) =>
+    vars[key] !== undefined ? String(vars[key]) : `{${key}}`,
+  );
 }

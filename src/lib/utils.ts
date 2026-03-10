@@ -6,11 +6,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number, locale = "en-US"): string {
-  return new Intl.NumberFormat(locale, {
-    style: "decimal",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount) + " JOD";
+  return (
+    new Intl.NumberFormat(locale, {
+      style: "decimal",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount) + " JOD"
+  );
 }
 
 export function formatNumber(num: number): string {
