@@ -8,16 +8,21 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 );
 
+const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+
 const bookingSchema = z.object({
   shopId: z.string().uuid("Invalid shop ID"),
-  serviceIds: z.array(z.string()).optional(),
+  serviceIds: z.array(z.string().uuid("Invalid service ID")).optional(),
   barberId: z.string().nullable().optional(),
-  clientName: z.string().min(2, "Name must be at least 2 characters").max(100),
-  clientPhone: z.string().min(7, "Phone must be at least 7 digits").max(20),
-  startTime: z.string().min(1, "Start time is required"),
-  endTime: z.string().min(1, "End time is required"),
-  totalPrice: z.number().min(0).optional(),
-  source: z.string().nullable().optional(),
+  clientName: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
+  clientPhone: z.string().trim().regex(phoneRegex, "Invalid phone number format"),
+  startTime: z.string().datetime("Start time must be a valid ISO date string"),
+  endTime: z.string().datetime("End time must be a valid ISO date string"),
+  totalPrice: z.number().nonnegative("Price cannot be negative").max(100000, "Price exceeds maximum allowed limit").optional(),
+  source: z.string().trim().max(50).nullable().optional(),
+}).refine(data => new Date(data.endTime) > new Date(data.startTime), {
+  message: "End time must be after start time",
+  path: ["endTime"],
 });
 
 export async function GET(req: NextRequest) {
@@ -72,60 +77,34 @@ export async function POST(req: NextRequest) {
     const parsed = bookingSchema.safeParse(body);
     if (!parsed.success) {
       const errors = parsed.error.flatten().fieldErrors;
-      const firstError = Object.values(errors).flat()[0] || "Invalid input";
-      return NextResponse.json({ error: firstError }, { status: 400 });
+      const firstError = Object.values(errors).flat()[0] || "Invalid input data";
+      console.warn("[Booking API] Validation failed:", errors);
+      return NextResponse.json({ error: firstError, details: errors }, { status: 400 });
     }
 
     const { shopId, serviceIds, barberId, clientName, clientPhone, startTime, endTime, totalPrice, source } = parsed.data;
 
-    const { data: client, error: clientErr } = await supabase
-      .from("clients")
-      .upsert(
-        { shop_id: shopId, name: clientName, phone: clientPhone, source: source || null },
-        { onConflict: "shop_id,phone", ignoreDuplicates: true },
-      )
-      .select("id")
-      .single();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: appointmentId, error: rpcErr } = await (supabase.rpc as any)("create_public_booking", {
+      p_shop_id: shopId,
+      p_client_name: clientName,
+      p_client_phone: clientPhone,
+      p_service_ids: serviceIds || [],
+      p_barber_id: barberId === "any" ? null : (barberId || null),
+      p_start_time: startTime,
+      p_end_time: endTime,
+      p_total_price: totalPrice || 0,
+      p_source: source || "online",
+    });
 
-    let clientId = client?.id;
-    if (clientErr || !clientId) {
-      const { data: existing } = await supabase
-        .from("clients")
-        .select("id")
-        .eq("shop_id", shopId)
-        .eq("phone", clientPhone)
-        .single();
-      clientId = existing?.id || null;
+    if (rpcErr || !appointmentId) {
+      console.error("[Booking API] RPC failed:", rpcErr);
+      return NextResponse.json({ error: "Failed to schedule appointment" }, { status: 500 });
     }
 
-    const { data: appointment, error: apptErr } = await supabase
-      .from("appointments")
-      .insert({
-        shop_id: shopId,
-        client_id: clientId,
-        barber_id: barberId === "any" ? null : (barberId || null),
-        service_ids: serviceIds || [],
-        client_name: clientName,
-        start_time: startTime,
-        end_time: endTime,
-        status: "pending",
-        price: totalPrice || 0,
-        payment_status: "unpaid",
-        payment_method: "cash",
-        amount_total: totalPrice ?? null,
-        amount_deposit: 0,
-        amount_paid: 0,
-        source: source || null,
-      })
-      .select()
-      .single();
-
-    if (apptErr) {
-      return NextResponse.json({ error: apptErr.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ appointment, clientId });
-  } catch {
-    return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
+    return NextResponse.json({ appointment_id: appointmentId });
+  } catch (err) {
+    console.error("[Booking API] Unexpected error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

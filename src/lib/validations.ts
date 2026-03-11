@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // ─── Phone validation (E.164 or common formats) ───
-const phoneRegex = /^\+?[1-9]\d{6,14}$/;
+const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
 
 // ─── Booking ───
 export const BookingSchema = z.object({

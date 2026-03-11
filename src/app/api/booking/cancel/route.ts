@@ -16,34 +16,18 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // ─── Fetch appointment ───
-    const { data: appointment, error: fetchError } = (await supabase
-      .from("appointments")
-      .select("id, status")
-      .eq("id", appointment_id)
-      .single()) as unknown as { data: { id: string; status: string | null } | null; error: { message: string } | null };
-
-    if (fetchError || !appointment) {
-      return apiError("Appointment not found", 404);
-    }
-
-    // ─── Only pending/confirmed can be cancelled ───
-    if (!["pending", "confirmed"].includes(appointment.status ?? "")) {
-      return apiError(
-        `Cannot cancel an appointment with status "${appointment.status}"`,
-        400,
-      );
-    }
-
+    // ─── Cancel appointment via secure RPC ───
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: updateError } = (await (supabase
-      .from("appointments") as any)
-      .update({ status: "cancelled", updated_at: new Date().toISOString() })
-      .eq("id", appointment_id)) as unknown as { error: { message: string } | null };
+    const { data: cancelled, error: rpcErr } = await (supabase.rpc as any)("cancel_public_booking", {
+      p_appointment_id: appointment_id,
+    });
 
-    if (updateError) {
-      console.error("[Cancel] Failed to cancel:", updateError);
-      return apiError("Failed to cancel appointment. Please try again.", 500);
+    if (rpcErr || !cancelled) {
+      console.error("[Cancel] RPC failed:", rpcErr);
+      // The RPC throws exact error strings like "Cannot cancel..." or "Appointment not found"
+      const msg = rpcErr?.message || "Failed to cancel appointment. Please try again.";
+      const status = msg.includes("not found") ? 404 : 400;
+      return apiError(msg, status);
     }
 
     return apiResponse({ cancelled: true, appointment_id });

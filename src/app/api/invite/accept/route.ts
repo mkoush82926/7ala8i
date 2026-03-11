@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
+
+const inviteAcceptSchema = z.object({
+  token: z.string().min(1, "Invite token is required").max(500, "Token is too long"),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { token } = body;
-
-    if (!token) {
-      return NextResponse.json({ error: "Invite token is required" }, { status: 400 });
+    
+    const parsed = inviteAcceptSchema.safeParse(body);
+    if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      const firstError = Object.values(errors).flat()[0] || "Invalid input data";
+      return NextResponse.json({ error: firstError, details: errors }, { status: 400 });
     }
+
+    const { token } = parsed.data;
 
     const supabase = await createClient();
 
