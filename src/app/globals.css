@@ -132,7 +132,7 @@
 }
 
 html {
-  font-size: 14px;
+  font-size: 16px;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -160,9 +160,16 @@ h6 {
 }
 
 /* Arabic RTL Typography */
-[dir="rtl"] body,
-[dir="rtl"] * {
+[dir="rtl"] body {
   font-family: 'Cairo', 'Inter', system-ui, sans-serif;
+}
+[dir="rtl"] h1, 
+[dir="rtl"] h2, 
+[dir="rtl"] h3, 
+[dir="rtl"] h4, 
+[dir="rtl"] button, 
+[dir="rtl"] input {
+  font-family: 'Cairo', sans-serif;
 }
 
 /* ─── Scrollbar Styling ─── */
