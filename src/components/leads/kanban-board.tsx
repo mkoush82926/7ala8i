@@ -24,7 +24,7 @@ import { KanbanColumn } from "./kanban-column";
 import { LeadCard, LeadCardOverlay } from "./lead-card";
 import { LeadDrawer } from "./lead-drawer";
 import { Plus, List, Kanban, Upload } from "lucide-react";
-import type { Lead } from "@/lib/mock-data";
+import type { Lead } from "@/lib/types";
 import { useTranslation } from "@/hooks/use-translation";
 
 function useStages() {
@@ -51,7 +51,7 @@ function useStages() {
       color: "var(--accent-mint)",
     },
     {
-      id: "loyal" as LeadStage,
+      id: "regular" as LeadStage,
       label: t.leads.loyal,
       color: "var(--accent-rose)",
     },
@@ -88,7 +88,7 @@ export function KanbanBoard() {
       contacted: [],
       booked: [],
       completed: [],
-      loyal: [],
+      regular: [],
     };
     leads.forEach((lead) => {
       map[lead.stage].push(lead);
@@ -295,7 +295,7 @@ function LeadListView({
       "text-[var(--accent-lavender)] bg-[var(--accent-lavender-muted)]",
     booked: "text-[var(--accent-amber)] bg-[var(--accent-amber-muted)]",
     completed: "text-[var(--accent-mint)] bg-[var(--accent-mint-muted)]",
-    loyal: "text-[var(--accent-rose)] bg-[var(--accent-rose-muted)]",
+    regular: "text-[var(--accent-rose)] bg-[var(--accent-rose-muted)]",
   };
 
   return (

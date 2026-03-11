@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -10,18 +10,22 @@ import {
   ArrowLeft,
   Check,
   Clock,
-  ChevronLeft,
-  ChevronRight,
   CalendarDays,
   Star,
   Sparkles,
   Heart,
   Palette,
+  AlertCircle,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
-import { services } from "@/lib/mock-data";
-import { useWorkspaceStore } from "@/store/workspace-store";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { useThemeStore } from "@/store/theme-store";
+import { createClient } from "@/lib/supabase/client";
+import { useSupabaseQuery } from "@/hooks/use-supabase-query";
+import { getPublicServices } from "@/lib/queries/services";
+import { getAvailableSlots } from "@/lib/queries/appointments";
+import { format, addDays, parseISO } from "date-fns";
 
 type BookingStep = "landing" | "services" | "barber" | "datetime" | "confirm";
 
@@ -32,83 +36,190 @@ const serviceIcons: Record<string, React.ReactNode> = {
   heart: <Heart size={20} />,
 };
 
+// Generate next 14 days dynamically
+function generateDays(count: number) {
+  const days = [];
+  for (let i = 0; i < count; i++) {
+    const date = addDays(new Date(), i);
+    days.push({
+      date: format(date, "MMM d"),
+      day: format(date, "EEE"),
+      full: format(date, "yyyy-MM-dd"),
+    });
+  }
+  return days;
+}
+
 const availableTimes = [
-  "09:00",
-  "09:30",
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "12:00",
-  "12:30",
-  "13:00",
-  "13:30",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-  "16:00",
-  "16:30",
-  "17:00",
-  "17:30",
+  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
+  "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
 ];
 
-const weekDays = [
-  { date: "Mar 10", day: "Mon", full: "2026-03-10" },
-  { date: "Mar 11", day: "Tue", full: "2026-03-11" },
-  { date: "Mar 12", day: "Wed", full: "2026-03-12" },
-  { date: "Mar 13", day: "Thu", full: "2026-03-13" },
-  { date: "Mar 14", day: "Fri", full: "2026-03-14" },
-  { date: "Mar 15", day: "Sat", full: "2026-03-15" },
-  { date: "Mar 16", day: "Sun", full: "2026-03-16" },
-];
+interface ServiceRow {
+  id: string;
+  name: string;
+  name_ar: string | null;
+  duration: number;
+  price: number;
+}
 
-// Simulate some occupied slots
-const occupiedSlots: Record<string, string[]> = {
-  "2026-03-10": ["09:00", "09:30", "10:00", "11:00", "14:00"],
-  "2026-03-11": ["10:00", "10:30", "15:00"],
-  "2026-03-12": ["09:30", "13:00", "13:30"],
-};
+interface BarberRow {
+  id: string;
+  full_name: string;
+}
 
-export function BookingEngine() {
-  const { shopName, barbers } = useWorkspaceStore();
+export function BookingEngine({ shopId }: { shopId?: string }) {
   const t = useTranslation();
   const isRTL = useThemeStore((s) => s.direction) === "rtl";
+  const supabase = createClient();
+
   const [step, setStep] = useState<BookingStep>("landing");
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [selectedBarber, setSelectedBarber] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>("2026-03-10");
+  const [selectedDate, setSelectedDate] = useState<string>(
+    format(new Date(), "yyyy-MM-dd"),
+  );
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [hearAboutUs, setHearAboutUs] = useState("");
   const [booked, setBooked] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
-  const totalPrice = services
+  const weekDays = useMemo(() => generateDays(14), []);
+
+  // Resolve shop ID — use prop or fetch first shop
+  const [resolvedShopId, setResolvedShopId] = useState(shopId ?? "");
+
+  useEffect(() => {
+    if (shopId) {
+      setResolvedShopId(shopId);
+      return;
+    }
+    // For demo: fetch the first shop
+    supabase
+      .from("shops")
+      .select("id, name")
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data) setResolvedShopId(data.id);
+      });
+  }, [shopId, supabase]);
+
+  // Fetch services from Supabase
+  const { data: services, loading: servicesLoading } = useSupabaseQuery<ServiceRow[]>(
+    () => getPublicServices(supabase, resolvedShopId),
+    [resolvedShopId],
+    { enabled: !!resolvedShopId },
+  );
+
+  // Fetch barbers from Supabase
+  const { data: barbers } = useSupabaseQuery<BarberRow[]>(
+    async () => {
+      const result = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("shop_id", resolvedShopId);
+      return result as { data: BarberRow[] | null; error: { message: string } | null };
+    },
+    [resolvedShopId],
+    { enabled: !!resolvedShopId },
+  );
+
+  // Fetch occupied slots for selected date
+  const { data: occupiedSlots, loading: slotsLoading } = useSupabaseQuery(
+    () =>
+      getAvailableSlots(
+        supabase,
+        resolvedShopId,
+        selectedDate,
+        selectedBarber !== "any" ? selectedBarber ?? undefined : undefined,
+      ),
+    [resolvedShopId, selectedDate, selectedBarber],
+    { enabled: !!resolvedShopId && step === "datetime" },
+  );
+
+  // Compute occupied time set
+  const occupiedTimeSet = useMemo(() => {
+    const set = new Set<string>();
+    if (!occupiedSlots) return set;
+    (occupiedSlots as { start_time: string; end_time: string }[]).forEach(
+      (slot) => {
+        const start = parseISO(slot.start_time);
+        const end = parseISO(slot.end_time);
+        // Mark all 30-minute blocks that overlap
+        for (const time of availableTimes) {
+          const [h, m] = time.split(":").map(Number);
+          const slotStart = new Date(start);
+          slotStart.setHours(h, m, 0, 0);
+          const slotEnd = new Date(slotStart);
+          slotEnd.setMinutes(slotEnd.getMinutes() + 30);
+
+          if (slotStart < end && slotEnd > start) {
+            set.add(time);
+          }
+        }
+      },
+    );
+    return set;
+  }, [occupiedSlots]);
+
+  const serviceList = services ?? [];
+  const barberList = barbers ?? [];
+
+  const totalPrice = serviceList
     .filter((s) => selectedServices.includes(s.id))
     .reduce((sum, s) => sum + s.price, 0);
 
-  const totalDuration = services
+  const totalDuration = serviceList
     .filter((s) => selectedServices.includes(s.id))
     .reduce((sum, s) => sum + s.duration, 0);
 
   const selectedBarberName =
     selectedBarber === "any"
       ? t.booking.anyBarber
-      : barbers.find((b) => b.id === selectedBarber)?.name;
+      : barberList.find((b) => b.id === selectedBarber)?.full_name;
 
-  const canProceed = () => {
-    switch (step) {
-      case "services":
-        return selectedServices.length > 0;
-      case "barber":
-        return selectedBarber !== null;
-      case "datetime":
-        return selectedTime !== null;
-      case "confirm":
-        return clientName.trim() && clientPhone.trim();
-      default:
-        return true;
+  // ─── Submit booking ───
+  const handleBooking = async () => {
+    setSubmitting(true);
+    setBookingError(null);
+
+    try {
+      const res = await fetch("/api/booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shop_id: resolvedShopId,
+          client_name: clientName.trim(),
+          client_phone: clientPhone.trim().replace(/\s/g, ""),
+          service_ids: selectedServices,
+          barber_id: selectedBarber,
+          date: selectedDate,
+          time: selectedTime,
+          hear_about_us: hearAboutUs,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!result.success) {
+        setBookingError(
+          result.error || "Something went wrong. Please try again.",
+        );
+        return;
+      }
+
+      setBooked(true);
+    } catch {
+      setBookingError(
+        "Unable to connect. Please check your internet and try again.",
+      );
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -119,7 +230,6 @@ export function BookingEngine() {
     "datetime",
     "confirm",
   ];
-  const currentIdx = steps.indexOf(step);
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-4">
@@ -142,17 +252,16 @@ export function BookingEngine() {
                 transition={{ duration: 0.4 }}
                 className="p-10 text-center"
               >
-                {/* Logo */}
                 <div className="w-16 h-16 rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--accent-mint)] to-[var(--accent-lavender)] flex items-center justify-center mx-auto mb-6">
                   <Scissors size={28} className="text-[#0A0A0A]" />
                 </div>
 
                 <h1 className="text-2xl text-[var(--text-primary)] font-light mb-2">
-                  {shopName}
+                  {t.booking.bookAppointment}
                 </h1>
                 <div className="flex items-center justify-center gap-2 text-[12px] text-[var(--text-tertiary)] mb-1">
                   <MapPin size={12} />
-                  <span>Rainbow St, Amman, Jordan</span>
+                  <span>{isRTL ? "عمّان، الأردن" : "Amman, Jordan"}</span>
                 </div>
                 <div className="flex items-center justify-center gap-1 mb-8">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -171,17 +280,20 @@ export function BookingEngine() {
                   </span>
                 </div>
 
-                {/* Map placeholder */}
-                <div className="w-full h-32 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-primary)] flex items-center justify-center mb-8">
-                  <div className="text-center">
-                    <MapPin
-                      size={20}
-                      className="text-[var(--text-muted)] mx-auto mb-1"
-                    />
-                    <p className="text-[10px] text-[var(--text-muted)]">
-                      Interactive Map
-                    </p>
-                  </div>
+                {/* Trust micro-copy */}
+                <div className="space-y-2 mb-8">
+                  {[
+                    { icon: Clock, text: isRTL ? "حجز سريع — أقل من دقيقة" : "Quick booking — under 1 minute" },
+                    { icon: MapPin, text: isRTL ? "الدفع في المحل" : "Pay in shop — no upfront charges" },
+                    { icon: CalendarDays, text: isRTL ? "إلغاء مجاني" : "Free cancellation anytime" },
+                  ].map(({ icon: Icon, text }) => (
+                    <div key={text} className="flex items-center justify-center gap-2">
+                      <Icon size={12} className="text-[var(--accent-mint)]" />
+                      <span className="text-[11px] text-[var(--text-tertiary)] font-light">
+                        {text}
+                      </span>
+                    </div>
+                  ))}
                 </div>
 
                 <button
@@ -211,74 +323,83 @@ export function BookingEngine() {
                   onBack={() => setStep("landing")}
                 />
 
-                <div className="grid grid-cols-2 gap-3 mt-6">
-                  {services.map((service) => {
-                    const isSelected = selectedServices.includes(service.id);
-                    return (
-                      <motion.button
-                        key={service.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() =>
-                          setSelectedServices((prev) =>
-                            isSelected
-                              ? prev.filter((id) => id !== service.id)
-                              : [...prev, service.id],
-                          )
-                        }
-                        className={cn(
-                          "p-4 rounded-[var(--radius-md)] border text-left transition-all cursor-pointer",
-                          isSelected
-                            ? "border-[var(--accent-mint)] bg-[var(--accent-mint-muted)]"
-                            : "border-[var(--border-primary)] bg-[var(--bg-surface)] hover:border-[var(--border-hover)]",
-                        )}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div
-                            className={cn(
-                              "w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center",
+                {servicesLoading ? (
+                  <div className="py-12 flex justify-center">
+                    <Loader2
+                      size={24}
+                      className="text-[var(--accent-mint)] animate-spin"
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 mt-6">
+                    {serviceList.map((service) => {
+                      const isSelected = selectedServices.includes(service.id);
+                      return (
+                        <motion.button
+                          key={service.id}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() =>
+                            setSelectedServices((prev) =>
                               isSelected
-                                ? "bg-[var(--accent-mint)] text-[#0A0A0A]"
-                                : "bg-[var(--bg-surface-hover)] text-[var(--text-tertiary)]",
-                            )}
-                          >
-                            {serviceIcons[service.icon] || (
-                              <Scissors size={16} />
-                            )}
-                          </div>
-                          {isSelected && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className="w-5 h-5 rounded-full bg-[var(--accent-mint)] flex items-center justify-center"
-                            >
-                              <Check size={12} className="text-[#0A0A0A]" />
-                            </motion.div>
-                          )}
-                        </div>
-                        <p
+                                ? prev.filter((id) => id !== service.id)
+                                : [...prev, service.id],
+                            )
+                          }
                           className={cn(
-                            "text-[12px] font-light mb-1",
+                            "p-4 rounded-[var(--radius-md)] border text-left transition-all cursor-pointer",
                             isSelected
-                              ? "text-[var(--accent-mint)]"
-                              : "text-[var(--text-primary)]",
+                              ? "border-[var(--accent-mint)] bg-[var(--accent-mint-muted)]"
+                              : "border-[var(--border-primary)] bg-[var(--bg-surface)] hover:border-[var(--border-hover)]",
                           )}
                         >
-                          {service.name}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[13px] text-[var(--text-primary)] font-medium">
-                            {service.price} {t.common.jod}
-                          </span>
-                          <span className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
-                            <Clock size={9} />
-                            {service.duration}m
-                          </span>
-                        </div>
-                      </motion.button>
-                    );
-                  })}
-                </div>
+                          <div className="flex items-center justify-between mb-2">
+                            <div
+                              className={cn(
+                                "w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center",
+                                isSelected
+                                  ? "bg-[var(--accent-mint)] text-[#0A0A0A]"
+                                  : "bg-[var(--bg-surface-hover)] text-[var(--text-tertiary)]",
+                              )}
+                            >
+                              <Scissors size={16} />
+                            </div>
+                            {isSelected && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="w-5 h-5 rounded-full bg-[var(--accent-mint)] flex items-center justify-center"
+                              >
+                                <Check size={12} className="text-[#0A0A0A]" />
+                              </motion.div>
+                            )}
+                          </div>
+                          <p
+                            className={cn(
+                              "text-[12px] font-light mb-1",
+                              isSelected
+                                ? "text-[var(--accent-mint)]"
+                                : "text-[var(--text-primary)]",
+                            )}
+                          >
+                            {isRTL && service.name_ar
+                              ? service.name_ar
+                              : service.name}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[13px] text-[var(--text-primary)] font-medium">
+                              {service.price} {t.common.jod}
+                            </span>
+                            <span className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
+                              <Clock size={9} />
+                              {service.duration}m
+                            </span>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Summary & Next */}
                 {selectedServices.length > 0 && (
@@ -289,7 +410,7 @@ export function BookingEngine() {
                   >
                     <div>
                       <p className="text-[11px] text-[var(--text-tertiary)]">
-                        {selectedServices.length} service(s) · {totalDuration}
+                        {selectedServices.length} service(s) · {totalDuration}{" "}
                         min
                       </p>
                       <p className="text-[15px] text-[var(--text-primary)] font-medium">
@@ -362,7 +483,7 @@ export function BookingEngine() {
                     )}
                   </motion.button>
 
-                  {barbers.map((barber) => (
+                  {barberList.map((barber) => (
                     <motion.button
                       key={barber.id}
                       whileHover={{ scale: 1.01 }}
@@ -372,12 +493,12 @@ export function BookingEngine() {
                         "w-full p-4 rounded-[var(--radius-md)] border flex items-center gap-4 transition-all cursor-pointer text-left",
                         selectedBarber === barber.id
                           ? "border-[var(--accent-mint)] bg-[var(--accent-mint-muted)] shadow-[0_0_15px_rgba(110,231,183,0.15)]"
-                          : "border-[var(--border-primary)] bg-[var(--bg-surface)] hover:border-[var(--border-hover)] hover:shadow-[0_0_15px_rgba(110,231,183,0.05)]",
+                          : "border-[var(--border-primary)] bg-[var(--bg-surface)] hover:border-[var(--border-hover)]",
                       )}
                     >
                       <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[var(--accent-lavender)] to-[var(--accent-blue)] flex items-center justify-center flex-shrink-0">
                         <span className="text-[12px] font-medium text-[#0A0A0A]">
-                          {barber.name
+                          {barber.full_name
                             .split(" ")
                             .map((n) => n[0])
                             .join("")}
@@ -385,20 +506,8 @@ export function BookingEngine() {
                       </div>
                       <div>
                         <p className="text-[13px] text-[var(--text-primary)] font-light">
-                          {barber.name}
+                          {barber.full_name}
                         </p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star
-                              key={i}
-                              size={9}
-                              className="text-[var(--accent-amber)] fill-[var(--accent-amber)]"
-                            />
-                          ))}
-                          <span className="text-[9px] text-[var(--text-muted)] ml-0.5">
-                            5.0
-                          </span>
-                        </div>
                       </div>
                       {selectedBarber === barber.id && (
                         <motion.div
@@ -447,7 +556,7 @@ export function BookingEngine() {
                   onBack={() => setStep("barber")}
                 />
 
-                {/* Date selector — horizontal scrolling week */}
+                {/* Date selector */}
                 <div className="flex gap-2 mt-6 overflow-x-auto pb-2">
                   {weekDays.map((d) => (
                     <button
@@ -478,42 +587,50 @@ export function BookingEngine() {
                   <p className="text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider mb-3">
                     {t.booking.availableTimes}
                   </p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {availableTimes.map((time) => {
-                      const isOccupied =
-                        occupiedSlots[selectedDate]?.includes(time);
-                      return (
-                        <button
-                          key={time}
-                          disabled={isOccupied}
-                          onClick={() => setSelectedTime(time)}
-                          className={cn(
-                            "relative h-9 rounded-[var(--radius-sm)] text-[12px] font-light transition-all cursor-pointer tabular-nums",
-                            isOccupied
-                              ? "bg-[var(--bg-surface)] text-[var(--text-muted)] cursor-not-allowed line-through opacity-40"
-                              : selectedTime === time
-                                ? "text-[#0A0A0A] font-medium"
-                                : "bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-primary)] hover:border-[var(--border-hover)]",
-                          )}
-                        >
-                          {selectedTime === time && (
-                            <motion.div
-                              layoutId="time-slot-active"
-                              className="absolute inset-0 bg-[var(--accent-mint)] rounded-[var(--radius-sm)] shadow-[0_0_12px_rgba(110,231,183,0.3)]"
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 25,
-                              }}
-                            />
-                          )}
-                          <span className="relative z-10">{time}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {slotsLoading ? (
+                    <div className="py-8 flex justify-center">
+                      <Loader2
+                        size={20}
+                        className="text-[var(--accent-mint)] animate-spin"
+                      />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {availableTimes.map((time) => {
+                        const isOccupied = occupiedTimeSet.has(time);
+                        return (
+                          <button
+                            key={time}
+                            disabled={isOccupied}
+                            onClick={() => setSelectedTime(time)}
+                            className={cn(
+                              "relative h-9 rounded-[var(--radius-sm)] text-[12px] font-light transition-all cursor-pointer tabular-nums",
+                              isOccupied
+                                ? "bg-[var(--bg-surface)] text-[var(--text-muted)] cursor-not-allowed line-through opacity-40"
+                                : selectedTime === time
+                                  ? "text-[#0A0A0A] font-medium"
+                                  : "bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-primary)] hover:border-[var(--border-hover)]",
+                            )}
+                          >
+                            {selectedTime === time && (
+                              <motion.div
+                                layoutId="time-slot-active"
+                                className="absolute inset-0 bg-[var(--accent-mint)] rounded-[var(--radius-sm)] shadow-[0_0_12px_rgba(110,231,183,0.3)]"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 400,
+                                  damping: 25,
+                                }}
+                              />
+                            )}
+                            <span className="relative z-10">{time}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {selectedTime && (
@@ -550,17 +667,19 @@ export function BookingEngine() {
                   onBack={() => setStep("datetime")}
                 />
 
-                {/* Summary */}
                 <div className="mt-6 space-y-3">
+                  {/* Summary */}
                   <div className="p-4 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-primary)] space-y-2">
                     <div className="flex justify-between text-[12px]">
                       <span className="text-[var(--text-tertiary)]">
                         {t.booking.services}
                       </span>
                       <span className="text-[var(--text-primary)] font-light">
-                        {services
+                        {serviceList
                           .filter((s) => selectedServices.includes(s.id))
-                          .map((s) => s.name)
+                          .map((s) =>
+                            isRTL && s.name_ar ? s.name_ar : s.name,
+                          )
                           .join(", ")}
                       </span>
                     </div>
@@ -640,18 +759,55 @@ export function BookingEngine() {
                     </p>
                   </div>
 
+                  {/* Error message */}
+                  {bookingError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3 rounded-[var(--radius-sm)] bg-[var(--accent-rose-muted)] border border-[var(--accent-rose)]/20 flex items-start gap-2"
+                    >
+                      <AlertCircle
+                        size={14}
+                        className="text-[var(--accent-rose)] mt-0.5 flex-shrink-0"
+                      />
+                      <div className="flex-1">
+                        <p className="text-[11px] text-[var(--accent-rose)] font-light">
+                          {bookingError}
+                        </p>
+                        <button
+                          onClick={handleBooking}
+                          className="mt-1 text-[10px] text-[var(--accent-rose)] underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <RefreshCw size={10} />
+                          Try again
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
                   <button
-                    onClick={() => setBooked(true)}
-                    disabled={!clientName.trim() || !clientPhone.trim()}
+                    onClick={handleBooking}
+                    disabled={
+                      !clientName.trim() || !clientPhone.trim() || submitting
+                    }
                     className={cn(
                       "w-full h-12 rounded-[var(--radius-md)] text-[14px] font-medium flex items-center justify-center gap-2 cursor-pointer transition-all",
-                      clientName.trim() && clientPhone.trim()
+                      clientName.trim() && clientPhone.trim() && !submitting
                         ? "bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] hover:opacity-90"
                         : "bg-[var(--bg-surface)] text-[var(--text-muted)] cursor-not-allowed",
                     )}
                   >
-                    {t.booking.confirmBtn}
-                    <Check size={16} />
+                    {submitting ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        {isRTL ? "جاري الحجز..." : "Booking..."}
+                      </>
+                    ) : (
+                      <>
+                        {t.booking.confirmBtn}
+                        <Check size={16} />
+                      </>
+                    )}
                   </button>
                 </div>
               </motion.div>
@@ -693,18 +849,11 @@ export function BookingEngine() {
                 <div className="p-4 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-left mb-6">
                   <div className="flex justify-between text-[12px] mb-2">
                     <span className="text-[var(--text-tertiary)]">
-                      {t.booking.location}
-                    </span>
-                    <span className="text-[var(--text-primary)] font-light">
-                      Rainbow St, Amman
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-[12px] mb-2">
-                    <span className="text-[var(--text-tertiary)]">
                       {t.booking.payment}
                     </span>
                     <span className="text-[var(--accent-mint)] font-medium">
-                      {totalPrice.toFixed(2)} {t.common.jod} {t.booking.inStore}
+                      {totalPrice.toFixed(2)} {t.common.jod}{" "}
+                      {t.booking.inStore}
                     </span>
                   </div>
                 </div>
@@ -756,6 +905,7 @@ function StepHeader({
       <button
         onClick={onBack}
         className="w-8 h-8 rounded-[var(--radius-sm)] flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+        aria-label="Go back"
       >
         <ArrowLeft size={16} />
       </button>

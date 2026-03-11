@@ -12,9 +12,13 @@ import {
   Target,
   ArrowUpRight,
   ArrowDownRight,
+  Loader2,
 } from "lucide-react";
-import { dashboardMetrics } from "@/lib/mock-data";
 import { useTranslation } from "@/hooks/use-translation";
+import { useWorkspaceStore } from "@/store/workspace-store";
+import { useSupabaseQuery } from "@/hooks/use-supabase-query";
+import { createClient } from "@/lib/supabase/client";
+import { getDashboardMetrics } from "@/lib/queries/analytics";
 
 interface MetricCardData {
   id: string;
@@ -26,53 +30,10 @@ interface MetricCardData {
   accentColor: string;
 }
 
-function useMetrics(): MetricCardData[] {
-  const t = useTranslation();
-  return [
-    {
-      id: "bookings",
-      label: t.dashboard.todaysBookings,
-      value: dashboardMetrics.todayBookings.toString(),
-      change: dashboardMetrics.todayBookingsChange,
-      icon: <CalendarDays size={18} />,
-      glow: "blue",
-      accentColor: "var(--accent-blue)",
-    },
-    {
-      id: "sales",
-      label: t.dashboard.todaysSales,
-      value: `${dashboardMetrics.todaySales.toFixed(1)} ${t.common.jod}`,
-      change: dashboardMetrics.todaySalesChange,
-      icon: <DollarSign size={18} />,
-      glow: "mint",
-      accentColor: "var(--accent-mint)",
-    },
-    {
-      id: "weekly",
-      label: t.dashboard.weeklyRevenue,
-      value: `${dashboardMetrics.weeklyTrajectory.toFixed(0)} ${t.common.jod}`,
-      change: dashboardMetrics.weeklyTrajectoryChange,
-      icon: <TrendingUp size={18} />,
-      glow: "lavender",
-      accentColor: "var(--accent-lavender)",
-    },
-    {
-      id: "goal",
-      label: t.dashboard.dailyGoal,
-      value: `${((dashboardMetrics.dailyProgress / dashboardMetrics.dailyGoal) * 100).toFixed(0)}%`,
-      change: dashboardMetrics.monthlyRevenueChange,
-      icon: <Target size={18} />,
-      glow: "mint",
-      accentColor: "var(--accent-mint)",
-    },
-  ];
-}
-
 function AnimatedNumber({ value }: { value: string }) {
   const [displayed, setDisplayed] = useState("0");
 
   useEffect(() => {
-    // Simple animation: reveal the value after mount
     const timer = setTimeout(() => setDisplayed(value), 100);
     return () => clearTimeout(timer);
   }, [value]);
@@ -90,8 +51,72 @@ function AnimatedNumber({ value }: { value: string }) {
 }
 
 export function MetricCards() {
-  const metrics = useMetrics();
-  const goalMet = dashboardMetrics.dailyProgress >= dashboardMetrics.dailyGoal;
+  const t = useTranslation();
+  const { shopId } = useWorkspaceStore();
+  const supabase = createClient();
+
+  const { data: metrics, loading } = useSupabaseQuery(
+    async () => {
+      const result = await getDashboardMetrics(supabase, shopId);
+      return { data: result, error: null };
+    },
+    [shopId],
+    { enabled: !!shopId },
+  );
+
+  const m = metrics ?? {
+    todayBookings: 0,
+    todayBookingsChange: 0,
+    todaySales: 0,
+    todaySalesChange: 0,
+    weeklyTrajectory: 0,
+    weeklyTrajectoryChange: 0,
+    monthlyRevenue: 0,
+    monthlyRevenueChange: 0,
+    dailyGoal: 120,
+    dailyProgress: 0,
+  };
+
+  const cards: MetricCardData[] = [
+    {
+      id: "bookings",
+      label: t.dashboard.todaysBookings,
+      value: m.todayBookings.toString(),
+      change: m.todayBookingsChange,
+      icon: <CalendarDays size={18} />,
+      glow: "blue",
+      accentColor: "var(--accent-blue)",
+    },
+    {
+      id: "sales",
+      label: t.dashboard.todaysSales,
+      value: `${m.todaySales.toFixed(1)} ${t.common.jod}`,
+      change: m.todaySalesChange,
+      icon: <DollarSign size={18} />,
+      glow: "mint",
+      accentColor: "var(--accent-mint)",
+    },
+    {
+      id: "weekly",
+      label: t.dashboard.weeklyRevenue,
+      value: `${m.weeklyTrajectory.toFixed(0)} ${t.common.jod}`,
+      change: m.weeklyTrajectoryChange,
+      icon: <TrendingUp size={18} />,
+      glow: "lavender",
+      accentColor: "var(--accent-lavender)",
+    },
+    {
+      id: "goal",
+      label: t.dashboard.dailyGoal,
+      value: `${m.dailyGoal > 0 ? ((m.dailyProgress / m.dailyGoal) * 100).toFixed(0) : 0}%`,
+      change: m.monthlyRevenueChange,
+      icon: <Target size={18} />,
+      glow: "mint",
+      accentColor: "var(--accent-mint)",
+    },
+  ];
+
+  const goalMet = m.dailyProgress >= m.dailyGoal;
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
@@ -101,9 +126,22 @@ export function MetricCards() {
     }
   }, [goalMet]);
 
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="glass-card-premium p-6 animate-pulse">
+            <div className="h-4 w-24 rounded bg-[var(--bg-surface)] mb-4" />
+            <div className="h-8 w-20 rounded bg-[var(--bg-surface)]" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      {metrics.map((metric, index) => (
+      {cards.map((metric, index) => (
         <motion.div
           key={metric.id}
           initial={{ opacity: 0, y: 20 }}
@@ -155,7 +193,7 @@ export function MetricCards() {
                 {Math.abs(metric.change)}%
               </div>
               <span className="text-[11px] text-[var(--text-tertiary)]">
-                vs last month
+                vs last period
               </span>
             </div>
 
@@ -171,9 +209,9 @@ export function MetricCards() {
                     initial={{ width: 0 }}
                     animate={{
                       width: `${Math.min(
-                        (dashboardMetrics.dailyProgress /
-                          dashboardMetrics.dailyGoal) *
-                          100,
+                        m.dailyGoal > 0
+                          ? (m.dailyProgress / m.dailyGoal) * 100
+                          : 0,
                         100,
                       )}%`,
                     }}
@@ -185,11 +223,7 @@ export function MetricCards() {
                   />
                 </div>
                 <p className="text-[10px] text-[var(--text-muted)] mt-1.5">
-                  {dashboardMetrics.dailyProgress.toFixed(1)} /{" "}
-                  {dashboardMetrics.dailyGoal}{" "}
-                  {metrics[0] && metrics[0].value.includes("د.أ")
-                    ? "د.أ"
-                    : "JOD"}
+                  {m.dailyProgress.toFixed(1)} / {m.dailyGoal} {t.common.jod}
                 </p>
               </div>
             )}

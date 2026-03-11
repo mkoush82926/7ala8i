@@ -8,7 +8,7 @@ import {
 } from "@dnd-kit/sortable";
 import { cn } from "@/lib/utils";
 import { LeadCard } from "./lead-card";
-import type { Lead } from "@/lib/mock-data";
+import type { Lead } from "@/lib/types";
 import type { LeadStage } from "@/store/leads-store";
 
 interface KanbanColumnProps {

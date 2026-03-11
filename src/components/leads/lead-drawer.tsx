@@ -43,7 +43,7 @@ export function LeadDrawer() {
       label: t.leads.completedStage,
       color: "var(--accent-mint)",
     },
-    { value: "loyal", label: t.leads.loyal, color: "var(--accent-rose)" },
+    { value: "regular", label: t.leads.loyal, color: "var(--accent-rose)" },
   ];
 
   const [form, setForm] = useState({

@@ -12,11 +12,13 @@ import {
   Search,
   Menu,
   Users,
+  LogOut,
 } from "lucide-react";
 import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { getGreeting, getInitials } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
+import { logout } from "@/app/auth/actions";
 
 export function Topbar() {
   const { theme, toggleTheme, locale, toggleLocale, direction } =
@@ -168,6 +170,17 @@ export function Topbar() {
           >
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </motion.button>
+
+          {/* Logout */}
+          <form action={logout}>
+            <button
+              type="submit"
+              className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
+          </form>
 
           {/* User Avatar */}
           <div

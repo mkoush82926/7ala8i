@@ -6,7 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { GripVertical, Phone, DollarSign } from "lucide-react";
-import type { Lead } from "@/lib/mock-data";
+import type { Lead } from "@/lib/types";
 
 interface LeadCardProps {
   lead: Lead;

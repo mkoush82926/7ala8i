@@ -13,8 +13,13 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { theme, direction } = useThemeStore();
+  const { isMobileSidebarOpen, setMobileSidebarOpen, initializeWorkspace } =
+    useWorkspaceStore();
 
-  const { isMobileSidebarOpen, setMobileSidebarOpen } = useWorkspaceStore();
+  // Initialize workspace data from Supabase
+  useEffect(() => {
+    initializeWorkspace();
+  }, [initializeWorkspace]);
 
   // Apply theme and direction to html element
   useEffect(() => {
