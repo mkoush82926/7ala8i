@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { useTranslation } from "@/hooks/use-translation";
 import { useThemeStore } from "@/store/theme-store";
+import { cn } from "@/lib/utils";
 
 // ─── Scroll-reveal wrapper ───
 function Reveal({
@@ -136,22 +137,22 @@ export default function LandingPage() {
           <div className="flex items-center gap-4">
             <button
               onClick={toggleLang}
-              className="text-[12px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors cursor-pointer"
+              className="h-12 w-12 flex items-center justify-center rounded-full bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] transition-all cursor-pointer"
             >
-              {isRTL ? "EN" : "عربي"}
+              {isRTL ? "EN" : "AR"}
             </button>
             <Link
               href="/"
-              className="text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              className="h-12 font-medium px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center"
             >
               {t.sidebar.dashboard}
             </Link>
             <Link
               href="/book"
-              className="h-9 px-5 rounded-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] text-[12px] font-medium flex items-center gap-2 hover:opacity-90 transition-opacity"
+              className="h-12 px-8 rounded-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] text-[14px] font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity"
             >
               {t.landing.getStarted}
-              <ArrowRight size={14} />
+              <ArrowRight size={16} />
             </Link>
           </div>
         </div>
@@ -311,24 +312,34 @@ export default function LandingPage() {
             </div>
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f, i) => (
               <Reveal key={i} delay={i * 0.08}>
-                <div className="glass-card-premium p-10 h-full">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-                    style={{
-                      background: `color-mix(in srgb, ${f.color} 15%, transparent)`,
-                    }}
-                  >
-                    <f.icon size={20} style={{ color: f.color }} />
+                <div 
+                  className={cn(
+                    "glass-card-premium p-10 h-full flex flex-col justify-between group cursor-default",
+                    (i === 0 || i === 3) ? "lg:col-span-2" : "col-span-1"
+                  )}
+                >
+                  <div className="mb-12">
+                    <div
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110"
+                      style={{
+                        background: `color-mix(in srgb, ${f.color} 15%, transparent)`,
+                      }}
+                    >
+                      <f.icon size={24} style={{ color: f.color }} />
+                    </div>
+                    <h3 className="text-[20px] text-[var(--text-primary)] font-medium mb-3 relative z-10 transition-colors group-hover:text-white">
+                      {f.title}
+                    </h3>
+                    <p className="text-[15px] text-[var(--text-tertiary)] font-light leading-[1.6] relative z-10 max-w-sm">
+                      {f.desc}
+                    </p>
                   </div>
-                  <h3 className="text-[15px] text-[var(--text-primary)] font-medium mb-2 relative z-10">
-                    {f.title}
-                  </h3>
-                  <p className="text-[13px] text-[var(--text-tertiary)] font-light leading-relaxed relative z-10">
-                    {f.desc}
-                  </p>
+                  <div className="w-full h-1 bg-[var(--bg-surface)] rounded-full overflow-hidden mt-auto">
+                     <div className="w-0 h-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] transition-all duration-500 ease-out group-hover:w-full" />
+                  </div>
                 </div>
               </Reveal>
             ))}

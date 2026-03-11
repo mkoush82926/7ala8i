@@ -53,7 +53,7 @@ export function Topbar() {
       <div className="flex items-center gap-3 md:gap-6">
         <button
           onClick={toggleMobileSidebar}
-          className="md:hidden flex items-center justify-center w-8 h-8 rounded-[var(--radius-sm)] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+          className="md:hidden flex items-center justify-center w-12 h-12 rounded-[var(--radius-md)] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
         >
           <Menu size={20} />
         </button>
@@ -71,13 +71,13 @@ export function Topbar() {
         {/* Workspace View Switcher (Team shops only) */}
         {role === "shop_admin" && (
           <div className="relative group hidden lg:block">
-            <button className="flex items-center gap-2 h-8 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[12px] text-[var(--text-secondary)] hover:border-[var(--border-hover)] transition-colors cursor-pointer">
+            <button className="flex items-center gap-2 h-12 px-4 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] font-medium text-[var(--text-secondary)] hover:border-[var(--border-hover)] transition-colors cursor-pointer">
               <span>
                 {currentView === "master"
                   ? t.topbar.masterView
                   : barbers.find((b) => b.id === currentView)?.name}
               </span>
-              <ChevronDown size={12} />
+              <ChevronDown size={14} />
             </button>
             {/* Dropdown */}
             <div
@@ -122,30 +122,30 @@ export function Topbar() {
       {/* Right — Actions */}
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
         {/* Search */}
-        <div className="relative hidden lg:block me-">
+        <div className="relative hidden lg:block me-2">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] group-focus-within:text-[var(--text-primary)] transition-colors"
-            size={14}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] group-focus-within:text-[var(--text-primary)] transition-colors"
+            size={16}
           />
           <input
             type="text"
             placeholder={t.common?.search || "Search..."}
-            className="h-8 w-48 ps- pe- rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--border-primary)] focus:bg-[var(--bg-primary)] text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition-all"
+            className="h-12 w-64 ps-11 pe-4 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--border-primary)] focus:bg-[var(--bg-primary)] text-[14px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition-all"
           />
         </div>
 
         <div className="flex items-center gap-1 md:gap-2">
           {/* View Switcher Mobile - Simplified */}
           {role === "shop_admin" && (
-            <button className="lg:hidden flex items-center justify-center w-8 h-8 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer">
-              <Users className="w-4 h-4" />
+            <button className="lg:hidden flex items-center justify-center w-12 h-12 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer">
+              <Users className="w-5 h-5" />
             </button>
           )}
 
           {/* Notifications */}
-          <button className="hidden sm:flex relative items-center justify-center w-8 h-8 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer group">
-            <Bell size={16} />
-            <span className="absolute top-2 right-2 flex h-2 w-2">
+          <button className="hidden sm:flex relative items-center justify-center w-12 h-12 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer group">
+            <Bell size={18} />
+            <span className="absolute top-3 right-3 flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-mint)] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent-mint)]"></span>
             </span>
@@ -156,9 +156,9 @@ export function Topbar() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={toggleLocale}
-            className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
+            className="flex items-center justify-center w-12 h-12 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
           >
-            <Globe size={16} />
+            <Globe size={18} />
           </motion.button>
 
           {/* Theme Toggle */}
@@ -166,30 +166,30 @@ export function Topbar() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={toggleTheme}
-            className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
+            className="flex items-center justify-center w-12 h-12 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
           >
-            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </motion.button>
 
           {/* Logout */}
           <form action={logout}>
             <button
               type="submit"
-              className="flex items-center justify-center w-8 h-8 rounded-full text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
+              className="flex items-center justify-center w-12 h-12 rounded-full text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
               title="Sign Out"
             >
-              <LogOut size={16} />
+              <LogOut size={18} />
             </button>
           </form>
 
           {/* User Avatar */}
           <div
             className={cn(
-              "w-7 h-7 md:w-8 md:h-8 rounded-full bg-[var(--text-primary)] flex items-center justify-center shadow-sm border border-[var(--border-primary)] cursor-pointer hover:opacity-90 transition-opacity",
-              isRTL ? "me-" : "ms-",
+              "w-10 h-10 md:w-12 md:h-12 rounded-full bg-[var(--text-primary)] flex items-center justify-center shadow-sm border border-[var(--border-primary)] cursor-pointer hover:opacity-90 transition-opacity",
+              isRTL ? "me-2" : "ms-2",
             )}
           >
-            <span className="text-[10px] md:text-[11px] font-medium text-[var(--bg-primary)]">
+            <span className="text-[11px] md:text-[13px] font-medium text-[var(--bg-primary)]">
               {getInitials("Admin User")}
             </span>
           </div>

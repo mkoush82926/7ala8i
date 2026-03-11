@@ -102,7 +102,7 @@ export function Sidebar() {
               key={item.id}
               href={item.href}
               className={cn(
-                "relative flex items-center gap-4 px-3 h-10 rounded-[var(--radius-md)]",
+                "relative flex items-center gap-4 px-4 h-12 rounded-[var(--radius-md)]",
                 "transition-colors duration-[var(--transition-fast)] cursor-pointer group",
                 isActive
                   ? "text-[var(--text-primary)] bg-[var(--bg-surface-active)]"
@@ -147,7 +147,7 @@ export function Sidebar() {
       <div className="p-3 border-t border-[var(--border-primary)]">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center justify-center w-full h-8 rounded-[var(--radius-sm)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+          className="flex items-center justify-center w-full h-12 rounded-[var(--radius-md)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
         >
           {isRTL ? (
             expanded ? (
