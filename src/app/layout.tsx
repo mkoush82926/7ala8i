@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Cairo } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -38,6 +39,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${cairo.variable} antialiased font-sans`}>
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
