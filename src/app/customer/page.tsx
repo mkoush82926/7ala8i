@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { format } from "date-fns";
 import {
   Scissors, Calendar, Clock, MapPin, LogOut, User, CalendarPlus, Loader2,
@@ -174,8 +175,8 @@ export default function CustomerDashboard() {
       <div className="relative z-10" style={{ maxWidth: 800, marginLeft: "auto", marginRight: "auto", padding: "48px 32px" }}>
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 18, marginBottom: 48 }}>
-          <a
-            href="/book"
+          <Link
+            href="/explore"
             className="glass-card-premium flex items-center group cursor-pointer"
             style={{ padding: 22 }}
           >
@@ -187,7 +188,7 @@ export default function CustomerDashboard() {
               <p className="text-[var(--text-tertiary)]" style={{ fontSize: 12 }}>Find a barbershop near you</p>
             </div>
             <ChevronRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--accent-mint)] transition-colors" />
-          </a>
+          </Link>
 
           <button
             onClick={() => setEditProfile(true)}
@@ -216,13 +217,13 @@ export default function CustomerDashboard() {
               <p className="text-[var(--text-tertiary)]" style={{ fontSize: 14, marginBottom: 20 }}>
                 No upcoming appointments
               </p>
-              <a
-                href="/book"
-                style={{ height: 40, padding: "0 20px" }}
-                className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent-mint)] text-[#0A0A0A] font-semibold text-[13px] hover:opacity-90 transition-opacity"
+              <Link
+                href="/explore"
+                style={{ height: 48, padding: "0 24px" }}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] font-semibold text-[14px] hover:opacity-90 transition-opacity cursor-pointer relative z-20"
               >
-                <CalendarPlus size={15} /> Book Now
-              </a>
+                <CalendarPlus size={16} /> Book Now
+              </Link>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -259,17 +260,17 @@ export default function CustomerDashboard() {
                   </div>
                   {appt.status !== "cancelled" && (
                     <div className="flex items-center" style={{ gap: 10 }}>
-                      <a
-                        href={`/book?shop=${appt.shop_id}`}
+                      <Link
+                        href={`/book/${appt.shop_id}`}
                         style={{ height: 34, padding: "0 16px" }}
-                        className="rounded-lg bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--text-secondary)] text-[12px] font-medium flex items-center gap-1.5 hover:border-[var(--border-hover)] transition-all"
+                        className="rounded-lg bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--text-secondary)] text-[12px] font-medium flex items-center gap-1.5 hover:border-[var(--border-hover)] transition-all relative z-20"
                       >
                         <RefreshCw size={12} /> Reschedule
-                      </a>
+                      </Link>
                       <button
                         onClick={() => handleCancel(appt.id)}
                         style={{ height: 34, padding: "0 16px" }}
-                        className="rounded-lg bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--text-tertiary)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--accent-rose)] hover:border-[var(--accent-rose)]/30 transition-all cursor-pointer"
+                        className="rounded-lg bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--text-tertiary)] text-[12px] font-medium flex items-center gap-1.5 hover:text-[var(--accent-rose)] hover:border-[var(--accent-rose)]/30 transition-all cursor-pointer relative z-20"
                       >
                         <XCircle size={12} /> Cancel
                       </button>
@@ -310,12 +311,12 @@ export default function CustomerDashboard() {
                       </span>
                     </div>
                     {appt.status === "completed" && (
-                      <a
-                        href={`/book?shop=${appt.shop_id}`}
-                        className="h-7 px-3 rounded-lg bg-[var(--accent-mint-muted)] text-[var(--accent-mint)] text-[11px] font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+                      <Link
+                        href={`/book/${appt.shop_id}`}
+                        className="h-7 px-3 rounded-lg bg-[var(--accent-mint-muted)] text-[var(--accent-mint)] text-[11px] font-medium flex items-center gap-1 hover:opacity-80 transition-opacity relative z-20"
                       >
                         <RefreshCw size={10} /> Rebook
-                      </a>
+                      </Link>
                     )}
                   </div>
                 </div>
