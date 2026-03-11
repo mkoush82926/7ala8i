@@ -20,7 +20,7 @@ import { useTranslation } from "@/hooks/use-translation";
 import { useThemeStore } from "@/store/theme-store";
 import { cn } from "@/lib/utils";
 
-// ─── Scroll-reveal wrapper ───
+// ΓöÇΓöÇΓöÇ Scroll-reveal wrapper ΓöÇΓöÇΓöÇ
 function Reveal({
   children,
   delay = 0,
@@ -123,51 +123,48 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-x-hidden">
-      {/* ═══ NAVBAR ═══ */}
+      {/* ΓòÉΓòÉΓòÉ NAVBAR ΓòÉΓòÉΓòÉ */}
       <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-[var(--bg-primary)]/80 border-b border-[var(--border-primary)]">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-8">
-          <Link href="/" className="flex items-center gap-3 shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--accent-mint)] to-[var(--accent-lavender)] flex items-center justify-center shadow-lg shadow-mint/20 animate-glow">
-              <Scissors size={18} className="text-[#0A0A0A]" />
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent-mint)] to-[var(--accent-lavender)] flex items-center justify-center">
+              <Scissors size={16} className="text-[#0A0A0A]" />
             </div>
-            <span className="text-[18px] font-medium tracking-tight bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+            <span className="text-[16px] font-medium tracking-tight">
               Lumina
             </span>
-          </Link>
-          
-          <div className="flex items-center gap-2 md:gap-4 ml-auto">
+          </div>
+          <div className="flex items-center gap-4">
             <button
               onClick={toggleLang}
-              className="h-10 w-10 flex items-center justify-center rounded-full bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] transition-all cursor-pointer grow-0 shrink-0"
+              className="h-12 w-12 flex items-center justify-center rounded-full bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] transition-all cursor-pointer"
             >
               {isRTL ? "EN" : "AR"}
             </button>
-            <div className="hidden lg:flex items-center gap-2">
-              <Link
-                href="/explore"
-                className="h-10 font-medium px-4 text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center rounded-full hover:bg-[var(--bg-surface)]"
-              >
-                {isRTL ? "استكشف الصالونات" : "Explore Shops"}
-              </Link>
-              <Link
-                href="/"
-                className="h-10 font-medium px-4 text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center rounded-full hover:bg-[var(--bg-surface)]"
-              >
-                {t.sidebar.dashboard}
-              </Link>
-            </div>
+            <Link
+              href="/explore"
+              className="h-12 font-medium px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center cursor-pointer"
+            >
+              {isRTL ? "استكشف الصالونات" : "Explore Shops"}
+            </Link>
+            <Link
+              href="/"
+              className="h-12 font-medium px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center cursor-pointer"
+            >
+              {t.sidebar.dashboard}
+            </Link>
             <Link
               href="/book"
-              className="h-10 px-6 rounded-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] text-[13px] font-semibold flex items-center gap-2 hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] grow-0 shrink-0 whitespace-nowrap"
+              className="h-12 px-8 rounded-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] text-[14px] font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity"
             >
               {t.landing.getStarted}
-              <ArrowRight size={14} className={isRTL ? "rotate-180" : ""} />
+              <ArrowRight size={16} />
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* ═══ HERO ═══ */}
+      {/* ΓòÉΓòÉΓòÉ HERO ΓòÉΓòÉΓòÉ */}
       <section className="relative min-h-[90vh] flex items-center justify-center gradient-mesh noise-overlay">
         {/* Floating orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -212,27 +209,21 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4, ease: [0.25, 1, 0.5, 1] }}
-            className="flex flex-col items-center justify-center gap-4"
+            className="flex items-center justify-center gap-4"
           >
-            <div className="flex items-center justify-center gap-4">
-              <Link
-                href="/explore"
-                className="h-12 px-8 rounded-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] text-[14px] font-medium flex items-center gap-2 hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-mint/10"
-              >
-                {isRTL ? "استكشف الصالونات" : "Explore Shops"}
-                <ArrowRight size={16} className={isRTL ? "rotate-180" : ""} />
-              </Link>
-              <Link
-                href="/"
-                className="h-12 px-8 rounded-full border border-[var(--border-primary)] text-[var(--text-secondary)] text-[14px] font-light flex items-center gap-2 hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-all"
-              >
-                {t.landing.getStarted}
-              </Link>
-            </div>
-            {/* Trust Signal / Conversion Cue */}
-            <p className="text-[12px] text-[var(--text-tertiary)] font-light tracking-wide mt-2">
-              {isRTL ? "لا يلزم بطاقة ائتمان • إلغاء في أي وقت" : "No credit card required • Cancel anytime"}
-            </p>
+            <Link
+              href="/explore"
+              className="h-12 px-8 rounded-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] text-[14px] font-medium flex items-center gap-2 hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            >
+              {isRTL ? "استكشف الصالونات" : "Explore Shops"}
+              <ArrowRight size={16} />
+            </Link>
+            <Link
+              href="/"
+              className="h-12 px-8 rounded-full border border-[var(--border-primary)] text-[var(--text-secondary)] text-[14px] font-light flex items-center gap-2 hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
+            >
+              {t.landing.getStarted}
+            </Link>
           </motion.div>
 
           {/* Floating dashboard preview */}
@@ -313,7 +304,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ FEATURES ═══ */}
+      {/* ΓòÉΓòÉΓòÉ FEATURES ΓòÉΓòÉΓòÉ */}
       <section className="py-40 px-6">
         <div className="max-w-6xl mx-auto">
           <Reveal>
@@ -332,31 +323,28 @@ export default function LandingPage() {
               <Reveal key={i} delay={i * 0.08}>
                 <div 
                   className={cn(
-                    "glass-card-premium p-8 md:p-10 h-full flex flex-col justify-between group cursor-default",
+                    "glass-card-premium p-10 h-full flex flex-col justify-between group cursor-default",
                     (i === 0 || i === 3) ? "lg:col-span-2" : "col-span-1"
                   )}
                 >
-                  <div className="mb-10">
+                  <div className="mb-12">
                     <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 shadow-inner"
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110"
                       style={{
                         background: `color-mix(in srgb, ${f.color} 15%, transparent)`,
                       }}
                     >
                       <f.icon size={24} style={{ color: f.color }} />
                     </div>
-                    <h3 className="text-[22px] text-[var(--text-primary)] font-medium mb-4 relative z-10 transition-colors group-hover:text-white">
+                    <h3 className="text-[20px] text-[var(--text-primary)] font-medium mb-3 relative z-10 transition-colors group-hover:text-white">
                       {f.title}
                     </h3>
-                    <p className="text-[15px] text-[var(--text-secondary)] font-light leading-[1.7] relative z-10 max-w-lg">
+                    <p className="text-[15px] text-[var(--text-tertiary)] font-light leading-[1.6] relative z-10 max-w-sm">
                       {f.desc}
                     </p>
                   </div>
-                  <div className="w-full h-1 bg-[var(--bg-surface)] rounded-full overflow-hidden mt-6">
-                     <div 
-                       className="h-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] transition-all duration-700 ease-out group-hover:w-full" 
-                       style={{ width: '0%', direction: 'ltr' }} 
-                     />
+                  <div className="w-full h-1 bg-[var(--bg-surface)] rounded-full overflow-hidden mt-auto">
+                     <div className="w-0 h-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] transition-all duration-500 ease-out group-hover:w-full" />
                   </div>
                 </div>
               </Reveal>
@@ -365,7 +353,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ HOW IT WORKS ═══ */}
+      {/* ΓòÉΓòÉΓòÉ HOW IT WORKS ΓòÉΓòÉΓòÉ */}
       <section className="py-40 px-6 border-t border-[var(--border-primary)]">
         <div className="max-w-4xl mx-auto">
           <Reveal>
@@ -376,12 +364,9 @@ export default function LandingPage() {
             </div>
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative items-start">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             {/* Connecting line */}
-            <div className={cn(
-              "hidden md:block absolute top-12 left-[15%] right-[15%] h-px bg-gradient-to-r from-[var(--accent-mint)]/30 via-[var(--accent-lavender)]/30 to-[var(--accent-blue)]/30 z-0",
-              isRTL && "scale-x-[-1]"
-            )} />
+            <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-px bg-gradient-to-r from-[var(--accent-mint)]/30 via-[var(--accent-lavender)]/30 to-[var(--accent-blue)]/30" />
 
             {steps.map((step, i) => (
               <Reveal key={i} delay={i * 0.15}>
@@ -404,67 +389,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ TESTIMONIALS (TRUST SIGNALS) ═══ */}
-      <section className="py-40 px-6 border-t border-[var(--border-primary)] gradient-mesh">
-        <div className="max-w-6xl mx-auto">
-          <Reveal>
-            <div className="text-center mb-16">
-              <h2 className="text-[clamp(1.8rem,3vw,2.5rem)] font-light tracking-tight mb-4">
-                {(t.landing as any).testimonialsTitle || (isRTL ? "مفضل لدى أفضل صالونات الحلاقة" : "Loved by Top Barbershops")}
-              </h2>
-            </div>
-          </Reveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                text: (t.landing as any).testimonial1Text || "Lumina transformed how we manage our bookings. The CRM pipeline is game-changing.",
-                author: (t.landing as any).testimonial1Author || "Ahmad K.",
-                role: (t.landing as any).testimonial1Role || "Owner, Fade Masters",
-              },
-              {
-                text: (t.landing as any).testimonial2Text || "Finally an intuitive system that perfectly supports Arabic RTL without breaking.",
-                author: (t.landing as any).testimonial2Author || "Sarah M.",
-                role: (t.landing as any).testimonial2Role || "Manager, The Grooming Co.",
-              },
-              {
-                text: (t.landing as any).testimonial3Text || "The glassmorphism design looks stunning on iPads in our waiting area.",
-                author: (t.landing as any).testimonial3Author || "Omar R.",
-                role: (t.landing as any).testimonial3Role || "Founder, Classic Cuts",
-              },
-            ].map((test, i) => (
-              <Reveal key={i} delay={i * 0.1}>
-                <div className="glass-card-premium p-8 h-full flex flex-col justify-between group">
-                  <div>
-                    <div className="flex gap-1 mb-6 text-[var(--accent-amber)]">
-                      {[...Array(5)].map((_, j) => (
-                        <Star key={j} size={14} fill="currentColor" />
-                      ))}
-                    </div>
-                    <p className={cn(
-                      "text-[16px] text-[var(--text-primary)] font-light leading-relaxed mb-8 relative z-10",
-                      isRTL ? "text-start font-normal" : "italic"
-                    )}>
-                      "{test.text}"
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 relative z-10">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent-mint)] to-[var(--accent-lavender)] flex items-center justify-center text-[var(--bg-primary)] text-[13px] font-medium">
-                      {test.author.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-[14px] font-medium text-[var(--text-primary)]">{test.author}</p>
-                      <p className="text-[12px] text-[var(--text-tertiary)] font-light">{test.role}</p>
-                    </div>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ PRICING ═══ */}
+      {/* ΓòÉΓòÉΓòÉ PRICING ΓòÉΓòÉΓòÉ */}
       <section className="py-40 px-6 border-t border-[var(--border-primary)]">
         <div className="max-w-lg mx-auto">
           <Reveal>
@@ -500,19 +425,17 @@ export default function LandingPage() {
                 {t.landing.pricingIncludes}
               </p>
 
-              <div className="space-y-4 mb-10 relative z-10 px-4">
+              <div className="space-y-3 mb-8 relative z-10">
                 {pricingFeatures.map((feat, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-4 text-start max-w-[280px] mx-auto"
+                    className="flex items-center gap-3 justify-center"
                   >
-                    <div className="mt-1 w-5 h-5 rounded-full bg-[var(--accent-mint)]/10 flex items-center justify-center shrink-0">
-                      <Check
-                        size={12}
-                        className="text-[var(--accent-mint)]"
-                      />
-                    </div>
-                    <span className="text-[14px] text-[var(--text-secondary)] font-light leading-snug">
+                    <Check
+                      size={14}
+                      className="text-[var(--accent-mint)] flex-shrink-0"
+                    />
+                    <span className="text-[13px] text-[var(--text-secondary)] font-light">
                       {feat}
                     </span>
                   </div>
@@ -527,7 +450,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ FOOTER ═══ */}
+      {/* ΓòÉΓòÉΓòÉ FOOTER ΓòÉΓòÉΓòÉ */}
       <footer className="border-t border-[var(--border-primary)] py-16 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
@@ -583,14 +506,14 @@ export default function LandingPage() {
 
           <div className="flex items-center justify-between pt-8 border-t border-[var(--border-primary)]">
             <p className="text-[11px] text-[var(--text-muted)] font-light">
-              © 2026 Lumina. {t.landing.allRightsReserved}
+              ┬⌐ 2026 Lumina. {t.landing.allRightsReserved}
             </p>
             <button
               onClick={toggleLang}
               className="text-[11px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors cursor-pointer flex items-center gap-1"
             >
               <Globe size={12} />
-              {isRTL ? "English" : "العربية"}
+              {isRTL ? "English" : "╪º┘ä╪╣╪▒╪¿┘è╪⌐"}
             </button>
           </div>
         </div>

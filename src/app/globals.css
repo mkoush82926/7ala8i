@@ -1,10 +1,10 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
-/* ═══════════════════════════════════════════════════════
-   LUMINA — Glassmorphism Design System
-   ═══════════════════════════════════════════════════════ */
+/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+   LUMINA ΓÇö Glassmorphism Design System
+   ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 
-/* ─── Dark Mode (Default) ─── */
+/* ΓöÇΓöÇΓöÇ Dark Mode (Default) ΓöÇΓöÇΓöÇ */
 :root {
   --bg-primary: #000000;
   --bg-secondary: #0A0A0A;
@@ -21,7 +21,7 @@
   --border-hover: rgba(255, 255, 255, 0.1);
   --border-active: rgba(255, 255, 255, 0.15);
 
-  /* Accent — Very Soft minimal neons */
+  /* Accent ΓÇö Very Soft minimal neons */
   --accent-mint: #4ADE80;
   --accent-mint-muted: rgba(74, 222, 128, 0.1);
   --accent-mint-glow: rgba(74, 222, 128, 0.2);
@@ -72,7 +72,7 @@
   --transition-spring: 600ms cubic-bezier(0.25, 1, 0.4, 1);
 }
 
-/* ─── Light Mode ─── */
+/* ΓöÇΓöÇΓöÇ Light Mode ΓöÇΓöÇΓöÇ */
 [data-theme="light"] {
   --bg-primary: #FFFFFF;
   --bg-secondary: #FAFAFA;
@@ -100,7 +100,7 @@
   --shadow-glow-lavender: 0 0 30px rgba(167, 139, 250, 0.15);
 }
 
-/* ─── Tailwind v4 Theme Tokens ─── */
+/* ΓöÇΓöÇΓöÇ Tailwind v4 Theme Tokens ΓöÇΓöÇΓöÇ */
 @theme inline {
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
@@ -124,7 +124,7 @@
   --font-sans: 'Inter', 'Cairo', system-ui, sans-serif;
 }
 
-/* ─── Base Styles ─── */
+/* ΓöÇΓöÇΓöÇ Base Styles ΓöÇΓöÇΓöÇ */
 * {
   margin: 0;
   padding: 0;
@@ -132,7 +132,7 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: 14px;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -160,19 +160,12 @@ h6 {
 }
 
 /* Arabic RTL Typography */
-[dir="rtl"] body {
+[dir="rtl"] body,
+[dir="rtl"] * {
   font-family: 'Cairo', 'Inter', system-ui, sans-serif;
 }
-[dir="rtl"] h1, 
-[dir="rtl"] h2, 
-[dir="rtl"] h3, 
-[dir="rtl"] h4, 
-[dir="rtl"] button, 
-[dir="rtl"] input {
-  font-family: 'Cairo', sans-serif;
-}
 
-/* ─── Scrollbar Styling ─── */
+/* ΓöÇΓöÇΓöÇ Scrollbar Styling ΓöÇΓöÇΓöÇ */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -191,13 +184,13 @@ h6 {
   background: var(--border-hover);
 }
 
-/* ─── Selection ─── */
+/* ΓöÇΓöÇΓöÇ Selection ΓöÇΓöÇΓöÇ */
 ::selection {
   background: var(--accent-mint-muted);
   color: var(--text-primary);
 }
 
-/* ─── Glassmorphism Utility Classes ─── */
+/* ΓöÇΓöÇΓöÇ Glassmorphism Utility Classes ΓöÇΓöÇΓöÇ */
 .glass {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
@@ -230,7 +223,7 @@ h6 {
   box-shadow: var(--shadow-md);
 }
 
-/* ─── Shimmer / Skeleton Loading ─── */
+/* ΓöÇΓöÇΓöÇ Shimmer / Skeleton Loading ΓöÇΓöÇΓöÇ */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -251,7 +244,7 @@ h6 {
   border-radius: var(--radius-sm);
 }
 
-/* ─── Geometric Confetti ─── */
+/* ΓöÇΓöÇΓöÇ Geometric Confetti ΓöÇΓöÇΓöÇ */
 @keyframes float-up {
   0% {
     opacity: 1;
@@ -279,7 +272,7 @@ h6 {
   animation: float-up 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-/* ─── Toast checkmark animation ─── */
+/* ΓöÇΓöÇΓöÇ Toast checkmark animation ΓöÇΓöÇΓöÇ */
 @keyframes draw-check {
   0% {
     stroke-dashoffset: 24;
@@ -297,7 +290,7 @@ h6 {
   animation-delay: 0.1s;
 }
 
-/* ─── Page Entrance Animation ─── */
+/* ΓöÇΓöÇΓöÇ Page Entrance Animation ΓöÇΓöÇΓöÇ */
 @keyframes page-enter {
   0% {
     opacity: 0;
@@ -314,7 +307,7 @@ h6 {
   animation: page-enter 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-/* ─── Animated Gradient Mesh ─── */
+/* ΓöÇΓöÇΓöÇ Animated Gradient Mesh ΓöÇΓöÇΓöÇ */
 @keyframes gradient-mesh {
 
   0%,
@@ -344,7 +337,7 @@ h6 {
   animation: gradient-mesh 20s ease infinite;
 }
 
-/* ─── Glow Pulse ─── */
+/* ΓöÇΓöÇΓöÇ Glow Pulse ΓöÇΓöÇΓöÇ */
 @keyframes glow-pulse {
 
   0%,
@@ -377,7 +370,7 @@ h6 {
   animation: glow-pulse-lavender 3s ease-in-out infinite;
 }
 
-/* ─── Float Animation ─── */
+/* ΓöÇΓöÇΓöÇ Float Animation ΓöÇΓöÇΓöÇ */
 @keyframes float {
 
   0%,
@@ -402,7 +395,7 @@ h6 {
   animation: float 6s ease-in-out 2s infinite;
 }
 
-/* ─── Gradient Text ─── */
+/* ΓöÇΓöÇΓöÇ Gradient Text ΓöÇΓöÇΓöÇ */
 .gradient-text {
   background: linear-gradient(135deg, var(--accent-mint), var(--accent-lavender), var(--accent-blue));
   -webkit-background-clip: text;
@@ -410,7 +403,7 @@ h6 {
   background-clip: text;
 }
 
-/* ─── Noise Texture Overlay ─── */
+/* ΓöÇΓöÇΓöÇ Noise Texture Overlay ΓöÇΓöÇΓöÇ */
 .noise-overlay::before {
   content: '';
   position: absolute;
@@ -420,7 +413,7 @@ h6 {
   z-index: 0;
 }
 
-/* ─── Glass Card Premium Hover ─── */
+/* ΓöÇΓöÇΓöÇ Glass Card Premium Hover ΓöÇΓöÇΓöÇ */
 .glass-card-premium {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
