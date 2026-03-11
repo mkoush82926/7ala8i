@@ -142,6 +142,12 @@ export default function LandingPage() {
               {isRTL ? "EN" : "AR"}
             </button>
             <Link
+              href="/explore"
+              className="h-12 font-medium px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center"
+            >
+              {isRTL ? "استكشف الصالونات" : "Explore Shops"}
+            </Link>
+            <Link
               href="/"
               className="h-12 font-medium px-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center"
             >
@@ -207,17 +213,17 @@ export default function LandingPage() {
           >
             <div className="flex items-center justify-center gap-4">
               <Link
-                href="/"
+                href="/explore"
                 className="h-12 px-8 rounded-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] text-[14px] font-medium flex items-center gap-2 hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
-                {t.landing.getStarted}
+                {isRTL ? "استكشف الصالونات" : "Explore Shops"}
                 <ArrowRight size={16} />
               </Link>
               <Link
-                href="/book"
+                href="/"
                 className="h-12 px-8 rounded-full border border-[var(--border-primary)] text-[var(--text-secondary)] text-[14px] font-light flex items-center gap-2 hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-all"
               >
-                {t.landing.bookDemo}
+                {t.landing.getStarted}
               </Link>
             </div>
             {/* Trust Signal / Conversion Cue */}
