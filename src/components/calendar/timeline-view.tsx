@@ -265,7 +265,7 @@ export function TimelineView() {
                 {timeSlots.map((time) => (
                   <div
                     key={time}
-                    className="flex-1 p-3 text-center text-[11px] text-[var(--text-muted)] font-light border-l border-[var(--border-primary)]"
+                    className="flex-1 p-3 text-center text-[11px] text-[var(--text-muted)] font-light border-s border-[var(--border-primary)]"
                   >
                     {time}
                   </div>
@@ -308,7 +308,7 @@ export function TimelineView() {
                       {timeSlots.map((time) => (
                         <div
                           key={time}
-                          className="flex-1 border-l border-[var(--border-primary)]"
+                          className="flex-1 border-s border-[var(--border-primary)]"
                         />
                       ))}
                     </div>
@@ -483,7 +483,7 @@ export function TimelineView() {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="text-left text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider px-4 py-3"
+                        className="text-start text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider px-4 py-3"
                       >
                         {h}
                       </th>

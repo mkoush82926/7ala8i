@@ -147,7 +147,7 @@ export default function SignupPage() {
                   key={role.id}
                   onClick={() => { setSelectedRole(role.id); setStep("form"); }}
                   className={cn(
-                    "w-full rounded-xl border flex items-center text-left transition-all hover:border-[var(--border-hover)]",
+                    "w-full rounded-xl border flex items-center text-start transition-all hover:border-[var(--border-hover)]",
                     "border-[var(--border-primary)] bg-[var(--bg-surface)]",
                   )}
                   style={{ padding: "20px 24px", gap: 16 }}

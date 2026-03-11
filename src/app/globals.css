@@ -121,7 +121,7 @@
   --color-accent-rose: var(--accent-rose);
   --color-accent-rose-muted: var(--accent-rose-muted);
   --color-accent-amber: var(--accent-amber);
-  --font-sans: 'Inter', 'Tajawal', system-ui, sans-serif;
+  --font-sans: 'Inter', 'Cairo', system-ui, sans-serif;
 }
 
 /* ─── Base Styles ─── */
@@ -162,7 +162,7 @@ h6 {
 /* Arabic RTL Typography */
 [dir="rtl"] body,
 [dir="rtl"] * {
-  font-family: 'Tajawal', 'Inter', system-ui, sans-serif;
+  font-family: 'Cairo', 'Inter', system-ui, sans-serif;
 }
 
 /* ─── Scrollbar Styling ─── */

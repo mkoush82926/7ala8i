@@ -111,8 +111,8 @@ export function LeadDrawer() {
               "fixed top-0 h-screen w-[420px] z-50",
               "bg-[var(--bg-secondary)] flex flex-col",
               isRTL
-                ? "left-0 border-r border-[var(--border-primary)]"
-                : "right-0 border-l border-[var(--border-primary)]",
+                ? "left-0 border-e border-[var(--border-primary)]"
+                : "right-0 border-s border-[var(--border-primary)]",
             )}
           >
             {/* Header */}

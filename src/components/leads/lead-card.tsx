@@ -88,7 +88,7 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
             <span className="font-medium tabular-nums">{lead.value}</span>
           </div>
         )}
-        <span className="text-[9px] text-[var(--text-muted)] ml-auto">
+        <span className="text-[9px] text-[var(--text-muted)] ms-">
           {lead.createdAt}
         </span>
       </div>

@@ -90,7 +90,7 @@ export function Topbar() {
                 onClick={() => setCurrentView("master")}
                 className={cn(
                   "w-full px-3 py-2 text-[12px] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer",
-                  isRTL ? "text-right" : "text-left",
+                  isRTL ? "text-end" : "text-start",
                   currentView === "master"
                     ? "text-[var(--accent-mint)]"
                     : "text-[var(--text-secondary)]",
@@ -105,7 +105,7 @@ export function Topbar() {
                   onClick={() => setCurrentView(barber.id)}
                   className={cn(
                     "w-full px-3 py-2 text-[12px] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer",
-                    isRTL ? "text-right" : "text-left",
+                    isRTL ? "text-end" : "text-start",
                     currentView === barber.id
                       ? "text-[var(--accent-mint)]"
                       : "text-[var(--text-secondary)]",
@@ -122,7 +122,7 @@ export function Topbar() {
       {/* Right — Actions */}
       <div className="flex items-center gap-2 md:gap-4 shrink-0">
         {/* Search */}
-        <div className="relative hidden lg:block mr-2">
+        <div className="relative hidden lg:block me-">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] group-focus-within:text-[var(--text-primary)] transition-colors"
             size={14}
@@ -130,7 +130,7 @@ export function Topbar() {
           <input
             type="text"
             placeholder={t.common?.search || "Search..."}
-            className="h-8 w-48 pl-9 pr-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--border-primary)] focus:bg-[var(--bg-primary)] text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition-all"
+            className="h-8 w-48 ps- pe- rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--border-primary)] focus:bg-[var(--bg-primary)] text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition-all"
           />
         </div>
 
@@ -186,7 +186,7 @@ export function Topbar() {
           <div
             className={cn(
               "w-7 h-7 md:w-8 md:h-8 rounded-full bg-[var(--text-primary)] flex items-center justify-center shadow-sm border border-[var(--border-primary)] cursor-pointer hover:opacity-90 transition-opacity",
-              isRTL ? "mr-1" : "ml-1",
+              isRTL ? "me-" : "ms-",
             )}
           >
             <span className="text-[10px] md:text-[11px] font-medium text-[var(--bg-primary)]">

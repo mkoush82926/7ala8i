@@ -178,7 +178,7 @@ function UpcomingAppointments() {
                     </div>
                   </div>
                   <div className="flex items-center flex-shrink-0" style={{ gap: 10 }}>
-                    <div className="text-right">
+                    <div className="text-end">
                       <p className="text-[13px] text-[var(--text-primary)] tabular-nums font-semibold">
                         {formatCurrency(apt.price || 0)}
                       </p>

@@ -138,7 +138,7 @@ export function DailyReceipt() {
                     {sale.service}
                   </p>
                 </div>
-                <div className="text-right ml-4 flex-shrink-0">
+                <div className="text-end ms- flex-shrink-0">
                   <p className="text-[13px] text-[var(--text-primary)] font-medium tabular-nums">
                     {sale.amount.toFixed(2)}
                   </p>

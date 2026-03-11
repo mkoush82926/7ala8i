@@ -347,7 +347,7 @@ function LeadListView({
         <div className="w-28 text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider">
           {t.leads.stage}
         </div>
-        <div className="w-24 text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider text-right">
+        <div className="w-24 text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider text-end">
           {t.leads.value}
         </div>
       </div>
@@ -416,7 +416,7 @@ function LeadListView({
                 {stages.find((s) => s.id === lead.stage)?.label || lead.stage}
               </span>
             </div>
-            <div className="w-24 text-right text-[13px] text-[var(--text-primary)] font-medium tabular-nums">
+            <div className="w-24 text-end text-[13px] text-[var(--text-primary)] font-medium tabular-nums">
               {lead.value ? `${lead.value} ${t.common.jod}` : "—"}
             </div>
           </motion.div>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Tajawal } from "next/font/google";
+import { Inter, Cairo } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -9,10 +9,10 @@ const inter = Inter({
   display: "swap",
 });
 
-const tajawal = Tajawal({
-  variable: "--font-tajawal",
+const cairo = Cairo({
+  variable: "--font-cairo",
   subsets: ["arabic"],
-  weight: ["300", "400", "500"],
+  weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -21,6 +21,12 @@ export const metadata: Metadata = {
   description:
     "Ultra-minimalist, glassmorphism-inspired barbershop management, CRM, and reservation system.",
   keywords: ["barbershop", "management", "CRM", "booking", "reservation"],
+  alternates: {
+    languages: {
+      "ar-JO": "/ar",
+      "en-US": "/en",
+    },
+  },
 };
 
 export default function RootLayout({
@@ -30,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${tajawal.variable} antialiased`}>
+      <body className={`${inter.variable} ${cairo.variable} antialiased font-sans`}>
         {children}
       </body>
     </html>

@@ -134,7 +134,7 @@ export default function ServicesPage() {
               placeholder={svc.title || "Search..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-10 pl-9 pr-3 rounded-xl bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all"
+              className="w-full h-10 ps- pe- rounded-xl bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all"
             />
           </div>
           <button

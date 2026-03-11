@@ -55,8 +55,8 @@ export function Sidebar() {
     <motion.aside
       className={cn(
         "fixed top-0 h-screen z-40 flex flex-col transition-transform duration-300 md:translate-x-0",
-        "bg-[var(--bg-primary)] border-r border-[var(--border-primary)]",
-        isRTL ? "right-0 border-l border-r-0" : "left-0 border-r",
+        "bg-[var(--bg-primary)] border-e border-[var(--border-primary)]",
+        isRTL ? "right-0 border-s border-e-0" : "left-0 border-e",
         isMobileSidebarOpen
           ? "translate-x-0"
           : isRTL

@@ -303,7 +303,7 @@ export default function CustomerDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center" style={{ gap: 10 }}>
-                    <div className="text-right">
+                    <div className="text-end">
                       <p className="text-[var(--text-primary)] font-medium" style={{ fontSize: 13 }}>{appt.price} JOD</p>
                       <span className={cn("text-[10px] font-medium capitalize", appt.status === "completed" ? "text-[var(--accent-mint)]" : "text-[var(--text-muted)]")}>
                         {appt.status}

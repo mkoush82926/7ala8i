@@ -275,7 +275,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                       )}
                     />
                   ))}
-                  <span className="text-[11px] text-[var(--text-tertiary)] ml-1">
+                  <span className="text-[11px] text-[var(--text-tertiary)] ms-">
                     4.8 (127 {t.booking.reviews})
                   </span>
                 </div>
@@ -347,7 +347,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                             )
                           }
                           className={cn(
-                            "p-4 rounded-[var(--radius-md)] border text-left transition-all cursor-pointer",
+                            "p-4 rounded-[var(--radius-md)] border text-start transition-all cursor-pointer",
                             isSelected
                               ? "border-[var(--accent-mint)] bg-[var(--accent-mint-muted)]"
                               : "border-[var(--border-primary)] bg-[var(--bg-surface)] hover:border-[var(--border-hover)]",
@@ -452,7 +452,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                     whileTap={{ scale: 0.99 }}
                     onClick={() => setSelectedBarber("any")}
                     className={cn(
-                      "w-full p-4 rounded-[var(--radius-md)] border flex items-center gap-4 transition-all cursor-pointer text-left",
+                      "w-full p-4 rounded-[var(--radius-md)] border flex items-center gap-4 transition-all cursor-pointer text-start",
                       selectedBarber === "any"
                         ? "border-[var(--accent-mint)] bg-[var(--accent-mint-muted)]"
                         : "border-[var(--border-primary)] bg-[var(--bg-surface)] hover:border-[var(--border-hover)]",
@@ -476,7 +476,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="ml-auto w-5 h-5 rounded-full bg-[var(--accent-mint)] flex items-center justify-center"
+                        className="ms- w-5 h-5 rounded-full bg-[var(--accent-mint)] flex items-center justify-center"
                       >
                         <Check size={12} className="text-[#0A0A0A]" />
                       </motion.div>
@@ -490,7 +490,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                       whileTap={{ scale: 0.99 }}
                       onClick={() => setSelectedBarber(barber.id)}
                       className={cn(
-                        "w-full p-4 rounded-[var(--radius-md)] border flex items-center gap-4 transition-all cursor-pointer text-left",
+                        "w-full p-4 rounded-[var(--radius-md)] border flex items-center gap-4 transition-all cursor-pointer text-start",
                         selectedBarber === barber.id
                           ? "border-[var(--accent-mint)] bg-[var(--accent-mint-muted)] shadow-[0_0_15px_rgba(110,231,183,0.15)]"
                           : "border-[var(--border-primary)] bg-[var(--bg-surface)] hover:border-[var(--border-hover)]",
@@ -513,7 +513,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="ml-auto w-5 h-5 rounded-full bg-[var(--accent-mint)] flex items-center justify-center"
+                          className="ms- w-5 h-5 rounded-full bg-[var(--accent-mint)] flex items-center justify-center"
                         >
                           <Check size={12} className="text-[#0A0A0A]" />
                         </motion.div>
@@ -846,7 +846,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                   })}
                 </p>
 
-                <div className="p-4 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-left mb-6">
+                <div className="p-4 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-start mb-6">
                   <div className="flex justify-between text-[12px] mb-2">
                     <span className="text-[var(--text-tertiary)]">
                       {t.booking.payment}
