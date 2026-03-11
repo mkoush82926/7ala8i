@@ -203,21 +203,27 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4, ease: [0.25, 1, 0.5, 1] }}
-            className="flex items-center justify-center gap-4"
+            className="flex flex-col items-center justify-center gap-4"
           >
-            <Link
-              href="/"
-              className="h-12 px-8 rounded-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] text-[14px] font-medium flex items-center gap-2 hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              {t.landing.getStarted}
-              <ArrowRight size={16} />
-            </Link>
-            <Link
-              href="/book"
-              className="h-12 px-8 rounded-full border border-[var(--border-primary)] text-[var(--text-secondary)] text-[14px] font-light flex items-center gap-2 hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-all"
-            >
-              {t.landing.bookDemo}
-            </Link>
+            <div className="flex items-center justify-center gap-4">
+              <Link
+                href="/"
+                className="h-12 px-8 rounded-full bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] text-[14px] font-medium flex items-center gap-2 hover:opacity-90 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                {t.landing.getStarted}
+                <ArrowRight size={16} />
+              </Link>
+              <Link
+                href="/book"
+                className="h-12 px-8 rounded-full border border-[var(--border-primary)] text-[var(--text-secondary)] text-[14px] font-light flex items-center gap-2 hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-all"
+              >
+                {t.landing.bookDemo}
+              </Link>
+            </div>
+            {/* Trust Signal / Conversion Cue */}
+            <p className="text-[12px] text-[var(--text-tertiary)] font-light tracking-wide mt-2">
+              {isRTL ? "لا يلزم بطاقة ائتمان • إلغاء في أي وقت" : "No credit card required • Cancel anytime"}
+            </p>
           </motion.div>
 
           {/* Floating dashboard preview */}
@@ -376,6 +382,63 @@ export default function LandingPage() {
                   <p className="text-[13px] text-[var(--text-tertiary)] font-light leading-relaxed max-w-[260px] mx-auto">
                     {step.desc}
                   </p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ TESTIMONIALS (TRUST SIGNALS) ═══ */}
+      <section className="py-40 px-6 border-t border-[var(--border-primary)] gradient-mesh">
+        <div className="max-w-6xl mx-auto">
+          <Reveal>
+            <div className="text-center mb-16">
+              <h2 className="text-[clamp(1.8rem,3vw,2.5rem)] font-light tracking-tight mb-4">
+                {(t.landing as any).testimonialsTitle || (isRTL ? "مفضل لدى أفضل صالونات الحلاقة" : "Loved by Top Barbershops")}
+              </h2>
+            </div>
+          </Reveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                text: (t.landing as any).testimonial1Text || "Lumina transformed how we manage our bookings. The CRM pipeline is game-changing.",
+                author: (t.landing as any).testimonial1Author || "Ahmad K.",
+                role: (t.landing as any).testimonial1Role || "Owner, Fade Masters",
+              },
+              {
+                text: (t.landing as any).testimonial2Text || "Finally an intuitive system that perfectly supports Arabic RTL without breaking.",
+                author: (t.landing as any).testimonial2Author || "Sarah M.",
+                role: (t.landing as any).testimonial2Role || "Manager, The Grooming Co.",
+              },
+              {
+                text: (t.landing as any).testimonial3Text || "The glassmorphism design looks stunning on iPads in our waiting area.",
+                author: (t.landing as any).testimonial3Author || "Omar R.",
+                role: (t.landing as any).testimonial3Role || "Founder, Classic Cuts",
+              },
+            ].map((test, i) => (
+              <Reveal key={i} delay={i * 0.1}>
+                <div className="glass-card-premium p-8 h-full flex flex-col justify-between group">
+                  <div>
+                    <div className="flex gap-1 mb-6 text-[var(--accent-amber)]">
+                      {[...Array(5)].map((_, j) => (
+                        <Star key={j} size={14} fill="currentColor" />
+                      ))}
+                    </div>
+                    <p className="text-[15px] text-[var(--text-primary)] font-light leading-relaxed mb-8 relative z-10 italic">
+                      "{test.text}"
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 relative z-10">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent-mint)] to-[var(--accent-lavender)] flex items-center justify-center text-[var(--bg-primary)] text-[13px] font-medium">
+                      {test.author.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-[14px] font-medium text-[var(--text-primary)]">{test.author}</p>
+                      <p className="text-[12px] text-[var(--text-tertiary)] font-light">{test.role}</p>
+                    </div>
+                  </div>
                 </div>
               </Reveal>
             ))}

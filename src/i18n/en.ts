@@ -251,6 +251,17 @@ const en = {
     pricingFeature5: "Google review automation",
     pricingFeature6: "Mobile app access",
     startFreeTrial: "Start Free Trial",
+    // Trust Signals
+    testimonialsTitle: "Loved by Top Barbershops",
+    testimonial1Text: "Lumina transformed how we manage our bookings. The CRM pipeline is game-changing.",
+    testimonial1Author: "Ahmad K.",
+    testimonial1Role: "Owner, Fade Masters",
+    testimonial2Text: "Finally an intuitive system that perfectly supports Arabic RTL without breaking.",
+    testimonial2Author: "Sarah M.",
+    testimonial2Role: "Manager, The Grooming Co.",
+    testimonial3Text: "The glassmorphism design looks stunning on iPads in our waiting area.",
+    testimonial3Author: "Omar R.",
+    testimonial3Role: "Founder, Classic Cuts",
     // Footer
     product: "Product",
     company: "Company",
