@@ -47,7 +47,7 @@ export default function ExplorePage() {
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {/* Navbar (Internal Variant) */}
       <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-[var(--bg-primary)]/80 border-b border-[var(--border-primary)]">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent-mint)] to-[var(--accent-lavender)] flex items-center justify-center">
               <Scissors size={16} className="text-[#0A0A0A]" />

@@ -44,9 +44,9 @@ export function Topbar() {
   return (
     <header
       className={cn(
-        "h-16 flex items-center justify-between px-4 md:px-8 border-b border-[var(--border-primary)]",
+        "h-20 flex items-center justify-between px-6 md:px-10 border-b border-[var(--border-primary)]",
         "bg-[var(--bg-primary)]/80 backdrop-blur-[20px]",
-        "sticky top-0 z-30",
+        "sticky top-0 z-[100]",
       )}
     >
       {/* Left — Hamburger & Greeting */}

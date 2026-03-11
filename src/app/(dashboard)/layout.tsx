@@ -43,13 +43,7 @@ export default function DashboardLayout({
         />
       )}
 
-      <main
-        className="transition-all duration-[var(--transition-normal)] md:ml-[72px]"
-        style={{
-          marginLeft: direction === "rtl" ? 0 : undefined,
-          marginRight: direction === "rtl" ? "72px" : undefined,
-        }}
-      >
+      <main className="transition-all duration-[var(--transition-normal)] md:ms-[72px]">
         <Topbar />
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">{children}</div>
       </main>

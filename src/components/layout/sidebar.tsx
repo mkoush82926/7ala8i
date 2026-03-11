@@ -70,7 +70,7 @@ export function Sidebar() {
       onMouseLeave={() => setExpanded(false)}
     >
       {/* Logo */}
-      <div className="h-16 flex items-center px-6 gap-4 border-b border-[var(--border-primary)]">
+      <div className="h-20 flex items-center px-6 gap-4 border-b border-[var(--border-primary)]">
         <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-[var(--text-primary)] flex items-center justify-center flex-shrink-0">
           <Scissors size={16} className="text-[var(--bg-primary)]" />
         </div>
