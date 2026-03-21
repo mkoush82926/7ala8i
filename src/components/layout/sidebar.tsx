@@ -16,6 +16,7 @@ import {
   Scissors,
   LogOut,
   X,
+  IdCard,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,7 @@ const navItems = [
   { id: "leads", icon: Kanban, href: "/leads" },
   { id: "clients", icon: Users, href: "/clients" },
   { id: "services", icon: Scissors, href: "/services" },
+  { id: "team", icon: IdCard, href: "/team" },
   { id: "analytics", icon: BarChart3, href: "/analytics" },
   { id: "settings", icon: Settings, href: "/settings" },
 ] as const;
@@ -51,6 +53,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     leads:     t.sidebar.leads,
     clients:   t.sidebar.clients,
     services:  "Services",
+    team:      "Team",
     analytics: t.sidebar.analytics,
     settings:  t.sidebar.settings,
   };

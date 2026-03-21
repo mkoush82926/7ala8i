@@ -833,3 +833,34 @@ h1, h2, h3, h4, h5, h6 {
   --color-outline:               #76777d;
   --color-outline-variant:       #45464c;
 }
+
+/* ── Landing Page Grids ── */
+.card-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
+}
+@media (max-width: 1024px) {
+  .card-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+  }
+}
+@media (max-width: 640px) {
+  .card-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+.card-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+}
+@media (max-width: 640px) {
+  .card-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}

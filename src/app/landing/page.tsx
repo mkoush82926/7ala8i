@@ -184,7 +184,7 @@ export default function LandingPage() {
             transition={{ duration: 1, delay: 0.3, ease: [0.25, 1, 0.5, 1] }}
             style={{ position: "relative" }}
           >
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, padding: 16 }}>
+            <div className="card-grid-2" style={{ padding: 16 }}>
               {/* Revenue Card */}
               <div style={{ gridColumn: "1 / -1", background: T.white, padding: 32, borderRadius: 24, border: `1px solid ${T.surfCont}`, boxShadow: "0 8px 30px rgba(0,0,0,0.04)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
@@ -267,7 +267,7 @@ export default function LandingPage() {
       {/* ═══ HOW IT WORKS ═══ */}
       <section className="landing-section" style={{ background: T.white }}>
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-          <div style={{ display: "flex", gap: 128, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "clamp(48px, 10vw, 128px)", alignItems: "flex-start", flexWrap: "wrap" }}>
             {/* Left sticky */}
             <Reveal>
               <div style={{ maxWidth: 400, position: "sticky", top: 160 }}>
