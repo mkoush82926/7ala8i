@@ -6,7 +6,6 @@ import {
   AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { useTranslation } from "@/hooks/use-translation";
 import { useThemeStore } from "@/store/theme-store";
 
 const revenueData = [

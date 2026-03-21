@@ -192,7 +192,7 @@ export function TimelineView() {
             </button>
           </div>
 
-          <button className="btn btn-primary">
+          <button className="btn btn-primary" onClick={() => window.location.href = '/book'}>
             <Plus size={16} />
             New Booking
           </button>

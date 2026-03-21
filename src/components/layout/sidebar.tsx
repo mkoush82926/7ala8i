@@ -13,8 +13,12 @@ import {
   Settings,
   BarChart3,
   CalendarPlus,
+  Scissors,
+  LogOut,
   X,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useTranslation } from "@/hooks/use-translation";
@@ -24,6 +28,7 @@ const navItems = [
   { id: "calendar", icon: Calendar, href: "/calendar" },
   { id: "leads", icon: Kanban, href: "/leads" },
   { id: "clients", icon: Users, href: "/clients" },
+  { id: "services", icon: Scissors, href: "/services" },
   { id: "analytics", icon: BarChart3, href: "/analytics" },
   { id: "settings", icon: Settings, href: "/settings" },
 ] as const;
@@ -31,12 +36,21 @@ const navItems = [
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const t = useTranslation();
+  const router = useRouter();
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    if (onClose) onClose();
+    router.push("/auth/login");
+  }
 
   const labels: Record<string, string> = {
     dashboard: t.sidebar.dashboard,
     calendar:  t.sidebar.calendar,
     leads:     t.sidebar.leads,
     clients:   t.sidebar.clients,
+    services:  "Services",
     analytics: t.sidebar.analytics,
     settings:  t.sidebar.settings,
   };
@@ -95,7 +109,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         })}
       </nav>
 
-      {/* Book Appointment CTA */}
+      {/* Book Appointment CTA + Sign Out */}
       <div style={{ padding: "24px 20px 32px", marginTop: "auto" }}>
         {/* Divider line */}
         <div style={{ height: 1, background: "#f0f2f5", marginBottom: 20 }} />
@@ -103,10 +117,35 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           href="/calendar"
           onClick={onClose}
           className="btn btn-primary"
-          style={{ width: "100%", justifyContent: "center" }}
+          style={{ width: "100%", justifyContent: "center", marginBottom: 12 }}
         >
+          <CalendarPlus size={16} />
           Book Appointment
         </Link>
+        <button
+          onClick={handleSignOut}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            width: "100%", height: 40,
+            borderRadius: 10, border: "1px solid #eceef0",
+            background: "transparent", fontSize: 13, fontWeight: 600,
+            color: "#76777d", cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color = "#ba1a1a";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "#fecdd3";
+            (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.color = "#76777d";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "#eceef0";
+            (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+          }}
+        >
+          <LogOut size={14} />
+          Sign Out
+        </button>
       </div>
     </div>
   );

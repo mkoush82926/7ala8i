@@ -4,11 +4,14 @@ import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Globe, ChevronDown, Bell, Search, Menu, Users, Sun, Moon,
+  Settings, LogOut,
 } from "lucide-react";
 import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { getInitials } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 /* ── Icon button helper ── */
 function IconBtn({
@@ -63,6 +66,14 @@ export function Topbar() {
   const t = useTranslation();
   const isRTL = direction === "rtl";
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const router = useRouter();
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/auth/login");
+  }
 
   return (
     <nav className="topbar-wrapper">
@@ -265,36 +276,135 @@ export function Topbar() {
         {/* Divider */}
         <div style={{ width: 1, height: 32, background: "#eceef0", margin: "0 12px" }} />
 
-        {/* User section */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          cursor: "pointer",
-        }}>
-          <div style={{ textAlign: isRTL ? "left" : "right" }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#191c1e", margin: 0, lineHeight: 1.3 }}>
-              {shopName || "My Atelier"}
-            </p>
-            <p style={{ fontSize: 10, color: "#b0b3b8", fontWeight: 600, textTransform: "capitalize", margin: 0, lineHeight: 1.4 }}>
-              {role?.replace("_", " ") || "Admin"}
-            </p>
-          </div>
-          <div style={{
-            width: 44,
-            height: 44,
-            borderRadius: 10,
-            background: "#191c1e",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            border: "2px solid #eceef0",
-          }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "#ffffff", letterSpacing: "0.05em" }}>
-              {getInitials(shopName || "A")}
-            </span>
-          </div>
+        {/* User section — click to open menu */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setUserMenuOpen((v) => !v)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              cursor: "pointer",
+              background: "none",
+              border: "none",
+              padding: "4px 8px 4px 4px",
+              borderRadius: 12,
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "#f4f6f8";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "none";
+            }}
+          >
+            <div style={{ textAlign: isRTL ? "left" : "right" }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "#191c1e", margin: 0, lineHeight: 1.3 }}>
+                {shopName || "My Atelier"}
+              </p>
+              <p style={{ fontSize: 10, color: "#b0b3b8", fontWeight: 600, textTransform: "capitalize", margin: 0, lineHeight: 1.4 }}>
+                {role?.replace("_", " ") || "Admin"}
+              </p>
+            </div>
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: 10,
+              background: "#191c1e",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              border: "2px solid #eceef0",
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: "#ffffff", letterSpacing: "0.05em" }}>
+                {getInitials(shopName || "A")}
+              </span>
+            </div>
+          </button>
+
+          {/* User Dropdown Menu */}
+          {userMenuOpen && (
+            <>
+              <div
+                style={{ position: "fixed", inset: 0, zIndex: 40 }}
+                onClick={() => setUserMenuOpen(false)}
+              />
+              <div style={{
+                position: "absolute",
+                top: "calc(100% + 8px)",
+                right: isRTL ? "auto" : 0,
+                left: isRTL ? 0 : "auto",
+                minWidth: 200,
+                background: "#ffffff",
+                border: "1px solid #eceef0",
+                borderRadius: 14,
+                boxShadow: "0 12px 32px rgba(0,0,0,0.12)",
+                padding: "8px",
+                zIndex: 50,
+              }}>
+                {/* User info header */}
+                <div style={{ padding: "10px 14px 12px", borderBottom: "1px solid #f0f2f5", marginBottom: 6 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: "#191c1e", margin: 0 }}>{shopName || "My Atelier"}</p>
+                  <p style={{ fontSize: 11, color: "#b0b3b8", margin: 0, marginTop: 2, textTransform: "capitalize" }}>{role?.replace("_", " ") || "Admin"}</p>
+                </div>
+
+                {/* Settings */}
+                <a
+                  href="/settings"
+                  onClick={() => setUserMenuOpen(false)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    width: "100%",
+                    padding: "9px 14px",
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#45464c",
+                    textDecoration: "none",
+                    transition: "background 0.15s",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "#f4f6f8"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
+                >
+                  <Settings size={15} style={{ color: "#76777d" }} />
+                  {isRTL ? "الإعدادات" : "Settings"}
+                </a>
+
+                {/* Divider */}
+                <div style={{ height: 1, background: "#f0f2f5", margin: "6px 8px" }} />
+
+                {/* Sign Out */}
+                <button
+                  onClick={() => { setUserMenuOpen(false); handleSignOut(); }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    width: "100%",
+                    padding: "9px 14px",
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#ba1a1a",
+                    background: "none",
+                    border: "none",
+                    textAlign: "left",
+                    transition: "background 0.15s",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                >
+                  <LogOut size={15} />
+                  {isRTL ? "تسجيل الخروج" : "Sign Out"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </nav>

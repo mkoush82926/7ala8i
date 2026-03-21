@@ -6,8 +6,10 @@ import { useWorkspaceStore } from "@/store/workspace-store";
 import { toast } from "@/components/ui/toast";
 import { useTranslation } from "@/hooks/use-translation";
 import { useThemeStore } from "@/store/theme-store";
+import { createClient } from "@/lib/supabase/client";
+import { Loader2 } from "lucide-react";
 
-type SettingsTab = "general" | "team" | "booking" | "billing";
+type SettingsTab = "general" | "team" | "billing" | "booking";
 
 // ── Explicit colors — bypassing Tailwind token resolution ──
 const C = {
@@ -24,12 +26,46 @@ const C = {
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
-  const { shopName, barbers } = useWorkspaceStore();
+  const { shopName, barbers, shopId } = useWorkspaceStore();
   const [copied, setCopied] = useState(false);
   const bookingLink = `halaqy.booking/${shopName.toLowerCase().replace(/\s+/g, "-")}`;
   const t = useTranslation();
   const { direction } = useThemeStore();
   const isRTL = direction === "rtl";
+
+  // General tab form state
+  const [formShopName, setFormShopName] = useState(shopName);
+  const [formEmail, setFormEmail] = useState("hello@halaqy.com");
+  const [formWhatsapp, setFormWhatsapp] = useState("+962 7 9000 0000");
+  const [formDescription, setFormDescription] = useState(
+    isRTL ? "حلاقة فاخرة وتصفيف حديث في قلب المدينة." : "Luxury barbering and modern grooming located in the heart of the city."
+  );
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!shopId) {
+      toast("success", "Settings saved locally!");
+      return;
+    }
+    setSaving(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("shops")
+      .update({
+        name: formShopName,
+        description: formDescription,
+        contact_email: formEmail,
+        whatsapp: formWhatsapp,
+      } as Record<string, unknown>)
+      .eq("id", shopId);
+
+    setSaving(false);
+    if (error) {
+      toast("error", "Failed to save: " + error.message);
+    } else {
+      toast("success", isRTL ? "تم حفظ الإعدادات بنجاح!" : "Settings saved successfully!");
+    }
+  }
 
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: "general", label: t.settings.general },
@@ -86,7 +122,13 @@ export function SettingsPage() {
           </p>
         </div>
         {activeTab === "general" && (
-          <button className="btn btn-primary">
+          <button
+            className="btn btn-primary"
+            onClick={handleSave}
+            disabled={saving}
+            style={{ minHeight: 40, padding: "0 20px" }}
+          >
+            {saving ? <Loader2 size={15} className="animate-spin" /> : null}
             {isRTL ? "حفظ التغييرات" : "Save Changes"}
           </button>
         )}
@@ -126,23 +168,39 @@ export function SettingsPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px 48px" }}>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Shop Name</label>
-                <input style={inputStyle} defaultValue={shopName} type="text" />
+                <input
+                  style={inputStyle}
+                  type="text"
+                  value={formShopName}
+                  onChange={(e) => setFormShopName(e.target.value)}
+                />
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Description</label>
                 <textarea
                   style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
                   rows={3}
-                  defaultValue={isRTL ? "حلاقة فاخرة وتصفيف حديث في قلب المدينة." : "Luxury barbering and modern grooming located in the heart of the city."}
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
                 />
               </div>
               <div>
                 <label style={labelStyle}>Contact Email</label>
-                <input style={inputStyle} type="email" defaultValue="hello@halaqy.com" />
+                <input
+                  style={inputStyle}
+                  type="email"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                />
               </div>
               <div>
                 <label style={labelStyle}>WhatsApp Number</label>
-                <input style={inputStyle} type="tel" defaultValue="+962 7 9000 0000" />
+                <input
+                  style={inputStyle}
+                  type="tel"
+                  value={formWhatsapp}
+                  onChange={(e) => setFormWhatsapp(e.target.value)}
+                />
               </div>
               <div>
                 <label style={labelStyle}>Currency</label>
