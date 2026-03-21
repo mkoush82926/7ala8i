@@ -30,21 +30,21 @@ export function EmptyState({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       className={cn(
-        "flex flex-col items-center justify-center py-24 px-8 text-center",
+        "flex flex-col items-center justify-center py-32 px-12 text-center",
         "rounded-[var(--radius-lg)] border border-dashed border-[var(--border-primary)]",
         "bg-[var(--bg-surface)]/30",
         className,
       )}
     >
       <div
-        className="w-16 h-16 rounded-[var(--radius-md)] flex items-center justify-center mb-6"
+        className="w-20 h-20 rounded-[var(--radius-md)] flex items-center justify-center mb-8"
         style={{
           background: "color-mix(in srgb, var(--text-muted) 10%, transparent)",
         }}
       >
-        <Icon size={24} className="text-[var(--text-muted)]" />
+        <Icon size={32} className="text-[var(--text-muted)]" />
       </div>
-      <h3 className="text-[16px] text-[var(--text-secondary)] font-medium mb-3">
+      <h3 className="text-[18px] tracking-tight text-[var(--text-secondary)] font-semibold mb-4">
         {title}
       </h3>
       {description && (

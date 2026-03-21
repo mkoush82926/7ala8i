@@ -621,9 +621,9 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 0.02em;
   text-decoration: none;
   cursor: pointer;
-  border: none;
+  border: 1px solid transparent;
   white-space: nowrap;
-  transition: all 0.2s cubic-bezier(0.25, 1, 0.4, 1);
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.4, 1);
 }
 
 .btn:active {
@@ -638,34 +638,39 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Primary Button (Rules 2, 14, 15) */
 .btn-primary {
-  background-color: #000000;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Stronger premium dimensionality */
+  border-color: var(--text-primary);
 }
 .btn-primary:hover:not(:disabled) {
-  background-color: #1a1a1a;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  opacity: 0.85;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   transform: translateY(-1px);
 }
 
 /* Secondary Button (Rule 2) */
 .btn-secondary {
-  background-color: #ffffff;
-  color: #000000;
-  border: 1px solid #d8dadc;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 .btn-secondary:hover:not(:disabled) {
-  background-color: #f7f9fb;
-  border-color: #c6c6cc;
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-hover);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
 }
 
 /* Destructive Button (Rule 10, 14) */
 .btn-destructive {
-  background-color: #ba1a1a;
+  background-color: var(--accent-rose);
   color: #ffffff;
 }
 .btn-destructive:hover:not(:disabled) {
-  background-color: #93000a;
+  opacity: 0.9;
+  box-shadow: 0 4px 16px var(--accent-rose-muted);
 }
 
 /* Ghost / Tertiary Button */

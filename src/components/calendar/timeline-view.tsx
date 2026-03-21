@@ -167,15 +167,15 @@ export function TimelineView() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           {/* View Toggle */}
-          <div className="flex items-center gap-1 p-1 rounded-[12px] bg-[#f2f4f6]">
+          <div className="flex items-center gap-1 p-1 rounded-[12px] bg-[var(--bg-secondary)] border border-[var(--border-primary)]">
             <button
               onClick={() => setView("timeline")}
               className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "timeline"
-                  ? "bg-white text-[#191c1e] shadow-sm"
-                  : "text-[#76777d] hover:text-[#191c1e]"
+                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               }`}
             >
               <Clock size={16} />
@@ -184,13 +184,15 @@ export function TimelineView() {
               onClick={() => setView("list")}
               className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "list"
-                  ? "bg-white text-[#191c1e] shadow-sm"
-                  : "text-[#76777d] hover:text-[#191c1e]"
+                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               }`}
             >
               <List size={16} />
             </button>
           </div>
+
+          <div className="h-8 w-px bg-[var(--border-primary)] hidden md:block" />
 
           <button className="btn btn-primary" onClick={() => window.location.href = '/book'}>
             <Plus size={16} />
