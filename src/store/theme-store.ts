@@ -35,6 +35,6 @@ export const useThemeStore = create<ThemeState>()(
           direction: state.locale === "en" ? "rtl" : "ltr",
         })),
     }),
-    { name: "lumina-theme-v2" },
+    { name: "halaqy-theme-v2" },
   ),
 );

@@ -1,4 +1,4 @@
-# Lumina — Full Project Roadmap
+# Halaqy — Full Project Roadmap
 
 > Generated from comprehensive audit on Mar 11, 2026.
 > This plan covers every remaining feature, fix, and enhancement needed.

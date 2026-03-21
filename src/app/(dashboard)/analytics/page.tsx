@@ -350,7 +350,7 @@ export default function AnalyticsPage() {
 
       {/* Footer */}
       <footer className="pt-8 border-t border-surface-container-low flex justify-between items-center text-on-surface-variant">
-        <p className="text-xs">© 2026 Lumina Digital Atelier. All rights reserved.</p>
+        <p className="text-xs">© 2026 Halaqy Digital Atelier. All rights reserved.</p>
         <div className="flex gap-4">
           <button className="text-xs hover:text-on-surface transition-colors cursor-pointer">Export Report</button>
           <button className="text-xs hover:text-on-surface transition-colors cursor-pointer">Data Privacy</button>

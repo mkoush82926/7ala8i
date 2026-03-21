@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Book an Appointment — Lumina",
+  title: "Book an Appointment — Halaqy",
   description: "Book your next barbershop appointment online. Choose your services, barber, and preferred time.",
   openGraph: {
-    title: "Book an Appointment — Lumina",
+    title: "Book an Appointment — Halaqy",
     description: "Book your next barbershop appointment online.",
     type: "website",
   },

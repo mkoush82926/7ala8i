@@ -26,7 +26,7 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const { shopName, barbers } = useWorkspaceStore();
   const [copied, setCopied] = useState(false);
-  const bookingLink = `lumina.booking/${shopName.toLowerCase().replace(/\s+/g, "-")}`;
+  const bookingLink = `halaqy.booking/${shopName.toLowerCase().replace(/\s+/g, "-")}`;
   const t = useTranslation();
   const { direction } = useThemeStore();
   const isRTL = direction === "rtl";
@@ -147,7 +147,7 @@ export function SettingsPage() {
               </div>
               <div>
                 <label style={labelStyle}>Contact Email</label>
-                <input style={inputStyle} type="email" defaultValue="hello@lumina.com" />
+                <input style={inputStyle} type="email" defaultValue="hello@halaqy.com" />
               </div>
               <div>
                 <label style={labelStyle}>WhatsApp Number</label>

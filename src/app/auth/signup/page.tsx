@@ -128,7 +128,7 @@ export default function SignupPage() {
       }}
     >
       <Link href="/landing" style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em", fontFamily: "'Manrope', sans-serif", textDecoration: "none" }}>
-        Lumina
+        Halaqy
       </Link>
       <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
         <button style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}>
@@ -193,7 +193,7 @@ export default function SignupPage() {
             style={{ textAlign: "center", marginBottom: 72, maxWidth: 640 }}
           >
             <h1 style={{ fontSize: 48, fontWeight: 300, fontFamily: "'Manrope', sans-serif", letterSpacing: "-0.03em", color: "#000000", marginBottom: 20 }}>
-              How will you use Lumina?
+              How will you use Halaqy?
             </h1>
             <p style={{ color: "#666666", fontSize: 18, fontWeight: 300, maxWidth: 400, margin: "0 auto" }}>
               Select the role that best describes your daily operations and goals.
@@ -272,7 +272,7 @@ export default function SignupPage() {
               <h1 style={{ fontSize: 40, fontWeight: 800, fontFamily: "'Manrope', sans-serif", letterSpacing: "-0.03em", color: "#000000", marginBottom: 10 }}>
                 Create your account
               </h1>
-              <p style={{ color: "#666666", fontSize: 15, fontWeight: 300 }}>Start managing your barbershop with Lumina</p>
+              <p style={{ color: "#666666", fontSize: 15, fontWeight: 300 }}>Start managing your barbershop with Halaqy</p>
             </div>
 
             <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -378,7 +378,7 @@ export default function SignupPage() {
 
       <footer style={{ padding: "24px 48px", borderTop: "1px solid #f8fafc" }}>
         <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.4)" }}>
-          © 2026 Lumina Digital.
+          © 2026 Halaqy Digital.
         </p>
       </footer>
     </div>

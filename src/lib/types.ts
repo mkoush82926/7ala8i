@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// Shared types for the Lumina application
+// Shared types for the Halaqy application
 // These replace the types previously in mock-data.ts
 // ═══════════════════════════════════════════════════════
 

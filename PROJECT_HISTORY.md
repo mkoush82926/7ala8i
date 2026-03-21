@@ -1,6 +1,6 @@
-## Lumina Project History & System Context
+## Halaqy Project History & System Context
 
-This file is a **high‑level history and architecture overview** for the **Lumina** barbershop management platform.  
+This file is a **high‑level history and architecture overview** for the **Halaqy** barbershop management platform.  
 It is written to give any future AI / developer enough context to safely continue work.
 
 ---

@@ -52,7 +52,7 @@ export default function ExplorePage() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent-mint)] to-[var(--accent-lavender)] flex items-center justify-center">
               <Scissors size={16} className="text-[#0A0A0A]" />
             </div>
-            <span className="text-[16px] font-medium tracking-tight">Lumina</span>
+            <span className="text-[16px] font-medium tracking-tight">Halaqy</span>
           </Link>
           <div className="flex items-center gap-4">
             <Link

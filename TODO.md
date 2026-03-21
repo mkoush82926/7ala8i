@@ -1,4 +1,4 @@
-# Lumina Master Development Plan
+# Halaqy Master Development Plan
 
 ## Phase 1 & 2: Frontend Foundation & Component Design
 - [x] Initial Next.js & Tailwind setup

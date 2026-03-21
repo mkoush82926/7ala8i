@@ -49,7 +49,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           <h1
             style={{ fontFamily: "Manrope, sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", color: "#191c1e", lineHeight: 1 }}
           >
-            Lumina
+            Halaqy
           </h1>
           <p style={{ fontSize: 9, fontWeight: 700, color: "#76777d", textTransform: "uppercase", letterSpacing: "0.22em", marginTop: 8 }}>
             Digital Atelier

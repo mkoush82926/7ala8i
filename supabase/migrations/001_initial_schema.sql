@@ -1,4 +1,4 @@
--- Lumina MVP Schema
+-- Halaqy MVP Schema
 -- Run this in the Supabase SQL Editor to create all tables
 
 -- ============================================

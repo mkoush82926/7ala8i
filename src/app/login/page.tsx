@@ -40,7 +40,7 @@ export default function LoginPage() {
                 }}
             >
                 <Link href="/landing" style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em', fontFamily: "'Manrope', sans-serif" }}>
-                    Lumina
+                    Halaqy
                 </Link>
                 <div className="flex items-center gap-6">
                     <button style={{ color: 'rgba(15,23,42,0.4)', cursor: 'pointer' }}>
@@ -316,7 +316,7 @@ export default function LoginPage() {
                         {/* Footer link */}
                         <div style={{ marginTop: 40, textAlign: 'center' }}>
                             <p style={{ fontSize: 13, color: 'rgba(100,116,139,0.6)' }}>
-                                New to Lumina?{' '}
+                                New to Halaqy?{' '}
                                 <Link
                                     href="/signup"
                                     style={{
@@ -338,7 +338,7 @@ export default function LoginPage() {
             {/* Footer */}
             <footer style={{ padding: '40px 48px', borderTop: '1px solid #f8fafc' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(100,116,139,0.4)' }}>
-                    © 2026 Lumina Digital.
+                    © 2026 Halaqy Digital.
                 </p>
             </footer>
         </div>

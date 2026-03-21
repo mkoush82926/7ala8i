@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════
--- LUMINA — Public Booking Functions (SECURITY DEFINER)
+-- HALAQY — Public Booking Functions (SECURITY DEFINER)
 -- Bypasses RLS strictly for public booking operations
 -- ═══════════════════════════════════════════════════════
 

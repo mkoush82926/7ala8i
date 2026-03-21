@@ -204,7 +204,7 @@ const en = {
   landing: {
     heroTitle: "The Future of Barbershop Management",
     heroSubtitle:
-      "Lumina is a next-gen platform that combines booking, CRM, analytics, and marketing — all wrapped in a stunning, minimalist interface.",
+      "Halaqy is a next-gen platform that combines booking, CRM, analytics, and marketing — all wrapped in a stunning, minimalist interface.",
     getStarted: "Get Started",
     bookDemo: "Book a Demo",
     trustedBy: "Trusted by modern barbershops across Jordan",
@@ -253,7 +253,7 @@ const en = {
     startFreeTrial: "Start Free Trial",
     // Trust Signals
     testimonialsTitle: "Loved by Top Barbershops",
-    testimonial1Text: "Lumina transformed how we manage our bookings. The CRM pipeline is game-changing.",
+    testimonial1Text: "Halaqy transformed how we manage our bookings. The CRM pipeline is game-changing.",
     testimonial1Author: "Ahmad K.",
     testimonial1Role: "Owner, Fade Masters",
     testimonial2Text: "Finally an intuitive system that perfectly supports Arabic RTL without breaking.",

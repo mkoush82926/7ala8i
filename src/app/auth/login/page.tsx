@@ -85,7 +85,7 @@ function LoginContent() {
       }}>
         <Link href="/landing" style={{ textDecoration: "none" }}>
           <span style={{ fontFamily: "'Manrope', sans-serif", fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: T.dark }}>
-            Lumina
+            Halaqy
           </span>
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
@@ -290,7 +290,7 @@ function LoginContent() {
             {/* Footer link */}
             <div style={{ marginTop: 40, textAlign: "center" }}>
               <p style={{ fontSize: 12, color: T.muted, opacity: 0.7 }}>
-                New to Lumina?{" "}
+                New to Halaqy?{" "}
                 <Link href="/auth/signup" style={{ fontWeight: 700, color: T.dark, textDecoration: "none" }}>
                   Create an account
                 </Link>
@@ -305,10 +305,10 @@ function LoginContent() {
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48, maxWidth: 900, margin: "0 auto" }}>
           <div>
             <span style={{ fontFamily: "'Manrope', sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: "-0.03em", color: T.dark }}>
-              Lumina
+              Halaqy
             </span>
             <p style={{ fontFamily: FF, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.2em", color: T.muted, opacity: 0.6, marginTop: 16 }}>
-              © 2026 Lumina Digital.
+              © 2026 Halaqy Digital.
             </p>
           </div>
           {[

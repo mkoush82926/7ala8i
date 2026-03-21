@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "My Appointments — Lumina",
+  title: "My Appointments — Halaqy",
   description: "View and manage your barbershop appointments.",
 };
 

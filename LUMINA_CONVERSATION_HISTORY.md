@@ -1,11 +1,11 @@
-# Lumina — AI Conversation History & Project Summary
+# Halaqy — AI Conversation History & Project Summary
 
-*This document serves as an exported summary of our conversation regarding the development of the **Lumina Barbershop Management SaaS**.*
+*This document serves as an exported summary of our conversation regarding the development of the **Halaqy Barbershop Management SaaS**.*
 
 ---
 
 ## 📅 Project Overview
-We have been pair-programming to transform Lumina from a basic template into a premium, Awwwards-level SaaS application. Our main focus has been on producing a clean, modern Glassmorphism UI, robust state management, full Arabic/English localization (i18n), and a complete backend migration to Supabase.
+We have been pair-programming to transform Halaqy from a basic template into a premium, Awwwards-level SaaS application. Our main focus has been on producing a clean, modern Glassmorphism UI, robust state management, full Arabic/English localization (i18n), and a complete backend migration to Supabase.
 
 ## 🚀 Phases Completed
 

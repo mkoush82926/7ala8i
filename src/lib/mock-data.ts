@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// LUMINA — Mock Data for Phase 1 (UI Development)
+// HALAQY — Mock Data for Phase 1 (UI Development)
 // ═══════════════════════════════════════════════════════
 
 export interface Appointment {

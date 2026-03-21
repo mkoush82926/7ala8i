@@ -17,7 +17,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Lumina — The Digital Standard for Barbershops",
+  title: "Halaqy — The Digital Standard for Barbershops",
   description:
     "Elevate your atelier with booking, analytics, and CRM reimagined for the modern era.",
   keywords: ["barbershop", "management", "CRM", "booking", "reservation", "Jordan"],

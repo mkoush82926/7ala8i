@@ -91,7 +91,7 @@ export default function LandingPage() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 48 }}>
           <span style={{ fontFamily: FF, fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: T.dark }}>
-            Lumina.
+            Halaqy.
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
             {["Dashboard", "Calendar", "Leads"].map((item) => (
@@ -390,7 +390,7 @@ export default function LandingPage() {
       <footer style={{ paddingTop: 96, paddingBottom: 96, paddingLeft: 48, paddingRight: 48, background: T.white, borderTop: `1px solid ${T.surfCont}` }}>
         <div style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 64 }}>
           <div>
-            <span style={{ fontFamily: FF, fontSize: 18, fontWeight: 900, letterSpacing: "-0.03em", color: T.dark }}>Lumina.</span>
+            <span style={{ fontFamily: FF, fontSize: 18, fontWeight: 900, letterSpacing: "-0.03em", color: T.dark }}>Halaqy.</span>
             <p style={{ marginTop: 24, fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", lineHeight: 2, color: T.mid }}>
               The Digital Standard.
             </p>
@@ -424,7 +424,7 @@ export default function LandingPage() {
         {/* Bottom bar */}
         <div style={{ maxWidth: 1280, margin: "96px auto 0", paddingTop: 48, borderTop: `1px solid ${T.surfCont}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <p style={{ fontWeight: 700, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.2em", color: T.mid, opacity: 0.5 }}>
-            © 2026 Lumina Digital Atelier.
+            © 2026 Halaqy Digital Atelier.
           </p>
           <span className="material-symbols-outlined" style={{ fontSize: 14, color: T.mid, opacity: 0.3, cursor: "pointer" }}>share</span>
         </div>

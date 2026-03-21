@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════
--- LUMINA — Performance Indexes
+-- HALAQY — Performance Indexes
 -- Run this in Supabase SQL Editor after the RLS migration
 -- ═══════════════════════════════════════════════════════
 

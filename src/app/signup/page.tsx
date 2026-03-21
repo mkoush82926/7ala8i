@@ -63,7 +63,7 @@ export default function SignupPage() {
                 }}
             >
                 <Link href="/landing" style={{ fontSize: 18, fontWeight: 700, color: '#000000', letterSpacing: '-0.02em', textDecoration: 'none' }}>
-                    Lumina
+                    Halaqy
                 </Link>
                 <div className="hidden md:flex items-center gap-10">
                     {['Dashboard', 'Calendar', 'Analytics'].map((item) => (
@@ -136,7 +136,7 @@ export default function SignupPage() {
                                 marginBottom: 20,
                             }}
                         >
-                            How will you use Lumina?
+                            How will you use Halaqy?
                         </h1>
                         <p style={{ color: '#666666', fontSize: 18, fontWeight: 300, maxWidth: 400, margin: '0 auto' }}>
                             Select the role that best describes your daily operations and goals.
@@ -304,7 +304,7 @@ export default function SignupPage() {
                                 Create your account
                             </h1>
                             <p style={{ color: '#666666', fontSize: 15, fontWeight: 300 }}>
-                                Start managing your barbershop with Lumina
+                                Start managing your barbershop with Halaqy
                             </p>
                         </div>
 
@@ -457,7 +457,7 @@ export default function SignupPage() {
             >
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-16">
                     <div style={{ maxWidth: 280 }}>
-                        <h4 style={{ fontWeight: 700, fontSize: 18, marginBottom: 20, color: '#000' }}>Lumina</h4>
+                        <h4 style={{ fontWeight: 700, fontSize: 18, marginBottom: 20, color: '#000' }}>Halaqy</h4>
                         <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(107,114,128,0.6)', lineHeight: 2 }}>
                             An intentional approach to grooming management. Built for the modern atelier.
                         </p>
@@ -483,7 +483,7 @@ export default function SignupPage() {
                 </div>
                 <div className="max-w-7xl mx-auto mt-16 pt-8" style={{ borderTop: '1px solid #e5e5e5' }}>
                     <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(107,114,128,0.4)' }}>
-                        © 2026 Lumina. All rights reserved.
+                        © 2026 Halaqy. All rights reserved.
                     </p>
                 </div>
             </footer>

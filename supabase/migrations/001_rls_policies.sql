@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════
--- LUMINA — RLS Policies & Helper Functions
+-- HALAQY — RLS Policies & Helper Functions
 -- Run this in Supabase SQL Editor
 -- ═══════════════════════════════════════════════════════
 
