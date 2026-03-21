@@ -1,57 +1,73 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { useThemeStore } from "@/store/theme-store";
-
-const revenueData = [
-  { name: "JAN", revenue: 2400 },
-  { name: "FEB", revenue: 3100 },
-  { name: "MAR", revenue: 2800 },
-  { name: "APR", revenue: 3600 },
-  { name: "MAY", revenue: 4200 },
-  { name: "JUN", revenue: 3900 },
-];
-
-const barberData = [
-  { name: "Ahmad Al-Fayed", revenue: 3420, pct: 92 },
-  { name: "Zaid Khalil", revenue: 2850, pct: 78 },
-  { name: "Omar S.", revenue: 2100, pct: 62 },
-  { name: "Sami Haddad", revenue: 1940, pct: 55 },
-];
-
-const acquisitionData = [
-  { name: "Instagram (45%)", value: 45, color: "#000000" },
-  { name: "Google (25%)", value: 25, color: "#45464c" },
-  { name: "Word of Mouth (15%)", value: 15, color: "#76777d" },
-  { name: "Walk-in (10%)", value: 10, color: "#c6c6cc" },
-  { name: "Other (5%)", value: 5, color: "#eceef0" },
-];
-
-const peakHoursData = [
-  { hour: "09 AM", vals: [0.2, 0.3, 0.1, 0.2, 0.4, 0.7, 0.1] },
-  { hour: "12 PM", vals: [0.4, 0.7, 0.4, 0.7, 1.0, 1.0, 0.2] },
-  { hour: "03 PM", vals: [0.7, 0.4, 0.7, 0.7, 1.0, 0.7, 0.4] },
-  { hour: "06 PM", vals: [1.0, 1.0, 1.0, 1.0, 0.7, 0.4, 0.1] },
-];
-
-const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-
-const summaryMetrics = [
-  { id: "revenue", label: "Revenue", value: "12,450 JOD", sub: "vs. 11,066 JOD last month", change: 12.5, dir: "up" },
-  { id: "bookings", label: "Bookings", value: "842", sub: "Total appointments scheduled", change: 8.2, dir: "up" },
-  { id: "clients", label: "New Clients", value: "124", sub: "First-time visitors this month", change: -1.4, dir: "down" },
-  { id: "retention", label: "Retention Rate", value: "68.2%", sub: "Returning client frequency", change: 4.1, dir: "up" },
-];
+import { useWorkspaceStore } from "@/store/workspace-store";
+import { createClient } from "@/lib/supabase/client";
+import { getFullAnalytics } from "@/lib/queries/analytics-page";
+import { DashboardSkeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
 export default function AnalyticsPage() {
   const { direction } = useThemeStore();
+  const { shopId } = useWorkspaceStore();
   const isRTL = direction === "rtl";
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");
+  
+  // Data state
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      if (!shopId) return;
+      setLoading(true);
+      const supabase = createClient();
+      const res = await getFullAnalytics(supabase, shopId, period);
+      setData(res);
+      setLoading(false);
+    }
+    fetchData();
+  }, [shopId, period]);
+
+  async function handleExport() {
+    if (!shopId) return;
+    setExporting(true);
+    const supabase = createClient();
+    const { data: appts } = await supabase.from('appointments').select('*').eq('shop_id', shopId).order('start_time', { ascending: false });
+    
+    if (appts && appts.length > 0) {
+      const headers = Object.keys(appts[0]).join(",");
+      const rows = appts.map(obj => Object.values(obj).map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(",")).join("\n");
+      const csv = `${headers}\n${rows}`;
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `appointments_export_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+    setExporting(false);
+  }
+
+  if (loading && !data) return <DashboardSkeleton />;
+
+  const { summaryMetrics, revenueData, barberData, acquisitionData, peakHoursData } = data ? {
+    summaryMetrics: data.summary,
+    revenueData: data.revenueChart,
+    barberData: data.barberChart,
+    acquisitionData: data.acquisitionChart,
+    peakHoursData: data.peakChart
+  } : { summaryMetrics: [], revenueData: [], barberData: [], acquisitionData: [], peakHoursData: [] };
+
+  const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
   return (
     <motion.div
@@ -92,30 +108,31 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      {loading && data ? (
+        <div style={{ position: "fixed", top: 16, right: 16, background: "#191c1e", color: "white", padding: "8px 16px", borderRadius: 8, fontSize: 13, zIndex: 50, display: "flex", alignItems: "center", gap: 8 }}>
+          <Loader2 size={14} className="animate-spin" /> Updating...
+        </div>
+      ) : null}
+
       {/* ── Summary Metric Cards ── */}
-      {/* Practice #6 — 4-column grid with 20px gap (5×4 base unit) */}
       <div className="card-grid-4">
-        {summaryMetrics.map((m, i) => (
+        {summaryMetrics.map((m: any, i: number) => (
           <motion.div
             key={m.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
             style={{
-              // Practice #1 — contrast: white card, border, shadow
               background: "#ffffff",
               border: "1px solid #eceef0",
               borderRadius: 16,
-              // Practice #3 — 32px = 8×4 base unit
               padding: 28,
-              // Practice #5 — fixed min-height for consistency
               minHeight: 152,
               display: "flex", flexDirection: "column", justifyContent: "space-between",
               boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
               transition: "box-shadow 0.2s ease, transform 0.2s ease",
               cursor: "default",
             }}
-            // Practice #8 — hover state
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 24px rgba(0,0,0,0.08)";
               (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
@@ -125,36 +142,31 @@ export default function AnalyticsPage() {
               (e.currentTarget as HTMLDivElement).style.transform = "";
             }}
           >
-            {/* Top row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-              {/* Practice #2 — label 11px UPPERCASE with strong tracking */}
               <span style={{ fontSize: 11, fontWeight: 700, color: "#76777d", textTransform: "uppercase", letterSpacing: "0.12em" }}>{m.label}</span>
               <div
                 style={{
                   display: "flex", alignItems: "center", padding: "3px 8px",
                   borderRadius: 6, fontSize: 11, fontWeight: 700,
-                  background: m.dir === "up" ? "#f0fdf4" : "#fffbeb",
-                  color: m.dir === "up" ? "#16a34a" : "#d97706",
+                  background: m.dir === "up" ? "#f0fdf4" : m.dir === "down" ? "#fef2f2" : "#fffbeb",
+                  color: m.dir === "up" ? "#16a34a" : m.dir === "down" ? "#dc2626" : "#d97706",
                 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 2 }}>
-                  {m.dir === "up" ? "trending_up" : "trending_flat"}
+                  {m.dir === "up" ? "trending_up" : m.dir === "down" ? "trending_down" : "trending_flat"}
                 </span>
                 {m.change > 0 ? "+" : ""}{m.change}%
               </div>
             </div>
-            {/* Practice #2 — 32px value = large enough for primary data */}
             <div style={{ fontFamily: "Manrope, sans-serif", fontSize: 32, fontWeight: 800, color: "#191c1e", letterSpacing: "-0.04em", lineHeight: 1 }}>
               {m.value}
             </div>
-            {/* Practice #2 — sub text 12px */}
             <div style={{ fontSize: 12, color: "#b0b3b8", marginTop: 8 }}>{m.sub}</div>
           </motion.div>
         ))}
       </div>
 
       {/* ── Charts 2×2 Grid ── */}
-      {/* Practice #6 — consistent 2-column grid with 20px gap */}
       <div className="card-grid-2">
 
         {/* 1. Revenue Trend */}
@@ -163,7 +175,6 @@ export default function AnalyticsPage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
           style={{
-            // Practice #1 — white on #f7f9fb, border + shadow
             background: "#ffffff", border: "1px solid #eceef0",
             borderRadius: 16, padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
             transition: "box-shadow 0.2s",
@@ -171,27 +182,29 @@ export default function AnalyticsPage() {
           onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.07)"; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 4px rgba(0,0,0,0.05)"; }}
         >
-          {/* Practice #2 — card title 16px bold */}
           <h3 style={{ fontFamily: "Manrope, sans-serif", fontSize: 16, fontWeight: 700, color: "#191c1e", margin: "0 0 24px" }}>
             {isRTL ? "اتجاه الإيرادات" : "Revenue Trend"}
           </h3>
-          {/* Practice #5 — fixed chart height */}
           <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueData}>
-                <defs>
-                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#000000" stopOpacity={0.1} />
-                    <stop offset="100%" stopColor="#000000" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: "#b0b3b8", fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#b0b3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "#191c1e", border: "none", borderRadius: 8, fontSize: 12, color: "#fff" }} labelStyle={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }} />
-                <Area type="monotone" dataKey="revenue" stroke="#191c1e" strokeWidth={2} fill="url(#revGrad)" dot={false} activeDot={{ r: 4, fill: "#191c1e", stroke: "#fff", strokeWidth: 2 }} />
-              </AreaChart>
-            </ResponsiveContainer>
+            {revenueData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueData}>
+                  <defs>
+                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#000000" stopOpacity={0.1} />
+                      <stop offset="100%" stopColor="#000000" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: "#b0b3b8", fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "#b0b3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ background: "#191c1e", border: "none", borderRadius: 8, fontSize: 12, color: "#fff" }} labelStyle={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }} />
+                  <Area type="monotone" dataKey="revenue" stroke="#191c1e" strokeWidth={2} fill="url(#revGrad)" dot={false} activeDot={{ r: 4, fill: "#191c1e", stroke: "#fff", strokeWidth: 2 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#b0b3b8", fontSize: 13 }}>No revenue data</div>
+            )}
           </div>
         </motion.div>
 
@@ -212,15 +225,13 @@ export default function AnalyticsPage() {
             <h3 style={{ fontFamily: "Manrope, sans-serif", fontSize: 16, fontWeight: 700, color: "#191c1e", margin: 0 }}>
               {isRTL ? "أفضل الحلاقين" : "Top Barbers"}
             </h3>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#b0b3b8", textTransform: "uppercase", letterSpacing: "0.1em" }}>This Month</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#b0b3b8", textTransform: "uppercase", letterSpacing: "0.1em" }}>This {period}</span>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {barberData.map((b, i) => (
+            {barberData.length > 0 ? barberData.map((b: any, i: number) => (
               <div key={b.name}>
-                {/* Top row: rank + name + amount */}
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                  {/* Rank badge */}
                   <span style={{
                     minWidth: 22, height: 22, borderRadius: 6,
                     background: i === 0 ? "#191c1e" : "#f4f6f8",
@@ -229,16 +240,12 @@ export default function AnalyticsPage() {
                     display: "flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0,
                   }}>#{i + 1}</span>
-                  {/* Name */}
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#191c1e", flex: 1 }}>{b.name}</span>
-                  {/* Percentage */}
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#b0b3b8" }}>{b.pct}%</span>
-                  {/* Amount */}
                   <span style={{ fontSize: 13, fontWeight: 800, color: "#191c1e", fontVariantNumeric: "tabular-nums", minWidth: 70, textAlign: "right" }}>
                     {b.revenue.toLocaleString()} JOD
                   </span>
                 </div>
-                {/* Progress bar — properly bounded */}
                 <div style={{ height: 6, background: "#f0f2f5", borderRadius: 999, width: "100%" }}>
                   <motion.div
                     initial={{ width: 0 }}
@@ -248,7 +255,9 @@ export default function AnalyticsPage() {
                   />
                 </div>
               </div>
-            ))}
+            )) : (
+              <div style={{ color: "#b0b3b8", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No barber data</div>
+            )}
           </div>
         </motion.div>
 
@@ -273,7 +282,7 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={acquisitionData} cx="50%" cy="50%" innerRadius={56} outerRadius={82} paddingAngle={2} dataKey="value">
-                    {acquisitionData.map((entry, i) => (
+                    {acquisitionData.map((entry: any, i: number) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
@@ -281,7 +290,7 @@ export default function AnalyticsPage() {
               </ResponsiveContainer>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
-              {acquisitionData.map((ch) => (
+              {acquisitionData.map((ch: any) => (
                 <div key={ch.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ width: 10, height: 10, borderRadius: "50%", background: ch.color, flexShrink: 0, border: ch.color === "#eceef0" ? "1px solid #c6c6cc" : undefined }} />
                   <span style={{ fontSize: 12, color: "#45464c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.name}</span>
@@ -324,13 +333,12 @@ export default function AnalyticsPage() {
             {days.map((d) => (
               <div key={d} style={{ fontSize: 9, fontWeight: 700, textAlign: "center", color: "#b0b3b8", letterSpacing: "0.05em" }}>{d}</div>
             ))}
-            {peakHoursData.map((row) => (
+            {peakHoursData.map((row: any) => (
               <React.Fragment key={row.hour}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: "#76777d", paddingRight: 8, display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>{row.hour}</div>
-                {row.vals.map((v, di) => (
+                {row.vals.map((v: number, di: number) => (
                   <div
                     key={di}
-                    // Practice #8 — heatmap cells have hover state
                     style={{
                       height: 28, borderRadius: 4,
                       background: `rgba(25,28,30,${v})`,
@@ -350,7 +358,9 @@ export default function AnalyticsPage() {
       <footer className="pt-8 border-t border-surface-container-low flex justify-between items-center text-on-surface-variant">
         <p className="text-xs">© 2026 Halaqy Digital Atelier. All rights reserved.</p>
         <div className="flex gap-4">
-          <button className="nav-link text-xs">Export Report</button>
+          <button onClick={handleExport} disabled={exporting} className="nav-link text-xs flex items-center gap-2">
+            {exporting ? <Loader2 size={12} className="animate-spin" /> : null} Export Report
+          </button>
           <button className="nav-link text-xs">Data Privacy</button>
         </div>
       </footer>

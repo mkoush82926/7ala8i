@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
   Globe, ChevronDown, Bell, Search, Menu, Users, Sun, Moon,
@@ -11,7 +11,8 @@ import { useWorkspaceStore } from "@/store/workspace-store";
 import { getInitials } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { toast } from "@/components/ui/toast";
 
 /* ── Icon button helper ── */
 function IconBtn({
@@ -35,13 +36,13 @@ function IconBtn({
         height: 44,
         borderRadius: 10,
         border: "none",
-        background: hover ? "#f4f6f8" : "transparent",
+        background: hover ? "var(--bg-secondary)" : "transparent",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         cursor: "pointer",
         transition: "background 0.15s ease",
-        color: "#76777d",
+        color: "var(--text-tertiary)",
         flexShrink: 0,
       }}
     >
@@ -52,7 +53,7 @@ function IconBtn({
           width: 7, height: 7,
           background: "#ef4444",
           borderRadius: "50%",
-          border: "1.5px solid #ffffff",
+          border: "1.5px solid var(--bg-primary)",
         }} />
       )}
     </button>
@@ -61,49 +62,82 @@ function IconBtn({
 
 export function Topbar() {
   const { theme, toggleTheme, toggleLocale, direction } = useThemeStore();
-  const { shopName, role, currentView, barbers, setCurrentView, toggleMobileSidebar } =
-    useWorkspaceStore();
+  const { shopId, shopName, role, currentView, barbers, setCurrentView, toggleMobileSidebar } = useWorkspaceStore();
   const t = useTranslation();
   const isRTL = direction === "rtl";
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [bellOpen, setBellOpen] = useState(false);
+
+  useEffect(() => {
+    if (!shopId) return;
+    const supabase = createClient();
+    supabase.from('appointments').select('*').eq('shop_id', shopId).order('created_at', { ascending: false }).limit(5)
+      .then(({ data }) => { if (data) setNotifications(data); });
+
+    const channel = supabase.channel('public:appointments')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'appointments', filter: `shop_id=eq.${shopId}` }, payload => {
+        setNotifications(prev => [payload.new, ...prev].slice(0, 5));
+        setUnreadCount(c => c + 1);
+      }).subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [shopId]);
 
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    toast("success", "You have been successfully signed out.");
     router.push("/auth/login");
   }
 
+  const getPageTitle = () => {
+    if (pathname.includes('/analytics')) return isRTL ? "التحليلات" : "Analytics";
+    if (pathname.includes('/clients')) return isRTL ? "العملاء" : "Clients";
+    if (pathname.includes('/calendar')) return isRTL ? "التقويم" : "Calendar";
+    if (pathname.includes('/services')) return isRTL ? "الخدمات" : "Services";
+    if (pathname.includes('/settings')) return isRTL ? "الإعدادات" : "Settings";
+    if (pathname.includes('/book')) return isRTL ? "الحجز" : "Booking Engine";
+    if (pathname.includes('/leads')) return isRTL ? "العملاء المحتملين" : "Leads Management";
+    return isRTL ? "لوحة التحكم" : "Main Dashboard";
+  };
+
   return (
-    <nav className="topbar-wrapper">
+    <nav className="topbar-wrapper" style={{ background: "var(--bg-primary)", borderBottom: "1px solid var(--border-primary)" }}>
       {/* ── LEFT: hamburger + breadcrumb + view switcher ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         {/* Mobile hamburger */}
-        <IconBtn onClick={toggleMobileSidebar}>
-          <Menu size={18} />
-        </IconBtn>
+        <div className="lg:hidden">
+            <IconBtn onClick={toggleMobileSidebar}>
+              <Menu size={18} />
+            </IconBtn>
+        </div>
 
         {/* Breadcrumb */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{
-            fontSize: 11, fontWeight: 700, color: "#b0b3b8",
+            fontSize: 11, fontWeight: 700, color: "var(--text-tertiary)",
             textTransform: "uppercase", letterSpacing: "0.12em",
           }}>
             {isRTL ? "الأتيليه" : "Atelier Overview"}
           </span>
-          <span style={{ fontSize: 14, color: "#d4d6da", lineHeight: 1 }}>/</span>
+          <span style={{ fontSize: 14, color: "var(--border-hover)", lineHeight: 1 }}>/</span>
           <span style={{
-            fontSize: 12, fontWeight: 700, color: "#191c1e",
+            fontSize: 12, fontWeight: 700, color: "var(--text-primary)",
             letterSpacing: "0.01em",
           }}>
-            {isRTL ? "لوحة التحكم" : "Main Dashboard"}
+            {getPageTitle()}
           </span>
         </div>
 
         {/* View Switcher — desktop only, for shop_admin */}
         {role === "shop_admin" && (
-          <div style={{ position: "relative" }}>
+          <div style={{ position: "relative" }} className="hidden lg:block">
             <button
               onClick={() => setDropdownOpen((v) => !v)}
               style={{
@@ -113,26 +147,26 @@ export function Topbar() {
                 height: 44,
                 padding: "0 16px",
                 borderRadius: 8,
-                border: "1px solid #eceef0",
-                background: "#f4f6f8",
+                border: "1px solid var(--border-primary)",
+                background: "var(--bg-secondary)",
                 fontSize: 11,
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.1em",
-                color: "#45464c",
+                color: "var(--text-secondary)",
                 cursor: "pointer",
                 transition: "all 0.15s",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "#eceef0";
+                (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-surface-hover)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "#f4f6f8";
+                (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-secondary)";
               }}
             >
               <span>
                 {currentView === "master"
-                  ? t.topbar.masterView || "Master View"
+                  ? t.topbar?.masterView || "Master View"
                   : barbers.find((b) => b.id === currentView)?.name}
               </span>
               <ChevronDown size={11} />
@@ -140,7 +174,6 @@ export function Topbar() {
 
             {dropdownOpen && (
               <>
-                {/* Click-away backdrop */}
                 <div
                   style={{ position: "fixed", inset: 0, zIndex: 40 }}
                   onClick={() => setDropdownOpen(false)}
@@ -151,8 +184,8 @@ export function Topbar() {
                   left: isRTL ? "auto" : 0,
                   right: isRTL ? 0 : "auto",
                   minWidth: 180,
-                  background: "#ffffff",
-                  border: "1px solid #eceef0",
+                  background: "var(--bg-primary)",
+                  border: "1px solid var(--border-primary)",
                   borderRadius: 12,
                   boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
                   padding: "6px",
@@ -167,16 +200,16 @@ export function Topbar() {
                       borderRadius: 8,
                       fontSize: 12,
                       fontWeight: 600,
-                      color: currentView === "master" ? "#191c1e" : "#76777d",
-                      background: currentView === "master" ? "#f4f6f8" : "transparent",
+                      color: currentView === "master" ? "var(--text-primary)" : "var(--text-tertiary)",
+                      background: currentView === "master" ? "var(--bg-secondary)" : "transparent",
                       border: "none",
                       cursor: "pointer",
                     }}
                   >
-                    {t.topbar.masterView || "Master View"}
+                    {t.topbar?.masterView || "Master View"}
                   </button>
                   {barbers.length > 0 && (
-                    <div style={{ height: 1, background: "#f0f2f5", margin: "4px 6px" }} />
+                    <div style={{ height: 1, background: "var(--border-primary)", margin: "4px 6px" }} />
                   )}
                   {barbers.map((barber) => (
                     <button
@@ -189,8 +222,8 @@ export function Topbar() {
                         borderRadius: 8,
                         fontSize: 12,
                         fontWeight: 600,
-                        color: currentView === barber.id ? "#191c1e" : "#76777d",
-                        background: currentView === barber.id ? "#f4f6f8" : "transparent",
+                        color: currentView === barber.id ? "var(--text-primary)" : "var(--text-tertiary)",
+                        background: currentView === barber.id ? "var(--bg-secondary)" : "transparent",
                         border: "none",
                         cursor: "pointer",
                       }}
@@ -208,7 +241,7 @@ export function Topbar() {
       {/* ── RIGHT: search + icons + user ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
         {/* Search bar */}
-        <div style={{ position: "relative", marginRight: 8 }}>
+        <div style={{ position: "relative", marginRight: 8 }} className="hidden sm:block">
           <Search
             size={14}
             style={{
@@ -216,7 +249,7 @@ export function Topbar() {
               left: 12,
               top: "50%",
               transform: "translateY(-50%)",
-              color: "#b0b3b8",
+              color: "var(--text-muted)",
               pointerEvents: "none",
             }}
           />
@@ -229,21 +262,21 @@ export function Topbar() {
               paddingLeft: 34,
               paddingRight: 14,
               borderRadius: 10,
-              border: "1px solid #eceef0",
-              background: "#f8f9fb",
+              border: "1px solid var(--border-primary)",
+              background: "var(--bg-secondary)",
               fontSize: 13,
-              color: "#191c1e",
+              color: "var(--text-primary)",
               outline: "none",
               transition: "all 0.18s",
             }}
             onFocus={(e) => {
-              e.currentTarget.style.background = "#ffffff";
-              e.currentTarget.style.borderColor = "#191c1e";
+              e.currentTarget.style.background = "var(--bg-primary)";
+              e.currentTarget.style.borderColor = "var(--text-primary)";
               e.currentTarget.style.width = "240px";
             }}
             onBlur={(e) => {
-              e.currentTarget.style.background = "#f8f9fb";
-              e.currentTarget.style.borderColor = "#eceef0";
+              e.currentTarget.style.background = "var(--bg-secondary)";
+              e.currentTarget.style.borderColor = "var(--border-primary)";
               e.currentTarget.style.width = "200px";
             }}
           />
@@ -259,9 +292,35 @@ export function Topbar() {
         )}
 
         {/* Notifications */}
-        <IconBtn badge>
-          <Bell size={17} />
-        </IconBtn>
+        <div style={{ position: "relative" }}>
+          <IconBtn badge={unreadCount > 0} onClick={() => { setBellOpen(!bellOpen); setUnreadCount(0); }}>
+            <Bell size={17} />
+          </IconBtn>
+          {bellOpen && (
+            <>
+              <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setBellOpen(false)} />
+              <div style={{
+                position: "absolute", top: "calc(100% + 8px)", right: isRTL ? "auto" : 0, left: isRTL ? 0 : "auto",
+                width: 280, background: "var(--bg-primary)", border: "1px solid var(--border-primary)",
+                borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", zIndex: 50, padding: 12
+              }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, margin: "0 0 8px", color: "var(--text-primary)" }}>Recent Bookings</h4>
+                {notifications.length === 0 ? <p style={{ fontSize: 12, color: "var(--text-tertiary)" }}>No recent bookings.</p> : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {notifications.map(n => (
+                      <div key={n.id} style={{ display: "flex", flexDirection: "column", background: "var(--bg-secondary)", padding: "8px 10px", borderRadius: 8 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{n.client_name}</span>
+                        <span style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>
+                          {new Date(n.start_time).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Language */}
         <IconBtn onClick={toggleLocale}>
@@ -274,7 +333,7 @@ export function Topbar() {
         </IconBtn>
 
         {/* Divider */}
-        <div style={{ width: 1, height: 32, background: "#eceef0", margin: "0 12px" }} />
+        <div style={{ width: 1, height: 32, background: "var(--border-primary)", margin: "0 12px" }} />
 
         {/* User section — click to open menu */}
         <div style={{ position: "relative" }}>
@@ -292,17 +351,17 @@ export function Topbar() {
               transition: "background 0.15s",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "#f4f6f8";
+              (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-secondary)";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.background = "none";
             }}
           >
-            <div style={{ textAlign: isRTL ? "left" : "right" }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#191c1e", margin: 0, lineHeight: 1.3 }}>
+            <div style={{ textAlign: isRTL ? "left" : "right" }} className="hidden sm:block">
+              <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", margin: 0, lineHeight: 1.3 }}>
                 {shopName || "My Atelier"}
               </p>
-              <p style={{ fontSize: 10, color: "#b0b3b8", fontWeight: 600, textTransform: "capitalize", margin: 0, lineHeight: 1.4 }}>
+              <p style={{ fontSize: 10, color: "var(--text-tertiary)", fontWeight: 600, textTransform: "capitalize", margin: 0, lineHeight: 1.4 }}>
                 {role?.replace("_", " ") || "Admin"}
               </p>
             </div>
@@ -310,14 +369,14 @@ export function Topbar() {
               width: 44,
               height: 44,
               borderRadius: 10,
-              background: "#191c1e",
+              background: "var(--brand-primary)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
-              border: "2px solid #eceef0",
+              border: "2px solid var(--border-primary)",
             }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: "#ffffff", letterSpacing: "0.05em" }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: "var(--brand-on-primary)", letterSpacing: "0.05em" }}>
                 {getInitials(shopName || "A")}
               </span>
             </div>
@@ -336,17 +395,17 @@ export function Topbar() {
                 right: isRTL ? "auto" : 0,
                 left: isRTL ? 0 : "auto",
                 minWidth: 200,
-                background: "#ffffff",
-                border: "1px solid #eceef0",
+                background: "var(--bg-primary)",
+                border: "1px solid var(--border-primary)",
                 borderRadius: 14,
                 boxShadow: "0 12px 32px rgba(0,0,0,0.12)",
                 padding: "8px",
                 zIndex: 50,
               }}>
                 {/* User info header */}
-                <div style={{ padding: "10px 14px 12px", borderBottom: "1px solid #f0f2f5", marginBottom: 6 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "#191c1e", margin: 0 }}>{shopName || "My Atelier"}</p>
-                  <p style={{ fontSize: 11, color: "#b0b3b8", margin: 0, marginTop: 2, textTransform: "capitalize" }}>{role?.replace("_", " ") || "Admin"}</p>
+                <div style={{ padding: "10px 14px 12px", borderBottom: "1px solid var(--border-primary)", marginBottom: 6 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>{shopName || "My Atelier"}</p>
+                  <p style={{ fontSize: 11, color: "var(--text-tertiary)", margin: 0, marginTop: 2, textTransform: "capitalize" }}>{role?.replace("_", " ") || "Admin"}</p>
                 </div>
 
                 {/* Settings */}
@@ -362,20 +421,20 @@ export function Topbar() {
                     borderRadius: 8,
                     fontSize: 13,
                     fontWeight: 600,
-                    color: "#45464c",
+                    color: "var(--text-secondary)",
                     textDecoration: "none",
                     transition: "background 0.15s",
                     cursor: "pointer",
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "#f4f6f8"; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "var(--bg-secondary)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
                 >
-                  <Settings size={15} style={{ color: "#76777d" }} />
+                  <Settings size={15} style={{ color: "var(--text-tertiary)" }} />
                   {isRTL ? "الإعدادات" : "Settings"}
                 </a>
 
                 {/* Divider */}
-                <div style={{ height: 1, background: "#f0f2f5", margin: "6px 8px" }} />
+                <div style={{ height: 1, background: "var(--border-primary)", margin: "6px 8px" }} />
 
                 {/* Sign Out */}
                 <button

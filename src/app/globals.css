@@ -794,3 +794,37 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 768px) {
   .auth-footer { padding: 32px 24px; }
 }
+
+/* ── Dark Mode Variables ── */
+.dark {
+  --bg-primary:       #191c1e;
+  --bg-secondary:     #121415;
+  --bg-surface:       #24272a;
+  --bg-surface-hover: #2d3133;
+  --bg-elevated:      #202426;
+
+  --text-primary:   #ffffff;
+  --text-secondary: #e0e3e5;
+  --text-tertiary:  #b0b3b8;
+  --text-muted:     #76777d;
+
+  --border-primary: #2d3133;
+  --border-hover:   #45464c;
+
+  --brand-primary:    #ffffff;
+  --brand-on-primary: #121826;
+  
+  /* Reverse Stitch tokens for dark mode */
+  --color-primary:               #ffffff;
+  --color-on-primary:            #000000;
+  --color-surface:               #191c1e;
+  --color-surface-bright:        #191c1e;
+  --color-surface-dim:           #0d1012;
+  --color-surface-container-lowest: #121415;
+  --color-surface-container-low:    #24272a;
+  --color-surface-container:        #2d3133;
+  --color-on-surface:            #ffffff;
+  --color-on-surface-variant:    #e0e3e5;
+  --color-outline:               #76777d;
+  --color-outline-variant:       #45464c;
+}
