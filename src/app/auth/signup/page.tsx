@@ -126,7 +126,7 @@ export default function SignupPage() {
         <button style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}>
           <span className="material-symbols-outlined" style={{ fontSize: 20 }}>language</span>
         </button>
-        <Link href="/auth/login" style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#0f172a", textDecoration: "none" }}>
+        <Link href="/auth/login" className="btn btn-secondary" style={{ borderRadius: 999, minHeight: 36, padding: "0 16px", fontSize: 12 }}>
           Sign In
         </Link>
       </div>
@@ -155,11 +155,7 @@ export default function SignupPage() {
               <p style={{ color: "#64748b", fontSize: 14, fontWeight: 300, lineHeight: 1.7, marginBottom: 40 }}>
                 We&apos;ve sent a confirmation link to <strong style={{ color: "#000" }}>{email}</strong>. Click the link to activate your account.
               </p>
-              <Link href="/auth/login" style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                height: 52, padding: "0 32px", background: "#000", color: "#fff",
-                borderRadius: 12, fontWeight: 600, fontSize: 14, textDecoration: "none",
-              }}>
+              <Link href="/auth/login" className="btn btn-primary" style={{ minHeight: 52, padding: "0 32px", width: "100%" }}>
                 Back to Sign In
               </Link>
             </div>
@@ -245,7 +241,8 @@ export default function SignupPage() {
           >
             <button
               onClick={() => setStep("role")}
-              style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", color: "#666666", fontSize: 13, fontWeight: 600, marginBottom: 40, padding: 0 }}
+              className="nav-link"
+              style={{ color: "#666666", marginBottom: 40 }}
             >
               <ArrowLeft size={16} />
               Back
@@ -338,13 +335,8 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={loading}
-                style={{
-                  marginTop: 8, width: "100%", height: 56, background: loading ? "#555" : "#000000",
-                  color: "#ffffff", border: "none", borderRadius: 12, fontFamily: "'Manrope', sans-serif",
-                  fontWeight: 700, fontSize: 14, letterSpacing: "0.04em",
-                  cursor: loading ? "not-allowed" : "pointer", transition: "all 0.15s ease",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                }}
+                className="btn btn-primary"
+                style={{ marginTop: 8, width: "100%", height: 56, opacity: loading ? 0.7 : 1 }}
               >
                 {loading ? <Loader2 size={18} className="animate-spin" /> : (
                   <>

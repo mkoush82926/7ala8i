@@ -169,38 +169,36 @@ export function KanbanBoard() {
 
         <div className="flex items-center gap-3">
           {/* View Toggle */}
-          <div className="flex items-center bg-[#f2f4f6] p-1 rounded-lg">
+          <div className="flex items-center bg-[#f2f4f6] p-1 rounded-[12px]">
             <button
               onClick={() => setView("kanban")}
-              className={cn(
-                "px-3 py-1.5 rounded-md text-sm font-semibold transition-all cursor-pointer",
+              className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "kanban"
                   ? "bg-white text-[#191c1e] shadow-sm"
-                  : "text-[#76777d] hover:text-[#191c1e]",
-              )}
+                  : "text-[#76777d] hover:text-[#191c1e]"
+              }`}
             >
-              <Kanban size={14} />
+              <Kanban size={16} />
             </button>
             <button
               onClick={() => setView("list")}
-              className={cn(
-                "px-3 py-1.5 rounded-md text-sm font-semibold transition-all cursor-pointer",
+              className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "list"
                   ? "bg-white text-[#191c1e] shadow-sm"
-                  : "text-[#76777d] hover:text-[#191c1e]",
-              )}
+                  : "text-[#76777d] hover:text-[#191c1e]"
+              }`}
             >
-              <List size={14} />
+              <List size={16} />
             </button>
           </div>
 
-          <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-[#eceef0] text-[#191c1e] font-semibold text-sm hover:bg-[#f2f4f6] transition-colors cursor-pointer">
+          <button className="btn btn-secondary">
             <Upload size={15} />
             {t.leads.importCsv}
           </button>
           <button
             onClick={handleNewLead}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#191c1e] text-white font-bold text-sm shadow-[0_8px_16px_rgba(0,0,0,0.1)] hover:opacity-90 transition-opacity cursor-pointer"
+            className="btn btn-primary"
           >
             <Plus size={15} />
             {t.leads.addNewLead}

@@ -50,7 +50,6 @@ const summaryMetrics = [
 ];
 
 export default function AnalyticsPage() {
-  const t = useTranslation();
   const { direction } = useThemeStore();
   const isRTL = direction === "rtl";
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");
@@ -76,16 +75,16 @@ export default function AnalyticsPage() {
           </p>
         </div>
 
-        {/* Period Toggle — exactly like Stitch */}
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-surface-container-low">
+        {/* Period Toggle */}
+        <div className="flex items-center gap-1 p-1 rounded-[12px] bg-[#f2f4f6]">
           {(["week", "month", "year"] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`px-4 py-1.5 rounded-md text-[13px] font-semibold transition-all cursor-pointer ${
+              className={`flex items-center justify-center px-5 min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 period === p
-                  ? "bg-white text-on-surface shadow-sm"
-                  : "text-on-surface-variant hover:text-on-surface"
+                  ? "bg-white text-[#191c1e] shadow-sm"
+                  : "text-[#76777d] hover:text-[#191c1e]"
               }`}
             >
               {p === "week" ? (isRTL ? "أسبوعي" : "Weekly") : p === "month" ? (isRTL ? "شهري" : "Monthly") : (isRTL ? "سنوي" : "Yearly")}
@@ -352,8 +351,8 @@ export default function AnalyticsPage() {
       <footer className="pt-8 border-t border-surface-container-low flex justify-between items-center text-on-surface-variant">
         <p className="text-xs">© 2026 Halaqy Digital Atelier. All rights reserved.</p>
         <div className="flex gap-4">
-          <button className="text-xs hover:text-on-surface transition-colors cursor-pointer">Export Report</button>
-          <button className="text-xs hover:text-on-surface transition-colors cursor-pointer">Data Privacy</button>
+          <button className="nav-link text-xs">Export Report</button>
+          <button className="nav-link text-xs">Data Privacy</button>
         </div>
       </footer>
     </motion.div>

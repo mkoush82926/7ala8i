@@ -498,17 +498,17 @@ h1, h2, h3, h4, h5, h6 {
 .card-grid-4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;           /* 5× base unit */
+  gap: 32px;           /* 8× base unit */
 }
 .card-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 32px;
 }
 .card-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 32px;
 }
 
 @media (max-width: 1280px) {
@@ -600,6 +600,97 @@ h1, h2, h3, h4, h5, h6 {
   background-size: 600px 100%;
   animation: shimmer 1.6s ease-in-out infinite;
   border-radius: 8px;
+}
+
+/* ════════════════════════════════════════════════════════
+   BUTTON DESIGN SYSTEM — UX/UI Best Practices
+   ════════════════════════════════════════════════════════ */
+
+/* Base Button (Rules 1, 12, 13, 16) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px; /* Touch target size */
+  padding: 0 24px;
+  border-radius: 12px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.4, 1);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Primary Button (Rules 2, 14, 15) */
+.btn-primary {
+  background-color: #000000;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: #1a1a1a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Secondary Button (Rule 2) */
+.btn-secondary {
+  background-color: #ffffff;
+  color: #000000;
+  border: 1px solid #d8dadc;
+}
+.btn-secondary:hover:not(:disabled) {
+  background-color: #f7f9fb;
+  border-color: #c6c6cc;
+}
+
+/* Destructive Button (Rule 10, 14) */
+.btn-destructive {
+  background-color: #ba1a1a;
+  color: #ffffff;
+}
+.btn-destructive:hover:not(:disabled) {
+  background-color: #93000a;
+}
+
+/* Ghost / Tertiary Button */
+.btn-ghost {
+  background-color: transparent;
+  color: #45464c;
+}
+.btn-ghost:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #000000;
+}
+
+/* Link acting as a navigation element (Rule 3) */
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #000000;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+.nav-link:hover {
+  border-bottom-color: #000000;
 }
 
 /* ─── Landing Page Helpers ─── */

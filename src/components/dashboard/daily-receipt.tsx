@@ -258,38 +258,22 @@ export function DailyReceipt() {
 
         {/* Export buttons */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <button style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: "10px 0",
+          <button className="btn" style={{
             background: "rgba(255,255,255,0.1)",
             border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 10,
             color: "rgba(255,255,255,0.8)",
-            fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
-            cursor: "pointer",
-            transition: "background 0.18s",
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.18)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.1)"; }}
-          >
-            <Download size={13} />
+            padding: "0 16px", minHeight: 44, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em",
+          }}>
+            <Download size={14} />
             PDF
           </button>
-          <button style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: "10px 0",
+          <button className="btn" style={{
             background: "rgba(255,255,255,0.1)",
             border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 10,
             color: "rgba(255,255,255,0.8)",
-            fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
-            cursor: "pointer",
-            transition: "background 0.18s",
-          }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.18)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.1)"; }}
-          >
-            <Download size={13} />
+            padding: "0 16px", minHeight: 44, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em",
+          }}>
+            <Download size={14} />
             CSV
           </button>
         </div>

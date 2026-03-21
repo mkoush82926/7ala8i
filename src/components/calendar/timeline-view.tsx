@@ -151,66 +151,51 @@ export function TimelineView() {
           <div className="flex items-center gap-2 text-[var(--text-secondary)]">
             <button
               onClick={() => setSelectedDate((d) => subDays(d, 1))}
-              className="w-7 h-7 flex items-center justify-center rounded-[var(--radius-sm)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
+              className="w-11 h-11 flex items-center justify-center rounded-[var(--radius-sm)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={18} />
             </button>
             <span className="text-[13px] font-medium text-[var(--text-primary)] min-w-[120px] text-center">
               {format(selectedDate, "MMMM d, yyyy")}
             </span>
             <button
               onClick={() => setSelectedDate((d) => addDays(d, 1))}
-              className="w-7 h-7 flex items-center justify-center rounded-[var(--radius-sm)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
+              className="w-11 h-11 flex items-center justify-center rounded-[var(--radius-sm)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={18} />
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           {/* View Toggle */}
-          <div className="flex items-center bg-[var(--bg-surface)] rounded-[var(--radius-sm)] p-0.5">
+          <div className="flex items-center gap-1 p-1 rounded-[12px] bg-[#f2f4f6]">
             <button
               onClick={() => setView("timeline")}
-              className={cn(
-                "relative px-2.5 py-1.5 rounded-[var(--radius-sm)] cursor-pointer z-10",
+              className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "timeline"
-                  ? "text-[var(--text-primary)]"
-                  : "text-[var(--text-tertiary)]",
-              )}
+                  ? "bg-white text-[#191c1e] shadow-sm"
+                  : "text-[#76777d] hover:text-[#191c1e]"
+              }`}
             >
-              {view === "timeline" && (
-                <motion.div
-                  layoutId="calendar-view-pill"
-                  className="absolute inset-0 bg-[var(--bg-surface-active)] rounded-[var(--radius-sm)] border border-[var(--border-primary)]"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-              <Clock size={14} className="relative z-10" />
+              <Clock size={16} />
             </button>
             <button
               onClick={() => setView("list")}
-              className={cn(
-                "relative px-2.5 py-1.5 rounded-[var(--radius-sm)] cursor-pointer z-10",
+              className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "list"
-                  ? "text-[var(--text-primary)]"
-                  : "text-[var(--text-tertiary)]",
-              )}
+                  ? "bg-white text-[#191c1e] shadow-sm"
+                  : "text-[#76777d] hover:text-[#191c1e]"
+              }`}
             >
-              {view === "list" && (
-                <motion.div
-                  layoutId="calendar-view-pill"
-                  className="absolute inset-0 bg-[var(--bg-surface-active)] rounded-[var(--radius-sm)] border border-[var(--border-primary)]"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-              <List size={14} className="relative z-10" />
+              <List size={16} />
             </button>
           </div>
 
-          <GlassButton variant="primary" size="sm" icon={<Plus size={14} />}>
+          <button className="btn btn-primary">
+            <Plus size={16} />
             New Booking
-          </GlassButton>
+          </button>
         </div>
       </div>
 
@@ -410,7 +395,7 @@ export function TimelineView() {
                                         "confirmed",
                                       );
                                     }}
-                                    className="flex-1 h-6 rounded text-[9px] bg-[var(--accent-blue-muted)] text-[var(--accent-blue)] hover:opacity-80 cursor-pointer transition-opacity"
+                                    className="flex-1 min-h-[36px] rounded text-[10px] uppercase font-bold bg-[var(--accent-blue-muted)] text-[var(--accent-blue)] hover:opacity-80 cursor-pointer transition-opacity"
                                   >
                                     Confirm
                                   </button>
@@ -420,7 +405,7 @@ export function TimelineView() {
                                     e.stopPropagation();
                                     handleStatusUpdate(appt.id, "completed");
                                   }}
-                                  className="flex-1 h-6 rounded text-[9px] bg-[var(--accent-mint-muted)] text-[var(--accent-mint)] hover:opacity-80 cursor-pointer transition-opacity"
+                                  className="flex-1 min-h-[36px] rounded text-[10px] uppercase font-bold bg-[var(--accent-mint-muted)] text-[var(--accent-mint)] hover:opacity-80 cursor-pointer transition-opacity"
                                 >
                                   Paid
                                 </button>
@@ -434,7 +419,7 @@ export function TimelineView() {
                                       label: "No Show",
                                     });
                                   }}
-                                  className="flex-1 h-6 rounded text-[9px] bg-[var(--accent-rose-muted)] text-[var(--accent-rose)] hover:opacity-80 cursor-pointer transition-opacity"
+                                  className="flex-1 min-h-[36px] rounded text-[10px] uppercase font-bold bg-[var(--accent-rose-muted)] text-[var(--accent-rose)] hover:opacity-80 cursor-pointer transition-opacity"
                                 >
                                   No Show
                                 </button>
@@ -448,7 +433,7 @@ export function TimelineView() {
                                       label: "Cancel",
                                     });
                                   }}
-                                  className="flex-1 h-6 rounded text-[9px] bg-[var(--text-muted)]/10 text-[var(--text-muted)] hover:opacity-80 cursor-pointer transition-opacity"
+                                  className="flex-1 min-h-[36px] rounded text-[10px] uppercase font-bold bg-[var(--text-muted)]/10 text-[var(--text-muted)] hover:opacity-80 cursor-pointer transition-opacity"
                                 >
                                   Cancel
                                 </button>
@@ -542,7 +527,7 @@ export function TimelineView() {
                                 onClick={() =>
                                   handleStatusUpdate(appt.id, "completed")
                                 }
-                                className="h-6 px-2 rounded text-[10px] bg-[var(--accent-mint-muted)] text-[var(--accent-mint)] cursor-pointer hover:opacity-80 transition-opacity"
+                                className="min-h-[36px] px-3 rounded text-[11px] font-bold uppercase bg-[var(--accent-mint-muted)] text-[var(--accent-mint)] cursor-pointer hover:opacity-80 transition-opacity"
                               >
                                 Paid
                               </button>
@@ -555,7 +540,7 @@ export function TimelineView() {
                                     label: "Cancel",
                                   })
                                 }
-                                className="h-6 px-2 rounded text-[10px] bg-[var(--text-muted)]/10 text-[var(--text-muted)] cursor-pointer hover:opacity-80 transition-opacity"
+                                className="min-h-[36px] px-3 rounded text-[11px] font-bold uppercase bg-[var(--text-muted)]/10 text-[var(--text-muted)] cursor-pointer hover:opacity-80 transition-opacity"
                               >
                                 Cancel
                               </button>

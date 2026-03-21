@@ -94,7 +94,8 @@ function LoginContent() {
           </button>
           <Link
             href="/auth/signup"
-            style={{ fontFamily: FF, fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: T.dark, textDecoration: "none", opacity: 0.7 }}
+            className="btn btn-secondary"
+            style={{ borderRadius: 999, minHeight: 36, padding: "0 16px", fontSize: 12 }}
           >
             Get Started
           </Link>
@@ -263,13 +264,8 @@ function LoginContent() {
               <button
                 type="submit"
                 disabled={loading}
-                style={{
-                  height: 52, background: T.black, color: T.white,
-                  borderRadius: 12, border: "none", cursor: loading ? "not-allowed" : "pointer",
-                  fontFamily: FF, fontWeight: 600, fontSize: 14, letterSpacing: "0.02em",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                  opacity: loading ? 0.7 : 1, transition: "opacity 0.15s",
-                }}
+                className="btn btn-primary"
+                style={{ height: 52, width: "100%", opacity: loading ? 0.7 : 1 }}
               >
                 {loading ? (
                   <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />

@@ -95,26 +95,11 @@ export default function ClientsPage() {
                 }}
               />
             </div>
-            <button
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "10px 16px", background: "#f8fafc",
-                border: "1px solid #e2e8f0", borderRadius: 10,
-                fontSize: 13, fontWeight: 600, cursor: "pointer",
-              }}
-            >
+            <button className="btn btn-secondary" style={{ minHeight: "36px", padding: "0 16px" }}>
               <Filter size={14} />
               {isRTL ? "تصفية" : "Filters"}
             </button>
-            <button
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "10px 20px", background: "#191c1e",
-                color: "#fff", border: "none", borderRadius: 10,
-                fontSize: 13, fontWeight: 700, cursor: "pointer",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-              }}
-            >
+            <button className="btn btn-primary" style={{ minHeight: "36px" }}>
               <UserPlus size={14} />
               {isRTL ? "عميل جديد" : "New Client"}
             </button>
@@ -369,11 +354,11 @@ export default function ClientsPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2 mt-8">
-                  <button className="flex-1 h-11 rounded-xl bg-primary text-on-primary text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity cursor-pointer">
+                  <button className="btn btn-primary" style={{ flex: 1, minHeight: 44 }}>
                     <MessageCircle size={15} />
                     WhatsApp
                   </button>
-                  <button className="flex-1 h-11 rounded-xl bg-surface-container border border-surface-container-high text-on-surface-variant text-sm font-semibold flex items-center justify-center gap-2 hover:bg-surface-container-high transition-colors cursor-pointer">
+                  <button className="btn btn-secondary" style={{ flex: 1, minHeight: 44 }}>
                     {isRTL ? "حجز جديد" : "New Booking"}
                   </button>
                 </div>

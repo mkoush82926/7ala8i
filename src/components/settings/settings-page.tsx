@@ -86,9 +86,7 @@ export function SettingsPage() {
           </p>
         </div>
         {activeTab === "general" && (
-          <button
-            style={{ background: C.black, color: C.white, padding: "10px 24px", borderRadius: 8, fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer" }}
-          >
+          <button className="btn btn-primary">
             {isRTL ? "حفظ التغييرات" : "Save Changes"}
           </button>
         )}
@@ -100,19 +98,12 @@ export function SettingsPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
+            className={`btn btn-ghost`}
             style={{
+              borderRadius: 0,
               padding: "10px 24px",
-              fontSize: 14,
-              fontWeight: 700,
               color: activeTab === tab.id ? C.black : C.mid,
               borderBottom: activeTab === tab.id ? `2px solid ${C.black}` : "2px solid transparent",
-              background: "none",
-              border: "none",
-              borderBottomWidth: 2,
-              borderBottomStyle: "solid",
-              borderBottomColor: activeTab === tab.id ? C.black : "transparent",
-              cursor: "pointer",
-              transition: "color 0.15s, border-color 0.15s",
             }}
           >
             {tab.label}
@@ -213,7 +204,7 @@ export function SettingsPage() {
                   placeholder="New staff email address"
                   type="email"
                 />
-                <button style={{ background: C.black, color: C.white, padding: "10px 24px", borderRadius: 8, fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
+                <button className="btn btn-primary">
                   {isRTL ? "دعوة عضو" : "Invite Member"}
                 </button>
               </div>
@@ -248,7 +239,8 @@ export function SettingsPage() {
               <div style={{ display: "flex", gap: 12, position: "relative", zIndex: 1 }}>
                 <button
                   onClick={handleCopy}
-                  style={{ display: "flex", alignItems: "center", gap: 8, background: C.white, color: C.black, padding: "12px 20px", borderRadius: 8, fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer" }}
+                  className="btn btn-secondary"
+                  style={{ border: "none" }}
                 >
                   {copied ? "✓ Copied!" : (isRTL ? "نسخ الرابط" : "Copy Public URL")}
                 </button>
@@ -256,9 +248,10 @@ export function SettingsPage() {
                   href={`https://${bookingLink}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.1)", color: C.white, padding: "12px 20px", borderRadius: 8, fontWeight: 700, fontSize: 14, textDecoration: "none" }}
+                  className="nav-link"
+                  style={{ color: "rgba(255,255,255,0.8)" }}
                 >
-                  {isRTL ? "عرض الصفحة" : "View Page"}
+                  {isRTL ? "عرض الصفحة" : "View Page"} ↗
                 </a>
               </div>
             </div>
@@ -272,7 +265,7 @@ export function SettingsPage() {
               </div>
               <p style={{ fontWeight: 700, fontSize: 14, color: C.dark, margin: "0 0 4px" }}>{isRTL ? "رمز QR للحجز" : "Booking QR Code"}</p>
               <p style={{ fontSize: 11, color: C.mid, margin: "0 0 16px" }}>{isRTL ? "ضعه على مكتب الاستقبال" : "Place this at your reception desk"}</p>
-              <button style={{ width: "100%", border: `1px solid ${C.black}`, color: C.black, background: "none", padding: "10px 0", borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+              <button className="btn btn-secondary" style={{ width: "100%" }}>
                 {isRTL ? "تنزيل بدقة عالية" : "Download High-Res"}
               </button>
             </div>
@@ -309,7 +302,7 @@ export function SettingsPage() {
                   <span style={{ fontFamily: "Manrope, sans-serif", fontSize: 32, fontWeight: 900, color: C.dark }}>25.00 JOD</span>
                   <span style={{ fontSize: 12, color: C.mid }}>/month</span>
                 </div>
-                <button style={{ color: C.black, fontSize: 14, fontWeight: 700, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                <button className="btn btn-secondary" style={{ minHeight: "36px", padding: "0 16px" }}>
                   {isRTL ? "تغيير الخطة" : "Change Plan"}
                 </button>
               </div>
@@ -328,7 +321,7 @@ export function SettingsPage() {
                   <div style={{ width: 32, height: 20, background: C.black, borderRadius: 4 }} />
                   <span style={{ fontSize: 14, fontWeight: 500, color: C.dark }}>Mastercard •••• 8829</span>
                 </div>
-                <button style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: C.mid, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.05em" }}>
+                <button className="btn btn-secondary" style={{ minHeight: "28px", padding: "0 12px", fontSize: 10, textTransform: "uppercase" }}>
                   {isRTL ? "تحديث" : "Update"}
                 </button>
               </div>

@@ -115,14 +115,11 @@ function UpcomingAppointments() {
         </h3>
         <a
           href="/calendar"
+          className="nav-link"
           style={{
             fontSize: 11, fontWeight: 700, textTransform: "uppercase",
             letterSpacing: "0.15em", color: "#191c1e",
-            textDecoration: "none", opacity: 0.5,
-            transition: "opacity 0.2s",
           }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = "1"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = "0.5"; }}
         >
           {isRTL ? "عرض الجدول" : "View All Schedule"} →
         </a>
@@ -149,23 +146,7 @@ function UpcomingAppointments() {
               </p>
               <p style={{ fontSize: 12, color: "#b0b3b8", margin: 0 }}>Your schedule is clear for now</p>
             </div>
-            <a
-              href="/book"
-              style={{
-                marginTop: 4,
-                padding: "10px 24px",
-                background: "#191c1e",
-                color: "#ffffff",
-                borderRadius: 10,
-                fontWeight: 700,
-                fontSize: 12,
-                textDecoration: "none",
-                letterSpacing: "0.02em",
-                transition: "opacity 0.2s",
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = "0.85"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.opacity = "1"; }}
-            >
+            <a href="/calendar" className="btn btn-primary" style={{ marginTop: 4, padding: "0 24px" }}>
               {isRTL ? "احجز الآن" : "+ Book Appointment"}
             </a>
           </div>
@@ -302,31 +283,11 @@ export default function DashboardPage() {
 
           {/* Header action buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <a
-              href="/calendar"
-              style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "10px 20px", background: "#fff",
-                border: "1px solid #e2e8f0", color: "#191c1e",
-                borderRadius: 10, fontWeight: 600, fontSize: 13,
-                textDecoration: "none", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                transition: "all 0.2s",
-              }}
-            >
+            <a href="/calendar" className="btn btn-secondary">
               <CalendarCheck size={16} />
               <span>{isRTL ? "حجز جديد" : "New Booking"}</span>
             </a>
-            <a
-              href="/leads"
-              style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "10px 20px", background: "#fff",
-                border: "1px solid #e2e8f0", color: "#191c1e",
-                borderRadius: 10, fontWeight: 600, fontSize: 13,
-                textDecoration: "none", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                transition: "all 0.2s",
-              }}
-            >
+            <a href="/leads" className="btn btn-secondary">
               <span>{isRTL ? "إضافة عميل" : "New Lead"}</span>
             </a>
           </div>

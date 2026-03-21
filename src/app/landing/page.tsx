@@ -102,19 +102,15 @@ export default function LandingPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
           <button
             onClick={() => toggleLocale()}
-            style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: T.mid }}
+            className="nav-link"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>language</span>
             <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em" }}>{isRTL ? "EN" : "عربي"}</span>
           </button>
           <Link
             href="/auth/signup"
-            style={{
-              padding: "10px 24px", background: T.black, color: T.white,
-              borderRadius: 999, fontWeight: 700, fontSize: 11,
-              textTransform: "uppercase", letterSpacing: "0.06em",
-              textDecoration: "none", display: "inline-block",
-            }}
+            className="btn btn-primary"
+            style={{ borderRadius: 999 }}
           >
             {isRTL ? "ابدأ الآن" : "GET STARTED"}
           </Link>
@@ -165,25 +161,16 @@ export default function LandingPage() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
               <Link
                 href="/auth/signup"
-                style={{
-                  display: "flex", alignItems: "center", gap: 12,
-                  padding: "18px 40px", background: T.black, color: T.white,
-                  borderRadius: 999, fontWeight: 800, fontSize: 14,
-                  fontFamily: FF, textDecoration: "none",
-                }}
+                className="btn btn-primary"
+                style={{ minHeight: 56, padding: "0 40px", borderRadius: 999, fontSize: 14, fontWeight: 800 }}
               >
                 {isRTL ? "ابدأ البناء" : "Start Building"}
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
               </Link>
               <Link
                 href="/book"
-                style={{
-                  display: "flex", alignItems: "center",
-                  padding: "18px 40px",
-                  color: "#374151", fontSize: 14, fontWeight: 600,
-                  borderRadius: 999, border: `1px solid ${T.outline}`,
-                  fontFamily: FF, textDecoration: "none",
-                }}
+                className="btn btn-secondary"
+                style={{ minHeight: 56, padding: "0 40px", borderRadius: 999, fontSize: 14, fontWeight: 800 }}
               >
                 {isRTL ? "احجز عرضاً تجريبياً" : "Book Demo"}
               </Link>
@@ -362,13 +349,8 @@ export default function LandingPage() {
 
               <Link
                 href="/auth/signup"
-                style={{
-                  display: "block", width: "100%", padding: "24px 0",
-                  textAlign: "center", fontWeight: 800, fontSize: 13,
-                  textTransform: "uppercase", letterSpacing: "0.1em",
-                  borderRadius: 999, background: T.black, color: T.white,
-                  textDecoration: "none", boxSizing: "border-box",
-                }}
+                className="btn btn-primary"
+                style={{ width: "100%", minHeight: 64, borderRadius: 999, fontSize: 14, fontWeight: 800 }}
               >
                 {isRTL ? "ابدأ تجربة 14 يوم" : "Initiate 14-Day Trial"}
               </Link>
@@ -390,7 +372,8 @@ export default function LandingPage() {
             </p>
             <button
               onClick={() => toggleLocale()}
-              style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 32, background: "none", border: "none", cursor: "pointer", color: T.mid }}
+              className="nav-link"
+              style={{ marginTop: 32 }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>language</span>
               <span style={{ fontWeight: 900, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.2em" }}>{isRTL ? "EN / عربي" : "AR / EN"}</span>
@@ -405,7 +388,7 @@ export default function LandingPage() {
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 20 }}>
                 {col.links.map((link) => (
                   <li key={link}>
-                    <a href="#" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.mid, textDecoration: "none" }}>
+                    <a href="#" className="nav-link">
                       {link}
                     </a>
                   </li>

@@ -28,8 +28,8 @@ function IconBtn({
       onMouseLeave={() => setHover(false)}
       style={{
         position: "relative",
-        width: 36,
-        height: 36,
+        width: 44,
+        height: 44,
         borderRadius: 10,
         border: "none",
         background: hover ? "#f4f6f8" : "transparent",
@@ -99,8 +99,8 @@ export function Topbar() {
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                height: 30,
-                padding: "0 12px",
+                height: 44,
+                padding: "0 16px",
                 borderRadius: 8,
                 border: "1px solid #eceef0",
                 background: "#f4f6f8",
@@ -281,8 +281,8 @@ export function Topbar() {
             </p>
           </div>
           <div style={{
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             borderRadius: 10,
             background: "#191c1e",
             display: "flex",

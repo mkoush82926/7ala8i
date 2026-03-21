@@ -298,7 +298,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
 
                 <button
                   onClick={() => setStep("services")}
-                  className="w-full h-12 rounded-[var(--radius-md)] bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] text-[14px] font-medium flex items-center justify-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
+                  className="btn btn-primary w-full"
                 >
                   {t.booking.bookAppointment}
                   <ArrowRight size={16} />
@@ -419,7 +419,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                     </div>
                     <button
                       onClick={() => setStep("barber")}
-                      className="h-10 px-6 rounded-[var(--radius-md)] bg-[var(--accent-mint)] text-[#0A0A0A] text-[13px] font-medium flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
+                      className="btn btn-primary"
                     >
                       {t.common.next} <ArrowRight size={14} />
                     </button>
@@ -530,7 +530,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                   >
                     <button
                       onClick={() => setStep("datetime")}
-                      className="h-10 px-6 rounded-[var(--radius-md)] bg-[var(--accent-mint)] text-[#0A0A0A] text-[13px] font-medium flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
+                      className="btn btn-primary"
                     >
                       {t.common.next} <ArrowRight size={14} />
                     </button>
@@ -641,7 +641,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                   >
                     <button
                       onClick={() => setStep("confirm")}
-                      className="h-10 px-6 rounded-[var(--radius-md)] bg-[var(--accent-mint)] text-[#0A0A0A] text-[13px] font-medium flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity"
+                      className="btn btn-primary"
                     >
                       {t.common.next} <ArrowRight size={14} />
                     </button>
@@ -790,12 +790,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                     disabled={
                       !clientName.trim() || !clientPhone.trim() || submitting
                     }
-                    className={cn(
-                      "w-full h-12 rounded-[var(--radius-md)] text-[14px] font-medium flex items-center justify-center gap-2 cursor-pointer transition-all",
-                      clientName.trim() && clientPhone.trim() && !submitting
-                        ? "bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] hover:opacity-90"
-                        : "bg-[var(--bg-surface)] text-[var(--text-muted)] cursor-not-allowed",
-                    )}
+                    className="btn btn-primary w-full"
                   >
                     {submitting ? (
                       <>

@@ -58,7 +58,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         {onClose && (
           <button
             onClick={onClose}
-            className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg text-on-surface-variant hover:bg-secondary-container transition-colors"
+            className="md:hidden flex items-center justify-center w-11 h-11 rounded-lg text-on-surface-variant hover:bg-secondary-container transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -102,16 +102,8 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         <Link
           href="/calendar"
           onClick={onClose}
-          style={{
-            display: "block", width: "100%",
-            background: "#191c1e", color: "#ffffff",
-            padding: "15px 16px", borderRadius: 12,
-            fontWeight: 700, fontSize: 13, textAlign: "center",
-            textDecoration: "none", fontFamily: "Manrope, sans-serif",
-            letterSpacing: "0.01em",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-            transition: "all 0.2s",
-          }}
+          className="btn btn-primary"
+          style={{ width: "100%", justifyContent: "center" }}
         >
           Book Appointment
         </Link>
