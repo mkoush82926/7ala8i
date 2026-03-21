@@ -82,13 +82,7 @@ export default function LandingPage() {
     <div style={{ fontFamily: FF, background: T.white, color: T.dark, overflowX: "hidden" }}>
 
       {/* ═══ NAVBAR ═══ */}
-      <nav style={{
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        position: "sticky", top: 0, zIndex: 50,
-        padding: "0 48px", height: 80,
-        background: "rgba(255,255,255,0.85)", backdropFilter: "blur(12px)",
-        borderBottom: `1px solid ${T.outline}33`,
-      }}>
+      <nav className="landing-nav" style={{ borderBottom: `1px solid ${T.outline}33` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 48 }}>
           <span style={{ fontFamily: FF, fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: T.dark }}>
             Halaqy.
@@ -128,8 +122,8 @@ export default function LandingPage() {
       </nav>
 
       {/* ═══ HERO ═══ */}
-      <section style={{ paddingTop: 96, paddingBottom: 96, paddingLeft: 48, paddingRight: 48, background: T.white, position: "relative" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 96, alignItems: "center" }}>
+      <section className="landing-section" style={{ background: T.white, position: "relative" }}>
+        <div className="landing-hero-grid" style={{ maxWidth: 1280, margin: "0 auto" }}>
 
           {/* Left copy */}
           <motion.div
@@ -250,7 +244,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ FEATURES ═══ */}
-      <section style={{ paddingTop: 96, paddingBottom: 96, paddingLeft: 48, paddingRight: 48, background: T.surfLow }}>
+      <section className="landing-section" style={{ background: T.surfLow }}>
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
           <Reveal>
             <div style={{ marginBottom: 96 }}>
@@ -265,7 +259,7 @@ export default function LandingPage() {
             </div>
           </Reveal>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "64px 48px" }}>
+          <div className="card-grid-3">
             {features.map((f, i) => (
               <Reveal key={i} delay={i * 0.06}>
                 <div>
@@ -284,7 +278,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ HOW IT WORKS ═══ */}
-      <section style={{ paddingTop: 96, paddingBottom: 96, paddingLeft: 48, paddingRight: 48, background: T.white }}>
+      <section className="landing-section" style={{ background: T.white }}>
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
           <div style={{ display: "flex", gap: 128, alignItems: "flex-start", flexWrap: "wrap" }}>
             {/* Left sticky */}
@@ -327,7 +321,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ PRICING ═══ */}
-      <section style={{ paddingTop: 96, paddingBottom: 96, paddingLeft: 48, paddingRight: 48, background: "#1a1a1a", color: T.white }}>
+      <section className="landing-section" style={{ background: "#1a1a1a", color: T.white }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <Reveal>
             <div style={{ textAlign: "center", marginBottom: 96 }}>
@@ -357,7 +351,7 @@ export default function LandingPage() {
               </div>
 
               {/* Features grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px 64px", marginBottom: 64 }}>
+              <div className="card-grid-2" style={{ marginBottom: 64 }}>
                 {pricingFeats.map((feat, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 16 }}>
                     <span className="material-symbols-outlined" style={{ fontSize: 20, color: T.black, fontVariationSettings: "'wght' 700" }}>check</span>
@@ -387,8 +381,8 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ FOOTER ═══ */}
-      <footer style={{ paddingTop: 96, paddingBottom: 96, paddingLeft: 48, paddingRight: 48, background: T.white, borderTop: `1px solid ${T.surfCont}` }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 64 }}>
+      <footer className="landing-section" style={{ background: T.white, borderTop: `1px solid ${T.surfCont}` }}>
+        <div className="landing-footer-grid" style={{ maxWidth: 1280, margin: "0 auto" }}>
           <div>
             <span style={{ fontFamily: FF, fontSize: 18, fontWeight: 900, letterSpacing: "-0.03em", color: T.dark }}>Halaqy.</span>
             <p style={{ marginTop: 24, fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", lineHeight: 2, color: T.mid }}>

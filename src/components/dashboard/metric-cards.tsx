@@ -119,7 +119,7 @@ export function MetricCards() {
 
   if (loading) {
     return (
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+      <div className="card-grid-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} style={{
             padding: 28, borderRadius: 16,
@@ -144,7 +144,7 @@ export function MetricCards() {
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+    <div className="card-grid-4">
       {cards.map((metric, index) => (
         <motion.div
           key={metric.id}

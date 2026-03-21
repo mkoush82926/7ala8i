@@ -42,7 +42,8 @@ export default function DashboardLayout({
       >
         <Topbar />
         <div
-          style={{ paddingTop: "92px", paddingBottom: "96px", paddingLeft: "72px", paddingRight: "72px" }}
+          className="page-padding"
+          style={{ paddingTop: "92px", paddingBottom: "96px" }}
         >
           {children}
         </div>

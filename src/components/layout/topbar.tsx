@@ -65,25 +65,7 @@ export function Topbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
-    <nav
-      style={{
-        position: "fixed",
-        top: 0,
-        left: isRTL ? 0 : "var(--sidebar-width)",
-        right: isRTL ? "var(--sidebar-width)" : 0,
-        height: 64,
-        background: "rgba(255,255,255,0.92)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        borderBottom: "1px solid #eceef0",
-        zIndex: 30,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 32px",
-        gap: 16,
-      }}
-    >
+    <nav className="topbar-wrapper">
       {/* ── LEFT: hamburger + breadcrumb + view switcher ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         {/* Mobile hamburger */}

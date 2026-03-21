@@ -96,7 +96,7 @@ export default function AnalyticsPage() {
 
       {/* ── Summary Metric Cards ── */}
       {/* Practice #6 — 4-column grid with 20px gap (5×4 base unit) */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+      <div className="card-grid-4">
         {summaryMetrics.map((m, i) => (
           <motion.div
             key={m.id}
@@ -157,7 +157,7 @@ export default function AnalyticsPage() {
 
       {/* ── Charts 2×2 Grid ── */}
       {/* Practice #6 — consistent 2-column grid with 20px gap */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div className="card-grid-2">
 
         {/* 1. Revenue Trend */}
         <motion.div

@@ -112,19 +112,11 @@ export default function SignupPage() {
   }
 
   const navBar = (
-    <nav
+    <nav className="auth-nav"
       style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "0 48px",
-        height: 80,
         background: "rgba(255,255,255,0.85)",
         backdropFilter: "blur(16px)",
         borderBottom: "1px solid #f1f5f9",
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
       }}
     >
       <Link href="/landing" style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em", fontFamily: "'Manrope', sans-serif", textDecoration: "none" }}>
@@ -145,15 +137,14 @@ export default function SignupPage() {
     return (
       <div style={{ minHeight: "100dvh", background: "#ffffff", display: "flex", flexDirection: "column" }}>
         {navBar}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 48 }}>
+        <div className="auth-main">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             style={{ maxWidth: 480, width: "100%", textAlign: "center" }}
           >
-            <div style={{
+            <div className="auth-card" style={{
               background: "#ffffff", borderRadius: 24, border: "1px solid #f1f5f9",
-              padding: "64px 80px", boxShadow: "0 32px 64px -16px rgba(0,0,0,0.05)",
             }}>
               <div style={{ width: 56, height: 56, background: "#000", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 32px" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#fff", fontVariationSettings: "'FILL' 1" }}>check</span>
@@ -185,7 +176,7 @@ export default function SignupPage() {
 
       {/* Step 1 — Role Selection */}
       {step === "role" && (
-        <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 24px" }}>
+        <main className="auth-main">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -245,7 +236,7 @@ export default function SignupPage() {
 
       {/* Step 2 — Account Details */}
       {step === "form" && (
-        <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 24px" }}>
+        <main className="auth-main">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -376,7 +367,7 @@ export default function SignupPage() {
         </main>
       )}
 
-      <footer style={{ padding: "24px 48px", borderTop: "1px solid #f8fafc" }}>
+      <footer className="auth-footer" style={{ borderTop: "1px solid #f8fafc" }}>
         <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.4)" }}>
           © 2026 Halaqy Digital.
         </p>

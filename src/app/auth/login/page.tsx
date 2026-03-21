@@ -76,10 +76,7 @@ function LoginContent() {
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", background: T.white, fontFamily: FF }}>
 
       {/* ── NavBar ── */}
-      <nav style={{
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "0 48px", height: 80,
-        position: "sticky", top: 0, zIndex: 50,
+      <nav className="auth-nav" style={{
         background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)",
         borderBottom: `1px solid ${T.outline}`,
       }}>
@@ -105,7 +102,7 @@ function LoginContent() {
       </nav>
 
       {/* ── Main Content ── */}
-      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 48, background: T.white }}>
+      <main className="auth-main" style={{ background: T.white }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -113,11 +110,9 @@ function LoginContent() {
           style={{ width: "100%", maxWidth: 480 }}
         >
           {/* Card */}
-          <div style={{
+          <div className="auth-card" style={{
             background: T.white, borderRadius: 24,
             border: `1px solid ${T.outline}`,
-            padding: "64px 64px",
-            boxShadow: "0 32px 64px -16px rgba(0,0,0,0.06)",
           }}>
             {/* Brand anchor */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 56 }}>
@@ -301,7 +296,7 @@ function LoginContent() {
       </main>
 
       {/* ── Footer ── */}
-      <footer style={{ padding: "48px 48px", background: T.white, borderTop: `1px solid ${T.outline}` }}>
+      <footer className="auth-footer" style={{ background: T.white, borderTop: `1px solid ${T.outline}` }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 48, maxWidth: 900, margin: "0 auto" }}>
           <div>
             <span style={{ fontFamily: "'Manrope', sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: "-0.03em", color: T.dark }}>

@@ -290,7 +290,7 @@ export default function DashboardPage() {
     <div className="page-enter">
       {/* Page Header */}
       <header style={{ display: "flex", flexDirection: "column", marginBottom: 32, gap: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div className="dashboard-header-flex">
           <div>
             <h2 style={{ fontFamily: "Manrope, sans-serif", fontSize: 38, fontWeight: 800, letterSpacing: "-0.04em", color: "#191c1e", lineHeight: 1.1, margin: 0 }}>
               {isRTL ? "نظرة عامة على الأتيليه" : "Atelier Overview"}
@@ -338,14 +338,8 @@ export default function DashboardPage() {
         <MetricCards />
       </div>
 
-      {/* Charts + Receipt — proper 2/3 + 1/3 grid with inline styles only */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "2fr 1fr",   /* 66% chart / 33% receipt */
-        gap: 20,
-        marginBottom: 32,
-        alignItems: "stretch",
-      }}>
+      {/* Charts + Receipt — proper responsive 2/3 + 1/3 grid */}
+      <div className="dashboard-main-grid">
         <SalesChart />
         <DailyReceipt />
       </div>
