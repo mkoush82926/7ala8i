@@ -119,27 +119,30 @@ export default function ServicesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between" style={{ gap: 20 }}>
         <div>
-          <h2 className="tracking-tight text-[var(--text-primary)] font-bold" style={{ fontSize: 26 }}>
+          <h2
+            className="text-4xl font-extrabold tracking-tight text-[#191c1e]"
+            style={{ fontFamily: "Manrope, sans-serif", fontSize: 32 }}
+          >
             {svc.title || "Services"}
           </h2>
-          <p className="text-[var(--text-tertiary)]" style={{ fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
+          <p className="text-[#45464c] font-medium" style={{ fontSize: 14, marginTop: 8 }}>
             {svc.subtitle || "Manage your barbershop service menu"}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative w-full sm:w-64">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#76777d]" />
             <input
               type="text"
               placeholder={svc.title || "Search..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-10 ps- pe- rounded-xl bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all"
+              className="w-full h-10 pl-10 pr-4 rounded-full bg-[#f2f4f6] border-none text-sm font-medium text-[#191c1e] placeholder-[#76777d] focus:outline-none focus:ring-2 focus:ring-[#191c1e]/20 transition-all"
             />
           </div>
           <button
             onClick={openAdd}
-            className="h-[42px] px-5 rounded-xl bg-[var(--accent-mint)] text-[#0A0A0A] font-semibold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
+            className="h-10 px-5 rounded-xl bg-[#191c1e] text-white font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap shadow-[0_8px_16px_rgba(0,0,0,0.1)]"
           >
             <Plus size={15} />
             <span className="hidden sm:inline">{svc.addService || "Add Service"}</span>
@@ -185,22 +188,24 @@ export default function ServicesPage() {
               onDrop={() => handleDrop(service.id)}
               onDragEnd={() => { setDraggedId(null); setDragOverId(null); }}
               className={cn(
-                "group relative rounded-2xl border border-[var(--border-primary)] bg-[var(--glass-bg)] backdrop-blur-xl p-[22px] transition-all duration-200 hover:border-[var(--border-hover)] hover:bg-[var(--bg-surface-hover)]",
+                "group relative rounded-xl border bg-white p-6 transition-all duration-200 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1",
+                "cursor-grab active:cursor-grabbing",
                 draggedId === service.id && "opacity-40",
-                dragOverId === service.id && "border-[var(--accent-mint)]/40 scale-[1.02]",
+                dragOverId === service.id && "border-[#191c1e]/20 scale-[1.02]",
                 !service.is_active && "opacity-60",
+                "border-[#eceef0] hover:border-[#c6c6cc]",
               )}
             >
               <div className="flex items-start justify-between" style={{ marginBottom: 18 }}>
                 <div className="flex items-center gap-3">
                   <div
                     className="rounded-xl flex items-center justify-center text-lg cursor-grab active:cursor-grabbing"
-                    style={{ width: 44, height: 44, background: "var(--accent-mint-muted)" }}
+                    style={{ width: 44, height: 44, background: "#f2f4f6" }}
                   >
                     {service.icon || "✂️"}
                   </div>
                   <div>
-                    <p className="text-[var(--text-primary)] font-semibold" style={{ fontSize: 14, marginBottom: 2 }}>
+                    <p className="text-[#191c1e] font-bold" style={{ fontSize: 14, marginBottom: 2, fontFamily: "Manrope, sans-serif" }}>
                       {isRTL && service.name_ar ? service.name_ar : service.name}
                     </p>
                     {service.name_ar && !isRTL && (
@@ -290,16 +295,16 @@ export default function ServicesPage() {
               onClick={(e) => e.target === e.currentTarget && setShowForm(false)}
             >
               <div
-                className="w-full max-w-md rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-primary)] shadow-2xl"
+                className="w-full max-w-md rounded-2xl bg-white border border-[#eceef0] shadow-2xl"
                 style={{ padding: "28px 28px 24px" }}
               >
                 <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
-                  <h3 className="text-[var(--text-primary)] font-bold" style={{ fontSize: 18 }}>
+                  <h3 className="text-[#191c1e] font-extrabold" style={{ fontSize: 20, fontFamily: "Manrope, sans-serif" }}>
                     {editingService ? (svc.editService || "Edit Service") : (svc.addService || "Add Service")}
                   </h3>
                   <button
                     onClick={() => setShowForm(false)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[#76777d] hover:text-[#191c1e] hover:bg-[#f2f4f6] transition-all cursor-pointer"
                   >
                     <X size={16} />
                   </button>
@@ -395,7 +400,7 @@ export default function ServicesPage() {
                   <button
                     type="submit"
                     disabled={saving || !name.trim() || !price.trim()}
-                    className="h-11 rounded-xl bg-[var(--accent-mint)] text-[#0A0A0A] font-semibold text-[13px] flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
+                    className="h-11 rounded-xl bg-[#191c1e] text-white font-bold text-[13px] flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
                     style={{ marginTop: 8 }}
                   >
                     {saving ? <Loader2 size={15} className="animate-spin" /> : null}

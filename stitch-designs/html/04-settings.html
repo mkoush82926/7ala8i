@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Settings - The Groomed Interface</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-fixed-dim": "#b9c7df",
+                        "on-primary-container": "#7e8395",
+                        "primary": "#000000",
+                        "on-background": "#191c1e",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#5d4201",
+                        "outline": "#76777d",
+                        "error": "#ba1a1a",
+                        "primary-container": "#151b29",
+                        "inverse-primary": "#c1c6d9",
+                        "surface-tint": "#585e6f",
+                        "background": "#f7f9fb",
+                        "surface-bright": "#f7f9fb",
+                        "tertiary-fixed": "#ffdea5",
+                        "on-primary-fixed": "#151b29",
+                        "secondary-fixed": "#d5e3fc",
+                        "surface-variant": "#e0e3e5",
+                        "surface-container-highest": "#e0e3e5",
+                        "tertiary": "#000000",
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "inverse-on-surface": "#eff1f3",
+                        "primary-fixed": "#dde2f6",
+                        "on-tertiary-fixed": "#261900",
+                        "tertiary-container": "#261900",
+                        "surface-container-high": "#e6e8ea",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-container": "#eceef0",
+                        "secondary-container": "#d5e3fc",
+                        "outline-variant": "#c6c6cc",
+                        "secondary": "#515f74",
+                        "on-secondary-container": "#57657a",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#414756",
+                        "primary-fixed-dim": "#c1c6d9",
+                        "tertiary-fixed-dim": "#e9c176",
+                        "surface": "#f7f9fb",
+                        "inverse-surface": "#2d3133",
+                        "on-surface-variant": "#45464c",
+                        "surface-dim": "#d8dadc",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "on-tertiary-container": "#a17f3b",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .headline-font { font-family: 'Manrope', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- Sidebar (SideNavBar) -->
+<aside class="fixed left-0 top-0 h-screen w-64 z-50 bg-white dark:bg-slate-900 flex flex-col p-6 border-r border-transparent shadow-xl shadow-slate-200/50 dark:shadow-none font-manrope font-medium text-sm">
+<div class="text-2xl font-black text-slate-900 dark:text-slate-100 mb-8 tracking-tight">The Groomed</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span>Schedule</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span>Clients</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Inventory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-50 rounded-lg font-bold active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 space-y-2 border-t border-surface-container">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span>Help Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 min-h-screen">
+<!-- Top Header (TopNavBar) -->
+<header class="w-full sticky top-0 z-40 bg-slate-50 dark:bg-slate-950 flex items-center justify-between px-8 py-4">
+<h1 class="font-manrope font-bold text-2xl text-slate-900 dark:text-slate-50">Settings</h1>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-300" data-icon="notifications">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden border border-surface-container">
+<img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiCVkacGihBn2gigxbFFobQJVubbTMITScvTExUM5RS727FQ_aWKKlKDzad3NLnkCwwvzU0PT7zgmtfhmNCWSO9P0IIJBUeMtTxZD9svvPzAgrcQzCyaxp32VCldjbAUI-O-qB0a0D9KvZ3rlHZTl0lj_MXkjX7cGmpNdl8qtRIGrx8xTed0HlbPLs6CC6SECXfZ3NWDbtBKls7z0v5e1aUssy9uHBseaJYxkhUwi8HrVbb2EfN8yhAePqqkTKipt6WMsB2-cZPPsy"/>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="p-8 max-w-5xl mx-auto space-y-12 pb-24">
+<!-- Horizontal Tab Navigation -->
+<div class="flex gap-1 border-b border-surface-container mb-8 sticky top-[72px] bg-surface z-30 py-2">
+<button class="px-6 py-2.5 text-sm font-bold border-b-2 border-primary text-primary transition-all">General</button>
+<button class="px-6 py-2.5 text-sm font-medium text-on-surface-variant hover:text-primary transition-all border-b-2 border-transparent">Team</button>
+<button class="px-6 py-2.5 text-sm font-medium text-on-surface-variant hover:text-primary transition-all border-b-2 border-transparent">Booking Link</button>
+<button class="px-6 py-2.5 text-sm font-medium text-on-surface-variant hover:text-primary transition-all border-b-2 border-transparent">Billing</button>
+</div>
+<!-- Section: General Shop Information -->
+<section class="space-y-8">
+<div class="flex justify-between items-end">
+<div class="space-y-1">
+<h2 class="text-xl font-headline font-extrabold tracking-tight">Shop Information</h2>
+<p class="text-on-surface-variant text-sm">Update your public profile and global preferences.</p>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-bold text-sm hover:opacity-90 transition-all shadow-sm">
+                        Save Changes
+                    </button>
+</div>
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+<div class="space-y-2 col-span-full">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Shop Name</label>
+<input class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary px-4 py-3 text-sm transition-all outline-none" type="text" value="Lumina Grooming Studio"/>
+</div>
+<div class="space-y-2 col-span-full">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Description</label>
+<textarea class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary px-4 py-3 text-sm transition-all outline-none" rows="3">Luxury barbering and modern grooming located in the heart of the city.</textarea>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Contact Email</label>
+<input class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 text-sm" type="email" value="hello@lumina.com"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">WhatsApp Number</label>
+<input class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 text-sm" type="tel" value="+962 7 9000 0000"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Currency</label>
+<select class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 text-sm appearance-none">
+<option selected="">JOD (Jordanian Dinar)</option>
+<option>USD ($)</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Timezone</label>
+<select class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg focus:ring-1 focus:ring-primary px-4 py-3 text-sm appearance-none">
+<option selected="">(GMT+03:00) Amman</option>
+<option>(GMT+00:00) London</option>
+</select>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Team Management -->
+<section class="space-y-6">
+<div class="space-y-1">
+<h2 class="text-xl font-headline font-extrabold tracking-tight">Team Management</h2>
+<p class="text-on-surface-variant text-sm">Organize your barbers and administrative staff.</p>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden border border-surface-container">
+<!-- Member Table/List -->
+<div class="divide-y divide-surface-container">
+<div class="flex items-center justify-between p-6 hover:bg-slate-50/50 transition-colors">
+<div class="flex items-center gap-4">
+<img class="w-12 h-12 rounded-full object-cover border border-surface-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDA2NaFywJxevWRcfjqCEHSdECCTZsM5fOjHToSoFnaTs5Nd0VvhC42hGObsB6K2icGpePerhCQca5kzGr1FXML_RYIv-cpoJEWCnyJFdvFSL3o3IYUQK2anptgCG-QkOSXrvuEJZ4Kt9ET4aiOm4C6GajclX-vCj32rYFdGYOwZx-ZScSCLaHTugZ0wAbMPEF8W3MjeDzXRJpGDSmnl-YnFuLhb5Bray9vZqDNyVog6WEq4Q2mH24yBXa38AS1VoQy06kG0hoehrpK"/>
+<div>
+<p class="font-bold text-sm tracking-tight">Omar Al-Fayez</p>
+<p class="text-xs text-on-surface-variant font-medium">Shop Manager • Joined Oct 2023</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 bg-primary-container/10 text-primary-container text-[10px] font-bold uppercase rounded-full">Admin</span>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between p-6 hover:bg-slate-50/50 transition-colors">
+<div class="flex items-center gap-4">
+<img class="w-12 h-12 rounded-full object-cover border border-surface-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVS_DKFYrugRVltR0oYxhvZPSRbqujmK6z6WoglMwVhmGGjOic6B0TGbThlMfaJuFnK__G76YzOxsXEnDDO3A0BII7XB8LYOeoinrj9JdknJEsMX-y0Zg-kefV66ZdnXmdIArbShbH48-fSOpcIAg0ieJ1_5LAGa1CTcLMJE-8jnlb000OncYsPfH7XsHMuHXzUj3xFQArmmOyCgoG6bS8jDJkgEHm8VrGTGGntGFNBQAja_xB5aThd653PR0lKhxUbEtDraWv3oih"/>
+<div>
+<p class="font-bold text-sm tracking-tight">Sara Jenkins</p>
+<p class="text-xs text-on-surface-variant font-medium">Senior Barber • Joined Nov 2023</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 bg-surface-container text-on-surface-variant text-[10px] font-bold uppercase rounded-full">Staff</span>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Invite Member Area -->
+<div class="bg-surface-container-low p-6 border-t border-surface-container">
+<div class="flex flex-col sm:flex-row gap-4">
+<div class="flex-1 relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-lg">mail</span>
+<input class="w-full bg-white border border-outline-variant/30 rounded-lg focus:ring-1 focus:ring-primary pl-11 pr-4 py-2.5 text-sm" placeholder="New staff email address" type="email"/>
+</div>
+<button class="bg-primary text-on-primary px-8 py-2.5 rounded-lg font-bold text-sm whitespace-nowrap">Invite Member</button>
+</div>
+<div class="mt-4 flex items-center gap-3 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">link</span>
+<span>Shareable join link:</span>
+<code class="bg-white/50 px-2 py-0.5 rounded font-mono text-primary">lumina.atelier/invite/x82kL9</code>
+<button class="font-bold text-primary hover:underline ml-auto">Copy Link</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Booking Portal -->
+<section class="space-y-6">
+<div class="space-y-1">
+<h2 class="text-xl font-headline font-extrabold tracking-tight">Booking Portal</h2>
+<p class="text-on-surface-variant text-sm">Your public facing interface for client bookings.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Featured Link Card -->
+<div class="lg:col-span-2 bg-primary text-on-primary p-10 rounded-2xl relative overflow-hidden flex flex-col justify-between min-h-[280px] shadow-lg shadow-slate-900/10">
+<div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+<div class="relative z-10">
+<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[10px] font-bold uppercase tracking-widest mb-6">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                Live Booking Page
+                            </span>
+<h3 class="text-3xl font-headline font-black tracking-tighter sm:text-4xl">lumina.booking/studio-amman</h3>
+</div>
+<div class="relative z-10 flex flex-wrap gap-3">
+<button class="flex items-center gap-2 bg-white text-primary px-6 py-3 rounded-lg font-bold text-sm hover:scale-[1.02] transition-all">
+<span class="material-symbols-outlined text-lg">content_copy</span>
+                                Copy Public URL
+                            </button>
+<button class="flex items-center gap-2 bg-white/10 text-on-primary px-6 py-3 rounded-lg font-bold text-sm hover:bg-white/20 transition-all">
+<span class="material-symbols-outlined text-lg">open_in_new</span>
+                                View Page
+                            </button>
+</div>
+</div>
+<!-- QR Code Card -->
+<div class="bg-surface-container-lowest border border-surface-container p-8 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm">
+<div class="mb-6 p-4 bg-white rounded-xl shadow-inner border border-surface-container flex items-center justify-center">
+<div class="w-32 h-32 flex flex-col items-center justify-center border-2 border-dashed border-surface-container rounded-lg">
+<span class="material-symbols-outlined text-5xl text-surface-container-highest">qr_code_2</span>
+<span class="text-[10px] text-on-surface-variant mt-2 font-bold uppercase tracking-tighter">STUDIO QR</span>
+</div>
+</div>
+<div class="space-y-4 w-full">
+<div>
+<p class="font-bold text-sm tracking-tight">Booking QR Code</p>
+<p class="text-[11px] text-on-surface-variant">Place this at your reception desk</p>
+</div>
+<button class="w-full border border-primary text-primary px-4 py-2.5 rounded-lg font-bold text-xs hover:bg-primary hover:text-on-primary transition-all">
+                                Download High-Res
+                            </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Billing & Plan -->
+<section class="space-y-6">
+<div class="space-y-1">
+<h2 class="text-xl font-headline font-extrabold tracking-tight">Billing &amp; Plan</h2>
+<p class="text-on-surface-variant text-sm">Manage your atelier subscription and view history.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Active Plan -->
+<div class="bg-surface-container-lowest p-8 rounded-2xl border border-surface-container flex flex-col justify-between shadow-sm min-h-[220px]">
+<div>
+<span class="inline-block px-2.5 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold uppercase tracking-widest rounded-md mb-4">Active Plan</span>
+<h3 class="text-2xl font-headline font-black mb-1">Pro Atelier</h3>
+<p class="text-on-surface-variant text-sm flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-emerald-600">check_circle</span>
+                                Up to 5 barbers &amp; unlimited bookings
+                            </p>
+</div>
+<div class="flex items-end justify-between mt-8">
+<div>
+<span class="text-3xl font-headline font-black">25.00 JOD</span>
+<span class="text-xs text-on-surface-variant">/month</span>
+</div>
+<button class="text-primary text-sm font-bold hover:underline">Change Plan</button>
+</div>
+</div>
+<!-- Payment Method -->
+<div class="bg-surface-container-low p-8 rounded-2xl flex flex-col justify-between min-h-[220px]">
+<div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-4">Next Payment</span>
+<p class="text-sm font-bold">Dec 01, 2023</p>
+<p class="text-xs text-on-surface-variant mt-1">Automatic renewal enabled</p>
+</div>
+<div class="flex items-center justify-between p-4 bg-white/50 rounded-xl border border-surface-container">
+<div class="flex items-center gap-3">
+<div class="w-8 h-5 bg-primary rounded-sm"></div>
+<span class="text-sm font-medium">Mastercard •••• 8829</span>
+</div>
+<button class="text-[10px] font-bold uppercase text-on-surface-variant hover:text-primary">Update</button>
+</div>
+</div>
+</div>
+<!-- Invoice History Table -->
+<div class="bg-surface-container-lowest rounded-2xl border border-surface-container overflow-hidden shadow-sm">
+<div class="px-6 py-4 border-b border-surface-container bg-surface-container-lowest">
+<h3 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Recent Invoices</h3>
+</div>
+<table class="w-full text-left text-sm">
+<thead class="bg-surface-container-low/50">
+<tr class="text-on-surface-variant border-b border-surface-container">
+<th class="px-6 py-3 font-bold text-[11px] uppercase tracking-wider">Date</th>
+<th class="px-6 py-3 font-bold text-[11px] uppercase tracking-wider">Amount</th>
+<th class="px-6 py-3 font-bold text-[11px] uppercase tracking-wider">Status</th>
+<th class="px-6 py-3 font-bold text-[11px] uppercase tracking-wider text-right">Receipt</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container text-on-surface">
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4 font-medium">Nov 01, 2023</td>
+<td class="px-6 py-4">25.00 JOD</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase">Paid</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary p-2 rounded-lg hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-lg">download</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4 font-medium">Oct 01, 2023</td>
+<td class="px-6 py-4">25.00 JOD</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase">Paid</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary p-2 rounded-lg hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-lg">download</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- Footer -->
+<footer class="p-8 border-t border-surface-container flex justify-between items-center text-on-surface-variant bg-surface">
+<p class="text-xs">© 2024 The Groomed Interface. Settings &amp; Atelier Management.</p>
+<div class="flex gap-6">
+<a class="text-xs hover:text-primary transition-colors font-medium" href="#">Security Policy</a>
+<a class="text-xs hover:text-primary transition-colors font-medium" href="#">Terms of Service</a>
+</div>
+</footer>
+</main>
+</body></html>

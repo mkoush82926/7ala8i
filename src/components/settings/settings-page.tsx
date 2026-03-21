@@ -2,49 +2,40 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { GlassCard } from "@/components/ui/glass-card";
-import { GlassButton } from "@/components/ui/glass-button";
-import { cn } from "@/lib/utils";
-import {
-  MapPin,
-  Users,
-  Plus,
-  Link as LinkIcon,
-  Copy,
-  Check,
-  Share2,
-  BarChart3,
-  CreditCard,
-  Mail,
-  Trash2,
-} from "lucide-react";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { toast } from "@/components/ui/toast";
 import { useTranslation } from "@/hooks/use-translation";
+import { useThemeStore } from "@/store/theme-store";
 
-type SettingsTab = "general" | "team" | "location" | "booking" | "billing";
+type SettingsTab = "general" | "team" | "booking" | "billing";
+
+// ── Explicit colors — bypassing Tailwind token resolution ──
+const C = {
+  dark: "#191c1e",
+  mid: "#45464c",
+  muted: "#76777d",
+  outline: "#c6c6cc",
+  surfaceLow: "#f2f4f6",
+  surface: "#eceef0",
+  white: "#ffffff",
+  black: "#000000",
+  amber: "#ffdea5",
+};
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
-  const { shopName, barbers, teamSize } = useWorkspaceStore();
+  const { shopName, barbers } = useWorkspaceStore();
   const [copied, setCopied] = useState(false);
-  const bookingLink = `lumina.barber/${shopName.toLowerCase().replace(/\s+/g, "-")}`;
+  const bookingLink = `lumina.booking/${shopName.toLowerCase().replace(/\s+/g, "-")}`;
   const t = useTranslation();
+  const { direction } = useThemeStore();
+  const isRTL = direction === "rtl";
 
-  const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    { id: "general", label: t.settings.general, icon: <BarChart3 size={15} /> },
-    { id: "team", label: t.settings.team, icon: <Users size={15} /> },
-    { id: "location", label: t.settings.location, icon: <MapPin size={15} /> },
-    {
-      id: "booking",
-      label: t.settings.bookingLink,
-      icon: <LinkIcon size={15} />,
-    },
-    {
-      id: "billing",
-      label: t.settings.billing,
-      icon: <CreditCard size={15} />,
-    },
+  const tabs: { id: SettingsTab; label: string }[] = [
+    { id: "general", label: t.settings.general },
+    { id: "team", label: t.settings.team },
+    { id: "booking", label: t.settings.bookingLink },
+    { id: "billing", label: t.settings.billing },
   ];
 
   const handleCopy = () => {
@@ -54,384 +45,333 @@ export function SettingsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
-    <div className="space-y-8">
-      <h2 className="text-[20px] tracking-tight text-[var(--text-primary)] font-light">
-        {t.settings.title}
-      </h2>
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: C.surfaceLow,
+    border: `1px solid ${C.outline}40`,
+    borderRadius: 8,
+    padding: "12px 16px",
+    fontSize: 14,
+    color: C.dark,
+    outline: "none",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+    fontFamily: "Manrope, Inter, system-ui, sans-serif",
+  };
 
-      {/* Tab Navigation */}
-      <div className="flex flex-wrap items-center gap-1 bg-[var(--bg-surface)] rounded-[var(--radius-md)] p-1 w-fit">
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    color: C.mid,
+    display: "block",
+    marginBottom: 6,
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.25, 1, 0.4, 1] }}
+      style={{ display: "flex", flexDirection: "column", gap: 32 }}
+    >
+      {/* ── Page Header ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h2 style={{ fontFamily: "Manrope, sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: C.dark, margin: 0 }}>
+            {t.settings.title}
+          </h2>
+          <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
+            {isRTL ? "إدارة إعدادات المشغل والتفضيلات" : "Manage your atelier settings and preferences"}
+          </p>
+        </div>
+        {activeTab === "general" && (
+          <button
+            style={{ background: C.black, color: C.white, padding: "10px 24px", borderRadius: 8, fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer" }}
+          >
+            {isRTL ? "حفظ التغييرات" : "Save Changes"}
+          </button>
+        )}
+      </div>
+
+      {/* ── Tab Navigation ── */}
+      <div style={{ display: "flex", gap: 4, borderBottom: `1px solid ${C.surface}` }}>
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "relative flex items-center gap-2 px-4 py-2 rounded-[var(--radius-sm)] text-[12px] font-medium transition-colors cursor-pointer z-10",
-              activeTab === tab.id
-                ? "text-[var(--text-primary)] shadow-sm"
-                : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)]",
-            )}
+            style={{
+              padding: "10px 24px",
+              fontSize: 14,
+              fontWeight: 700,
+              color: activeTab === tab.id ? C.black : C.mid,
+              borderBottom: activeTab === tab.id ? `2px solid ${C.black}` : "2px solid transparent",
+              background: "none",
+              border: "none",
+              borderBottomWidth: 2,
+              borderBottomStyle: "solid",
+              borderBottomColor: activeTab === tab.id ? C.black : "transparent",
+              cursor: "pointer",
+              transition: "color 0.15s, border-color 0.15s",
+            }}
           >
-            {activeTab === tab.id && (
-              <motion.div
-                layoutId="settings-tab-pill"
-                className="absolute inset-0 bg-[var(--bg-surface-active)] rounded-[var(--radius-sm)] border border-[var(--border-primary)]"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
-            )}
-            <span className="relative z-10">{tab.icon}</span>
-            <span className="relative z-10">{tab.label}</span>
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Tab Content */}
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-      >
-        {activeTab === "general" && (
-          <div className="grid gap-6 max-w-2xl">
-            <GlassCard hoverable={false} padding="lg">
-              <h3 className="text-[13px] text-[var(--text-primary)] mb-4">
-                Shop Information
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[11px] text-[var(--text-tertiary)] font-light mb-1.5 uppercase tracking-wider">
-                    {t.settings.shopName}
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue={shopName}
-                    className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--accent-mint)] focus:outline-none transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-[var(--text-tertiary)] font-light mb-1.5 uppercase tracking-wider">
-                    Contact Email
-                  </label>
-                  <input
-                    type="email"
-                    defaultValue="info@gentlemensden.com"
-                    className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--accent-mint)] focus:outline-none transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-[var(--text-tertiary)] font-light mb-1.5 uppercase tracking-wider">
-                    {t.leads.phone}
-                  </label>
-                  <input
-                    type="tel"
-                    defaultValue="+962791234567"
-                    className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--accent-mint)] focus:outline-none transition-colors"
-                  />
-                </div>
-                <div className="flex items-center justify-between pt-2">
-                  <div>
-                    <p className="text-[13px] text-[var(--text-primary)]">
-                      {t.settings.acquisitionChannel}
-                    </p>
-                    <p className="text-[11px] text-[var(--text-tertiary)]">
-                      {t.settings.acquisitionDesc}
-                    </p>
-                  </div>
-                  <button className="relative w-10 h-5 rounded-full bg-[var(--accent-mint)] cursor-pointer transition-colors">
-                    <motion.div
-                      className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm"
-                      animate={{ left: 20 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 30,
-                      }}
-                    />
-                  </button>
-                </div>
-              </div>
-            </GlassCard>
-
-            <GlassCard hoverable={false} padding="lg">
-              <h3 className="text-[13px] text-[var(--text-primary)] mb-4">
-                Social Media
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[11px] text-[var(--text-tertiary)] font-light mb-1.5 uppercase tracking-wider">
-                    Instagram
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue="@gentlemensden_amman"
-                    className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--accent-mint)] focus:outline-none transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-[var(--text-tertiary)] font-light mb-1.5 uppercase tracking-wider">
-                    Google Maps URL
-                  </label>
-                  <input
-                    type="text"
-                    defaultValue="https://maps.google.com/..."
-                    className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--accent-mint)] focus:outline-none transition-colors"
-                  />
-                </div>
-              </div>
-            </GlassCard>
+      {/* ── GENERAL TAB ── */}
+      {activeTab === "general" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+          <div>
+            <h2 style={{ fontFamily: "Manrope, sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
+              {isRTL ? "معلومات المتجر" : "Shop Information"}
+            </h2>
+            <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
+              {isRTL ? "تحديث ملفك الشخصي العام والتفضيلات العامة." : "Update your public profile and global preferences."}
+            </p>
           </div>
-        )}
-
-        {activeTab === "team" && (
-          <div className="max-w-2xl space-y-6">
-            <GlassCard hoverable={false} padding="lg">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-[13px] text-[var(--text-primary)]">
-                    {t.settings.teamMembers}
-                  </h3>
-                  <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">
-                    {barbers.length} of {teamSize} {t.settings.barbersActive} ·{" "}
-                    {(barbers.length * 1.5).toFixed(1)} {t.common.jod}
-                    {t.common.perMonth}
-                  </p>
-                </div>
-                <GlassButton
-                  variant="primary"
-                  size="sm"
-                  icon={<Plus size={14} />}
-                >
-                  {t.settings.inviteBarber}
-                </GlassButton>
+          <div style={{ background: C.white, padding: 32, borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px 48px" }}>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={labelStyle}>Shop Name</label>
+                <input style={inputStyle} defaultValue={shopName} type="text" />
               </div>
-
-              <div className="space-y-0">
-                {barbers.map((barber, i) => (
-                  <motion.div
-                    key={barber.id}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className={cn(
-                      "flex items-center justify-between py-3",
-                      i < barbers.length - 1 &&
-                        "border-b border-[var(--border-primary)]",
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-lavender)] to-[var(--accent-blue)] flex items-center justify-center">
-                        <span className="text-[10px] font-medium text-[#0A0A0A]">
-                          {barber.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-[13px] text-[var(--text-primary)] font-light">
-                          {barber.name}
-                        </p>
-                        <p className="text-[11px] text-[var(--text-tertiary)]">
-                          {t.common.active} · 1.5 {t.common.jod}
-                          {t.common.perMonth}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <GlassButton size="sm" icon={<Mail size={12} />}>
-                        {t.common.resend}
-                      </GlassButton>
-                      <button className="p-1.5 text-[var(--text-muted)] hover:text-[var(--accent-rose)] transition-colors cursor-pointer">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </GlassCard>
-          </div>
-        )}
-
-        {activeTab === "location" && (
-          <div className="max-w-2xl space-y-6">
-            <GlassCard hoverable={false} padding="lg">
-              <h3 className="text-[13px] text-[var(--text-primary)] mb-4">
-                {t.settings.venueLocation}
-              </h3>
-              <p className="text-[11px] text-[var(--text-tertiary)] mb-4">
-                Drop a pin so clients know exactly where to find you.
-              </p>
-              {/* Map placeholder — will be replaced with Mapbox in a later phase */}
-              <div className="w-full h-64 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-primary)] flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin
-                    size={32}
-                    className="text-[var(--text-muted)] mx-auto mb-2"
-                  />
-                  <p className="text-[12px] text-[var(--text-tertiary)]">
-                    Interactive map (powered by Mapbox)
-                  </p>
-                  <p className="text-[11px] text-[var(--text-muted)] mt-1">
-                    Amman, Jordan — 31.9539° N, 35.9106° E
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4">
-                <label className="block text-[11px] text-[var(--text-tertiary)] font-light mb-1.5 uppercase tracking-wider">
-                  {t.settings.address}
-                </label>
-                <input
-                  type="text"
-                  defaultValue="Rainbow St, Amman, Jordan"
-                  className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--accent-mint)] focus:outline-none transition-colors"
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={labelStyle}>Description</label>
+                <textarea
+                  style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
+                  rows={3}
+                  defaultValue={isRTL ? "حلاقة فاخرة وتصفيف حديث في قلب المدينة." : "Luxury barbering and modern grooming located in the heart of the city."}
                 />
               </div>
-            </GlassCard>
-          </div>
-        )}
-
-        {activeTab === "booking" && (
-          <div className="max-w-2xl space-y-6">
-            <GlassCard hoverable={false} padding="lg">
-              <h3 className="text-[13px] text-[var(--text-primary)] mb-1">
-                {t.settings.onlineBookingLink}
-              </h3>
-              <p className="text-[11px] text-[var(--text-tertiary)] mb-6">
-                {t.settings.bookingLinkDesc}
-              </p>
-
-              {/* Link display */}
-              <div className="flex items-center gap-2 mb-6">
-                <div className="flex-1 h-10 px-4 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] flex items-center">
-                  <span className="text-[13px] text-[var(--accent-mint)] font-light">
-                    {bookingLink}
-                  </span>
-                </div>
-                <GlassButton
-                  variant={copied ? "primary" : "secondary"}
-                  size="md"
-                  onClick={handleCopy}
-                  icon={copied ? <Check size={14} /> : <Copy size={14} />}
-                >
-                  {copied ? "✓" : t.common.copy}
-                </GlassButton>
-                <GlassButton
-                  variant="secondary"
-                  size="md"
-                  icon={<Share2 size={14} />}
-                >
-                  {t.common.share}
-                </GlassButton>
+              <div>
+                <label style={labelStyle}>Contact Email</label>
+                <input style={inputStyle} type="email" defaultValue="hello@lumina.com" />
               </div>
+              <div>
+                <label style={labelStyle}>WhatsApp Number</label>
+                <input style={inputStyle} type="tel" defaultValue="+962 7 9000 0000" />
+              </div>
+              <div>
+                <label style={labelStyle}>Currency</label>
+                <select style={inputStyle}>
+                  <option>JOD (Jordanian Dinar)</option>
+                  <option>USD ($)</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Timezone</label>
+                <select style={inputStyle}>
+                  <option>(GMT+03:00) Amman</option>
+                  <option>(GMT+00:00) London</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-              {/* QR Code placeholder */}
-              <div className="flex items-center gap-6 p-4 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-primary)]">
-                <div className="w-28 h-28 rounded-[var(--radius-sm)] bg-white flex items-center justify-center flex-shrink-0">
-                  <div className="w-24 h-24 border-2 border-[#0A0A0A] rounded grid grid-cols-3 grid-rows-3 gap-0.5 p-1">
-                    {Array.from({ length: 9 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={cn(
-                          "rounded-sm",
-                          [0, 2, 3, 5, 6, 8].includes(i)
-                            ? "bg-[#0A0A0A]"
-                            : "bg-transparent",
-                        )}
-                      />
-                    ))}
+      {/* ── TEAM TAB ── */}
+      {activeTab === "team" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div>
+            <h2 style={{ fontFamily: "Manrope, sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
+              {isRTL ? "إدارة الفريق" : "Team Management"}
+            </h2>
+            <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
+              {isRTL ? "تنظيم الحلاقين والموظفين الإداريين." : "Organize your barbers and administrative staff."}
+            </p>
+          </div>
+          <div style={{ background: C.white, borderRadius: 12, overflow: "hidden", border: `1px solid ${C.surface}`, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            {(barbers.length > 0 ? barbers : [
+              { id: "1", name: "Omar Al-Fayez" },
+              { id: "2", name: "Sara Jenkins" },
+            ]).map((member, i) => (
+              <div key={member.id || i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", borderBottom: i < 1 ? `1px solid ${C.surface}` : undefined }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: "50%", background: C.surfaceLow, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 16, color: C.mid }}>
+                    {(member.name || "?").slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p style={{ fontWeight: 700, fontSize: 14, color: C.dark, margin: 0 }}>{member.name || "Team Member"}</p>
+                    <p style={{ fontSize: 12, color: C.mid, margin: 0 }}>Barber · Active</p>
                   </div>
                 </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ padding: "4px 10px", background: `${C.surface}`, color: C.dark, fontSize: 10, fontWeight: 700, textTransform: "uppercase", borderRadius: 99, letterSpacing: "0.05em" }}>
+                    {i === 0 ? "Admin" : "Staff"}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {/* Invite form */}
+            <div style={{ background: C.surfaceLow, padding: 24, borderTop: `1px solid ${C.surface}` }}>
+              <div style={{ display: "flex", gap: 12 }}>
+                <input
+                  style={{ ...inputStyle, flex: 1, background: C.white }}
+                  placeholder="New staff email address"
+                  type="email"
+                />
+                <button style={{ background: C.black, color: C.white, padding: "10px 24px", borderRadius: 8, fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
+                  {isRTL ? "دعوة عضو" : "Invite Member"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── BOOKING LINK TAB ── */}
+      {activeTab === "booking" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div>
+            <h2 style={{ fontFamily: "Manrope, sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
+              {isRTL ? "بوابة الحجز" : "Booking Portal"}
+            </h2>
+            <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
+              {isRTL ? "واجهتك العامة لحجوزات العملاء." : "Your public facing interface for client bookings."}
+            </p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24 }}>
+            {/* Live Link Card */}
+            <div style={{ background: C.black, color: C.white, padding: 40, borderRadius: 16, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 280, position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 99, background: "rgba(255,255,255,0.1)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 24 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", animation: "pulse 2s infinite" }} />
+                  {isRTL ? "صفحة حجز مباشرة" : "Live Booking Page"}
+                </span>
+                <h3 style={{ fontFamily: "Manrope, sans-serif", fontSize: 28, fontWeight: 900, letterSpacing: "-0.03em", color: C.white, margin: 0 }}>
+                  {bookingLink}
+                </h3>
+              </div>
+              <div style={{ display: "flex", gap: 12, position: "relative", zIndex: 1 }}>
+                <button
+                  onClick={handleCopy}
+                  style={{ display: "flex", alignItems: "center", gap: 8, background: C.white, color: C.black, padding: "12px 20px", borderRadius: 8, fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer" }}
+                >
+                  {copied ? "✓ Copied!" : (isRTL ? "نسخ الرابط" : "Copy Public URL")}
+                </button>
+                <a
+                  href={`https://${bookingLink}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.1)", color: C.white, padding: "12px 20px", borderRadius: 8, fontWeight: 700, fontSize: 14, textDecoration: "none" }}
+                >
+                  {isRTL ? "عرض الصفحة" : "View Page"}
+                </a>
+              </div>
+            </div>
+            {/* QR Card */}
+            <div style={{ background: C.white, border: `1px solid ${C.surface}`, padding: 32, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+              <div style={{ marginBottom: 24, padding: 16, background: C.surfaceLow, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 128, height: 128, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: `2px dashed ${C.surface}`, borderRadius: 8 }}>
+                  <span style={{ fontSize: 48, color: C.outline }}>▦</span>
+                  <span style={{ fontSize: 10, color: C.mid, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>STUDIO QR</span>
+                </div>
+              </div>
+              <p style={{ fontWeight: 700, fontSize: 14, color: C.dark, margin: "0 0 4px" }}>{isRTL ? "رمز QR للحجز" : "Booking QR Code"}</p>
+              <p style={{ fontSize: 11, color: C.mid, margin: "0 0 16px" }}>{isRTL ? "ضعه على مكتب الاستقبال" : "Place this at your reception desk"}</p>
+              <button style={{ width: "100%", border: `1px solid ${C.black}`, color: C.black, background: "none", padding: "10px 0", borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                {isRTL ? "تنزيل بدقة عالية" : "Download High-Res"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── BILLING TAB ── */}
+      {activeTab === "billing" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div>
+            <h2 style={{ fontFamily: "Manrope, sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
+              {isRTL ? "الفوترة والخطة" : "Billing & Plan"}
+            </h2>
+            <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
+              {isRTL ? "إدارة اشتراكك وعرض التاريخ." : "Manage your atelier subscription and view history."}
+            </p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+            {/* Active Plan */}
+            <div style={{ background: C.white, padding: 32, borderRadius: 16, border: `1px solid ${C.surface}`, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 220 }}>
+              <div>
+                <span style={{ display: "inline-block", padding: "3px 10px", background: C.amber, color: "#92400e", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", borderRadius: 6, marginBottom: 16 }}>
+                  {isRTL ? "الخطة النشطة" : "Active Plan"}
+                </span>
+                <h3 style={{ fontFamily: "Manrope, sans-serif", fontSize: 24, fontWeight: 900, color: C.dark, margin: "0 0 8px" }}>Pro Atelier</h3>
+                <p style={{ fontSize: 14, color: C.mid, display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
+                  <span style={{ color: "#059669", fontSize: 12 }}>✓</span>
+                  {isRTL ? "حتى 5 حلاقين وحجوزات غير محدودة" : "Up to 5 barbers & unlimited bookings"}
+                </p>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: 32 }}>
                 <div>
-                  <p className="text-[13px] text-[var(--text-primary)] mb-1">
-                    {t.settings.qrCode}
-                  </p>
-                  <p className="text-[11px] text-[var(--text-tertiary)] mb-3">
-                    {t.settings.qrDesc}
-                  </p>
-                  <GlassButton size="sm">{t.settings.downloadQr}</GlassButton>
+                  <span style={{ fontFamily: "Manrope, sans-serif", fontSize: 32, fontWeight: 900, color: C.dark }}>25.00 JOD</span>
+                  <span style={{ fontSize: 12, color: C.mid }}>/month</span>
                 </div>
+                <button style={{ color: C.black, fontSize: 14, fontWeight: 700, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                  {isRTL ? "تغيير الخطة" : "Change Plan"}
+                </button>
               </div>
-            </GlassCard>
+            </div>
+            {/* Payment */}
+            <div style={{ background: C.surfaceLow, padding: 32, borderRadius: 16, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 220 }}>
+              <div>
+                <span style={{ fontSize: 10, fontWeight: 700, color: C.mid, textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 16 }}>
+                  {isRTL ? "الدفعة القادمة" : "Next Payment"}
+                </span>
+                <p style={{ fontWeight: 700, fontSize: 14, color: C.dark, margin: "0 0 4px" }}>Dec 01, 2025</p>
+                <p style={{ fontSize: 12, color: C.mid, margin: 0 }}>{isRTL ? "التجديد التلقائي مُفعّل" : "Automatic renewal enabled"}</p>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 16, background: "rgba(255,255,255,0.6)", borderRadius: 12, border: `1px solid ${C.surface}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 32, height: 20, background: C.black, borderRadius: 4 }} />
+                  <span style={{ fontSize: 14, fontWeight: 500, color: C.dark }}>Mastercard •••• 8829</span>
+                </div>
+                <button style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: C.mid, background: "none", border: "none", cursor: "pointer", letterSpacing: "0.05em" }}>
+                  {isRTL ? "تحديث" : "Update"}
+                </button>
+              </div>
+            </div>
           </div>
-        )}
-
-        {activeTab === "billing" && (
-          <div className="max-w-2xl space-y-6">
-            <GlassCard hoverable={false} padding="lg">
-              <h3 className="text-[13px] text-[var(--text-primary)] mb-4">
-                {t.settings.currentPlan}
+          {/* Invoice Table */}
+          <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.surface}`, overflow: "hidden" }}>
+            <div style={{ padding: "16px 24px", borderBottom: `1px solid ${C.surface}` }}>
+              <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.mid, margin: 0 }}>
+                {isRTL ? "الفواتير الأخيرة" : "Recent Invoices"}
               </h3>
-
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="p-4 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-primary)]">
-                  <p className="text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider mb-1">
-                    Active Staff
-                  </p>
-                  <p className="text-xl text-[var(--text-primary)] font-light">
-                    {barbers.length}
-                  </p>
-                </div>
-                <div className="p-4 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-primary)]">
-                  <p className="text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider mb-1">
-                    Rate
-                  </p>
-                  <p className="text-xl text-[var(--text-primary)] font-light">
-                    1.5 {t.common.jod}
-                  </p>
-                  <p className="text-[10px] text-[var(--text-muted)]">
-                    {t.settings.perBarber}
-                  </p>
-                </div>
-                <div className="p-4 rounded-[var(--radius-md)] bg-[var(--accent-mint-muted)] border border-[var(--accent-mint)]/20">
-                  <p className="text-[11px] text-[var(--accent-mint)] font-light uppercase tracking-wider mb-1">
-                    {t.settings.nextInvoice}
-                  </p>
-                  <p className="text-xl text-[var(--accent-mint)] font-light">
-                    {(barbers.length * 1.5).toFixed(1)}
-                  </p>
-                  <p className="text-[10px] text-[var(--accent-mint)]/60">
-                    {t.common.jod} — April 1
-                  </p>
-                </div>
-              </div>
-
-              <h4 className="text-[12px] text-[var(--text-tertiary)] font-light uppercase tracking-wider mb-3">
-                {t.settings.invoiceHistory}
-              </h4>
-              <div className="space-y-0">
-                {["March 2026", "February 2026", "January 2026"].map(
-                  (month, i) => (
-                    <div
-                      key={month}
-                      className={cn(
-                        "flex items-center justify-between py-3",
-                        i < 2 && "border-b border-[var(--border-primary)]",
-                      )}
-                    >
-                      <div>
-                        <p className="text-[13px] text-[var(--text-primary)] font-light">
-                          {month}
-                        </p>
-                        <p className="text-[11px] text-[var(--text-tertiary)]">
-                          {barbers.length} barbers · {t.settings.paid}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[13px] text-[var(--text-primary)] font-medium tabular-nums">
-                          {(barbers.length * 1.5).toFixed(1)} {t.common.jod}
-                        </span>
-                        <GlassButton size="sm">PDF</GlassButton>
-                      </div>
-                    </div>
-                  ),
-                )}
-              </div>
-            </GlassCard>
+            </div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <thead>
+                <tr style={{ color: C.mid, borderBottom: `1px solid ${C.surface}`, background: `${C.surfaceLow}80` }}>
+                  <th style={{ padding: "12px 24px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" }}>{isRTL ? "التاريخ" : "Date"}</th>
+                  <th style={{ padding: "12px 24px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" }}>{isRTL ? "المبلغ" : "Amount"}</th>
+                  <th style={{ padding: "12px 24px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" }}>{isRTL ? "الحالة" : "Status"}</th>
+                  <th style={{ padding: "12px 24px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "right" }}>{isRTL ? "الإيصال" : "Receipt"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[{ date: "Nov 01, 2025", amount: "25.00 JOD" }, { date: "Oct 01, 2025", amount: "25.00 JOD" }].map((inv, i) => (
+                  <tr key={i} style={{ borderBottom: i < 1 ? `1px solid ${C.surface}` : undefined, color: C.dark }}>
+                    <td style={{ padding: "16px 24px", fontWeight: 500 }}>{inv.date}</td>
+                    <td style={{ padding: "16px 24px" }}>{inv.amount}</td>
+                    <td style={{ padding: "16px 24px" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 99, background: "#d1fae5", color: "#065f46", fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>
+                        {isRTL ? "مدفوع" : "Paid"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "16px 24px", textAlign: "right" }}>
+                      <button style={{ color: C.mid, background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>
+                        ↓
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </motion.div>
-    </div>
+        </div>
+      )}
+    </motion.div>
   );
 }

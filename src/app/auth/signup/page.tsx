@@ -4,34 +4,58 @@ import React, { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Scissors, Eye, EyeOff, Loader2, CheckCircle, Store, User, Briefcase, ArrowLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
 
 type UserType = "shop_admin" | "customer" | "barber";
 
-const roles: { id: UserType; icon: React.ReactNode; title: string; desc: string; color: string }[] = [
+const roles: { id: UserType; icon: string; title: string; desc: string }[] = [
   {
     id: "shop_admin",
-    icon: <Store size={24} />,
+    icon: "storefront",
     title: "Shop Manager",
-    desc: "I own or manage a barbershop",
-    color: "var(--accent-mint)",
+    desc: "Directing operations, managing staff, and scaling your business.",
   },
   {
     id: "customer",
-    icon: <User size={24} />,
+    icon: "person",
     title: "Customer",
-    desc: "I want to book appointments",
-    color: "var(--accent-lavender)",
+    desc: "Booking appointments and curating your personal grooming journey.",
   },
   {
     id: "barber",
-    icon: <Briefcase size={24} />,
-    title: "Barber / Staff",
-    desc: "I work at a barbershop",
-    color: "var(--accent-blue)",
+    icon: "content_cut",
+    title: "Professional",
+    desc: "Managing your individual schedule, clients, and creative portfolio.",
   },
 ];
+
+const inputStyle = (isFocused = false): React.CSSProperties => ({
+  width: "100%",
+  height: 56,
+  padding: "0 20px",
+  borderRadius: 12,
+  border: isFocused ? "1px solid #000" : "1px solid #f1f5f9",
+  background: isFocused ? "#ffffff" : "#f8fafc",
+  color: "#0f172a",
+  fontSize: 14,
+  fontFamily: "'Inter', sans-serif",
+  outline: "none",
+  transition: "all 0.2s ease",
+  boxShadow: isFocused ? "0 0 0 1px #000000" : "none",
+});
+
+function StyledInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <input
+      {...props}
+      style={inputStyle(focused)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+    />
+  );
+}
 
 export default function SignupPage() {
   const [step, setStep] = useState<"role" | "form">("role");
@@ -87,220 +111,276 @@ export default function SignupPage() {
     setLoading(false);
   }
 
+  const navBar = (
+    <nav
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "0 48px",
+        height: 80,
+        background: "rgba(255,255,255,0.85)",
+        backdropFilter: "blur(16px)",
+        borderBottom: "1px solid #f1f5f9",
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+      }}
+    >
+      <Link href="/landing" style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em", fontFamily: "'Manrope', sans-serif", textDecoration: "none" }}>
+        Lumina
+      </Link>
+      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+        <button style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>language</span>
+        </button>
+        <Link href="/auth/login" style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#0f172a", textDecoration: "none" }}>
+          Sign In
+        </Link>
+      </div>
+    </nav>
+  );
+
   if (success) {
     return (
-      <div className="min-h-dvh bg-[var(--bg-primary)] flex items-center justify-center p-4 relative">
-        <div className="absolute inset-0 dot-grid opacity-20 pointer-events-none" />
-        <div className="w-full relative z-10" style={{ maxWidth: 420 }}>
-          <div className="glass-card-premium overflow-hidden text-center" style={{ padding: "44px 32px" }}>
-            <div className="rounded-full bg-[var(--accent-mint)] flex items-center justify-center mx-auto shadow-md" style={{ width: 64, height: 64, marginBottom: 24 }}>
-              <CheckCircle size={28} className="text-[#0A0A0A]" />
+      <div style={{ minHeight: "100dvh", background: "#ffffff", display: "flex", flexDirection: "column" }}>
+        {navBar}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 48 }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{ maxWidth: 480, width: "100%", textAlign: "center" }}
+          >
+            <div style={{
+              background: "#ffffff", borderRadius: 24, border: "1px solid #f1f5f9",
+              padding: "64px 80px", boxShadow: "0 32px 64px -16px rgba(0,0,0,0.05)",
+            }}>
+              <div style={{ width: 56, height: 56, background: "#000", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 32px" }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#fff", fontVariationSettings: "'FILL' 1" }}>check</span>
+              </div>
+              <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", marginBottom: 12, fontFamily: "'Manrope', sans-serif" }}>
+                Check your email
+              </h2>
+              <p style={{ color: "#64748b", fontSize: 14, fontWeight: 300, lineHeight: 1.7, marginBottom: 40 }}>
+                We&apos;ve sent a confirmation link to <strong style={{ color: "#000" }}>{email}</strong>. Click the link to activate your account.
+              </p>
+              <Link href="/auth/login" style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                height: 52, padding: "0 32px", background: "#000", color: "#fff",
+                borderRadius: 12, fontWeight: 600, fontSize: 14, textDecoration: "none",
+              }}>
+                Back to Sign In
+              </Link>
             </div>
-            <h2 className="text-[var(--text-primary)] font-semibold" style={{ fontSize: 22, marginBottom: 10, letterSpacing: "-0.02em" }}>
-              Check your email
-            </h2>
-            <p className="text-[var(--text-tertiary)]" style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 28 }}>
-              We&apos;ve sent a confirmation link to <strong className="text-[var(--text-primary)]">{email}</strong>. Click the link to activate your account.
-            </p>
-            <Link
-              href="/auth/login"
-              className="inline-flex items-center justify-center rounded-xl bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--text-primary)] font-medium hover:bg-[var(--bg-surface-hover)] transition-colors"
-              style={{ height: 44, paddingLeft: 24, paddingRight: 24, fontSize: 14 }}
-            >
-              Back to Sign In
-            </Link>
-          </div>
+          </motion.div>
         </div>
       </div>
     );
   }
 
-  const inputClass = "w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--text-primary)] focus:border-[var(--accent-mint)]/40 transition-all outline-none";
 
   return (
-    <div className="min-h-dvh bg-[var(--bg-primary)] flex items-center justify-center p-4 relative">
-      <div className="absolute inset-0 dot-grid opacity-20 pointer-events-none" />
-      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-[var(--accent-mint)] opacity-[0.05] blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-[var(--accent-lavender)] opacity-[0.05] blur-[120px] pointer-events-none" />
+    <div style={{ minHeight: "100dvh", background: "#ffffff", color: "#000000", fontFamily: "'Manrope', 'Inter', sans-serif", display: "flex", flexDirection: "column" }}>
+      {navBar}
 
-      <div className="w-full relative z-10" style={{ maxWidth: 460 }}>
-        <div className="glass-card-premium overflow-hidden" style={{ padding: "40px 32px" }}>
-          <div className="text-center" style={{ marginBottom: 36 }}>
-            <div
-              className="rounded-2xl bg-gradient-to-br from-[var(--accent-mint)] to-[var(--accent-lavender)] flex items-center justify-center mx-auto shadow-lg"
-              style={{ width: 64, height: 64, marginBottom: 24 }}
-            >
-              <Scissors size={26} className="text-[#050507]" />
-            </div>
-            <h1 className="text-[var(--text-primary)] font-bold" style={{ fontSize: 24, marginBottom: 10, letterSpacing: "-0.02em" }}>
-              {step === "role" ? "Join Lumina" : "Create your account"}
+      {/* Step 1 — Role Selection */}
+      {step === "role" && (
+        <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 24px" }}>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
+            style={{ textAlign: "center", marginBottom: 72, maxWidth: 640 }}
+          >
+            <h1 style={{ fontSize: 48, fontWeight: 300, fontFamily: "'Manrope', sans-serif", letterSpacing: "-0.03em", color: "#000000", marginBottom: 20 }}>
+              How will you use Lumina?
             </h1>
-            <p className="text-[var(--text-tertiary)]" style={{ fontSize: 14, lineHeight: 1.6 }}>
-              {step === "role" ? "How will you use Lumina?" : `Signing up as ${roles.find((r) => r.id === selectedRole)?.title}`}
+            <p style={{ color: "#666666", fontSize: 18, fontWeight: 300, maxWidth: 400, margin: "0 auto" }}>
+              Select the role that best describes your daily operations and goals.
             </p>
+          </motion.div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24, width: "100%", maxWidth: 960 }}>
+            {roles.map((role, i) => (
+              <motion.button
+                key={role.id}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.08, ease: [0.25, 1, 0.5, 1] }}
+                onClick={() => { setSelectedRole(role.id); setStep("form"); }}
+                style={{
+                  display: "flex", flexDirection: "column", padding: 48,
+                  border: "1px solid #e5e5e5", borderRadius: 16, textAlign: "left",
+                  background: "#ffffff", cursor: "pointer",
+                  transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#000"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e5e5e5"; e.currentTarget.style.transform = "none"; }}
+              >
+                <div style={{ marginBottom: 56 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 30, color: "#aaaaaa" }}>{role.icon}</span>
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, color: "#000000", marginBottom: 12 }}>{role.title}</h3>
+                  <p style={{ fontSize: 14, color: "#666666", fontWeight: 300, lineHeight: 1.7 }}>{role.desc}</p>
+                </div>
+                <div style={{ marginTop: 40, display: "flex", alignItems: "center", color: "#000000", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em" }}>
+                  Select{" "}
+                  <span className="material-symbols-outlined" style={{ fontSize: 14, marginLeft: 8 }}>arrow_forward</span>
+                </div>
+              </motion.button>
+            ))}
           </div>
 
-          {step === "role" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {roles.map((role) => (
-                <button
-                  key={role.id}
-                  onClick={() => { setSelectedRole(role.id); setStep("form"); }}
-                  className={cn(
-                    "w-full rounded-xl border flex items-center text-start transition-all hover:border-[var(--border-hover)]",
-                    "border-[var(--border-primary)] bg-[var(--bg-surface)]",
-                  )}
-                  style={{ padding: "20px 24px", gap: 16 }}
-                >
-                  <div
-                    className="rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ width: 48, height: 48, background: `color-mix(in srgb, ${role.color} 15%, transparent)`, color: role.color }}
-                  >
-                    {role.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[var(--text-primary)] font-semibold" style={{ fontSize: 15, marginBottom: 3 }}>
-                      {role.title}
-                    </p>
-                    <p className="text-[var(--text-tertiary)]" style={{ fontSize: 12 }}>
-                      {role.desc}
-                    </p>
-                  </div>
-                </button>
-              ))}
+          <div style={{ marginTop: 64, textAlign: "center" }}>
+            <p style={{ fontSize: 14, color: "#666666", fontWeight: 300 }}>
+              Already have an account?{" "}
+              <Link href="/auth/login" style={{ color: "#000000", fontWeight: 600, marginLeft: 4, textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.15)" }}>
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </main>
+      )}
 
-              <p className="text-center text-[var(--text-tertiary)]" style={{ fontSize: 13, marginTop: 16 }}>
+      {/* Step 2 — Account Details */}
+      {step === "form" && (
+        <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 24px" }}>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
+            style={{ width: "100%", maxWidth: 520 }}
+          >
+            <button
+              onClick={() => setStep("role")}
+              style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", color: "#666666", fontSize: 13, fontWeight: 600, marginBottom: 40, padding: 0 }}
+            >
+              <ArrowLeft size={16} />
+              Back
+            </button>
+
+            <div style={{ marginBottom: 40 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 9999, background: "#f5f5f5", marginBottom: 20 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#666" }}>
+                  {roles.find((r) => r.id === selectedRole)?.icon}
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#666" }}>
+                  {roles.find((r) => r.id === selectedRole)?.title}
+                </span>
+              </div>
+              <h1 style={{ fontSize: 40, fontWeight: 800, fontFamily: "'Manrope', sans-serif", letterSpacing: "-0.03em", color: "#000000", marginBottom: 10 }}>
+                Create your account
+              </h1>
+              <p style={{ color: "#666666", fontSize: 15, fontWeight: 300 }}>Start managing your barbershop with Lumina</p>
+            </div>
+
+            <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+
+              {/* Full Name */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.8)" }}>
+                  Full Name
+                </label>
+                <StyledInput type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" required />
+              </div>
+
+              {/* Shop Name (admin only) */}
+              {selectedRole === "shop_admin" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.8)" }}>
+                    Barbershop Name
+                  </label>
+                  <StyledInput type="text" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="e.g. The Gentlemen's Den" required />
+                </div>
+              )}
+
+              {/* Phone (customer only) */}
+              {selectedRole === "customer" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.8)" }}>
+                    Phone Number
+                  </label>
+                  <StyledInput type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+962 7X XXX XXXX" />
+                </div>
+              )}
+
+              {/* Email */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.8)" }}>
+                  Email Address
+                </label>
+                <StyledInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@domain.com" required />
+              </div>
+
+              {/* Password */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.8)" }}>
+                  Password
+                </label>
+                <div style={{ position: "relative" }}>
+                  <StyledInput
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    required
+                    minLength={6}
+                    style={{ ...inputStyle(), paddingRight: 48 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgba(100,116,139,0.4)", display: "flex", alignItems: "center" }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <div style={{ padding: "14px 16px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, color: "#dc2626", fontSize: 13 }}>
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  marginTop: 8, width: "100%", height: 56, background: loading ? "#555" : "#000000",
+                  color: "#ffffff", border: "none", borderRadius: 12, fontFamily: "'Manrope', sans-serif",
+                  fontWeight: 700, fontSize: 14, letterSpacing: "0.04em",
+                  cursor: loading ? "not-allowed" : "pointer", transition: "all 0.15s ease",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                }}
+              >
+                {loading ? <Loader2 size={18} className="animate-spin" /> : (
+                  <>
+                    <span>Create Account</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div style={{ marginTop: 32, textAlign: "center" }}>
+              <p style={{ fontSize: 13, color: "rgba(100,116,139,0.6)" }}>
                 Already have an account?{" "}
-                <Link href="/auth/login" className="text-[var(--accent-mint)] hover:underline font-medium">
+                <Link href="/auth/login" style={{ color: "#000000", fontWeight: 700, marginLeft: 4, textDecoration: "none" }}>
                   Sign in
                 </Link>
               </p>
             </div>
-          ) : (
-            <>
-              <button
-                onClick={() => setStep("role")}
-                className="flex items-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors font-medium"
-                style={{ marginBottom: 24, fontSize: 13, gap: 8 }}
-              >
-                <ArrowLeft size={14} /> Change role
-              </button>
+          </motion.div>
+        </main>
+      )}
 
-              <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                <div>
-                  <label className="text-[var(--text-tertiary)] font-semibold block" style={{ fontSize: 11, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your full name"
-                    required
-                    className={inputClass}
-                    style={{ height: 48, paddingLeft: 16, paddingRight: 16, fontSize: 14 }}
-                  />
-                </div>
-
-                {selectedRole === "shop_admin" && (
-                  <div>
-                    <label className="text-[var(--text-tertiary)] font-semibold block" style={{ fontSize: 11, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                      Barbershop Name
-                    </label>
-                    <input
-                      type="text"
-                      value={shopName}
-                      onChange={(e) => setShopName(e.target.value)}
-                      placeholder="e.g. The Gentlemen's Den"
-                      required
-                      className={inputClass}
-                      style={{ height: 48, paddingLeft: 16, paddingRight: 16, fontSize: 14 }}
-                    />
-                  </div>
-                )}
-
-                {selectedRole === "customer" && (
-                  <div>
-                    <label className="text-[var(--text-tertiary)] font-semibold block" style={{ fontSize: 11, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+962 7X XXX XXXX"
-                      className={inputClass}
-                      style={{ height: 48, paddingLeft: 16, paddingRight: 16, fontSize: 14 }}
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="text-[var(--text-tertiary)] font-semibold block" style={{ fontSize: 11, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    required
-                    className={inputClass}
-                    style={{ height: 48, paddingLeft: 16, paddingRight: 16, fontSize: 14 }}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[var(--text-tertiary)] font-semibold block" style={{ fontSize: 11, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min. 6 characters"
-                      required
-                      minLength={6}
-                      className={inputClass}
-                      style={{ height: 48, paddingLeft: 16, paddingRight: 48, fontSize: 14 }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="rounded-lg bg-[var(--accent-rose-muted)] border border-[var(--accent-rose)]/20" style={{ padding: 12 }}>
-                    <p className="text-[var(--accent-rose)] text-center" style={{ fontSize: 13 }}>{error}</p>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full rounded-xl font-semibold flex items-center justify-center bg-gradient-to-r from-[var(--accent-mint)] to-[var(--accent-lavender)] text-[#0A0A0A] hover:opacity-90 transition-all shadow-md disabled:opacity-60"
-                  style={{ height: 52, fontSize: 15, gap: 10, marginTop: 12 }}
-                >
-                  {loading ? <Loader2 size={18} className="animate-spin" /> : "Create Account"}
-                </button>
-              </form>
-
-              <p className="text-center text-[var(--text-tertiary)]" style={{ fontSize: 13, marginTop: 28 }}>
-                Already have an account?{" "}
-                <Link href="/auth/login" className="text-[var(--accent-mint)] hover:underline font-medium">
-                  Sign in
-                </Link>
-              </p>
-            </>
-          )}
-        </div>
-      </div>
+      <footer style={{ padding: "24px 48px", borderTop: "1px solid #f8fafc" }}>
+        <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.4)" }}>
+          © 2026 Lumina Digital.
+        </p>
+      </footer>
     </div>
   );
 }

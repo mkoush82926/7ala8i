@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina | Choose Your Barber</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#0d1c2e",
+              "primary-fixed": "#dde2f6",
+              "primary-fixed-dim": "#c1c6d9",
+              "inverse-surface": "#2d3133",
+              "outline-variant": "#c6c6cc",
+              "on-primary-container": "#7e8395",
+              "surface-tint": "#585e6f",
+              "on-error-container": "#93000a",
+              "surface-variant": "#e0e3e5",
+              "on-background": "#191c1e",
+              "on-secondary-fixed-variant": "#3a485b",
+              "on-tertiary-container": "#a17f3b",
+              "on-primary": "#ffffff",
+              "secondary-fixed-dim": "#b9c7df",
+              "surface-bright": "#f7f9fb",
+              "on-primary-fixed": "#151b29",
+              "inverse-primary": "#c1c6d9",
+              "tertiary": "#000000",
+              "surface-container-high": "#e6e8ea",
+              "surface-container-lowest": "#ffffff",
+              "secondary-container": "#d5e3fc",
+              "surface-dim": "#d8dadc",
+              "secondary": "#515f74",
+              "on-surface": "#191c1e",
+              "tertiary-fixed-dim": "#e9c176",
+              "error-container": "#ffdad6",
+              "secondary-fixed": "#d5e3fc",
+              "on-secondary": "#ffffff",
+              "tertiary-container": "#261900",
+              "on-tertiary-fixed-variant": "#5d4201",
+              "error": "#ba1a1a",
+              "tertiary-fixed": "#ffdea5",
+              "surface-container-low": "#f2f4f6",
+              "primary-container": "#151b29",
+              "inverse-on-surface": "#eff1f3",
+              "primary": "#000000",
+              "surface-container-highest": "#e0e3e5",
+              "surface-container": "#eceef0",
+              "on-tertiary": "#ffffff",
+              "on-surface-variant": "#45464c",
+              "on-error": "#ffffff",
+              "outline": "#76777d",
+              "on-tertiary-fixed": "#261900",
+              "on-primary-fixed-variant": "#414756",
+              "background": "#f7f9fb",
+              "on-secondary-container": "#57657a",
+              "surface": "#f7f9fb"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-effect {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(20px);
+      }
+      .asymmetric-gutter {
+        padding-left: 2.5rem;
+      }
+      /* Hide standard radio but keep accessible */
+      .custom-radio:checked + div {
+        background-color: #151b29; /* primary-container */
+        color: white;
+      }
+      .custom-radio:checked + div .check-icon {
+        display: block;
+      }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- Top Navigation (Shell Injected via Design Protocol - Task Focused Suppression Rule applied to links) -->
+<header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl">
+<div class="flex justify-between items-center max-w-7xl mx-auto px-6 h-20">
+<div class="text-2xl font-bold tracking-tighter text-black">Lumina</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant flex items-center gap-2 px-4 py-2 hover:bg-surface-container-low rounded-lg transition-all active:scale-95">
+<span class="material-symbols-outlined">close</span>
+<span class="font-medium text-sm">Cancel Booking</span>
+</button>
+</div>
+</div>
+</header>
+<main class="pt-32 pb-24 min-h-screen">
+<div class="max-w-5xl mx-auto px-6">
+<!-- Header Section: Asymmetric & Editorial -->
+<div class="flex flex-col md:flex-row justify-between items-baseline mb-12 asymmetric-gutter">
+<div class="max-w-xl">
+<div class="flex items-center gap-3 mb-4">
+<span class="text-xs font-bold tracking-[0.2em] uppercase text-on-primary-container">Step 3 of 4</span>
+<div class="h-px w-12 bg-outline-variant/30"></div>
+<span class="text-xs font-medium text-outline">Select Professional</span>
+</div>
+<h1 class="font-headline text-5xl font-extrabold tracking-tight text-on-surface mb-6">
+                        The Hands Behind <br/>
+<span class="text-primary-container">The Craft.</span>
+</h1>
+<p class="text-on-surface-variant text-lg leading-relaxed max-w-md">
+                        Our artisans bring decades of combined experience to every chair. Choose your preferred barber or select availability.
+                    </p>
+</div>
+<div class="mt-8 md:mt-0">
+<button class="group flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined transition-transform group-hover:-translate-x-1">arrow_back</span>
+<span class="font-label text-sm font-semibold">Back to Services</span>
+</button>
+</div>
+</div>
+<!-- Content Area: Tonal Layering & Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Left Column: The Selection Matrix -->
+<div class="md:col-span-8 space-y-4">
+<!-- Special Option: Any Available -->
+<label class="relative cursor-pointer block group">
+<input checked="" class="sr-only custom-radio" name="barber" type="radio" value="any"/>
+<div class="flex items-center justify-between p-6 rounded-xl bg-surface-container-low transition-all duration-300 group-hover:bg-surface-container-high">
+<div class="flex items-center gap-6">
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-3xl">group</span>
+</div>
+<div>
+<h3 class="font-headline text-xl font-bold">Any Available Barber</h3>
+<p class="text-sm opacity-70">Best for immediate availability or flexible schedules.</p>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant flex items-center justify-center check-icon hidden">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+</div>
+</label>
+<!-- Professional Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+<!-- Barber Card 1 -->
+<label class="relative cursor-pointer block group">
+<input class="sr-only custom-radio" name="barber" type="radio" value="marcus"/>
+<div class="p-6 rounded-xl bg-surface-container-low transition-all duration-300 group-hover:bg-surface-container-high border-2 border-transparent">
+<div class="relative w-20 h-20 mb-6 mx-auto">
+<img alt="Portrait of Marcus" class="w-full h-full object-cover rounded-full shadow-lg" data-alt="Professional male barber with groomed beard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVxGikz6dFny8A1Rba24MSt9HRsUGGeJpX9yJXkWy-HkJuX8_wRuxWtbeVPq_TfjiU7hjnj9dYoCaqLn-znxEcE2i9TpQSEGZHbP3GyELvcq1rKJ__MY5UpYkdW6qmdLMtbQkD3KWM5hbjkajiI3Iu1AjvtjJYzm5T2C5dMwCTpoWZP5Vy98uh5kXBFa5ThWF9SOzTiYUOmxz9ESVEE1YI33Hc4SkYnn6m66tIZraQS61vcrm90ADyFW-cqS2ufqEE5ABgQKwSlWLI"/>
+<div class="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-sm check-icon hidden">
+<div class="bg-primary rounded-full p-1">
+<span class="material-symbols-outlined text-[12px] text-white block">check</span>
+</div>
+</div>
+</div>
+<div class="text-center">
+<h3 class="font-headline text-lg font-bold">Marcus Thorne</h3>
+<p class="text-xs font-medium uppercase tracking-widest text-on-surface-variant/60 mb-3">Master Artisan</p>
+<div class="flex justify-center items-center gap-1 text-tertiary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold text-on-surface">4.9</span>
+<span class="text-xs text-on-surface-variant ml-1">(120+)</span>
+</div>
+</div>
+</div>
+</label>
+<!-- Barber Card 2 -->
+<label class="relative cursor-pointer block group">
+<input class="sr-only custom-radio" name="barber" type="radio" value="elara"/>
+<div class="p-6 rounded-xl bg-surface-container-low transition-all duration-300 group-hover:bg-surface-container-high border-2 border-transparent">
+<div class="relative w-20 h-20 mb-6 mx-auto">
+<img alt="Portrait of Elara" class="w-full h-full object-cover rounded-full shadow-lg" data-alt="Modern female stylist smiling warmly" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0zTCPup3BVzB1p-zlcz9fRT6Go3vVokWonY1_5dL28fAZxUkipvnEu1VwNgcejui6aGddUZM190WiEDJpjJIRLe6rq08-F-a6aDZ2cgMpFjQ5eaAKYT_SsyP5erywNeCWd3Pzi_VbTalMibLIKvV_Ou1jVHfdFqehJY42bLWEdxm0LdSEbteA-LMfjvPtRJlx7K9fmJwOe__ZWnKkQWixlaRHpkIGCnOutd_64gL9X0C_9-Q_B6zP9hT1wCyVBvWzkUsqsTPNClcP"/>
+<div class="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-sm check-icon hidden">
+<div class="bg-primary rounded-full p-1">
+<span class="material-symbols-outlined text-[12px] text-white block">check</span>
+</div>
+</div>
+</div>
+<div class="text-center">
+<h3 class="font-headline text-lg font-bold">Elara Vance</h3>
+<p class="text-xs font-medium uppercase tracking-widest text-on-surface-variant/60 mb-3">Texture Specialist</p>
+<div class="flex justify-center items-center gap-1 text-tertiary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold text-on-surface">5.0</span>
+<span class="text-xs text-on-surface-variant ml-1">(95)</span>
+</div>
+</div>
+</div>
+</label>
+<!-- Barber Card 3 -->
+<label class="relative cursor-pointer block group">
+<input class="sr-only custom-radio" name="barber" type="radio" value="julian"/>
+<div class="p-6 rounded-xl bg-surface-container-low transition-all duration-300 group-hover:bg-surface-container-high border-2 border-transparent">
+<div class="relative w-20 h-20 mb-6 mx-auto">
+<img alt="Portrait of Julian" class="w-full h-full object-cover rounded-full shadow-lg" data-alt="Young professional barber in stylish studio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcoyI-bH4rfYj5UMD44id9nNNKn3-fjoBgOP9sfc9h4tj-gkLOV9sy96nfsbdovenCZULzgkzpcRUyTKv0E10l9J1zXcY292wWwam6b8DC4lKB0wxoHbZMD3gtDMdc4yHzQnsApAC2LDKtPehRzwR3FI1PHxsLnrPPQVO223Cs7PLMWC2P-IdPTVn7eDsg5gDg_r_JiOAmtRcDnDK-MNrBctcrq-hVYz7AFB4fcKEDYR8cemYsw22xLKc_nF4oR6kWA1xivRb1aOnq"/>
+<div class="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-sm check-icon hidden">
+<div class="bg-primary rounded-full p-1">
+<span class="material-symbols-outlined text-[12px] text-white block">check</span>
+</div>
+</div>
+</div>
+<div class="text-center">
+<h3 class="font-headline text-lg font-bold">Julian Rossi</h3>
+<p class="text-xs font-medium uppercase tracking-widest text-on-surface-variant/60 mb-3">Classic Cuts</p>
+<div class="flex justify-center items-center gap-1 text-tertiary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold text-on-surface">4.8</span>
+<span class="text-xs text-on-surface-variant ml-1">(210)</span>
+</div>
+</div>
+</div>
+</label>
+<!-- Barber Card 4 -->
+<label class="relative cursor-pointer block group">
+<input class="sr-only custom-radio" name="barber" type="radio" value="theo"/>
+<div class="p-6 rounded-xl bg-surface-container-low transition-all duration-300 group-hover:bg-surface-container-high border-2 border-transparent">
+<div class="relative w-20 h-20 mb-6 mx-auto">
+<img alt="Portrait of Theo" class="w-full h-full object-cover rounded-full shadow-lg" data-alt="Experienced barber with tattoos and apron" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4yQEZwX-7NZVEyiogKaQyOa70bZZ-S5EzrvlhC96Pe6uwKHFbyx5COB4nlfElTzhwkKogjgoQqxAM8RXmNoRKc22lyu96yHBw3orpFQ0GlniYY30PKUX77Oft37PwA5sbsMSv8rTTA7DQxgspIxNXC2D_LRs1RMDzdub5APwkv3EeLpJia3zRD4tN-jzw-ukjTkQrA-IkR2NZj75XDU28P1yej62z9pPY-Z6R_k4nkmscUqJDqOhDjdxroDhcq2TydtCbPwmQJm5X"/>
+<div class="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-sm check-icon hidden">
+<div class="bg-primary rounded-full p-1">
+<span class="material-symbols-outlined text-[12px] text-white block">check</span>
+</div>
+</div>
+</div>
+<div class="text-center">
+<h3 class="font-headline text-lg font-bold">Theo Wright</h3>
+<p class="text-xs font-medium uppercase tracking-widest text-on-surface-variant/60 mb-3">Creative Director</p>
+<div class="flex justify-center items-center gap-1 text-tertiary-fixed-dim">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold text-on-surface">4.9</span>
+<span class="text-xs text-on-surface-variant ml-1">(340+)</span>
+</div>
+</div>
+</div>
+</label>
+</div>
+</div>
+<!-- Right Column: Summary Card -->
+<div class="md:col-span-4">
+<div class="sticky top-32 p-8 rounded-2xl bg-surface-container-lowest shadow-sm border border-outline-variant/10">
+<h4 class="font-headline text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-6">Your Selection</h4>
+<div class="space-y-6">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs font-medium text-outline-variant uppercase tracking-tighter mb-1">Service</p>
+<p class="font-semibold text-on-surface">The Signature Grooming</p>
+</div>
+<span class="font-headline font-bold text-primary">$65</span>
+</div>
+<div class="h-px bg-outline-variant/20"></div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<span class="material-symbols-outlined">schedule</span>
+<span class="text-sm">45 Minutes</span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<span class="material-symbols-outlined">location_on</span>
+<span class="text-sm">Lumina Downtown Studio</span>
+</div>
+<!-- CTA Section -->
+<div class="pt-8">
+<button class="w-full bg-primary text-on-primary py-4 rounded-lg font-bold flex items-center justify-center gap-2 group transition-all active:scale-[0.98] shadow-lg shadow-primary/10">
+<span>Continue to Time</span>
+<span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+</button>
+<p class="text-[10px] text-center mt-4 text-on-surface-variant/60 uppercase tracking-widest font-medium">Step 4: Choose Date &amp; Time</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Navigation Pivot (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-6 pb-8 pt-4 md:hidden bg-white/80 backdrop-blur-xl border-t border-neutral-100">
+<div class="flex flex-col items-center justify-center text-neutral-400">
+<span class="material-symbols-outlined">search</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-widest mt-1">Explore</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-black text-white rounded-full w-12 h-12 shadow-lg">
+<span class="material-symbols-outlined">event_note</span>
+</div>
+<div class="flex flex-col items-center justify-center text-neutral-400">
+<span class="material-symbols-outlined">person</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-widest mt-1">Account</span>
+</div>
+</nav>
+</body></html>

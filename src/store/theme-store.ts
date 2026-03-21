@@ -18,7 +18,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      theme: "dark",
+      theme: "light",
       direction: "ltr",
       locale: "en",
       setTheme: (theme) => set({ theme }),
@@ -35,6 +35,6 @@ export const useThemeStore = create<ThemeState>()(
           direction: state.locale === "en" ? "rtl" : "ltr",
         })),
     }),
-    { name: "lumina-theme" },
+    { name: "lumina-theme-v2" },
   ),
 );

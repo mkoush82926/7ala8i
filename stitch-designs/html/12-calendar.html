@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary": "#ffffff",
+              "on-primary-fixed-variant": "#414756",
+              "inverse-primary": "#c1c6d9",
+              "surface-container-highest": "#e0e3e5",
+              "surface": "#f7f9fb",
+              "on-tertiary-container": "#a17f3b",
+              "on-surface-variant": "#45464c",
+              "surface-container-low": "#f2f4f6",
+              "primary-fixed-dim": "#c1c6d9",
+              "surface-container": "#eceef0",
+              "on-error": "#ffffff",
+              "on-secondary-container": "#57657a",
+              "outline-variant": "#c6c6cc",
+              "on-primary": "#ffffff",
+              "on-tertiary": "#ffffff",
+              "error-container": "#ffdad6",
+              "inverse-on-surface": "#eff1f3",
+              "primary-fixed": "#dde2f6",
+              "on-primary-container": "#7e8395",
+              "surface-container-lowest": "#ffffff",
+              "on-background": "#191c1e",
+              "on-secondary-fixed-variant": "#3a485b",
+              "on-error-container": "#93000a",
+              "tertiary-container": "#261900",
+              "secondary": "#515f74",
+              "tertiary-fixed": "#ffdea5",
+              "background": "#f7f9fb",
+              "surface-container-high": "#e6e8ea",
+              "error": "#ba1a1a",
+              "outline": "#76777d",
+              "secondary-fixed": "#d5e3fc",
+              "inverse-surface": "#2d3133",
+              "surface-bright": "#f7f9fb",
+              "tertiary": "#000000",
+              "on-tertiary-fixed-variant": "#5d4201",
+              "on-primary-fixed": "#151b29",
+              "on-surface": "#191c1e",
+              "surface-tint": "#585e6f",
+              "on-tertiary-fixed": "#261900",
+              "primary-container": "#151b29",
+              "tertiary-fixed-dim": "#e9c176",
+              "secondary-fixed-dim": "#b9c7df",
+              "on-secondary-fixed": "#0d1c2e",
+              "secondary-container": "#d5e3fc",
+              "primary": "#000000",
+              "surface-variant": "#e0e3e5",
+              "surface-dim": "#d8dadc"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e0e3e5; border-radius: 10px; }
+        .timeline-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(3, 1fr);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- Side Navigation -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-zinc-50 dark:bg-zinc-900 flex flex-col p-4 gap-2 z-50">
+<div class="mb-8 px-4 py-2">
+<h1 class="text-lg font-black text-zinc-900 dark:text-zinc-50 font-headline">Lumina</h1>
+<p class="text-xs text-zinc-500 font-medium">Management</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 font-headline text-sm font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all active:translate-x-1 duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 font-headline text-sm font-semibold rounded-lg shadow-sm active:translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span>Calendar</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 font-headline text-sm font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all active:translate-x-1 duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined">content_cut</span>
+<span>Barbers</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 font-headline text-sm font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all active:translate-x-1 duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Clients</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 font-headline text-sm font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all active:translate-x-1 duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined">insert_chart</span>
+<span>Analytics</span>
+</a>
+</nav>
+<div class="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 font-headline text-sm font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+<span>Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-600 dark:text-zinc-400 font-headline text-sm font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 min-h-screen flex flex-col">
+<!-- Top App Bar -->
+<header class="w-full sticky top-0 z-40 bg-white dark:bg-zinc-950 flex items-center justify-between px-6 py-3 shadow-none">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-headline">Calendar</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="absolute inset-y-0 left-3 flex items-center text-zinc-400">
+<span class="material-symbols-outlined text-sm">search</span>
+</span>
+<input class="pl-10 pr-4 py-2 bg-zinc-100 dark:bg-zinc-900 border-none rounded-full text-sm focus:ring-2 focus:ring-primary w-64 transition-all" placeholder="Search appointments..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-zinc-200 overflow-hidden ml-2">
+<img alt="User Profile" class="h-full w-full object-cover" data-alt="Close up of a professional man profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJK_FG5gUgaFY2fkQhuKF_U2E0qJQs53jiC0Ssxbw_pROToXQ8f1hBUXfzO6I4YYGV4wQ_a5FSXIo0r_BLZSjsmpw5NzJFqmZ23jLF0ACjZf_12yRO7RRQN6Q9vXeltBTSQFi5O6S_eJEQpNhRakdBqaHRr7BYuvZB63qJyDbhH7KQnQ3ddx0BxuM-V1opxAlRv5RAYvayJAnKuhlHqxnTjm2oFrQl9QX_5MsAizFpB031U5VkEUNfafG7sQvdrtWjdxQTgaaWhxaK"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Sub-Header / Calendar Controls -->
+<section class="px-8 py-6 flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-4">
+<div class="flex items-center bg-surface-container rounded-lg p-1">
+<button class="p-2 hover:bg-surface-container-highest rounded-md transition-colors">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<span class="px-4 font-headline font-bold text-on-surface">Oct 24, 2023</span>
+<button class="p-2 hover:bg-surface-container-highest rounded-md transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<button class="px-4 py-2 bg-surface-container-low text-on-surface font-semibold rounded-lg hover:bg-surface-container-high transition-colors">Today</button>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex bg-surface-container p-1 rounded-lg">
+<button class="px-4 py-1.5 bg-surface-container-lowest shadow-sm rounded-md text-sm font-semibold text-primary font-headline">Timeline</button>
+<button class="px-4 py-1.5 text-sm font-semibold text-on-surface-variant font-headline hover:bg-surface-container-high transition-colors rounded-md">List</button>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-headline font-bold text-sm shadow-[inset_0_4px_4px_rgba(255,255,255,0.1)] hover:opacity-90 active:scale-95 transition-all">
+                    New Booking
+                </button>
+</div>
+</section>
+<!-- Calendar Main Surface -->
+<section class="flex-1 px-8 pb-8">
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-none border border-transparent">
+<!-- Column Headers -->
+<div class="timeline-grid border-b border-surface-container">
+<div class="h-16 flex items-center justify-center border-r border-surface-container">
+<span class="material-symbols-outlined text-outline">schedule</span>
+</div>
+<!-- Barber 1 -->
+<div class="h-16 flex items-center px-6 gap-3 border-r border-surface-container">
+<div class="w-10 h-10 rounded-full bg-surface-dim overflow-hidden ring-2 ring-surface-container-lowest">
+<img alt="Zaid K." class="w-full h-full object-cover" data-alt="Professional barber with beard smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeQps385utWkxP9f6CgwsZfhgGXPpbP611f8zkfQINHfsS5JA5aAowwuKefq5_CP87SHNJXpvQaIt60FFxQ6gKyJBuXaYjYZJ7ygFyBbMYbHIyAtMl06oQScfTJZ5SUPMlwkVF6bMmkpve35gXkN4aB9jGkLEODHRDibWxk9RyGHzjyjl26Xg8WV3UYtsE13YJpIvoBxap1XuZDDPHBkGj07GVKWJANsZPdAbSYHXhvFQ1rNGgzFGD-yqAGDIETe2hyghcDhJd3icz"/>
+</div>
+<div>
+<p class="font-headline font-bold text-sm">Zaid K.</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Senior Barber</p>
+</div>
+</div>
+<!-- Barber 2 -->
+<div class="h-16 flex items-center px-6 gap-3 border-r border-surface-container">
+<div class="w-10 h-10 rounded-full bg-surface-dim overflow-hidden ring-2 ring-surface-container-lowest">
+<img alt="Ibrahim S." class="w-full h-full object-cover" data-alt="Portrait of a stylist man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADEETqkcqJUM52S909km8KlTz2H2kF2lAmQotMn4SzMss1pBY6-PqhmuiU3G8dCMyCKnRy5NLl5DAyg07Qc7jig3T-FpzVDXMWPEdNHjHLDg_sI5ZLEsDS6Lktw9Xa3wZ2tCZwrdmy495IYvDCgb5UaMoV1shHFZZYxfwdfgNYKG5TV4fIRnlCIyC-S5dHTAE7WFQlYAGzqSkpTIbYFvoBuHoalUVU33nMraMWpjqp2YbflQHGMW9nc2qh3yLI_74UrT7LSAOoRALv"/>
+</div>
+<div>
+<p class="font-headline font-bold text-sm">Ibrahim S.</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Master Stylist</p>
+</div>
+</div>
+<!-- Barber 3 -->
+<div class="h-16 flex items-center px-6 gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-dim overflow-hidden ring-2 ring-surface-container-lowest">
+<img alt="Faris J." class="w-full h-full object-cover" data-alt="Young professional barber profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8hdzFyRtRIRcp-frr_QEgX2JloUxlPXGXF6w45CyhyBioa-HT-5rfWgyS-pPmQSSgmd29v6xKBjuBSlVPcxSmhNOTh5GHCOyZWHnux8EMuTdz_SoSpXl5yvQIvrn1wuXGqn0sU-XfMjV1kmaDP9W5Wk_Q1QoSj6J7C63OquASfQw-8MbXpYjn2UhXB5K34DNEHyP79zWUHQbW_F0HAI6Y218q4AA_bVK4Ej6ZW5tLLvCTpteTyY-LA1s9m7z3-_0mOtOORcGy-fTo"/>
+</div>
+<div>
+<p class="font-headline font-bold text-sm">Faris J.</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Junior Barber</p>
+</div>
+</div>
+</div>
+<!-- Timeline Body -->
+<div class="relative overflow-y-auto max-h-[calc(100vh-320px)]">
+<!-- Current Time Indicator -->
+<div class="absolute w-full top-[280px] z-20 flex items-center pointer-events-none">
+<div class="w-2 h-2 rounded-full bg-error ml-[76px]"></div>
+<div class="flex-1 h-px bg-error opacity-50"></div>
+</div>
+<div class="timeline-grid">
+<!-- Time Column -->
+<div class="flex flex-col border-r border-surface-container bg-surface-container-low/30">
+<!-- Slots Loop Mockup -->
+<div class="h-20 border-b border-surface-container-low flex justify-center pt-4"><span class="text-[11px] font-bold text-outline">09:00 AM</span></div>
+<div class="h-20 border-b border-surface-container-low flex justify-center pt-4"><span class="text-[11px] font-bold text-outline">10:00 AM</span></div>
+<div class="h-20 border-b border-surface-container-low flex justify-center pt-4"><span class="text-[11px] font-bold text-outline">11:00 AM</span></div>
+<div class="h-20 border-b border-surface-container-low flex justify-center pt-4"><span class="text-[11px] font-bold text-outline">12:00 PM</span></div>
+<div class="h-20 border-b border-surface-container-low flex justify-center pt-4"><span class="text-[11px] font-bold text-outline">01:00 PM</span></div>
+<div class="h-20 border-b border-surface-container-low flex justify-center pt-4"><span class="text-[11px] font-bold text-outline">02:00 PM</span></div>
+<div class="h-20 border-b border-surface-container-low flex justify-center pt-4"><span class="text-[11px] font-bold text-outline">03:00 PM</span></div>
+<div class="h-20 border-b border-surface-container-low flex justify-center pt-4"><span class="text-[11px] font-bold text-outline">04:00 PM</span></div>
+<div class="h-20 border-b border-surface-container-low flex justify-center pt-4"><span class="text-[11px] font-bold text-outline">05:00 PM</span></div>
+</div>
+<!-- Zaid K. Column -->
+<div class="relative border-r border-surface-container bg-surface-container-low/10">
+<!-- Appt 1: Confirmed -->
+<div class="absolute top-4 left-2 right-2 h-16 bg-emerald-50 border-l-4 border-emerald-500 rounded-md p-2 shadow-sm cursor-pointer hover:scale-[1.02] transition-transform z-10">
+<p class="text-xs font-bold text-emerald-900 truncate">Alex Rivera</p>
+<p class="text-[10px] text-emerald-700/80">Skin Fade &amp; Wash</p>
+</div>
+<!-- Appt 2: Completed -->
+<div class="absolute top-44 left-2 right-2 h-12 bg-slate-100 border-l-4 border-slate-400 rounded-md p-2 opacity-70 z-10">
+<p class="text-xs font-bold text-slate-700 truncate">Mark Thompson</p>
+<p class="text-[10px] text-slate-500">Beard Trim</p>
+</div>
+<!-- Appt 3: Confirmed -->
+<div class="absolute top-[320px] left-2 right-2 h-24 bg-emerald-50 border-l-4 border-emerald-500 rounded-md p-2 shadow-sm z-10">
+<p class="text-xs font-bold text-emerald-900 truncate">James Wilson</p>
+<p class="text-[10px] text-emerald-700/80">Full Service Package</p>
+</div>
+</div>
+<!-- Ibrahim S. Column -->
+<div class="relative border-r border-surface-container bg-surface-container-low/10">
+<!-- Appt 1: Pending -->
+<div class="absolute top-24 left-2 right-2 h-16 bg-amber-50 border-l-4 border-amber-500 rounded-md p-2 shadow-sm z-10">
+<div class="flex justify-between items-start">
+<p class="text-xs font-bold text-amber-900 truncate">Samir Hadad</p>
+<span class="material-symbols-outlined text-xs text-amber-600">error</span>
+</div>
+<p class="text-[10px] text-amber-700/80">Scissor Cut</p>
+</div>
+<!-- Appt 2: Confirmed -->
+<div class="absolute top-84 left-2 right-2 h-20 bg-emerald-50 border-l-4 border-emerald-500 rounded-md p-2 shadow-sm z-10">
+<p class="text-xs font-bold text-emerald-900 truncate">Youssef Ali</p>
+<p class="text-[10px] text-emerald-700/80">Hot Towel Shave</p>
+</div>
+</div>
+<!-- Faris J. Column -->
+<div class="relative bg-surface-container-low/10">
+<!-- Appt 1: No-show -->
+<div class="absolute top-40 left-2 right-2 h-12 bg-rose-50 border-l-4 border-rose-500 rounded-md p-2 shadow-sm z-10 opacity-80">
+<p class="text-xs font-bold text-rose-900 truncate">Kevin Doe</p>
+<p class="text-[10px] text-rose-700/80 line-through">Quick Buzz</p>
+</div>
+<!-- Appt 2: Confirmed -->
+<div class="absolute top-[280px] left-2 right-2 h-16 bg-emerald-50 border-l-4 border-emerald-500 rounded-md p-2 shadow-sm z-10">
+<p class="text-xs font-bold text-emerald-900 truncate">Liam Zhang</p>
+<p class="text-[10px] text-emerald-700/80">Executive Style</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Legend Footer -->
+<footer class="px-8 py-4 flex items-center justify-end gap-6 text-xs font-semibold text-on-surface-variant bg-surface-container-low/50 border-t border-surface-container">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+<span>Confirmed</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-amber-500"></span>
+<span>Pending</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-slate-400"></span>
+<span>Completed</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-rose-500"></span>
+<span>No-show</span>
+</div>
+</footer>
+</main>
+</body></html>

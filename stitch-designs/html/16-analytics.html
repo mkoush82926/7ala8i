@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Analytics - The Groomed Interface</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-fixed-dim": "#b9c7df",
+                        "on-primary-container": "#7e8395",
+                        "primary": "#000000",
+                        "on-background": "#191c1e",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#5d4201",
+                        "outline": "#76777d",
+                        "error": "#ba1a1a",
+                        "primary-container": "#151b29",
+                        "inverse-primary": "#c1c6d9",
+                        "surface-tint": "#585e6f",
+                        "background": "#f7f9fb",
+                        "surface-bright": "#f7f9fb",
+                        "tertiary-fixed": "#ffdea5",
+                        "on-primary-fixed": "#151b29",
+                        "secondary-fixed": "#d5e3fc",
+                        "surface-variant": "#e0e3e5",
+                        "surface-container-highest": "#e0e3e5",
+                        "tertiary": "#000000",
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "inverse-on-surface": "#eff1f3",
+                        "primary-fixed": "#dde2f6",
+                        "on-tertiary-fixed": "#261900",
+                        "tertiary-container": "#261900",
+                        "surface-container-high": "#e6e8ea",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-container": "#eceef0",
+                        "secondary-container": "#d5e3fc",
+                        "outline-variant": "#c6c6cc",
+                        "secondary": "#515f74",
+                        "on-secondary-container": "#57657a",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#414756",
+                        "primary-fixed-dim": "#c1c6d9",
+                        "tertiary-fixed-dim": "#e9c176",
+                        "surface": "#f7f9fb",
+                        "inverse-surface": "#2d3133",
+                        "on-surface-variant": "#45464c",
+                        "surface-dim": "#d8dadc",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "on-tertiary-container": "#a17f3b",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .headline-font { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- Sidebar (SideNavBar) -->
+<aside class="fixed left-0 top-0 h-screen w-64 z-50 bg-white dark:bg-slate-900 flex flex-col h-full p-6 border-r border-transparent shadow-xl shadow-slate-200/50 dark:shadow-none font-manrope font-medium text-sm">
+<div class="text-2xl font-black text-slate-900 dark:text-slate-100 mb-8 tracking-tight">The Groomed</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-50 rounded-lg font-bold active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span>Schedule</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span>Clients</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Inventory</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 space-y-2 border-t border-surface-container">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span>Help Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 min-h-screen">
+<!-- Top Header (TopNavBar) -->
+<header class="w-full sticky top-0 z-40 bg-slate-50 dark:bg-slate-950 flex items-center justify-between px-8 py-4 ml-auto">
+<h1 class="font-manrope font-bold text-2xl text-slate-900 dark:text-slate-50">Analytics</h1>
+<div class="flex items-center gap-6">
+<!-- Period Selector -->
+<div class="flex bg-surface-container-low p-1 rounded-lg">
+<button class="px-4 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Weekly</button>
+<button class="px-4 py-1.5 text-sm font-bold text-slate-900 bg-white rounded shadow-sm">Monthly</button>
+<button class="px-4 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Yearly</button>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-300" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-300" data-icon="settings">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="User profile avatar image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_d-zjYgse9R2ZLtg1rbQX1MVwzw-lZzJ1sMNIW_fGka6PmEHopJBcuGoRblBSkpk9Y-jsBlnOAz_DPIjFwlOqnolD3vV9uP6J4wjoa9JrhgsFEc7jXmiRrcS3SB68aUmGTkLec8pHJEI4GFMP8Gmm3-EZu6sFpVZO5JjUOm1vc8c2A4r62kTW0WrCpkw_Jshk1ngSb1JZgQjsNPY2ZVRAvUasflrgholKnY-rN4fPDQXUwHZ15IHOA_Kfs0X0NcNNCUcdZTxtqhZp"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Analytics Content -->
+<div class="p-8 space-y-8">
+<!-- Summary Metric Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Revenue Card -->
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<span class="text-sm font-medium text-on-surface-variant">Revenue</span>
+<div class="flex items-center text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-xs font-bold">
+<span class="material-symbols-outlined text-sm mr-1" data-icon="trending_up">trending_up</span>
+                            +12.5%
+                        </div>
+</div>
+<div class="text-3xl font-extrabold headline-font tracking-tight">12,450 JOD</div>
+<div class="mt-2 text-xs text-on-surface-variant">vs. 11,066 JOD last month</div>
+</div>
+<!-- Bookings Card -->
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<span class="text-sm font-medium text-on-surface-variant">Bookings</span>
+<div class="flex items-center text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-xs font-bold">
+<span class="material-symbols-outlined text-sm mr-1" data-icon="trending_up">trending_up</span>
+                            +8.2%
+                        </div>
+</div>
+<div class="text-3xl font-extrabold headline-font tracking-tight">842</div>
+<div class="mt-2 text-xs text-on-surface-variant">Total appointments scheduled</div>
+</div>
+<!-- New Clients Card -->
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<span class="text-sm font-medium text-on-surface-variant">New Clients</span>
+<div class="flex items-center text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-xs font-bold">
+<span class="material-symbols-outlined text-sm mr-1" data-icon="trending_flat">trending_flat</span>
+                            -1.4%
+                        </div>
+</div>
+<div class="text-3xl font-extrabold headline-font tracking-tight">124</div>
+<div class="mt-2 text-xs text-on-surface-variant">First-time visitors this month</div>
+</div>
+<!-- Retention Card -->
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<span class="text-sm font-medium text-on-surface-variant">Retention Rate</span>
+<div class="flex items-center text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-xs font-bold">
+<span class="material-symbols-outlined text-sm mr-1" data-icon="trending_up">trending_up</span>
+                            +4.1%
+                        </div>
+</div>
+<div class="text-3xl font-extrabold headline-font tracking-tight">68.2%</div>
+<div class="mt-2 text-xs text-on-surface-variant">Returning client frequency</div>
+</div>
+</div>
+<!-- Visualizations Grid (2x2) -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- 1. Revenue Trend (Area Chart) -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm">
+<h3 class="headline-font font-bold text-lg mb-8">Revenue Trend</h3>
+<div class="relative h-64 flex items-end justify-between gap-2 px-2">
+<!-- Simulated Area Chart -->
+<div class="absolute inset-0 flex items-end opacity-10">
+<div class="w-full h-full bg-gradient-to-t from-primary to-transparent" style="clip-path: polygon(0% 100%, 0% 60%, 10% 70%, 20% 55%, 30% 65%, 40% 40%, 50% 50%, 60% 30%, 70% 45%, 80% 25%, 90% 35%, 100% 20%, 100% 100%);"></div>
+</div>
+<!-- Data Points -->
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full bg-primary-container/5 rounded-t transition-all hover:bg-primary/20" style="height: 60%;"></div>
+<span class="mt-4 text-[10px] font-bold text-on-surface-variant">JAN</span>
+</div>
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full bg-primary-container/5 rounded-t transition-all hover:bg-primary/20" style="height: 45%;"></div>
+<span class="mt-4 text-[10px] font-bold text-on-surface-variant">FEB</span>
+</div>
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full bg-primary-container/5 rounded-t transition-all hover:bg-primary/20" style="height: 75%;"></div>
+<span class="mt-4 text-[10px] font-bold text-on-surface-variant">MAR</span>
+</div>
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full bg-primary-container/5 rounded-t transition-all hover:bg-primary/20" style="height: 55%;"></div>
+<span class="mt-4 text-[10px] font-bold text-on-surface-variant">APR</span>
+</div>
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full bg-primary-container/5 rounded-t transition-all hover:bg-primary/20" style="height: 90%;"></div>
+<span class="mt-4 text-[10px] font-bold text-on-surface-variant">MAY</span>
+</div>
+<div class="flex-1 flex flex-col items-center group">
+<div class="w-full bg-primary-container/5 rounded-t transition-all hover:bg-primary/20" style="height: 85%;"></div>
+<span class="mt-4 text-[10px] font-bold text-on-surface-variant">JUN</span>
+</div>
+</div>
+</div>
+<!-- 2. Top Barbers (Horizontal Bar Chart) -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm">
+<h3 class="headline-font font-bold text-lg mb-8">Top Barbers</h3>
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between text-sm mb-1">
+<span class="font-bold">Ahmad Al-Fayed</span>
+<span class="text-on-surface-variant">3,420 JOD</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 92%;"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-sm mb-1">
+<span class="font-bold">Zaid Khalil</span>
+<span class="text-on-surface-variant">2,850 JOD</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 78%;"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-sm mb-1">
+<span class="font-bold">Omar S.</span>
+<span class="text-on-surface-variant">2,100 JOD</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 62%;"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-sm mb-1">
+<span class="font-bold">Sami Haddad</span>
+<span class="text-on-surface-variant">1,940 JOD</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 55%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. Acquisition Channels (Donut Chart) -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm">
+<h3 class="headline-font font-bold text-lg mb-8">Acquisition Channels</h3>
+<div class="flex items-center justify-center h-64 gap-12">
+<!-- Simple CSS Donut -->
+<div class="relative w-48 h-48 rounded-full flex items-center justify-center" style="background: conic-gradient(#000000 0% 45%, #45464c 45% 70%, #76777d 70% 85%, #c6c6cc 85% 95%, #eceef0 95% 100%);">
+<div class="w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center">
+<span class="text-2xl font-black">842</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Total Clients</span>
+</div>
+</div>
+<!-- Legend -->
+<div class="space-y-3">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="text-xs font-medium">Instagram (45%)</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-on-surface-variant"></div>
+<span class="text-xs font-medium">Google (25%)</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-outline"></div>
+<span class="text-xs font-medium">Word of Mouth (15%)</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-outline-variant"></div>
+<span class="text-xs font-medium">Walk-in (10%)</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-surface-container"></div>
+<span class="text-xs font-medium">Other (5%)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 4. Peak Hours Heatmap (Grid) -->
+<div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm">
+<div class="flex justify-between items-center mb-8">
+<h3 class="headline-font font-bold text-lg">Peak Hours Heatmap</h3>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-on-surface-variant">Low</span>
+<div class="flex gap-1">
+<div class="w-3 h-3 bg-surface-container rounded-sm"></div>
+<div class="w-3 h-3 bg-primary/20 rounded-sm"></div>
+<div class="w-3 h-3 bg-primary/40 rounded-sm"></div>
+<div class="w-3 h-3 bg-primary/70 rounded-sm"></div>
+<div class="w-3 h-3 bg-primary rounded-sm"></div>
+</div>
+<span class="text-[10px] text-on-surface-variant">High</span>
+</div>
+</div>
+<div class="grid grid-cols-8 gap-1.5">
+<!-- Header Row -->
+<div></div>
+<div class="text-[10px] font-bold text-center text-on-surface-variant">MON</div>
+<div class="text-[10px] font-bold text-center text-on-surface-variant">TUE</div>
+<div class="text-[10px] font-bold text-center text-on-surface-variant">WED</div>
+<div class="text-[10px] font-bold text-center text-on-surface-variant">THU</div>
+<div class="text-[10px] font-bold text-center text-on-surface-variant">FRI</div>
+<div class="text-[10px] font-bold text-center text-on-surface-variant">SAT</div>
+<div class="text-[10px] font-bold text-center text-on-surface-variant">SUN</div>
+<!-- 9 AM Row -->
+<div class="text-[10px] font-bold py-1">09 AM</div>
+<div class="bg-surface-container rounded-sm h-6"></div>
+<div class="bg-primary/20 rounded-sm h-6"></div>
+<div class="bg-surface-container rounded-sm h-6"></div>
+<div class="bg-primary/20 rounded-sm h-6"></div>
+<div class="bg-primary/40 rounded-sm h-6"></div>
+<div class="bg-primary/70 rounded-sm h-6"></div>
+<div class="bg-surface-container rounded-sm h-6"></div>
+<!-- 12 PM Row -->
+<div class="text-[10px] font-bold py-1">12 PM</div>
+<div class="bg-primary/40 rounded-sm h-6"></div>
+<div class="bg-primary/70 rounded-sm h-6"></div>
+<div class="bg-primary/40 rounded-sm h-6"></div>
+<div class="bg-primary/70 rounded-sm h-6"></div>
+<div class="bg-primary rounded-sm h-6"></div>
+<div class="bg-primary rounded-sm h-6"></div>
+<div class="bg-primary/20 rounded-sm h-6"></div>
+<!-- 3 PM Row -->
+<div class="text-[10px] font-bold py-1">03 PM</div>
+<div class="bg-primary/70 rounded-sm h-6"></div>
+<div class="bg-primary/40 rounded-sm h-6"></div>
+<div class="bg-primary/70 rounded-sm h-6"></div>
+<div class="bg-primary/70 rounded-sm h-6"></div>
+<div class="bg-primary rounded-sm h-6"></div>
+<div class="bg-primary/70 rounded-sm h-6"></div>
+<div class="bg-primary/40 rounded-sm h-6"></div>
+<!-- 6 PM Row -->
+<div class="text-[10px] font-bold py-1">06 PM</div>
+<div class="bg-primary rounded-sm h-6"></div>
+<div class="bg-primary rounded-sm h-6"></div>
+<div class="bg-primary rounded-sm h-6"></div>
+<div class="bg-primary rounded-sm h-6"></div>
+<div class="bg-primary/70 rounded-sm h-6"></div>
+<div class="bg-primary/40 rounded-sm h-6"></div>
+<div class="bg-surface-container rounded-sm h-6"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer / Branding spacer -->
+<footer class="p-8 mt-12 border-t border-surface-container-low flex justify-between items-center text-on-surface-variant">
+<p class="text-xs">© 2024 The Groomed Interface. All rights reserved.</p>
+<div class="flex gap-4">
+<a class="text-xs hover:text-primary transition-colors" href="#">Export Report</a>
+<a class="text-xs hover:text-primary transition-colors" href="#">Data Privacy</a>
+</div>
+</footer>
+</main>
+</body></html>

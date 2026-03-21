@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Explore Shops | Lumina</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#0d1c2e",
+              "primary-fixed": "#dde2f6",
+              "primary-fixed-dim": "#c1c6d9",
+              "inverse-surface": "#2d3133",
+              "outline-variant": "#c6c6cc",
+              "on-primary-container": "#7e8395",
+              "surface-tint": "#585e6f",
+              "on-error-container": "#93000a",
+              "surface-variant": "#e0e3e5",
+              "on-background": "#191c1e",
+              "on-secondary-fixed-variant": "#3a485b",
+              "on-tertiary-container": "#a17f3b",
+              "on-primary": "#ffffff",
+              "secondary-fixed-dim": "#b9c7df",
+              "surface-bright": "#f7f9fb",
+              "on-primary-fixed": "#151b29",
+              "inverse-primary": "#c1c6d9",
+              "tertiary": "#000000",
+              "surface-container-high": "#e6e8ea",
+              "surface-container-lowest": "#ffffff",
+              "secondary-container": "#d5e3fc",
+              "surface-dim": "#d8dadc",
+              "secondary": "#515f74",
+              "on-surface": "#191c1e",
+              "tertiary-fixed-dim": "#e9c176",
+              "error-container": "#ffdad6",
+              "secondary-fixed": "#d5e3fc",
+              "on-secondary": "#ffffff",
+              "tertiary-container": "#261900",
+              "on-tertiary-fixed-variant": "#5d4201",
+              "error": "#ba1a1a",
+              "tertiary-fixed": "#ffdea5",
+              "surface-container-low": "#f2f4f6",
+              "primary-container": "#151b29",
+              "inverse-on-surface": "#eff1f3",
+              "primary": "#000000",
+              "surface-container-highest": "#e0e3e5",
+              "surface-container": "#eceef0",
+              "on-tertiary": "#ffffff",
+              "on-surface-variant": "#45464c",
+              "on-error": "#ffffff",
+              "outline": "#76777d",
+              "on-tertiary-fixed": "#261900",
+              "on-primary-fixed-variant": "#414756",
+              "background": "#f7f9fb",
+              "on-secondary-container": "#57657a",
+              "surface": "#f7f9fb"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-effect {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .tap-highlight-transparent {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-white dark:bg-[#121826]">
+<div class="flex justify-between items-center max-w-7xl mx-auto px-6 h-20">
+<div class="text-2xl font-bold tracking-tighter text-black dark:text-white font-headline">Lumina</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="font-manrope text-sm font-bold tracking-tight text-black dark:text-white border-b-2 border-black dark:border-white pb-1" href="#">Explore</a>
+<a class="font-manrope text-sm font-medium tracking-tight text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors" href="#">Bookings</a>
+<a class="font-manrope text-sm font-medium tracking-tight text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors" href="#">Profile</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="hidden lg:flex items-center gap-2 bg-primary text-on-primary px-5 py-2.5 rounded-lg font-manrope text-sm font-semibold transition-all duration-300 ease-in-out active:scale-95 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                    Book Now
+                </button>
+<button class="md:hidden text-on-surface">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</div>
+</header>
+<main class="pt-20 pb-24 md:pb-12 min-h-screen">
+<!-- Hero Search Section -->
+<section class="max-w-7xl mx-auto px-6 pt-12 pb-8">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+<div class="max-w-2xl">
+<h1 class="text-4xl md:text-5xl font-extrabold font-headline tracking-tight text-on-background mb-4">
+                        Discover your next <span class="text-outline">signature</span> look.
+                    </h1>
+<p class="text-on-surface-variant text-lg max-w-lg leading-relaxed">
+                        Curated ateliers and master barbers tailored to your grooming standards.
+                    </p>
+</div>
+<!-- Advanced Search Bar -->
+<div class="w-full md:w-auto">
+<div class="flex flex-col sm:flex-row bg-surface-container-low p-2 rounded-xl gap-2">
+<div class="flex items-center px-4 py-3 bg-surface-container-lowest rounded-lg flex-1 min-w-[240px]">
+<span class="material-symbols-outlined text-outline mr-3">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm font-medium w-full" placeholder="Search shops or services" type="text"/>
+</div>
+<div class="flex items-center px-4 py-3 bg-surface-container-lowest rounded-lg">
+<span class="material-symbols-outlined text-outline mr-3">location_on</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm font-medium w-48" placeholder="Location" type="text"/>
+</div>
+<button class="bg-primary text-on-primary px-6 py-3 rounded-lg font-bold text-sm transition-all active:scale-95">
+                            Search
+                        </button>
+</div>
+</div>
+</div>
+<!-- Category Filter Pills -->
+<div class="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar">
+<button class="px-5 py-2 bg-primary text-on-primary rounded-full text-sm font-semibold whitespace-nowrap">All Shops</button>
+<button class="px-5 py-2 bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high rounded-full text-sm font-semibold whitespace-nowrap transition-colors">Classic Barbers</button>
+<button class="px-5 py-2 bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high rounded-full text-sm font-semibold whitespace-nowrap transition-colors">Luxury Spas</button>
+<button class="px-5 py-2 bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high rounded-full text-sm font-semibold whitespace-nowrap transition-colors">Styling Studios</button>
+<button class="px-5 py-2 bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high rounded-full text-sm font-semibold whitespace-nowrap transition-colors">Men's Grooming</button>
+<div class="ml-auto flex items-center gap-2">
+<span class="text-xs font-bold uppercase tracking-widest text-outline">Filter By</span>
+<button class="p-2 bg-surface-container-low rounded-lg hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Discovery Grid -->
+<section class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Featured Card (Asymmetric Layout Start) -->
+<div class="lg:col-span-2 group relative bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+<div class="aspect-[16/9] md:aspect-[21/9] relative overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Modern minimalist luxury barbershop interior" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7Bsh2lEbD6ZTy5h9T1ZG2MfsCUuywaaZd_nDq-ITBCub76GRU6XIlZTHFIOusrp-JJ09EY9hZIjSKHLqnLzJfWCNu69nSF9e1itU_wlbDpZS5P3oKnHge0HXclB_FldVVgc0CztwnMJvSXaFvlCVR-NgFXTd--q1AfHMIHEy0DUze4UyYtmmM0GoN-gVDSNGchj-GxzY4-HtCnSHTY5Qs2s-4Tfv3m3YaHGC1dWQF9kDDUDLMwPV5_NaI5cgUrBO8y0bjvwJEh01V"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+<div class="absolute top-4 left-4 bg-tertiary-fixed text-on-tertiary-fixed px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest">Master Selection</div>
+</div>
+<div class="p-8 flex flex-col md:flex-row justify-between items-end gap-6">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold">4.9</span>
+<span class="text-outline text-sm">(1.2k reviews)</span>
+</div>
+<h3 class="text-3xl font-extrabold font-headline mb-2">The Heritage Atelier</h3>
+<div class="flex items-center text-on-surface-variant gap-2 text-sm font-medium">
+<span class="material-symbols-outlined text-base">location_on</span>
+                            Downtown District, Suite 402
+                        </div>
+</div>
+<button class="w-full md:w-auto bg-primary text-on-primary px-8 py-4 rounded-lg font-bold tracking-tight transition-all active:scale-95 shadow-lg">
+                        Book Now
+                    </button>
+</div>
+</div>
+<!-- Standard Card 1 -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg">
+<div class="aspect-square relative overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Close up of barber tools on a wooden table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSCFMQFuOkdgX7Yi5aFyGJXWyFRL_0nsmIzQuSp9pTlpt0Jvzq7s8XQDRzmyMREhhu_R0pMPnXp1r9E7-w7Sl1lcker-7vzu2GkfOzpBimNcBYFpgelUb0ov4bh9zAzfSXHDJpnrLD7ON1LD3w9DS08fanZhKmjYKr_ovtIKPYVWSWY3XKrJhIm-fJ4XGFofFMjZ5sfasoDqch4mdVsdubVvgiVb50yUWBFIPtQpctKjRGuCABoP2bWgRF2sLf3Pwz3dLtvd9JKI-9"/>
+<button class="absolute top-4 right-4 w-10 h-10 glass-effect bg-white/20 rounded-full flex items-center justify-center text-white transition-all hover:bg-white hover:text-black">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="text-xl font-bold font-headline mb-1">Sharp &amp; Co.</h4>
+<p class="text-sm text-on-surface-variant font-medium">Midtown North</p>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-1 rounded text-xs font-bold">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span> 4.7
+                        </div>
+</div>
+<div class="flex items-center justify-between mt-6">
+<span class="text-lg font-bold">From $45</span>
+<button class="text-sm font-bold underline underline-offset-4 decoration-2 hover:text-outline transition-colors">Book Now</button>
+</div>
+</div>
+</div>
+<!-- Standard Card 2 -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg">
+<div class="aspect-square relative overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Traditional barber pole against a dark wall" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi3P0YWjSoB1W30rvVp7iaIzU52UVcRYzlZZxCqyS8oPQZgIcGRE80gF7jJr9736TXDTpefv_eH6Jj-o_jvyvFoaJTYsXFeqa1Nj7vvzJeaDpsdgYgGPSz-Ud7vQBfK1UfnpoqHsW6y-bi3x7Ot7yQNiG0k43hkr9-aJDf066iT8l3se2D1p2FzMq-EjLBHitsEEEFNc1PmwlmGN-v4Wv0dZM0hNSgH_BhbqAMPJUsrSM8BRn36lR5KOeGjmVfX05fJUrqZ6jDzwnY"/>
+<button class="absolute top-4 right-4 w-10 h-10 glass-effect bg-white/20 rounded-full flex items-center justify-center text-white transition-all hover:bg-white hover:text-black">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="text-xl font-bold font-headline mb-1">Old Town Grooming</h4>
+<p class="text-sm text-on-surface-variant font-medium">East Side Waterfront</p>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-1 rounded text-xs font-bold">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span> 4.8
+                        </div>
+</div>
+<div class="flex items-center justify-between mt-6">
+<span class="text-lg font-bold">From $35</span>
+<button class="text-sm font-bold underline underline-offset-4 decoration-2 hover:text-outline transition-colors">Book Now</button>
+</div>
+</div>
+</div>
+<!-- Standard Card 3 -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg">
+<div class="aspect-square relative overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Man getting a fresh haircut in a modern shop" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDL395efcii6egq6DbxYxfSxw9lPtASWvr9nyiIX3PDRD5DPM2aqD-bM24z4nlQJNFIo6duutRJce1FKomv5xJynkuGaW0lIyG9K81I9sKdFbDMa4ZlJBaVyqTtLKGyHgdrvugCLceYGsmCazNcaFoKYgZVmVbd0X-4DWwtJ5e_2xrcb-S5B2FuUTH6MxUgF-0fhNjhhQAleMA_50MfPbTo3QOjn5ysqxr19Eq5CPPMcDcTBff8hfbQCevSW-MLwmXp7v4SCUrkGcw7"/>
+<button class="absolute top-4 right-4 w-10 h-10 glass-effect bg-white/20 rounded-full flex items-center justify-center text-white transition-all hover:bg-white hover:text-black">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="text-xl font-bold font-headline mb-1">Vogue Barbers</h4>
+<p class="text-sm text-on-surface-variant font-medium">Luxury Row</p>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-1 rounded text-xs font-bold">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span> 4.9
+                        </div>
+</div>
+<div class="flex items-center justify-between mt-6">
+<span class="text-lg font-bold">From $60</span>
+<button class="text-sm font-bold underline underline-offset-4 decoration-2 hover:text-outline transition-colors">Book Now</button>
+</div>
+</div>
+</div>
+<!-- Standard Card 4 -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg">
+<div class="aspect-square relative overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="High end shave tools and products display" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKL2ZrQAUlqbOtFfkEGvw6DmSw57sdg9YmXWzeJPsJVsyrQNp_GXB4JKlVdvhiadC9IPYcj0q8fwQJw2nlU-HxiXXF5qhMK3eBr0p26LI8SKQ_icmkJg1vy2iEvAdy-7-vElFIc8ur5u9ACl6MC5SjvfmjYqNy_5Z9IMCCjW-KKHBo3WSQ6Bhh_qNwIthzEpiQstUUbJkxFnG49PCyN04BzOYxUtrbPGaa79a-ML-3hsyU2LStPkDjKt843nZj13lhsq7FbuGTad8U"/>
+<button class="absolute top-4 right-4 w-10 h-10 glass-effect bg-white/20 rounded-full flex items-center justify-center text-white transition-all hover:bg-white hover:text-black">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="text-xl font-bold font-headline mb-1">The Razor's Edge</h4>
+<p class="text-sm text-on-surface-variant font-medium">Arts District</p>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-1 rounded text-xs font-bold">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span> 4.6
+                        </div>
+</div>
+<div class="flex items-center justify-between mt-6">
+<span class="text-lg font-bold">From $40</span>
+<button class="text-sm font-bold underline underline-offset-4 decoration-2 hover:text-outline transition-colors">Book Now</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Newsletter / CTA Asymmetric Section -->
+<section class="max-w-7xl mx-auto px-6 mt-20">
+<div class="bg-primary-container rounded-3xl p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 overflow-hidden relative">
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-3xl"></div>
+<div class="flex-1 z-10">
+<h2 class="text-3xl md:text-4xl font-black font-headline text-white mb-6 leading-tight">Join the Lumina Priority List</h2>
+<p class="text-on-primary-container text-lg mb-8 max-w-md">Get early access to premium bookings and exclusive grooming events in your city.</p>
+<div class="flex flex-col sm:flex-row gap-4">
+<input class="bg-white/10 border-white/20 rounded-lg px-6 py-4 text-white placeholder:text-white/40 focus:ring-1 focus:ring-white flex-1 outline-none" placeholder="Enter your email" type="email"/>
+<button class="bg-white text-black font-bold px-8 py-4 rounded-lg hover:bg-opacity-90 transition-all active:scale-95">Subscribe</button>
+</div>
+</div>
+<div class="hidden lg:block flex-1 relative z-10">
+<div class="bg-surface-container-lowest/10 backdrop-blur-xl border border-white/10 p-8 rounded-2xl transform rotate-3 scale-110 translate-x-12">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-12 h-12 bg-tertiary-fixed rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-fixed">verified</span>
+</div>
+<div>
+<h4 class="font-bold text-white">VIP Membership</h4>
+<p class="text-xs text-white/60">Unlock premium benefits</p>
+</div>
+</div>
+<ul class="space-y-4">
+<li class="flex items-center gap-3 text-white/80 text-sm">
+<span class="material-symbols-outlined text-tertiary-fixed text-xs">check_circle</span>
+                                Priority booking at top ateliers
+                            </li>
+<li class="flex items-center gap-3 text-white/80 text-sm">
+<span class="material-symbols-outlined text-tertiary-fixed text-xs">check_circle</span>
+                                Monthly complimentary grooming kit
+                            </li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-6 pb-8 pt-4 md:hidden bg-white/80 dark:bg-[#121826]/80 backdrop-blur-xl border-t border-neutral-100 dark:border-neutral-800 rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center bg-black dark:bg-white text-white dark:text-black rounded-full w-12 h-12 tap-highlight-transparent scale-90 active:scale-100 transition-transform" href="#">
+<span class="material-symbols-outlined">search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-neutral-400 dark:text-neutral-500 active:opacity-70 tap-highlight-transparent scale-90 active:scale-100 transition-transform" href="#">
+<span class="material-symbols-outlined">event_note</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-widest mt-1">Bookings</span>
+</a>
+<a class="flex flex-col items-center justify-center text-neutral-400 dark:text-neutral-500 active:opacity-70 tap-highlight-transparent scale-90 active:scale-100 transition-transform" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-widest mt-1">Account</span>
+</a>
+</nav>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-xl md:bottom-12 transition-all hover:rotate-12 active:scale-95 z-40">
+<span class="material-symbols-outlined">add</span>
+</button>
+</body></html>

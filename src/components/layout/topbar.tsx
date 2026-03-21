@@ -1,200 +1,320 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
-  Sun,
-  Moon,
-  Globe,
-  ChevronDown,
-  Bell,
-  Search,
-  Menu,
-  Users,
-  LogOut,
+  Globe, ChevronDown, Bell, Search, Menu, Users, Sun, Moon,
 } from "lucide-react";
 import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
-import { getGreeting, getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
-import { logout } from "@/app/auth/actions";
+
+/* ── Icon button helper ── */
+function IconBtn({
+  onClick,
+  children,
+  badge,
+}: {
+  onClick?: () => void;
+  children: React.ReactNode;
+  badge?: boolean;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        position: "relative",
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        border: "none",
+        background: hover ? "#f4f6f8" : "transparent",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        transition: "background 0.15s ease",
+        color: "#76777d",
+        flexShrink: 0,
+      }}
+    >
+      {children}
+      {badge && (
+        <span style={{
+          position: "absolute", top: 7, right: 7,
+          width: 7, height: 7,
+          background: "#ef4444",
+          borderRadius: "50%",
+          border: "1.5px solid #ffffff",
+        }} />
+      )}
+    </button>
+  );
+}
 
 export function Topbar() {
-  const { theme, toggleTheme, locale, toggleLocale, direction } =
-    useThemeStore();
-  const {
-    shopName,
-    role,
-    currentView,
-    barbers,
-    setCurrentView,
-    toggleMobileSidebar,
-  } = useWorkspaceStore();
+  const { theme, toggleTheme, toggleLocale, direction } = useThemeStore();
+  const { shopName, role, currentView, barbers, setCurrentView, toggleMobileSidebar } =
+    useWorkspaceStore();
   const t = useTranslation();
   const isRTL = direction === "rtl";
-
-  const getLocalizedGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return t.topbar.goodMorning;
-    if (hour < 17) return t.topbar.goodAfternoon;
-    return t.topbar.goodEvening;
-  };
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
-    <header
-      className={cn(
-        "h-20 flex items-center justify-between px-6 md:px-10 border-b border-[var(--border-primary)]",
-        "bg-[var(--bg-primary)]/80 backdrop-blur-[20px]",
-        "sticky top-0 z-[100]",
-      )}
+    <nav
+      style={{
+        position: "fixed",
+        top: 0,
+        left: isRTL ? 0 : "var(--sidebar-width)",
+        right: isRTL ? "var(--sidebar-width)" : 0,
+        height: 64,
+        background: "rgba(255,255,255,0.92)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderBottom: "1px solid #eceef0",
+        zIndex: 30,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 32px",
+        gap: 16,
+      }}
     >
-      {/* Left — Hamburger & Greeting */}
-      <div className="flex items-center gap-3 md:gap-6">
-        <button
-          onClick={toggleMobileSidebar}
-          className="md:hidden flex items-center justify-center w-12 h-12 rounded-[var(--radius-md)] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
-        >
-          <Menu size={20} />
-        </button>
-        <div className="hidden sm:block">
-          <p className="text-[11px] text-[var(--text-tertiary)] font-light tracking-wider uppercase">
-            {getLocalizedGreeting()}
-          </p>
-          <div className="flex items-center gap-2 mt-0.5">
-            <h1 className="text-[14px] md:text-[15px] text-[var(--text-primary)] font-medium">
-              {shopName}
-            </h1>
-          </div>
+      {/* ── LEFT: hamburger + breadcrumb + view switcher ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        {/* Mobile hamburger */}
+        <IconBtn onClick={toggleMobileSidebar}>
+          <Menu size={18} />
+        </IconBtn>
+
+        {/* Breadcrumb */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{
+            fontSize: 11, fontWeight: 700, color: "#b0b3b8",
+            textTransform: "uppercase", letterSpacing: "0.12em",
+          }}>
+            {isRTL ? "الأتيليه" : "Atelier Overview"}
+          </span>
+          <span style={{ fontSize: 14, color: "#d4d6da", lineHeight: 1 }}>/</span>
+          <span style={{
+            fontSize: 12, fontWeight: 700, color: "#191c1e",
+            letterSpacing: "0.01em",
+          }}>
+            {isRTL ? "لوحة التحكم" : "Main Dashboard"}
+          </span>
         </div>
 
-        {/* Workspace View Switcher (Team shops only) */}
+        {/* View Switcher — desktop only, for shop_admin */}
         {role === "shop_admin" && (
-          <div className="relative group hidden lg:block">
-            <button className="flex items-center gap-2 h-12 px-4 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] font-medium text-[var(--text-secondary)] hover:border-[var(--border-hover)] transition-colors cursor-pointer">
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setDropdownOpen((v) => !v)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                height: 30,
+                padding: "0 12px",
+                borderRadius: 8,
+                border: "1px solid #eceef0",
+                background: "#f4f6f8",
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                color: "#45464c",
+                cursor: "pointer",
+                transition: "all 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "#eceef0";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "#f4f6f8";
+              }}
+            >
               <span>
                 {currentView === "master"
-                  ? t.topbar.masterView
+                  ? t.topbar.masterView || "Master View"
                   : barbers.find((b) => b.id === currentView)?.name}
               </span>
-              <ChevronDown size={14} />
+              <ChevronDown size={11} />
             </button>
-            {/* Dropdown */}
-            <div
-              className={cn(
-                "absolute top-full mt-1 w-48 py-1 rounded-[var(--radius-md)] bg-[var(--bg-secondary)] border border-[var(--border-primary)] shadow-[var(--shadow-lg)] backdrop-blur-[20px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50",
-                isRTL ? "right-0" : "left-0",
-              )}
-            >
-              <button
-                onClick={() => setCurrentView("master")}
-                className={cn(
-                  "w-full px-3 py-2 text-[12px] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer",
-                  isRTL ? "text-end" : "text-start",
-                  currentView === "master"
-                    ? "text-[var(--accent-mint)]"
-                    : "text-[var(--text-secondary)]",
-                )}
-              >
-                {t.topbar.masterView}
-              </button>
-              <div className="h-px bg-[var(--border-primary)] my-1" />
-              {barbers.map((barber) => (
-                <button
-                  key={barber.id}
-                  onClick={() => setCurrentView(barber.id)}
-                  className={cn(
-                    "w-full px-3 py-2 text-[12px] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer",
-                    isRTL ? "text-end" : "text-start",
-                    currentView === barber.id
-                      ? "text-[var(--accent-mint)]"
-                      : "text-[var(--text-secondary)]",
+
+            {dropdownOpen && (
+              <>
+                {/* Click-away backdrop */}
+                <div
+                  style={{ position: "fixed", inset: 0, zIndex: 40 }}
+                  onClick={() => setDropdownOpen(false)}
+                />
+                <div style={{
+                  position: "absolute",
+                  top: "calc(100% + 8px)",
+                  left: isRTL ? "auto" : 0,
+                  right: isRTL ? 0 : "auto",
+                  minWidth: 180,
+                  background: "#ffffff",
+                  border: "1px solid #eceef0",
+                  borderRadius: 12,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
+                  padding: "6px",
+                  zIndex: 50,
+                }}>
+                  <button
+                    onClick={() => { setCurrentView("master"); setDropdownOpen(false); }}
+                    style={{
+                      width: "100%",
+                      textAlign: isRTL ? "right" : "left",
+                      padding: "9px 12px",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: currentView === "master" ? "#191c1e" : "#76777d",
+                      background: currentView === "master" ? "#f4f6f8" : "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {t.topbar.masterView || "Master View"}
+                  </button>
+                  {barbers.length > 0 && (
+                    <div style={{ height: 1, background: "#f0f2f5", margin: "4px 6px" }} />
                   )}
-                >
-                  {barber.name}
-                </button>
-              ))}
-            </div>
+                  {barbers.map((barber) => (
+                    <button
+                      key={barber.id}
+                      onClick={() => { setCurrentView(barber.id); setDropdownOpen(false); }}
+                      style={{
+                        width: "100%",
+                        textAlign: isRTL ? "right" : "left",
+                        padding: "9px 12px",
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: currentView === barber.id ? "#191c1e" : "#76777d",
+                        background: currentView === barber.id ? "#f4f6f8" : "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {barber.name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
 
-      {/* Right — Actions */}
-      <div className="flex items-center gap-2 md:gap-4 shrink-0">
-        {/* Search */}
-        <div className="relative hidden lg:block me-2">
+      {/* ── RIGHT: search + icons + user ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        {/* Search bar */}
+        <div style={{ position: "relative", marginRight: 8 }}>
           <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] group-focus-within:text-[var(--text-primary)] transition-colors"
-            size={16}
+            size={14}
+            style={{
+              position: "absolute",
+              left: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#b0b3b8",
+              pointerEvents: "none",
+            }}
           />
           <input
             type="text"
-            placeholder={t.common?.search || "Search..."}
-            className="h-12 w-64 ps-11 pe-4 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--border-primary)] focus:bg-[var(--bg-primary)] text-[14px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition-all"
+            placeholder={t.common?.search || "Search…"}
+            style={{
+              height: 36,
+              width: 200,
+              paddingLeft: 34,
+              paddingRight: 14,
+              borderRadius: 10,
+              border: "1px solid #eceef0",
+              background: "#f8f9fb",
+              fontSize: 13,
+              color: "#191c1e",
+              outline: "none",
+              transition: "all 0.18s",
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.background = "#ffffff";
+              e.currentTarget.style.borderColor = "#191c1e";
+              e.currentTarget.style.width = "240px";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.background = "#f8f9fb";
+              e.currentTarget.style.borderColor = "#eceef0";
+              e.currentTarget.style.width = "200px";
+            }}
           />
         </div>
 
-        <div className="flex items-center gap-1 md:gap-2">
-          {/* View Switcher Mobile - Simplified */}
-          {role === "shop_admin" && (
-            <button className="lg:hidden flex items-center justify-center w-12 h-12 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer">
-              <Users className="w-5 h-5" />
-            </button>
-          )}
+        {/* Mobile view switcher */}
+        {role === "shop_admin" && (
+          <div className="lg:hidden">
+            <IconBtn>
+              <Users size={17} />
+            </IconBtn>
+          </div>
+        )}
 
-          {/* Notifications */}
-          <button className="hidden sm:flex relative items-center justify-center w-12 h-12 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer group">
-            <Bell size={18} />
-            <span className="absolute top-3 right-3 flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-mint)] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent-mint)]"></span>
-            </span>
-          </button>
+        {/* Notifications */}
+        <IconBtn badge>
+          <Bell size={17} />
+        </IconBtn>
 
-          {/* Language Toggle */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={toggleLocale}
-            className="flex items-center justify-center w-12 h-12 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
-          >
-            <Globe size={18} />
-          </motion.button>
+        {/* Language */}
+        <IconBtn onClick={toggleLocale}>
+          <Globe size={17} />
+        </IconBtn>
 
-          {/* Theme Toggle */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={toggleTheme}
-            className="flex items-center justify-center w-12 h-12 rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
-          >
-            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-          </motion.button>
+        {/* Theme */}
+        <IconBtn onClick={toggleTheme}>
+          {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+        </IconBtn>
 
-          {/* Logout */}
-          <form action={logout}>
-            <button
-              type="submit"
-              className="flex items-center justify-center w-12 h-12 rounded-full text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
-              title="Sign Out"
-            >
-              <LogOut size={18} />
-            </button>
-          </form>
+        {/* Divider */}
+        <div style={{ width: 1, height: 32, background: "#eceef0", margin: "0 12px" }} />
 
-          {/* User Avatar */}
-          <div
-            className={cn(
-              "w-10 h-10 md:w-12 md:h-12 rounded-full bg-[var(--text-primary)] flex items-center justify-center shadow-sm border border-[var(--border-primary)] cursor-pointer hover:opacity-90 transition-opacity",
-              isRTL ? "me-2" : "ms-2",
-            )}
-          >
-            <span className="text-[11px] md:text-[13px] font-medium text-[var(--bg-primary)]">
-              {getInitials("Admin User")}
+        {/* User section */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          cursor: "pointer",
+        }}>
+          <div style={{ textAlign: isRTL ? "left" : "right" }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#191c1e", margin: 0, lineHeight: 1.3 }}>
+              {shopName || "My Atelier"}
+            </p>
+            <p style={{ fontSize: 10, color: "#b0b3b8", fontWeight: 600, textTransform: "capitalize", margin: 0, lineHeight: 1.4 }}>
+              {role?.replace("_", " ") || "Admin"}
+            </p>
+          </div>
+          <div style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: "#191c1e",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            border: "2px solid #eceef0",
+          }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "#ffffff", letterSpacing: "0.05em" }}>
+              {getInitials(shopName || "A")}
             </span>
           </div>
         </div>
       </div>
-    </header>
+    </nav>
   );
 }

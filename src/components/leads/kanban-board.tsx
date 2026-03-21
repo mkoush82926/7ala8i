@@ -153,73 +153,58 @@ export function KanbanBoard() {
   return (
     <div className="space-y-8 h-full">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h2 className="text-[20px] tracking-tight text-[var(--text-primary)] font-light">
+          <h2
+            className="text-4xl font-extrabold tracking-tight text-[#191c1e]"
+            style={{ fontFamily: "Manrope, sans-serif" }}
+          >
             {t.leads.crmPipeline}
           </h2>
-          <p className="text-[13px] text-[var(--text-secondary)] mt-1 font-light">
+          <p className="text-[#45464c] mt-2 font-medium text-sm">
             {leads.length} {t.leads.leadsAcross} {stages.length}{" "}
             {t.leads.stages}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {/* View Toggle */}
-          <div className="flex items-center bg-[var(--bg-surface)] rounded-[var(--radius-sm)] p-0.5">
+          <div className="flex items-center bg-[#f2f4f6] p-1 rounded-lg">
             <button
               onClick={() => setView("kanban")}
               className={cn(
-                "relative px-2.5 py-1.5 rounded-[var(--radius-sm)] cursor-pointer z-10",
+                "px-3 py-1.5 rounded-md text-sm font-semibold transition-all cursor-pointer",
                 view === "kanban"
-                  ? "text-[var(--text-primary)]"
-                  : "text-[var(--text-tertiary)]",
+                  ? "bg-white text-[#191c1e] shadow-sm"
+                  : "text-[#76777d] hover:text-[#191c1e]",
               )}
             >
-              {view === "kanban" && (
-                <motion.div
-                  layoutId="leads-view-pill"
-                  className="absolute inset-0 bg-[var(--bg-surface-active)] rounded-[var(--radius-sm)] border border-[var(--border-primary)]"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-              <Kanban size={14} className="relative z-10" />
+              <Kanban size={14} />
             </button>
             <button
               onClick={() => setView("list")}
               className={cn(
-                "relative px-2.5 py-1.5 rounded-[var(--radius-sm)] cursor-pointer z-10",
+                "px-3 py-1.5 rounded-md text-sm font-semibold transition-all cursor-pointer",
                 view === "list"
-                  ? "text-[var(--text-primary)]"
-                  : "text-[var(--text-tertiary)]",
+                  ? "bg-white text-[#191c1e] shadow-sm"
+                  : "text-[#76777d] hover:text-[#191c1e]",
               )}
             >
-              {view === "list" && (
-                <motion.div
-                  layoutId="leads-view-pill"
-                  className="absolute inset-0 bg-[var(--bg-surface-active)] rounded-[var(--radius-sm)] border border-[var(--border-primary)]"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-              <List size={14} className="relative z-10" />
+              <List size={14} />
             </button>
           </div>
 
-          <GlassButton
-            variant="secondary"
-            size="sm"
-            icon={<Upload size={14} />}
-          >
+          <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-[#eceef0] text-[#191c1e] font-semibold text-sm hover:bg-[#f2f4f6] transition-colors cursor-pointer">
+            <Upload size={15} />
             {t.leads.importCsv}
-          </GlassButton>
-          <GlassButton
-            variant="primary"
-            size="sm"
-            icon={<Plus size={14} />}
+          </button>
+          <button
             onClick={handleNewLead}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#191c1e] text-white font-bold text-sm shadow-[0_8px_16px_rgba(0,0,0,0.1)] hover:opacity-90 transition-opacity cursor-pointer"
           >
+            <Plus size={15} />
             {t.leads.addNewLead}
-          </GlassButton>
+          </button>
         </div>
       </div>
 
@@ -299,7 +284,7 @@ function LeadListView({
   };
 
   return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--border-primary)] bg-[var(--glass-bg)] backdrop-blur-[20px] overflow-hidden">
+    <div className="rounded-xl border border-[#eceef0] bg-white overflow-hidden shadow-sm">
       {/* Bulk actions bar */}
       <AnimatePresence>
         {selectedIds.length > 0 && (
@@ -329,25 +314,25 @@ function LeadListView({
       </AnimatePresence>
 
       {/* Table header */}
-      <div className="flex items-center border-b border-[var(--border-primary)] px-4 py-3">
+      <div className="flex items-center border-b border-[#eceef0] px-6 py-3 bg-[#f7f9fb]">
         <div className="w-8 flex-shrink-0">
           <input
             type="checkbox"
             checked={selectedIds.length === leads.length && leads.length > 0}
             onChange={toggleAll}
-            className="w-3.5 h-3.5 rounded border-[var(--border-primary)] bg-transparent accent-[var(--accent-mint)] cursor-pointer"
+            className="w-3.5 h-3.5 rounded cursor-pointer"
           />
         </div>
-        <div className="flex-1 text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider">
+        <div className="flex-1 text-[11px] text-[#76777d] font-bold uppercase tracking-wider">
           {t.leads.name}
         </div>
-        <div className="w-36 text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider">
+        <div className="w-36 text-[11px] text-[#76777d] font-bold uppercase tracking-wider">
           {t.leads.phone}
         </div>
-        <div className="w-28 text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider">
+        <div className="w-28 text-[11px] text-[#76777d] font-bold uppercase tracking-wider">
           {t.leads.stage}
         </div>
-        <div className="w-24 text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider text-end">
+        <div className="w-24 text-[11px] text-[#76777d] font-bold uppercase tracking-wider text-end">
           {t.leads.value}
         </div>
       </div>
@@ -362,9 +347,9 @@ function LeadListView({
             exit={{ opacity: 0, height: 0 }}
             transition={{ delay: i * 0.02 }}
             className={cn(
-              "flex items-center px-4 py-3 border-b border-[var(--border-primary)] last:border-b-0",
-              "hover:bg-[var(--bg-surface-hover)] transition-colors cursor-pointer",
-              selectedIds.includes(lead.id) && "bg-[var(--bg-surface)]",
+              "flex items-center px-6 py-4 border-b border-[#eceef0] last:border-b-0",
+              "hover:bg-[#f7f9fb] transition-colors cursor-pointer",
+              selectedIds.includes(lead.id) && "bg-[#f2f4f6]",
             )}
             onClick={() => onLeadClick(lead)}
           >
@@ -379,44 +364,41 @@ function LeadListView({
                 type="checkbox"
                 checked={selectedIds.includes(lead.id)}
                 onChange={() => toggleSelect(lead.id)}
-                className="w-3.5 h-3.5 rounded border-[var(--border-primary)] bg-transparent accent-[var(--accent-mint)] cursor-pointer"
+                className="w-3.5 h-3.5 rounded cursor-pointer"
               />
             </div>
             <div className="flex-1 flex items-center gap-3 min-w-0">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-lavender)] to-[var(--accent-blue)] flex items-center justify-center flex-shrink-0">
-                <span className="text-[9px] font-medium text-[#0A0A0A]">
-                  {lead.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .slice(0, 2)}
-                </span>
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
+                style={{ background: "#dde2f6", color: "#151b29", fontFamily: "Manrope, sans-serif" }}
+              >
+                {lead.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
               </div>
               <div className="min-w-0">
-                <p className="text-[13px] text-[var(--text-primary)] font-light truncate">
+                <p className="text-sm font-bold text-[#191c1e] truncate">
                   {lead.name}
                 </p>
                 {lead.notes && (
-                  <p className="text-[10px] text-[var(--text-muted)] truncate">
+                  <p className="text-xs text-[#76777d] truncate">
                     {lead.notes}
                   </p>
                 )}
               </div>
             </div>
-            <div className="w-36 text-[12px] text-[var(--text-secondary)] font-light tabular-nums">
+            <div className="w-36 text-sm text-[#45464c] font-medium tabular-nums">
               {lead.phone}
             </div>
             <div className="w-28">
               <span
                 className={cn(
-                  "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize",
+                  "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold capitalize",
                   stageColors[lead.stage],
                 )}
               >
                 {stages.find((s) => s.id === lead.stage)?.label || lead.stage}
               </span>
             </div>
-            <div className="w-24 text-end text-[13px] text-[var(--text-primary)] font-medium tabular-nums">
+            <div className="w-24 text-end text-sm text-[#191c1e] font-bold tabular-nums">
               {lead.value ? `${lead.value} ${t.common.jod}` : "—"}
             </div>
           </motion.div>

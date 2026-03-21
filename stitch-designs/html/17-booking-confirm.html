@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#0d1c2e",
+              "primary-fixed": "#dde2f6",
+              "primary-fixed-dim": "#c1c6d9",
+              "inverse-surface": "#2d3133",
+              "outline-variant": "#c6c6cc",
+              "on-primary-container": "#7e8395",
+              "surface-tint": "#585e6f",
+              "on-error-container": "#93000a",
+              "surface-variant": "#e0e3e5",
+              "on-background": "#191c1e",
+              "on-secondary-fixed-variant": "#3a485b",
+              "on-tertiary-container": "#a17f3b",
+              "on-primary": "#ffffff",
+              "secondary-fixed-dim": "#b9c7df",
+              "surface-bright": "#f7f9fb",
+              "on-primary-fixed": "#151b29",
+              "inverse-primary": "#c1c6d9",
+              "tertiary": "#000000",
+              "surface-container-high": "#e6e8ea",
+              "surface-container-lowest": "#ffffff",
+              "secondary-container": "#d5e3fc",
+              "surface-dim": "#d8dadc",
+              "secondary": "#515f74",
+              "on-surface": "#191c1e",
+              "tertiary-fixed-dim": "#e9c176",
+              "error-container": "#ffdad6",
+              "secondary-fixed": "#d5e3fc",
+              "on-secondary": "#ffffff",
+              "tertiary-container": "#261900",
+              "on-tertiary-fixed-variant": "#5d4201",
+              "error": "#ba1a1a",
+              "tertiary-fixed": "#ffdea5",
+              "surface-container-low": "#f2f4f6",
+              "primary-container": "#151b29",
+              "inverse-on-surface": "#eff1f3",
+              "primary": "#000000",
+              "surface-container-highest": "#e0e3e5",
+              "surface-container": "#eceef0",
+              "on-tertiary": "#ffffff",
+              "on-surface-variant": "#45464c",
+              "on-error": "#ffffff",
+              "outline": "#76777d",
+              "on-tertiary-fixed": "#261900",
+              "on-primary-fixed-variant": "#414756",
+              "background": "#f7f9fb",
+              "on-secondary-container": "#57657a",
+              "surface": "#f7f9fb"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .tonal-layering {
+            transition: background-color 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-background min-h-screen">
+<!-- Header Suppression: Minimal Brand Anchor for Checkout -->
+<header class="h-20 flex items-center justify-between px-6 md:px-12 bg-white/50 backdrop-blur-md sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<span class="text-2xl font-black tracking-tighter text-primary">Lumina</span>
+<span class="w-[1px] h-6 bg-outline-variant/30"></span>
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Booking Atelier</span>
+</div>
+<div class="hidden md:flex items-center gap-2">
+<div class="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-xs font-semibold font-headline">Step 5: Confirmation</span>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-6 py-12 lg:py-20 grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Left Column: The Detail Canvas (Asymmetric Layout) -->
+<div class="lg:col-span-7 space-y-10">
+<section>
+<h1 class="font-headline text-4xl lg:text-5xl font-extrabold tracking-tight mb-4">Complete your <span class="text-primary-container/40 italic">transformation.</span></h1>
+<p class="text-on-surface-variant max-w-lg leading-relaxed">Please review your appointment details and provide your contact information to finalize the booking.</p>
+</section>
+<!-- Success State Simulation (Initially Hidden via opacity logic if needed, but here shown as requested context) -->
+<!-- Note: This would typically be a separate route, but here we provide the structure for the "Digital Atelier" success -->
+<div class="space-y-8">
+<!-- Client Info Form -->
+<div class="bg-surface-container-low p-8 rounded-xl space-y-6">
+<h2 class="font-headline text-xl font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">person_outline</span>
+                        Client Information
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">Full Name</label>
+<input class="w-full bg-surface-container-lowest border-none focus:ring-2 focus:ring-primary rounded-lg p-4 font-medium transition-all" placeholder="Julian Vane" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">Phone Number</label>
+<input class="w-full bg-surface-container-lowest border-none focus:ring-2 focus:ring-primary rounded-lg p-4 font-medium transition-all" placeholder="+1 (555) 000-0000" type="tel"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1">How did you hear about us?</label>
+<select class="w-full bg-surface-container-lowest border-none focus:ring-2 focus:ring-primary rounded-lg p-4 font-medium appearance-none transition-all">
+<option>Social Media (Instagram/TikTok)</option>
+<option>Referral from a friend</option>
+<option>Walk-by</option>
+<option>Google Search</option>
+<option>Other</option>
+</select>
+</div>
+</div>
+<!-- Payment Notice -->
+<div class="flex gap-4 p-6 bg-secondary-container/30 rounded-xl border-l-4 border-primary">
+<span class="material-symbols-outlined text-primary">payments</span>
+<div class="space-y-1">
+<h4 class="font-bold text-sm">Payment Policy</h4>
+<p class="text-sm text-on-secondary-container leading-relaxed">No payment is required today. You will pay at the atelier after your service. We kindly ask for a 24-hour notice for cancellations.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: The Summary Sidebar (Tonal Layering) -->
+<div class="lg:col-span-5">
+<div class="sticky top-32 space-y-6">
+<div class="bg-surface-container-highest p-8 rounded-xl shadow-sm space-y-8">
+<div class="flex justify-between items-start">
+<h3 class="font-headline text-2xl font-black uppercase tracking-tighter">Summary</h3>
+<span class="px-3 py-1 bg-primary text-on-primary text-[10px] font-bold tracking-widest rounded-full">ESTIMATED</span>
+</div>
+<!-- Line Items -->
+<div class="space-y-4">
+<div class="flex justify-between items-center p-4 bg-surface-container-lowest rounded-lg">
+<div class="flex items-center gap-4">
+<img class="w-12 h-12 rounded-md object-cover" data-alt="Modern barbershop interior service thumbnail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC88Gy8G1Trf7nv68Hy_MNyvVEZfi765j1GX7Qa1LRKR8TflHEzZcs0Lxy3-_vdxs94yvcQPnlXhDATMBrFX0TvpfLEDHbtUb9VlbcleDwBg9ShXeqr3X73-9dBk38nBbY4nryhIWr_RgYkL8m9ZrudMX3ie0ghiEzh3En1ACyrDNrrcCBqieGNlie04tWrbx1N2V2NxZkjpmHOQRs2lnwBDn7FWoMW-cWKzaBLSPPrh1WMrx_c320HgHWfWgiUy_MPvuLfNkbXbo5v"/>
+<div>
+<p class="font-bold text-sm">Signature Scissor Cut</p>
+<p class="text-xs text-on-surface-variant">45 mins • Artisan Level</p>
+</div>
+</div>
+<span class="font-bold text-sm">$65</span>
+</div>
+<div class="flex justify-between items-center p-4 bg-surface-container-lowest rounded-lg">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-primary-fixed rounded-md flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">content_cut</span>
+</div>
+<div>
+<p class="font-bold text-sm">Hot Towel Shave</p>
+<p class="text-xs text-on-surface-variant">30 mins • Add-on</p>
+</div>
+</div>
+<span class="font-bold text-sm">$35</span>
+</div>
+</div>
+<!-- Appointment Metadata -->
+<div class="grid grid-cols-2 gap-4 py-6 border-y border-outline-variant/20">
+<div class="space-y-1">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Barber</p>
+<p class="font-bold text-sm">Marcus Sterling</p>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Date &amp; Time</p>
+<p class="font-bold text-sm">Oct 24, 2:30 PM</p>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Duration</p>
+<p class="font-bold text-sm">1h 15m total</p>
+</div>
+<div class="space-y-1">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Location</p>
+<p class="font-bold text-sm">Downtown Atelier</p>
+</div>
+</div>
+<!-- Total -->
+<div class="flex justify-between items-end">
+<div>
+<p class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Total Price</p>
+<p class="text-4xl font-black font-headline tracking-tighter">$100.00</p>
+</div>
+<button class="bg-primary text-on-primary font-headline font-bold px-10 py-5 rounded-lg shadow-[0_10px_20px_-5px_rgba(0,0,0,0.3)] hover:scale-[1.02] active:scale-95 transition-all">
+                            Confirm Booking
+                        </button>
+</div>
+</div>
+<p class="text-[11px] text-center text-on-surface-variant px-4 leading-tight">
+                    By clicking Confirm, you agree to our Terms of Service and Privacy Policy. Your data is encrypted and handled with the utmost care.
+                </p>
+</div>
+</div>
+</main>
+<!-- SUCCESS STATE OVERLAY (Simulated for visualization) -->
+<!-- In a real app, this would be toggled or a new page. Here it is presented as the requested Success State -->
+<div class="fixed inset-0 z-[100] bg-surface flex items-center justify-center p-6 hidden">
+<div class="max-w-2xl w-full bg-surface-container-lowest rounded-xl p-12 text-center space-y-8 relative overflow-hidden shadow-2xl">
+<!-- Decorative Confetti (Simulated with spans) -->
+<div class="absolute inset-0 pointer-events-none opacity-20">
+<div class="absolute top-10 left-10 w-4 h-4 bg-tertiary-fixed rotate-45"></div>
+<div class="absolute top-20 right-20 w-3 h-3 bg-primary-fixed rounded-full"></div>
+<div class="absolute bottom-10 left-1/4 w-4 h-2 bg-secondary-fixed"></div>
+<div class="absolute top-1/2 right-10 w-2 h-6 bg-outline-variant"></div>
+</div>
+<div class="relative">
+<div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+<span class="material-symbols-outlined text-on-primary text-5xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<h2 class="font-headline text-5xl font-black tracking-tighter mb-4">You're All Set!</h2>
+<p class="text-on-surface-variant text-lg">We've reserved your chair. A confirmation email and SMS have been dispatched.</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-lg grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+<div>
+<p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Barber</p>
+<p class="font-bold text-sm">Sterling</p>
+</div>
+<div>
+<p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Date</p>
+<p class="font-bold text-sm">Oct 24</p>
+</div>
+<div>
+<p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Time</p>
+<p class="font-bold text-sm">2:30 PM</p>
+</div>
+<div>
+<p class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Total</p>
+<p class="font-bold text-sm">$100</p>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+<button class="bg-primary text-on-primary font-bold px-8 py-4 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm">calendar_add_on</span>
+                    Add to Calendar
+                </button>
+<button class="bg-surface-container-high text-on-surface font-bold px-8 py-4 rounded-lg hover:bg-surface-dim transition-colors">
+                    Book Another
+                </button>
+</div>
+<p class="text-xs text-on-surface-variant">Booking Reference: #LM-99201-AX</p>
+</div>
+</div>
+<!-- Bottom Navigation Suppression Logic: Only show for mobile top-level destinations -->
+<!-- Since this is Step 5 (Transactional/Linear), we keep it hidden to focus the user on the goal -->
+<footer class="mt-20 py-12 px-6 border-t border-outline-variant/10">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="flex items-center gap-4">
+<span class="text-xl font-black tracking-tighter">Lumina</span>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Precision &amp; Care</span>
+</div>
+<div class="flex gap-8">
+<a class="text-xs font-bold uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors" href="#">Help</a>
+<a class="text-xs font-bold uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors" href="#">Locations</a>
+<a class="text-xs font-bold uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy</a>
+</div>
+<div class="text-[10px] text-on-surface-variant/50">
+                © 2024 Lumina Grooming Atelier. All rights reserved.
+            </div>
+</div>
+</footer>
+</body></html>

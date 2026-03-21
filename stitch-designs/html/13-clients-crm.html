@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina Barber Atelier - Clients</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary": "#515f74",
+                        "on-surface": "#191c1e",
+                        "surface-dim": "#d8dadc",
+                        "inverse-surface": "#2d3133",
+                        "primary": "#000000",
+                        "secondary-container": "#d5e3fc",
+                        "on-tertiary-fixed-variant": "#5d4201",
+                        "on-tertiary-container": "#a17f3b",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "inverse-primary": "#c1c6d9",
+                        "on-primary-fixed-variant": "#414756",
+                        "tertiary-fixed": "#ffdea5",
+                        "surface-container": "#eceef0",
+                        "primary-fixed-dim": "#c1c6d9",
+                        "surface-tint": "#585e6f",
+                        "surface": "#f7f9fb",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#d5e3fc",
+                        "primary-container": "#151b29",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed": "#151b29",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-container-high": "#e6e8ea",
+                        "on-background": "#191c1e",
+                        "tertiary": "#000000",
+                        "on-tertiary-fixed": "#261900",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#dde2f6",
+                        "outline-variant": "#c6c6cc",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#261900",
+                        "on-primary-container": "#7e8395",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#e9c176",
+                        "secondary-fixed-dim": "#b9c7df",
+                        "outline": "#76777d",
+                        "surface-variant": "#e0e3e5",
+                        "background": "#f7f9fb",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f7f9fb",
+                        "on-surface-variant": "#45464c",
+                        "on-secondary-container": "#57657a"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .font-manrope { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="text-on-surface bg-surface">
+<!-- SideNavBar (Shared Component) -->
+<aside class="h-screen w-64 fixed left-0 top-0 overflow-y-auto bg-slate-50 dark:bg-slate-950 flex flex-col gap-2 p-4 border-r-0 z-50">
+<div class="mb-8 px-4">
+<h1 class="text-xl font-bold tracking-tighter text-slate-900 dark:text-slate-50 font-manrope">Lumina</h1>
+<p class="text-xs text-slate-500 font-manrope">Barber Atelier</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-manrope tracking-tight font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-manrope tracking-tight font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+                Calendar
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-manrope tracking-tight font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+                Leads
+            </a>
+<!-- Active Tab: Clients -->
+<a class="flex items-center gap-3 px-4 py-3 text-slate-900 dark:text-slate-50 bg-slate-200/50 dark:bg-slate-800/50 rounded-lg font-bold font-manrope tracking-tight text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+                Clients
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-manrope tracking-tight font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                Analytics
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-manrope tracking-tight font-medium text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="mt-auto px-4 py-6">
+<button class="w-full py-3 bg-primary text-on-primary rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95 duration-150">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                Book Appointment
+            </button>
+</div>
+</aside>
+<!-- Main Content Shell -->
+<main class="ml-64 min-h-screen flex flex-col">
+<!-- TopNavBar (Shared Component) -->
+<header class="sticky top-0 z-40 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-sm dark:shadow-none h-16 px-8 flex justify-between items-center">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary transition-all font-body" placeholder="Search by name, phone, or email..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 text-slate-500">
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="notifications">notifications</span></button>
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="language">language</span></button>
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined" data-icon="dark_mode">dark_mode</span></button>
+</div>
+<div class="h-8 w-px bg-surface-variant"></div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity">Check-in</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-slate-200">
+<img class="w-full h-full object-cover" data-alt="User Profile Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMhSK1EL_ndDU7jP7sW9oMnrI-h4MhTMb1vnd__4p-UmCm9WJu07hyA5THZKdAXPKS2WNisM8v6w4nu_6tCfqM_jV8N3sxh56eS4oOvHq_yze8UYdF83WlI1YIZwkP87Un6ARGgzTVKuZINq1uOuyfg5PbDMAL9RH7SXqRWVlvQbPfy3aBg6RNYuechBTvWGEagDMYjFnh5Gp1fyT5WpEwbPeyERJt-_jLcqE370qOUsDCEO5EtOTry22x1IHHvWdyW_2P_DZUcJYp"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Canvas -->
+<div class="p-10 flex-1 flex flex-col gap-8 max-w-[1600px] w-full mx-auto">
+<!-- Header Section -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="space-y-1">
+<h2 class="text-4xl font-extrabold font-manrope tracking-tighter text-on-surface">Clients</h2>
+<p class="text-on-surface-variant text-sm font-medium">Manage your database of <span class="text-primary font-bold">1,248</span> active clients</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high rounded-lg text-sm font-semibold transition-all hover:bg-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+                        Filters
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-semibold shadow-sm hover:opacity-90 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="person_add">person_add</span>
+                        New Client
+                    </button>
+</div>
+</section>
+<!-- Clients Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<!-- Client Card 1 -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-manrope font-bold text-lg">
+                            JD
+                        </div>
+<div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-primary transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="call">call</span>
+</button>
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-green-600 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="chat">chat</span>
+</button>
+</div>
+</div>
+<div class="space-y-1">
+<h3 class="font-manrope font-bold text-lg text-on-surface">Jordan Davis</h3>
+<p class="text-sm text-on-surface-variant font-medium">+962 79 123 4567</p>
+</div>
+<div class="flex items-center justify-between pt-4 mt-auto border-t-0 bg-surface-container-low/30 -mx-6 px-6 py-3 rounded-b-xl">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Total Spent</span>
+<span class="text-sm font-manrope font-bold text-primary">245 JOD</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Email Status</span>
+<span class="material-symbols-outlined text-green-500 text-base" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+</div>
+<!-- Client Card 2 -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-manrope font-bold text-lg">
+                            SK
+                        </div>
+<div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-primary transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="call">call</span>
+</button>
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-green-600 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="chat">chat</span>
+</button>
+</div>
+</div>
+<div class="space-y-1">
+<h3 class="font-manrope font-bold text-lg text-on-surface">Sami Khalid</h3>
+<p class="text-sm text-on-surface-variant font-medium">+962 78 555 8899</p>
+</div>
+<div class="flex items-center justify-between pt-4 mt-auto border-t-0 bg-surface-container-low/30 -mx-6 px-6 py-3 rounded-b-xl">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Total Spent</span>
+<span class="text-sm font-manrope font-bold text-primary">120 JOD</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Email Status</span>
+<span class="material-symbols-outlined text-slate-300 text-base" data-icon="remove">remove</span>
+</div>
+</div>
+</div>
+<!-- Client Card 3 -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed font-manrope font-bold text-lg">
+                            MA
+                        </div>
+<div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-primary transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="call">call</span>
+</button>
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-green-600 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="chat">chat</span>
+</button>
+</div>
+</div>
+<div class="space-y-1">
+<h3 class="font-manrope font-bold text-lg text-on-surface">Muna Al-Fayez</h3>
+<p class="text-sm text-on-surface-variant font-medium">+962 77 000 1122</p>
+</div>
+<div class="flex items-center justify-between pt-4 mt-auto border-t-0 bg-surface-container-low/30 -mx-6 px-6 py-3 rounded-b-xl">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Total Spent</span>
+<span class="text-sm font-manrope font-bold text-primary">480 JOD</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Email Status</span>
+<span class="material-symbols-outlined text-green-500 text-base" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+</div>
+<!-- Client Card 4 -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant font-manrope font-bold text-lg">
+                            TR
+                        </div>
+<div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-primary transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="call">call</span>
+</button>
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-green-600 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="chat">chat</span>
+</button>
+</div>
+</div>
+<div class="space-y-1">
+<h3 class="font-manrope font-bold text-lg text-on-surface">Thomas Reed</h3>
+<p class="text-sm text-on-surface-variant font-medium">+962 79 999 0000</p>
+</div>
+<div class="flex items-center justify-between pt-4 mt-auto border-t-0 bg-surface-container-low/30 -mx-6 px-6 py-3 rounded-b-xl">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Total Spent</span>
+<span class="text-sm font-manrope font-bold text-primary">15 JOD</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Email Status</span>
+<span class="material-symbols-outlined text-slate-300 text-base" data-icon="remove">remove</span>
+</div>
+</div>
+</div>
+<!-- Repeat for pagination visual -->
+<div class="group relative bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-full bg-slate-900 text-white flex items-center justify-center font-manrope font-bold text-lg">
+                            ZM
+                        </div>
+<div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-primary transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="call">call</span>
+</button>
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-green-600 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="chat">chat</span>
+</button>
+</div>
+</div>
+<div class="space-y-1">
+<h3 class="font-manrope font-bold text-lg text-on-surface">Zaid Murad</h3>
+<p class="text-sm text-on-surface-variant font-medium">+962 79 444 3322</p>
+</div>
+<div class="flex items-center justify-between pt-4 mt-auto bg-surface-container-low/30 -mx-6 px-6 py-3 rounded-b-xl">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Total Spent</span>
+<span class="text-sm font-manrope font-bold text-primary">60 JOD</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Email Status</span>
+<span class="material-symbols-outlined text-green-500 text-base" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+</div>
+<div class="group relative bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-manrope font-bold text-lg">
+                            YA
+                        </div>
+<div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-primary transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="call">call</span>
+</button>
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-green-600 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="chat">chat</span>
+</button>
+</div>
+</div>
+<div class="space-y-1">
+<h3 class="font-manrope font-bold text-lg text-on-surface">Yara Abbas</h3>
+<p class="text-sm text-on-surface-variant font-medium">+962 78 111 2233</p>
+</div>
+<div class="flex items-center justify-between pt-4 mt-auto bg-surface-container-low/30 -mx-6 px-6 py-3 rounded-b-xl">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Total Spent</span>
+<span class="text-sm font-manrope font-bold text-primary">310 JOD</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Email Status</span>
+<span class="material-symbols-outlined text-green-500 text-base" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+</div>
+<div class="group relative bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed font-manrope font-bold text-lg">
+                            OB
+                        </div>
+<div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-primary transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="call">call</span>
+</button>
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-green-600 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="chat">chat</span>
+</button>
+</div>
+</div>
+<div class="space-y-1">
+<h3 class="font-manrope font-bold text-lg text-on-surface">Omar Bakr</h3>
+<p class="text-sm text-on-surface-variant font-medium">+962 77 667 5544</p>
+</div>
+<div class="flex items-center justify-between pt-4 mt-auto bg-surface-container-low/30 -mx-6 px-6 py-3 rounded-b-xl">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Total Spent</span>
+<span class="text-sm font-manrope font-bold text-primary">85 JOD</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Email Status</span>
+<span class="material-symbols-outlined text-slate-300 text-base" data-icon="remove">remove</span>
+</div>
+</div>
+</div>
+<div class="group relative bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-manrope font-bold text-lg">
+                            LF
+                        </div>
+<div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-primary transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="call">call</span>
+</button>
+<button class="p-2 bg-surface rounded-full text-on-surface hover:text-green-600 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg" data-icon="chat">chat</span>
+</button>
+</div>
+</div>
+<div class="space-y-1">
+<h3 class="font-manrope font-bold text-lg text-on-surface">Laila Farrah</h3>
+<p class="text-sm text-on-surface-variant font-medium">+962 79 111 0099</p>
+</div>
+<div class="flex items-center justify-between pt-4 mt-auto bg-surface-container-low/30 -mx-6 px-6 py-3 rounded-b-xl">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Total Spent</span>
+<span class="text-sm font-manrope font-bold text-primary">1,120 JOD</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] uppercase tracking-wider text-outline font-bold">Email Status</span>
+<span class="material-symbols-outlined text-green-500 text-base" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Pagination Section -->
+<section class="mt-auto py-8 flex items-center justify-between border-t-0">
+<p class="text-sm text-on-surface-variant font-medium">Showing <span class="text-on-surface font-bold">1 - 8</span> of 1,248 clients</p>
+<div class="flex items-center gap-1">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-on-primary font-bold text-sm">1</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high font-medium text-sm transition-colors">2</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high font-medium text-sm transition-colors">3</button>
+<span class="px-2 text-on-surface-variant">...</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high font-medium text-sm transition-colors">156</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</section>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina - Shop Manager Registration</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed-variant": "#3a485b",
+              "surface-tint": "#585e6f",
+              "on-error-container": "#93000a",
+              "surface-variant": "#e0e3e5",
+              "on-background": "#191c1e",
+              "primary-fixed-dim": "#c1c6d9",
+              "inverse-surface": "#2d3133",
+              "on-primary-container": "#7e8395",
+              "outline-variant": "#c6c6cc",
+              "on-secondary-fixed": "#0d1c2e",
+              "primary-fixed": "#dde2f6",
+              "secondary-container": "#d5e3fc",
+              "surface-container-high": "#e6e8ea",
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed-dim": "#b9c7df",
+              "on-primary-fixed": "#151b29",
+              "surface-bright": "#f7f9fb",
+              "inverse-primary": "#c1c6d9",
+              "tertiary": "#000000",
+              "on-tertiary-container": "#a17f3b",
+              "on-primary": "#ffffff",
+              "on-tertiary": "#ffffff",
+              "on-surface-variant": "#45464c",
+              "error": "#ba1a1a",
+              "on-error": "#ffffff",
+              "on-tertiary-fixed-variant": "#5d4201",
+              "primary-container": "#151b29",
+              "surface-container-low": "#f2f4f6",
+              "inverse-on-surface": "#eff1f3",
+              "tertiary-fixed": "#ffdea5",
+              "primary": "#000000",
+              "surface-container-highest": "#e0e3e5",
+              "surface-container": "#eceef0",
+              "on-secondary": "#ffffff",
+              "secondary-fixed": "#d5e3fc",
+              "tertiary-container": "#261900",
+              "surface-dim": "#d8dadc",
+              "secondary": "#515f74",
+              "on-surface": "#191c1e",
+              "error-container": "#ffdad6",
+              "tertiary-fixed-dim": "#e9c176",
+              "surface": "#ffffff",
+              "background": "#ffffff",
+              "on-secondary-container": "#57657a",
+              "on-tertiary-fixed": "#261900",
+              "on-primary-fixed-variant": "#414756",
+              "outline": "#76777d"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+              "label": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .clean-border {
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-white text-on-surface min-h-screen flex flex-col">
+<nav class="flex justify-between items-center w-full px-8 h-20 sticky top-0 z-50 bg-white/80 backdrop-blur-md">
+<div class="flex items-center gap-2">
+<span class="text-xl font-extrabold text-[#191c1e] font-headline tracking-tight">Lumina</span>
+</div>
+<div class="hidden md:flex items-center gap-10">
+<a class="font-headline font-semibold text-sm text-on-surface/60 hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="font-headline font-semibold text-sm text-on-surface/60 hover:text-primary transition-colors" href="#">Calendar</a>
+<a class="font-headline font-semibold text-sm text-on-surface/60 hover:text-primary transition-colors" href="#">Leads</a>
+<a class="font-headline font-semibold text-sm text-on-surface/60 hover:text-primary transition-colors" href="#">Clients</a>
+<a class="font-headline font-semibold text-sm text-on-surface/60 hover:text-primary transition-colors" href="#">Analytics</a>
+<a class="font-headline font-semibold text-sm text-on-surface/60 hover:text-primary transition-colors" href="#">Settings</a>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 text-on-surface/70">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="dark_mode">dark_mode</span>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-headline font-bold text-sm tracking-tight hover:shadow-lg transition-all">Get Started</button>
+</div>
+</nav>
+<main class="flex-grow flex items-center justify-center py-20 px-6 bg-white">
+<div class="w-full max-w-xl flex flex-col gap-10">
+<a class="inline-flex items-center gap-2 text-on-surface/40 hover:text-primary transition-colors group w-fit" href="#">
+<span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform" data-icon="arrow_back">arrow_back</span>
+<span class="font-label font-semibold text-xs uppercase tracking-widest">Change role</span>
+</a>
+<div class="bg-white p-10 md:p-16 rounded-3xl clean-border shadow-[0_32px_64px_-16px_rgba(0,0,0,0.05)]">
+<div class="mb-12">
+<h1 class="font-headline font-extrabold text-4xl text-on-surface tracking-tight mb-3">Create your account</h1>
+<p class="font-body text-on-surface/50 text-base">Registering as a Shop Manager</p>
+</div>
+<form class="flex flex-col gap-10">
+<div class="grid grid-cols-1 gap-10">
+<div class="flex flex-col gap-3">
+<label class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface/60 font-bold" for="fullname">Full Name</label>
+<input class="w-full bg-transparent border-0 border-b border-outline-variant/30 py-3 px-0 text-on-surface focus:ring-0 focus:border-primary transition-all placeholder:text-outline/30 text-lg" id="fullname" name="fullname" placeholder="Alexander Sterling" required="" type="text"/>
+</div>
+<div class="flex flex-col gap-3">
+<label class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface/60 font-bold" for="shopname">Barbershop Name</label>
+<input class="w-full bg-transparent border-0 border-b border-outline-variant/30 py-3 px-0 text-on-surface focus:ring-0 focus:border-primary transition-all placeholder:text-outline/30 text-lg" id="shopname" name="shopname" placeholder="The Royal Cut Atelier" required="" type="text"/>
+</div>
+<div class="flex flex-col gap-3">
+<label class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface/60 font-bold" for="email">Email Address</label>
+<input class="w-full bg-transparent border-0 border-b border-outline-variant/30 py-3 px-0 text-on-surface focus:ring-0 focus:border-primary transition-all placeholder:text-outline/30 text-lg" id="email" name="email" placeholder="manager@lumina.studio" required="" type="email"/>
+</div>
+<div class="flex flex-col gap-3">
+<label class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface/60 font-bold" for="password">Password</label>
+<div class="relative">
+<input class="w-full bg-transparent border-0 border-b border-outline-variant/30 py-3 px-0 text-on-surface focus:ring-0 focus:border-primary transition-all placeholder:text-outline/30 text-lg" id="password" minlength="6" name="password" placeholder="Create a secure password" required="" type="password"/>
+<button class="absolute right-0 top-1/2 -translate-y-1/2 text-outline/40 hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+</div>
+</div>
+<div class="mt-4">
+<button class="w-full bg-primary text-on-primary py-5 rounded-xl font-headline font-bold text-base tracking-tight hover:bg-on-primary-container shadow-none hover:shadow-xl transition-all flex justify-center items-center gap-3 group" type="submit">
+<span>Create Account</span>
+<span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</form>
+<div class="mt-12 pt-10 border-t border-outline-variant/10 text-center">
+<p class="font-body text-sm text-on-surface/50">
+                        Already part of Lumina? 
+                        <a class="text-primary font-bold hover:underline underline-offset-8 ml-1" href="#">Sign in</a>
+</p>
+</div>
+</div>
+<div class="flex flex-wrap justify-center gap-x-12 gap-y-4 opacity-30">
+<span class="font-label text-[9px] uppercase tracking-[0.3em] font-semibold">Crafted for Professionals</span>
+<span class="font-label text-[9px] uppercase tracking-[0.3em] font-semibold">Secure Encryption</span>
+<span class="font-label text-[9px] uppercase tracking-[0.3em] font-semibold">Cloud Sync Ready</span>
+</div>
+</div>
+</main>
+<footer class="w-full py-20 px-8 bg-white border-t border-outline-variant/10">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 max-w-7xl mx-auto">
+<div class="flex flex-col gap-6">
+<span class="text-xl font-black text-on-surface font-headline tracking-tight">Lumina</span>
+<p class="font-body text-xs leading-relaxed text-on-surface/40">
+                    Empowering the next generation of creative ateliers with intelligent management tools.
+                </p>
+<p class="font-body text-[10px] uppercase tracking-widest text-on-surface/30">
+                    © 2024 Lumina Digital Atelier.
+                </p>
+</div>
+<div class="flex flex-col gap-4">
+<span class="font-headline text-[11px] uppercase tracking-[0.2em] font-extrabold text-on-surface">Product</span>
+<div class="flex flex-col gap-3">
+<a class="font-body text-sm text-on-surface/50 hover:text-primary transition-colors" href="#">Features</a>
+<a class="font-body text-sm text-on-surface/50 hover:text-primary transition-colors" href="#">Pricing</a>
+<a class="font-body text-sm text-on-surface/50 hover:text-primary transition-colors" href="#">API Reference</a>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<span class="font-headline text-[11px] uppercase tracking-[0.2em] font-extrabold text-on-surface">Company</span>
+<div class="flex flex-col gap-3">
+<a class="font-body text-sm text-on-surface/50 hover:text-primary transition-colors" href="#">About</a>
+<a class="font-body text-sm text-on-surface/50 hover:text-primary transition-colors" href="#">Careers</a>
+<a class="font-body text-sm text-on-surface/50 hover:text-primary transition-colors" href="#">Contact</a>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<span class="font-headline text-[11px] uppercase tracking-[0.2em] font-extrabold text-on-surface">Legal</span>
+<div class="flex flex-col gap-3">
+<a class="font-body text-sm text-on-surface/50 hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body text-sm text-on-surface/50 hover:text-primary transition-colors" href="#">Terms of Service</a>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

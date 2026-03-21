@@ -13,8 +13,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { theme, direction } = useThemeStore();
-  const { isMobileSidebarOpen, setMobileSidebarOpen, initializeWorkspace } =
-    useWorkspaceStore();
+  const { initializeWorkspace } = useWorkspaceStore();
 
   // Initialize workspace data from Supabase
   useEffect(() => {
@@ -32,21 +31,23 @@ export default function DashboardLayout({
   }, [theme, direction]);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
+    /* Stitch body: bg-background text-on-surface antialiased */
+    <div className="min-h-screen bg-background text-on-surface antialiased">
       <Sidebar />
 
-      {/* Mobile Sidebar Overlay */}
-      {isMobileSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm"
-          onClick={() => setMobileSidebarOpen(false)}
-        />
-      )}
-
-      <main className="transition-all duration-[var(--transition-normal)] md:ms-[72px]">
+      {/* Stitch: ml-72 mt-20 min-h-screen p-10 lg:p-14 */}
+      <main
+        className={`main-content transition-all duration-300`}
+        style={{ minHeight: "100vh" }}
+      >
         <Topbar />
-        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">{children}</div>
+        <div
+          style={{ paddingTop: "92px", paddingBottom: "96px", paddingLeft: "72px", paddingRight: "72px" }}
+        >
+          {children}
+        </div>
       </main>
+
       <ToastContainer />
     </div>
   );

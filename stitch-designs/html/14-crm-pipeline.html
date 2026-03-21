@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Leads Pipeline | The Groomed</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-container": "#261900",
+              "secondary-fixed": "#d5e3fc",
+              "on-secondary": "#ffffff",
+              "tertiary-fixed-dim": "#e9c176",
+              "error-container": "#ffdad6",
+              "secondary": "#515f74",
+              "on-surface": "#191c1e",
+              "surface-dim": "#d8dadc",
+              "on-tertiary": "#ffffff",
+              "on-surface-variant": "#45464c",
+              "surface-container-highest": "#e0e3e5",
+              "surface-container": "#eceef0",
+              "primary": "#000000",
+              "tertiary-fixed": "#ffdea5",
+              "surface-container-low": "#f2f4f6",
+              "primary-container": "#151b29",
+              "inverse-on-surface": "#eff1f3",
+              "on-tertiary-fixed-variant": "#5d4201",
+              "error": "#ba1a1a",
+              "on-primary-fixed-variant": "#414756",
+              "on-tertiary-fixed": "#261900",
+              "outline": "#76777d",
+              "on-error": "#ffffff",
+              "surface": "#f7f9fb",
+              "on-secondary-container": "#57657a",
+              "background": "#f7f9fb",
+              "outline-variant": "#c6c6cc",
+              "on-primary-container": "#7e8395",
+              "inverse-surface": "#2d3133",
+              "primary-fixed-dim": "#c1c6d9",
+              "primary-fixed": "#dde2f6",
+              "on-secondary-fixed": "#0d1c2e",
+              "on-secondary-fixed-variant": "#3a485b",
+              "surface-variant": "#e0e3e5",
+              "on-background": "#191c1e",
+              "surface-tint": "#585e6f",
+              "on-error-container": "#93000a",
+              "tertiary": "#000000",
+              "surface-bright": "#f7f9fb",
+              "on-primary-fixed": "#151b29",
+              "inverse-primary": "#c1c6d9",
+              "secondary-fixed-dim": "#b9c7df",
+              "on-primary": "#ffffff",
+              "on-tertiary-container": "#a17f3b",
+              "secondary-container": "#d5e3fc",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-high": "#e6e8ea"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass-header { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- SideNavBar Integration -->
+<aside class="h-screen w-64 fixed left-0 top-0 overflow-y-auto bg-slate-50 dark:bg-slate-900 flex flex-col py-8 px-6 gap-y-8 z-50">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-xl">T</div>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-slate-950 dark:text-white leading-none">The Groomed</h1>
+<p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-1">Digital Atelier</p>
+</div>
+</div>
+<nav class="flex flex-col gap-y-1">
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg font-manrope font-medium text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg font-manrope font-medium text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+                Schedule
+            </a>
+<!-- Active Tab: Leads -->
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg font-manrope text-sm text-slate-950 dark:text-white font-bold border-r-2 border-slate-950 dark:border-white bg-slate-100 dark:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+                Leads
+            </a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg font-manrope font-medium text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+                Clients
+            </a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg font-manrope font-medium text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+                Analytics
+            </a>
+</nav>
+<div class="mt-4">
+<button class="w-full bg-primary text-on-primary py-3 rounded-lg font-bold text-sm shadow-[inset_0px_4px_0px_rgba(255,255,255,0.1)] hover:opacity-90 transition-all">
+                Book Appointment
+            </button>
+</div>
+<div class="mt-auto flex flex-col gap-y-1">
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg font-manrope font-medium text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Settings
+            </a>
+<a class="flex items-center gap-3 py-3 px-4 rounded-lg font-manrope font-medium text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                Logout
+            </a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-64 min-h-screen">
+<!-- TopNavBar Integration -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-white/60 dark:bg-slate-950/60 backdrop-blur-xl flex justify-between items-center h-20 px-10 transition-all">
+<div class="flex items-center gap-6 w-full max-w-xl">
+<div class="relative w-full group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-2.5 pl-12 pr-4 text-sm focus:ring-1 focus:ring-slate-200 transition-all font-body" placeholder="Search leads by name or phone..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors relative">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-white"></span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+<div class="h-8 w-[1px] bg-outline-variant/30"></div>
+<div class="flex items-center gap-3 pl-2">
+<div class="text-right">
+<p class="text-xs font-bold text-on-surface leading-none">Ahmad Mansour</p>
+<p class="text-[10px] text-on-surface-variant mt-1">Master Barber</p>
+</div>
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm" data-alt="User Profile Photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDefhiEym_PPEKXhry6BeXILaQiIYa_HBtHmdqHGe-a0xjOX6bro0ZVihb2s6JR1emyJUyX5vUCdUDrScAqf6q2kdAb-7-0Ke_IiHJ6S9m0yWVUWebt0iX-nifIOSmcFQQRmUjz_7wrMp4f-uw8PbnjUjF4wONh6kFIDiHIH8-34NVuNz1wgn2n-_G-iInxHQt1y0G2BFPPU0M1PV2qpgkr3G_yyVOklomYorEaeGZ_p2t5EbLagpC-WjFrsfSlqhAQBL1VGl74fj2k"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="pt-32 px-10 pb-12">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+<div>
+<h2 class="text-4xl font-extrabold font-headline tracking-tight text-on-surface">CRM Pipeline</h2>
+<p class="text-on-surface-variant mt-2 font-medium">42 leads across 5 stages <span class="mx-2 text-outline-variant">•</span> Updated 2 mins ago</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-6 py-3 rounded-lg bg-surface-container-lowest text-on-surface font-semibold text-sm hover:bg-surface-container-highest transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-lg" data-icon="upload_file">upload_file</span>
+                        Import CSV
+                    </button>
+<button class="px-6 py-3 rounded-lg bg-primary text-on-primary font-bold text-sm shadow-[0_8px_16px_rgba(0,0,0,0.1)] hover:opacity-90 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-lg" data-icon="add">add</span>
+                        New Lead
+                    </button>
+</div>
+</div>
+<!-- Kanban Board -->
+<div class="flex gap-6 overflow-x-auto pb-8 no-scrollbar min-h-[calc(100vh-280px)]">
+<!-- Stage 1: New Lead -->
+<div class="flex-shrink-0 w-[300px]">
+<div class="flex items-center justify-between mb-6 px-1">
+<div class="flex items-center gap-2">
+<span class="text-sm font-bold font-headline text-on-surface">New Lead</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-[10px] font-extrabold text-on-surface-variant">12</span>
+</div>
+<button class="p-1 hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-outline" data-icon="more_horiz">more_horiz</span></button>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Card -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-grab group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs">ZK</div>
+<span class="text-xs font-bold text-on-surface-variant bg-surface-container py-1 px-2 rounded-md">Hot</span>
+</div>
+<h4 class="font-bold text-on-surface group-hover:text-primary transition-colors">Zaid Kawar</h4>
+<p class="text-xs text-on-surface-variant mt-1">+962 79 123 4567</p>
+<div class="mt-6 flex justify-between items-end">
+<span class="text-[10px] uppercase font-bold tracking-wider text-outline">Deal Value</span>
+<span class="font-extrabold text-primary">45.00 JOD</span>
+</div>
+</div>
+<!-- Card -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-grab group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-white font-bold text-xs">RM</div>
+</div>
+<h4 class="font-bold text-on-surface group-hover:text-primary transition-colors">Rania Masri</h4>
+<p class="text-xs text-on-surface-variant mt-1">+962 77 987 6543</p>
+<div class="mt-6 flex justify-between items-end">
+<span class="text-[10px] uppercase font-bold tracking-wider text-outline">Deal Value</span>
+<span class="font-extrabold text-primary">120.00 JOD</span>
+</div>
+</div>
+<button class="w-full py-4 border-2 border-dashed border-outline-variant/30 rounded-xl text-outline text-xs font-bold hover:bg-surface-container-low hover:border-outline-variant transition-all">
+                            + Drop here to add
+                        </button>
+</div>
+</div>
+<!-- Stage 2: Contacted -->
+<div class="flex-shrink-0 w-[300px]">
+<div class="flex items-center justify-between mb-6 px-1">
+<div class="flex items-center gap-2">
+<span class="text-sm font-bold font-headline text-on-surface">Contacted</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-[10px] font-extrabold text-on-surface-variant">8</span>
+</div>
+<button class="p-1 hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-outline" data-icon="more_horiz">more_horiz</span></button>
+</div>
+<div class="flex flex-col gap-4">
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-grab group">
+<div class="flex justify-between items-start mb-4">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="Client Portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOBp7aCYStT8qYpI825vosxHUhjObC4AJYqWkQLpDTCn0Dn4susXCsCYyjkyc6sn7EWAAVJgl-HJ2iX963kB_GYJJL0T_1w4HC5Amo1kl907txZKxVWsXNgMHUNRqiKMnrcZjUjMmUCnQ2XZh7iTaHSF_iclIyE0oeuXUZN048bgDfl12hBms9ZRJ6MAOtilZAiU5rofT79NW9PA-aVtcyKp9IWfhg7GSl-v6iolDxH-bWNRTwRiXzZwrJgY2J14F5Ow4VvYZVRM8f"/>
+<span class="text-[10px] font-bold text-on-error-container bg-error-container py-1 px-2 rounded-md">Follow up</span>
+</div>
+<h4 class="font-bold text-on-surface group-hover:text-primary transition-colors">Omar Haddad</h4>
+<p class="text-xs text-on-surface-variant mt-1">+962 78 555 1122</p>
+<div class="mt-6 flex justify-between items-end">
+<span class="text-[10px] uppercase font-bold tracking-wider text-outline">Deal Value</span>
+<span class="font-extrabold text-primary">60.00 JOD</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Stage 3: Booked Package -->
+<div class="flex-shrink-0 w-[300px]">
+<div class="flex items-center justify-between mb-6 px-1">
+<div class="flex items-center gap-2">
+<span class="text-sm font-bold font-headline text-on-surface">Booked Package</span>
+<span class="px-2 py-0.5 rounded-full bg-primary text-[10px] font-extrabold text-white">15</span>
+</div>
+<button class="p-1 hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-outline" data-icon="more_horiz">more_horiz</span></button>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Card with high contrast -->
+<div class="bg-primary-container p-5 rounded-xl shadow-lg cursor-grab group border-l-4 border-tertiary-fixed">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold text-xs border border-white/20">TA</div>
+<span class="text-[10px] font-bold text-tertiary-fixed bg-tertiary-container py-1 px-2 rounded-md">VIP</span>
+</div>
+<h4 class="font-bold text-white group-hover:text-tertiary-fixed transition-colors">Talal Akel</h4>
+<p class="text-xs text-on-primary-container mt-1">+962 79 000 9999</p>
+<div class="mt-6 flex justify-between items-end">
+<span class="text-[10px] uppercase font-bold tracking-wider text-on-primary-container/60">Deal Value</span>
+<span class="font-extrabold text-tertiary-fixed">240.00 JOD</span>
+</div>
+</div>
+<!-- Standard card -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-grab group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed-dim flex items-center justify-center text-on-tertiary-fixed font-bold text-xs">SA</div>
+</div>
+<h4 class="font-bold text-on-surface group-hover:text-primary transition-colors">Sami Amari</h4>
+<p class="text-xs text-on-surface-variant mt-1">+962 77 444 3333</p>
+<div class="mt-6 flex justify-between items-end">
+<span class="text-[10px] uppercase font-bold tracking-wider text-outline">Deal Value</span>
+<span class="font-extrabold text-primary">85.00 JOD</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Stage 4: Completed -->
+<div class="flex-shrink-0 w-[300px]">
+<div class="flex items-center justify-between mb-6 px-1">
+<div class="flex items-center gap-2">
+<span class="text-sm font-bold font-headline text-on-surface">Completed</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-[10px] font-extrabold text-on-surface-variant">4</span>
+</div>
+<button class="p-1 hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-outline" data-icon="more_horiz">more_horiz</span></button>
+</div>
+<div class="flex flex-col gap-4 opacity-60">
+<div class="bg-surface-container p-5 rounded-xl shadow-none cursor-grab group grayscale">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-full bg-outline-variant flex items-center justify-center text-on-surface-variant font-bold text-xs">FH</div>
+<span class="material-symbols-outlined text-primary" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<h4 class="font-bold text-on-surface">Fadi Hijazi</h4>
+<p class="text-xs text-on-surface-variant mt-1">+962 78 111 2222</p>
+<div class="mt-6 flex justify-between items-end">
+<span class="text-[10px] uppercase font-bold tracking-wider text-outline">Revenue</span>
+<span class="font-extrabold text-primary">35.00 JOD</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Stage 5: Loyal -->
+<div class="flex-shrink-0 w-[300px]">
+<div class="flex items-center justify-between mb-6 px-1">
+<div class="flex items-center gap-2">
+<span class="text-sm font-bold font-headline text-on-surface">Loyal</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-[10px] font-extrabold text-on-tertiary-fixed">3</span>
+</div>
+<button class="p-1 hover:bg-surface-container-low rounded"><span class="material-symbols-outlined text-outline" data-icon="more_horiz">more_horiz</span></button>
+</div>
+<div class="flex flex-col gap-4">
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-tertiary-fixed/30 hover:shadow-md transition-shadow cursor-grab group">
+<div class="flex justify-between items-start mb-4">
+<img class="w-10 h-10 rounded-full object-cover ring-2 ring-tertiary-fixed/50" data-alt="Loyal Customer Portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSwdGZjuE3hSL0qO3bPtzQvauS_Z85LiCW9UbQGvAuH7cVQfOTjl_kK_YqYPo_O432ML8xsb-WgVZbzRDrql7FKSt5VQogKB8ETfUiKK0qtSzowkeTquz_ViWd8BGg31iLsCd6AQVKE03XeTzPQTyR6_CIw3E7P-E83Bz4SanNGqJZiw1L0aDWKVvKq3wKBo-uVNTkTGTVyfHl_5_4eW7K6TgdMeEeWS0mVCqOMr3UfFbwbHh1DHg5EnWM0ZgrYyhW_VadoruUTpMJ"/>
+<div class="flex gap-1">
+<span class="material-symbols-outlined text-tertiary-fixed text-xs" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-tertiary-fixed text-xs" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-tertiary-fixed text-xs" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<h4 class="font-bold text-on-surface group-hover:text-primary transition-colors">Husam Odeh</h4>
+<p class="text-xs text-on-surface-variant mt-1">12 Visits • LTV: 750 JOD</p>
+<div class="mt-6 flex justify-between items-end">
+<span class="text-[10px] uppercase font-bold tracking-wider text-outline">Current Deal</span>
+<span class="font-extrabold text-primary">95.00 JOD</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Quick Add (Contextual Suppression Handled) -->
+<button class="fixed bottom-10 right-10 w-16 h-16 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all z-50">
+<span class="material-symbols-outlined text-3xl" data-icon="add_circle">add_circle</span>
+</button>
+</main>
+</body></html>

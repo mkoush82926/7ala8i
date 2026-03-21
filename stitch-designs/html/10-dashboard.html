@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina Dashboard | Digital Atelier</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#121826",
+              "on-primary": "#ffffff",
+              "background": "#f8f9fa",
+              "surface": "#ffffff",
+              "on-surface": "#121826",
+              "on-surface-variant": "#64748b",
+              "outline": "#e2e8f0",
+              "secondary-container": "#f1f5f9",
+              "on-secondary-container": "#475569",
+              "tertiary-fixed": "#fef3c7",
+              "on-tertiary-fixed-variant": "#92400e"
+            },
+            fontFamily: {
+              "sans": ["Manrope", "sans-serif"],
+              "headline": ["Manrope", "sans-serif"],
+              "body": ["Manrope", "sans-serif"],
+            },
+            borderRadius: {
+                "DEFAULT": "8px",
+                "lg": "12px",
+                "xl": "16px",
+                "full": "9999px"
+            },
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Manrope', sans-serif; letter-spacing: -0.01em; }
+        .sidebar-item-active { background-color: #121826; color: white; }
+        .table-row-hover:hover { background-color: #f8f9fa; }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased">
+<!-- SideNavBar Component -->
+<aside class="h-screen w-72 fixed left-0 top-0 bg-white border-r border-outline flex flex-col py-8 px-6 z-50">
+<div class="mb-12">
+<h1 class="text-2xl font-extrabold text-primary tracking-tight">Lumina</h1>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em] mt-1">Digital Atelier</p>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 sidebar-item-active rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-semibold">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-secondary-container rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="calendar_today">calendar_today</span>
+<span class="text-sm font-semibold">Calendar</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-secondary-container rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="person_add">person_add</span>
+<span class="text-sm font-semibold">Leads</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-secondary-container rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="group">group</span>
+<span class="text-sm font-semibold">Clients</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-secondary-container rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="insights">insights</span>
+<span class="text-sm font-semibold">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-secondary-container rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="settings">settings</span>
+<span class="text-sm font-semibold">Settings</span>
+</a>
+</nav>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary py-4 px-4 rounded-lg font-bold text-sm shadow-lg shadow-primary/10 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                Book Appointment
+            </button>
+</div>
+</aside>
+<!-- TopNavBar Component -->
+<nav class="ml-72 h-20 bg-white/80 backdrop-blur-md border-b border-outline fixed top-0 right-0 left-0 z-40 px-8 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Atelier Overview</span>
+<span class="text-outline">/</span>
+<span class="text-xs font-bold text-primary">Main Dashboard</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+</div>
+<div class="flex items-center gap-3 pl-6 border-l border-outline">
+<div class="text-right">
+<p class="text-xs font-bold text-primary">Zaid Al-Kour</p>
+<p class="text-[10px] text-on-surface-variant font-medium">Master Barber</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary overflow-hidden border border-outline">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcEZq3RTDWtqndz1qEgQcXmMDkBqPtGR7ytJRpn-fww1ICnaUw4ilZKzi8BPnL5lUw6jMn3qknxzh2qcOPL2jjZDAeUnTvqo7lkjMOdtikXMEKYDR4kuEeZua71OrLIy-sU9kD869De0V6DA6sJ4qx-IskkEAemH8UQLFneVmzRHQiTjZctwzNFukkcS7WQT-dclaHFSs1olJAer8Y5Xy6tz-0PwUC4KXP1lKW8w_haHWqOueyHeAwUo7X7hFH9fth1D_7b9zPadu3"/>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-72 mt-20 min-h-screen p-10 lg:p-14">
+<!-- Header Section -->
+<header class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+<div>
+<h2 class="text-4xl font-extrabold tracking-tight text-primary">Atelier Overview</h2>
+<p class="text-on-surface-variant font-medium mt-1">Wednesday, 24 May 2024</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-6 py-3 bg-white border border-outline text-primary rounded-lg font-bold text-sm shadow-sm hover:bg-secondary-container transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+<span>New Booking</span>
+</button>
+<button class="flex items-center gap-2 px-6 py-3 bg-white border border-outline text-primary rounded-lg font-bold text-sm shadow-sm hover:bg-secondary-container transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="person_add">person_add</span>
+<span>New Lead</span>
+</button>
+<button class="flex items-center justify-center w-12 h-12 bg-white border border-outline text-primary rounded-lg shadow-sm hover:bg-secondary-container transition-all">
+<span class="material-symbols-outlined" data-icon="file_download">file_download</span>
+</button>
+</div>
+</header>
+<!-- Metrics Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-14">
+<!-- Metric 1 -->
+<div class="bg-white p-7 rounded-xl border border-outline shadow-sm flex flex-col justify-between group hover:border-primary transition-all duration-300">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-black uppercase tracking-[0.15em] text-on-surface-variant">Today's Bookings</span>
+<div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px] text-primary" data-icon="event_note">event_note</span>
+</div>
+</div>
+<div class="mt-6">
+<div class="text-4xl font-extrabold tracking-tight text-primary">18</div>
+<div class="flex items-center gap-1.5 text-xs font-bold text-emerald-600 mt-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="trending_up">trending_up</span>
+<span>+12% vs yesterday</span>
+</div>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-white p-7 rounded-xl border border-outline shadow-sm flex flex-col justify-between group hover:border-primary transition-all duration-300">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-black uppercase tracking-[0.15em] text-on-surface-variant">Today's Sales</span>
+<div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px] text-primary" data-icon="payments">payments</span>
+</div>
+</div>
+<div class="mt-6">
+<div class="text-4xl font-extrabold tracking-tight text-primary">245.00 <span class="text-lg font-medium text-on-surface-variant">JOD</span></div>
+<div class="flex items-center gap-1.5 text-xs font-bold text-emerald-600 mt-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="trending_up">trending_up</span>
+<span>+8% vs yesterday</span>
+</div>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-white p-7 rounded-xl border border-outline shadow-sm flex flex-col justify-between group hover:border-primary transition-all duration-300">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-black uppercase tracking-[0.15em] text-on-surface-variant">Weekly Revenue</span>
+<div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px] text-primary" data-icon="query_stats">query_stats</span>
+</div>
+</div>
+<div class="mt-6">
+<div class="text-4xl font-extrabold tracking-tight text-primary">1,820 <span class="text-lg font-medium text-on-surface-variant">JOD</span></div>
+<div class="flex items-center gap-1.5 text-xs font-bold text-emerald-600 mt-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="trending_up">trending_up</span>
+<span>+4% vs last week</span>
+</div>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="bg-primary p-7 rounded-xl shadow-lg flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-black uppercase tracking-[0.15em] text-on-primary/70">Daily Goal</span>
+<span class="text-sm font-extrabold text-on-primary">78%</span>
+</div>
+<div class="mt-8">
+<div class="w-full h-2 bg-white/20 rounded-full overflow-hidden mb-4">
+<div class="h-full bg-on-primary rounded-full shadow-[0_0_12px_rgba(255,255,255,0.4)]" style="width: 78%"></div>
+</div>
+<p class="text-[10px] font-bold text-on-primary/80 uppercase tracking-widest">780 JOD of 1,000 JOD target</p>
+</div>
+</div>
+</div>
+<!-- Charts and Receipts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-14">
+<!-- Sales Chart (8/12) -->
+<div class="lg:col-span-8 bg-white p-10 rounded-xl border border-outline shadow-sm">
+<div class="flex flex-col sm:flex-row justify-between sm:items-center mb-12 gap-4">
+<h3 class="text-xl font-extrabold tracking-tight text-primary">Revenue Stream</h3>
+<div class="flex bg-secondary-container p-1 rounded-lg self-start">
+<button class="px-5 py-2 text-[10px] font-black uppercase tracking-wider rounded bg-white shadow-sm text-primary">Daily</button>
+<button class="px-5 py-2 text-[10px] font-black uppercase tracking-wider rounded text-on-surface-variant hover:text-primary transition-colors">Weekly</button>
+<button class="px-5 py-2 text-[10px] font-black uppercase tracking-wider rounded text-on-surface-variant hover:text-primary transition-colors">Monthly</button>
+</div>
+</div>
+<!-- Chart Visualization -->
+<div class="h-[360px] w-full flex items-end gap-3 px-2">
+<div class="flex-1 bg-secondary-container rounded-t-lg transition-all hover:bg-primary/20 relative group h-[40%]" title="Mon">
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-[10px] font-bold px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap shadow-lg">142 JOD</div>
+</div>
+<div class="flex-1 bg-secondary-container rounded-t-lg transition-all hover:bg-primary/20 relative group h-[65%]" title="Tue"></div>
+<div class="flex-1 bg-primary rounded-t-lg transition-all relative group h-[85%]" title="Wed">
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-[10px] font-bold px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap shadow-lg">245 JOD</div>
+</div>
+<div class="flex-1 bg-secondary-container rounded-t-lg transition-all hover:bg-primary/20 relative group h-[55%]" title="Thu"></div>
+<div class="flex-1 bg-secondary-container rounded-t-lg transition-all hover:bg-primary/20 relative group h-[70%]" title="Fri"></div>
+<div class="flex-1 bg-secondary-container rounded-t-lg transition-all hover:bg-primary/20 relative group h-[90%]" title="Sat"></div>
+<div class="flex-1 bg-secondary-container rounded-t-lg transition-all hover:bg-primary/20 relative group h-[30%]" title="Sun"></div>
+</div>
+<div class="flex justify-between mt-6 px-2 text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">
+<span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+</div>
+</div>
+<!-- Daily Receipt Summary (4/12) -->
+<div class="lg:col-span-4 bg-white p-10 rounded-xl border border-outline shadow-sm flex flex-col">
+<h3 class="text-xl font-extrabold tracking-tight text-primary mb-10">Daily Receipt</h3>
+<div class="space-y-8 flex-1">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]" data-icon="payments">payments</span>
+</div>
+<div>
+<p class="text-sm font-bold text-primary">Cash Payments</p>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">12 Transactions</p>
+</div>
+</div>
+<p class="font-extrabold text-primary">145.00 JOD</p>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]" data-icon="credit_card">credit_card</span>
+</div>
+<div>
+<p class="text-sm font-bold text-primary">Card Payments</p>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">6 Transactions</p>
+</div>
+</div>
+<p class="font-extrabold text-primary">100.00 JOD</p>
+</div>
+<div class="pt-10 mt-6 border-t border-outline">
+<div class="flex justify-between items-center mb-1">
+<span class="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">Total Volume</span>
+<span class="text-2xl font-black text-primary">245.00 JOD</span>
+</div>
+<p class="text-[10px] text-right font-medium text-on-surface-variant">VAT Included (16%)</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-10">
+<button class="flex items-center justify-center gap-2 py-3.5 bg-white border border-outline text-primary rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-secondary-container transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="picture_as_pdf">picture_as_pdf</span>
+                        PDF
+                    </button>
+<button class="flex items-center justify-center gap-2 py-3.5 bg-white border border-outline text-primary rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-secondary-container transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="csv">csv</span>
+                        CSV
+                    </button>
+</div>
+</div>
+</div>
+<!-- Appointments Table -->
+<section>
+<div class="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
+<h3 class="text-2xl font-extrabold tracking-tight text-primary">Upcoming Appointments</h3>
+<button class="text-xs font-black uppercase tracking-[0.15em] text-primary hover:underline underline-offset-8">View All Schedule</button>
+</div>
+<div class="bg-white rounded-xl border border-outline shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-secondary-container">
+<th class="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Client</th>
+<th class="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Service</th>
+<th class="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Barber</th>
+<th class="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Time</th>
+<th class="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Price</th>
+<th class="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant">Status</th>
+<th class="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline">
+<!-- Row 1 -->
+<tr class="table-row-hover transition-colors group">
+<td class="px-8 py-6">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline bg-secondary-container">
+<img alt="Ahmad Masri" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtXZxf2m4vaF-F5athmKisKdDdMW1TUjgS1tfmNbw8iru3cjtIKUW5wE6ViXNDQC8psKoER-YMcoy8zK7GqNpyuOSqFR1g5hm1AQfysSlX_NbtkXjaMASxdPrC2EAilJrIFtAWME5ko_KAmQ0v1V601yKwVea39y_P_1o62H8z8IzP_LVNdRzyAG9eu13E-Q7916mZjyR9Io2p_9HdRIJXpDDX7WIpZbTajObxsaV73Yez01h-cAI1ggT-PEUBV2D7mo6mmpLYqdoy"/>
+</div>
+<span class="font-extrabold text-sm text-primary">Ahmad Masri</span>
+</div>
+</td>
+<td class="px-8 py-6 text-sm font-semibold text-primary">Beard Sculpt &amp; Steam</td>
+<td class="px-8 py-6 text-sm font-semibold text-on-surface-variant">Zaid K.</td>
+<td class="px-8 py-6 text-sm font-black text-primary">14:30</td>
+<td class="px-8 py-6 text-sm font-extrabold text-primary">15.00 JOD</td>
+<td class="px-8 py-6">
+<span class="px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-black uppercase tracking-wider">Confirmed</span>
+</td>
+<td class="px-8 py-6 text-right">
+<div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 flex items-center justify-center text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Mark Paid">
+<span class="material-symbols-outlined text-[20px]" data-icon="check_circle">check_circle</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-secondary-container rounded-lg" title="No-show">
+<span class="material-symbols-outlined text-[20px]" data-icon="person_off">person_off</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg" title="Cancel">
+<span class="material-symbols-outlined text-[20px]" data-icon="cancel">cancel</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="table-row-hover transition-colors group">
+<td class="px-8 py-6">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline bg-secondary-container">
+<img alt="Omar Haddad" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmPlGfI7r8Lhm-dziR2Mgd1jSzpQQmyMYtG5MwsPru_fkXq5F8uLWCpQqdKZupdsxytmwsOnrPPtEltAkR6i2U9eCV0ztopEtn7MZS60BfxzA9Y4ZJDpHD0Sf71trY4recwDQy7KK3rjNXQ5yEau2Acbql8KFPTqfKIHNuaVH8OHt_BsWtuik-8Y1Lb2FnK4C4VDGCFTIH3dEGYnXqgGg7IGfPJ2CXTWnGZGC026IvIMdwNyDwFBFM0rprZZSOpS3MsFE7EJoVL3pZ"/>
+</div>
+<span class="font-extrabold text-sm text-primary">Omar Haddad</span>
+</div>
+</td>
+<td class="px-8 py-6 text-sm font-semibold text-primary">Classic Fade</td>
+<td class="px-8 py-6 text-sm font-semibold text-on-surface-variant">Ibrahim S.</td>
+<td class="px-8 py-6 text-sm font-black text-primary">15:15</td>
+<td class="px-8 py-6 text-sm font-extrabold text-primary">12.00 JOD</td>
+<td class="px-8 py-6">
+<span class="px-3 py-1.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] font-black uppercase tracking-wider">In Progress</span>
+</td>
+<td class="px-8 py-6 text-right">
+<div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 flex items-center justify-center text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Mark Paid">
+<span class="material-symbols-outlined text-[20px]" data-icon="check_circle">check_circle</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-secondary-container rounded-lg" title="No-show">
+<span class="material-symbols-outlined text-[20px]" data-icon="person_off">person_off</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg" title="Cancel">
+<span class="material-symbols-outlined text-[20px]" data-icon="cancel">cancel</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="table-row-hover transition-colors group">
+<td class="px-8 py-6">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline bg-secondary-container">
+<img alt="Faris Jaber" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_UMAnjI93YaMY2sJKGaf19HtonU1BKL9wVEh1q2Fe8CjG4_GbQqYA9wZbo6HfdJNLmqMccySPs95P3q7VPOd2AywOsMpOJgOCHIvK7_aVnr7S4Ux7O8i9R__KaWNSDjd_-BdMBkW2l8cXP33b8hvvUQ23Z-qLWanBAioXvA6-TRUKRuiPTADxP6ggHXv3yVqaQ3EnB8MkJBMUkU50wmUEvAjC6Core6b9kE4sBTkl_HcZTVCvckeMAxdw5V1xach0TyZSzTbD2VVW"/>
+</div>
+<span class="font-extrabold text-sm text-primary">Faris Jaber</span>
+</div>
+</td>
+<td class="px-8 py-6 text-sm font-semibold text-primary">Atelier Signature Package</td>
+<td class="px-8 py-6 text-sm font-semibold text-on-surface-variant">Zaid K.</td>
+<td class="px-8 py-6 text-sm font-black text-primary">16:00</td>
+<td class="px-8 py-6 text-sm font-extrabold text-primary">35.00 JOD</td>
+<td class="px-8 py-6">
+<span class="px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-black uppercase tracking-wider">Confirmed</span>
+</td>
+<td class="px-8 py-6 text-right">
+<div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 flex items-center justify-center text-emerald-600 hover:bg-emerald-50 rounded-lg" title="Mark Paid">
+<span class="material-symbols-outlined text-[20px]" data-icon="check_circle">check_circle</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-secondary-container rounded-lg" title="No-show">
+<span class="material-symbols-outlined text-[20px]" data-icon="person_off">person_off</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg" title="Cancel">
+<span class="material-symbols-outlined text-[20px]" data-icon="cancel">cancel</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</main>
+</body></html>

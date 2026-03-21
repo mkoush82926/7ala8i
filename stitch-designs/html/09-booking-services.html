@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina | Select Services</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=IBM+Plex+Sans+Arabic:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#0d1c2e",
+              "primary-fixed": "#dde2f6",
+              "primary-fixed-dim": "#c1c6d9",
+              "inverse-surface": "#2d3133",
+              "outline-variant": "#c6c6cc",
+              "on-primary-container": "#7e8395",
+              "surface-tint": "#585e6f",
+              "on-error-container": "#93000a",
+              "surface-variant": "#e0e3e5",
+              "on-background": "#191c1e",
+              "on-secondary-fixed-variant": "#3a485b",
+              "on-tertiary-container": "#a17f3b",
+              "on-primary": "#ffffff",
+              "secondary-fixed-dim": "#b9c7df",
+              "surface-bright": "#f7f9fb",
+              "on-primary-fixed": "#151b29",
+              "inverse-primary": "#c1c6d9",
+              "tertiary": "#000000",
+              "surface-container-high": "#e6e8ea",
+              "surface-container-lowest": "#ffffff",
+              "secondary-container": "#d5e3fc",
+              "surface-dim": "#d8dadc",
+              "secondary": "#515f74",
+              "on-surface": "#191c1e",
+              "tertiary-fixed-dim": "#e9c176",
+              "error-container": "#ffdad6",
+              "secondary-fixed": "#d5e3fc",
+              "on-secondary": "#ffffff",
+              "tertiary-container": "#261900",
+              "on-tertiary-fixed-variant": "#5d4201",
+              "error": "#ba1a1a",
+              "tertiary-fixed": "#ffdea5",
+              "surface-container-low": "#f2f4f6",
+              "primary-container": "#151b29",
+              "inverse-on-surface": "#eff1f3",
+              "primary": "#000000",
+              "surface-container-highest": "#e0e3e5",
+              "surface-container": "#eceef0",
+              "on-tertiary": "#ffffff",
+              "on-surface-variant": "#45464c",
+              "on-error": "#ffffff",
+              "outline": "#76777d",
+              "on-tertiary-fixed": "#261900",
+              "on-primary-fixed-variant": "#414756",
+              "background": "#f7f9fb",
+              "on-secondary-container": "#57657a",
+              "surface": "#f7f9fb"
+            },
+            fontFamily: {
+              "headline": ["Manrope", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+              "label": ["Inter", "sans-serif"],
+              "arabic": ["IBM Plex Sans Arabic", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .font-arabic { font-family: 'IBM Plex Sans Arabic', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- Header Navigation (Simplified for Transactional Flow) -->
+<header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-transparent">
+<div class="max-w-4xl mx-auto px-6 h-20 flex items-center justify-between">
+<button class="flex items-center gap-2 text-on-surface hover:opacity-70 transition-opacity">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+<span class="font-headline font-bold text-sm tracking-tight">Back</span>
+</button>
+<div class="flex flex-col items-center">
+<span class="font-headline font-extrabold text-xl tracking-tighter">Lumina</span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Step 2 of 4</span>
+</div>
+<div class="w-10"></div> <!-- Spacer for symmetry -->
+</div>
+</header>
+<main class="pt-32 pb-40 px-6 max-w-4xl mx-auto">
+<!-- Title Section -->
+<section class="mb-12 text-center md:text-left">
+<h1 class="font-headline text-3xl font-extrabold tracking-tight mb-2">Select Services</h1>
+<p class="text-on-surface-variant font-body">Choose one or more treatments for your visit. Multiple selections are supported.</p>
+</section>
+<!-- Service Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Service Card 1 (Active/Selected Example) -->
+<div class="group relative bg-surface-container-lowest p-6 rounded-xl transition-all duration-300 ring-2 ring-primary shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-primary-container flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="content_cut">content_cut</span>
+</div>
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-white" data-icon="check" style="font-variation-settings: 'wght' 700;">check</span>
+</div>
+</div>
+<div class="space-y-1 mb-6">
+<h3 class="font-headline font-bold text-lg leading-tight">Classic Signature Cut</h3>
+<p class="font-arabic text-on-surface-variant text-sm" dir="rtl">قصة الشعر الكلاسيكية المميزة</p>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-xs font-semibold">45 min</span>
+</div>
+<div class="text-lg font-bold">15.00 JOD</div>
+</div>
+</div>
+<!-- Service Card 2 -->
+<div class="group relative bg-surface-container-low p-6 rounded-xl hover:bg-surface-container-lowest transition-all duration-300 hover:shadow-md cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="face">face</span>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant"></div>
+</div>
+<div class="space-y-1 mb-6">
+<h3 class="font-headline font-bold text-lg leading-tight">Beard Sculpting &amp; Trim</h3>
+<p class="font-arabic text-on-surface-variant text-sm" dir="rtl">نحت وتشذيب اللحية</p>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-xs font-semibold">30 min</span>
+</div>
+<div class="text-lg font-bold">10.00 JOD</div>
+</div>
+</div>
+<!-- Service Card 3 -->
+<div class="group relative bg-surface-container-low p-6 rounded-xl hover:bg-surface-container-lowest transition-all duration-300 hover:shadow-md cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="spa">spa</span>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant"></div>
+</div>
+<div class="space-y-1 mb-6">
+<h3 class="font-headline font-bold text-lg leading-tight">Hot Towel Ritual</h3>
+<p class="font-arabic text-on-surface-variant text-sm" dir="rtl">طقوس المنشفة الساخنة</p>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-xs font-semibold">20 min</span>
+</div>
+<div class="text-lg font-bold">8.00 JOD</div>
+</div>
+</div>
+<!-- Service Card 4 -->
+<div class="group relative bg-surface-container-low p-6 rounded-xl hover:bg-surface-container-lowest transition-all duration-300 hover:shadow-md cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="clean_hands">clean_hands</span>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant"></div>
+</div>
+<div class="space-y-1 mb-6">
+<h3 class="font-headline font-bold text-lg leading-tight">Exfoliating Facial</h3>
+<p class="font-arabic text-on-surface-variant text-sm" dir="rtl">تقشير الوجه الاحترافي</p>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-xs font-semibold">40 min</span>
+</div>
+<div class="text-lg font-bold">12.00 JOD</div>
+</div>
+</div>
+<!-- Service Card 5 -->
+<div class="group relative bg-surface-container-low p-6 rounded-xl hover:bg-surface-container-lowest transition-all duration-300 hover:shadow-md cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="palette">palette</span>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant"></div>
+</div>
+<div class="space-y-1 mb-6">
+<h3 class="font-headline font-bold text-lg leading-tight">Grey Blending</h3>
+<p class="font-arabic text-on-surface-variant text-sm" dir="rtl">تغطية الشيب الطبيعية</p>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-xs font-semibold">30 min</span>
+</div>
+<div class="text-lg font-bold">18.00 JOD</div>
+</div>
+</div>
+<!-- Service Card 6 -->
+<div class="group relative bg-surface-container-low p-6 rounded-xl hover:bg-surface-container-lowest transition-all duration-300 hover:shadow-md cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="flatware">flatware</span>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant"></div>
+</div>
+<div class="space-y-1 mb-6">
+<h3 class="font-headline font-bold text-lg leading-tight">Luxury Head Massage</h3>
+<p class="font-arabic text-on-surface-variant text-sm" dir="rtl">تدليك الرأس الفاخر</p>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-xs font-semibold">15 min</span>
+</div>
+<div class="text-lg font-bold">5.00 JOD</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Summary Bar -->
+<footer class="fixed bottom-0 left-0 w-full z-50 bg-white shadow-[0_-4px_32px_rgba(0,0,0,0.08)]">
+<div class="max-w-4xl mx-auto px-6 h-24 flex items-center justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline font-extrabold text-xl">15.00 JOD</span>
+<span class="text-on-surface-variant text-xs font-medium">Total</span>
+</div>
+<div class="text-on-surface-variant text-xs font-medium tracking-wide">
+                    1 service · 45 min
+                </div>
+</div>
+<button class="bg-primary text-on-primary h-14 px-8 rounded-lg font-headline font-bold text-sm flex items-center gap-3 hover:opacity-90 transition-all active:scale-95 shadow-sm">
+                Next
+                <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</footer>
+<!-- Selection Visual Feedback Gradient Overlay (Digital Atelier aesthetic) -->
+<div class="fixed inset-0 pointer-events-none border-[12px] border-white z-[60] mix-blend-overlay opacity-20"></div>
+</body></html>

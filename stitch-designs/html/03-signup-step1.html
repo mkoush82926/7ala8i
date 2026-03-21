@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Join Lumina - Role Selection</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&amp;display=swap" rel="stylesheet"/>
+<!-- Fonts: Inter for everything to maintain minimalist feel -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#000000",
+              "on-primary": "#ffffff",
+              "surface": "#ffffff",
+              "on-surface": "#000000",
+              "on-surface-variant": "#666666",
+              "outline": "#e5e5e5",
+              "surface-container-low": "#fafafa",
+            },
+            fontFamily: {
+              "headline": ["Inter", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+            },
+            borderRadius: {
+              "DEFAULT": "0px", 
+              "lg": "0.5rem", 
+              "xl": "1rem", 
+              "full": "9999px"
+            },
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+        }
+        .selection-card {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .selection-card:hover {
+            border-color: #000;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-black selection:text-white">
+<!-- Minimal Nav -->
+<nav class="flex justify-between items-center w-full px-12 h-24 sticky top-0 z-50 bg-white/80 backdrop-blur-md">
+<div class="text-lg font-bold tracking-tight">Lumina</div>
+<div class="hidden md:flex items-center gap-10">
+<a class="text-xs font-medium uppercase tracking-widest text-on-surface/50 hover:text-on-surface transition-colors" href="#">Dashboard</a>
+<a class="text-xs font-medium uppercase tracking-widest text-on-surface/50 hover:text-on-surface transition-colors" href="#">Calendar</a>
+<a class="text-xs font-medium uppercase tracking-widest text-on-surface/50 hover:text-on-surface transition-colors" href="#">Analytics</a>
+</div>
+<div class="flex items-center gap-6">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer text-xl">notifications</span>
+<button class="bg-primary text-on-primary text-xs font-bold uppercase tracking-widest px-8 py-3 transition-all hover:bg-neutral-800">Get Started</button>
+</div>
+</nav>
+<main class="min-h-[calc(100vh-96px)] flex flex-col items-center justify-center px-6 py-24">
+<!-- Header Section -->
+<div class="text-center mb-24 max-w-2xl">
+<span class="material-symbols-outlined text-4xl mb-8 block text-neutral-300">circle</span>
+<h1 class="font-headline text-5xl font-light text-on-surface mb-6 tracking-tight">How will you use Lumina?</h1>
+<p class="text-on-surface-variant text-lg font-light max-w-md mx-auto">Select the role that best describes your daily operations and goals.</p>
+</div>
+<!-- Role Selection Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
+<!-- Shop Manager Card -->
+<button class="selection-card group relative flex flex-col p-12 border border-outline rounded-xl text-left bg-white">
+<div class="mb-16">
+<span class="material-symbols-outlined text-3xl text-neutral-400 group-hover:text-black transition-colors">storefront</span>
+</div>
+<div>
+<h3 class="font-headline text-lg font-semibold text-on-surface mb-4">Shop Manager</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed font-light">Directing operations, managing staff, and scaling your business.</p>
+</div>
+<div class="mt-12 flex items-center text-black font-semibold text-[10px] uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity">
+                Select <span class="material-symbols-outlined ml-2 text-sm">arrow_forward</span>
+</div>
+</button>
+<!-- Customer Card -->
+<button class="selection-card group relative flex flex-col p-12 border border-outline rounded-xl text-left bg-white">
+<div class="mb-16">
+<span class="material-symbols-outlined text-3xl text-neutral-400 group-hover:text-black transition-colors">person</span>
+</div>
+<div>
+<h3 class="font-headline text-lg font-semibold text-on-surface mb-4">Customer</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed font-light">Booking appointments and curating your personal grooming journey.</p>
+</div>
+<div class="mt-12 flex items-center text-black font-semibold text-[10px] uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity">
+                Select <span class="material-symbols-outlined ml-2 text-sm">arrow_forward</span>
+</div>
+</button>
+<!-- Staff Card -->
+<button class="selection-card group relative flex flex-col p-12 border border-outline rounded-xl text-left bg-white">
+<div class="mb-16">
+<span class="material-symbols-outlined text-3xl text-neutral-400 group-hover:text-black transition-colors">content_cut</span>
+</div>
+<div>
+<h3 class="font-headline text-lg font-semibold text-on-surface mb-4">Professional</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed font-light">Managing your individual schedule, clients, and creative portfolio.</p>
+</div>
+<div class="mt-12 flex items-center text-black font-semibold text-[10px] uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity">
+                Select <span class="material-symbols-outlined ml-2 text-sm">arrow_forward</span>
+</div>
+</button>
+</div>
+<!-- Footer Link -->
+<div class="mt-20 text-center">
+<p class="text-on-surface-variant text-sm font-light">
+            Already have an account? 
+            <a class="text-primary font-semibold border-b border-black/10 hover:border-black ml-1 transition-all" href="#">Sign in</a>
+</p>
+</div>
+</main>
+<!-- Minimal Footer -->
+<footer class="w-full py-24 px-12 bg-white border-t border-outline">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-16">
+<div class="max-w-xs">
+<h4 class="font-bold text-lg mb-6">Lumina</h4>
+<p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 leading-loose">
+                An intentional approach to grooming management. Built for the modern atelier.
+            </p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-16 md:gap-24">
+<div class="flex flex-col gap-4">
+<span class="text-[10px] uppercase tracking-[0.2em] font-bold">Product</span>
+<a class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 hover:text-black transition-colors" href="#">Features</a>
+<a class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 hover:text-black transition-colors" href="#">Pricing</a>
+</div>
+<div class="flex flex-col gap-4">
+<span class="text-[10px] uppercase tracking-[0.2em] font-bold">Studio</span>
+<a class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 hover:text-black transition-colors" href="#">About</a>
+<a class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 hover:text-black transition-colors" href="#">Journal</a>
+</div>
+<div class="flex flex-col gap-4">
+<span class="text-[10px] uppercase tracking-[0.2em] font-bold">Legal</span>
+<a class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 hover:text-black transition-colors" href="#">Terms</a>
+<a class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/60 hover:text-black transition-colors" href="#">Privacy</a>
+</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto mt-24 pt-8 border-t border-outline">
+<p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/40">
+            © 2024 Lumina. All rights reserved.
+        </p>
+</div>
+</footer>
+</body></html>

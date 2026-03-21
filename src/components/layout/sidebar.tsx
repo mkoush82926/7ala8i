@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -12,9 +12,8 @@ import {
   Kanban,
   Settings,
   BarChart3,
-  Scissors,
-  ChevronLeft,
-  ChevronRight,
+  CalendarPlus,
+  X,
 } from "lucide-react";
 import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
@@ -29,68 +28,45 @@ const navItems = [
   { id: "settings", icon: Settings, href: "/settings" },
 ] as const;
 
-export function Sidebar() {
-  const [expanded, setExpanded] = useState(false);
-  const { isMobileSidebarOpen, setMobileSidebarOpen } = useWorkspaceStore();
+function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
-  const { direction } = useThemeStore();
   const t = useTranslation();
-  const isRTL = direction === "rtl";
 
   const labels: Record<string, string> = {
     dashboard: t.sidebar.dashboard,
-    calendar: t.sidebar.calendar,
-    leads: t.sidebar.leads,
-    clients: t.sidebar.clients,
+    calendar:  t.sidebar.calendar,
+    leads:     t.sidebar.leads,
+    clients:   t.sidebar.clients,
     analytics: t.sidebar.analytics,
-    settings: t.sidebar.settings,
+    settings:  t.sidebar.settings,
   };
 
-  // Close mobile sidebar on route change
-  React.useEffect(() => {
-    setMobileSidebarOpen(false);
-  }, [pathname, setMobileSidebarOpen]);
-
   return (
-    <motion.aside
-      className={cn(
-        "fixed top-0 h-screen z-40 flex flex-col transition-transform duration-300 md:translate-x-0",
-        "bg-[var(--bg-primary)] border-e border-[var(--border-primary)]",
-        isRTL ? "right-0 border-s border-e-0" : "left-0 border-e",
-        isMobileSidebarOpen
-          ? "translate-x-0"
-          : isRTL
-            ? "translate-x-full md:translate-x-0"
-            : "-translate-x-full md:translate-x-0",
-      )}
-      initial={false}
-      animate={{ width: expanded || isMobileSidebarOpen ? 260 : 72 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-    >
+    <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="h-20 flex items-center px-6 gap-4 border-b border-[var(--border-primary)]">
-        <div className="w-8 h-8 rounded-[var(--radius-sm)] bg-[var(--text-primary)] flex items-center justify-center flex-shrink-0">
-          <Scissors size={16} className="text-[var(--bg-primary)]" />
+      <div style={{ padding: "36px 24px 32px", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <div>
+          <h1
+            style={{ fontFamily: "Manrope, sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", color: "#191c1e", lineHeight: 1 }}
+          >
+            Lumina
+          </h1>
+          <p style={{ fontSize: 9, fontWeight: 700, color: "#76777d", textTransform: "uppercase", letterSpacing: "0.22em", marginTop: 8 }}>
+            Digital Atelier
+          </p>
         </div>
-        <AnimatePresence>
-          {expanded && (
-            <motion.span
-              initial={{ opacity: 0, x: isRTL ? 10 : -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: isRTL ? 10 : -10 }}
-              transition={{ duration: 0.15 }}
-              className="text-[14px] font-medium tracking-tight text-[var(--text-primary)] whitespace-nowrap"
-            >
-              Lumina
-            </motion.span>
-          )}
-        </AnimatePresence>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg text-on-surface-variant hover:bg-secondary-container transition-colors"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-6 px-4 flex flex-col gap-2">
+      <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, padding: "0 16px" }}>
         {navItems.map((item) => {
           const isActive =
             item.href === "/"
@@ -101,67 +77,94 @@ export function Sidebar() {
             <Link
               key={item.id}
               href={item.href}
-              className={cn(
-                "relative flex items-center gap-4 px-4 h-12 rounded-[var(--radius-md)]",
-                "transition-colors duration-[var(--transition-fast)] cursor-pointer group",
-                isActive
-                  ? "text-[var(--text-primary)] bg-[var(--bg-surface-active)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)]",
-              )}
+              onClick={onClose}
+              style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "13px 16px", borderRadius: 10,
+                textDecoration: "none", fontSize: 13, fontWeight: 600,
+                letterSpacing: "0.01em",
+                transition: "all 0.2s",
+                background: isActive ? "#191c1e" : "transparent",
+                color: isActive ? "#ffffff" : "#76777d",
+              }}
             >
-              <item.icon
-                size={18}
-                className="relative z-10 flex-shrink-0 transition-opacity"
-                style={isActive ? { opacity: 1 } : { opacity: 0.7 }}
-              />
-              <AnimatePresence>
-                {expanded && (
-                  <motion.span
-                    initial={{ opacity: 0, x: isRTL ? 8 : -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: isRTL ? 8 : -8 }}
-                    transition={{ duration: 0.12 }}
-                    className="relative z-10 text-[13px] whitespace-nowrap font-medium"
-                  >
-                    {labels[item.id]}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-              {/* Collapsed tooltip */}
-              {!expanded && (
-                <div
-                  className={cn(
-                    "absolute top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-[var(--radius-sm)] bg-[var(--text-primary)] text-[var(--bg-primary)] text-[12px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-sm z-50",
-                    isRTL ? "right-[calc(100%+8px)]" : "left-[calc(100%+8px)]",
-                  )}
-                >
-                  {labels[item.id]}
-                </div>
-              )}
+              <item.icon size={18} style={{ flexShrink: 0 }} />
+              <span>{labels[item.id]}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* Collapse Toggle */}
-      <div className="p-3 border-t border-[var(--border-primary)]">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="flex items-center justify-center w-full h-12 rounded-[var(--radius-md)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
+      {/* Book Appointment CTA */}
+      <div style={{ padding: "24px 20px 32px", marginTop: "auto" }}>
+        {/* Divider line */}
+        <div style={{ height: 1, background: "#f0f2f5", marginBottom: 20 }} />
+        <Link
+          href="/calendar"
+          onClick={onClose}
+          style={{
+            display: "block", width: "100%",
+            background: "#191c1e", color: "#ffffff",
+            padding: "15px 16px", borderRadius: 12,
+            fontWeight: 700, fontSize: 13, textAlign: "center",
+            textDecoration: "none", fontFamily: "Manrope, sans-serif",
+            letterSpacing: "0.01em",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+            transition: "all 0.2s",
+          }}
         >
-          {isRTL ? (
-            expanded ? (
-              <ChevronRight size={16} />
-            ) : (
-              <ChevronLeft size={16} />
-            )
-          ) : expanded ? (
-            <ChevronLeft size={16} />
-          ) : (
-            <ChevronRight size={16} />
-          )}
-        </button>
+          Book Appointment
+        </Link>
       </div>
-    </motion.aside>
+    </div>
+  );
+}
+
+export function Sidebar() {
+  const { isMobileSidebarOpen, setMobileSidebarOpen } = useWorkspaceStore();
+  const { direction } = useThemeStore();
+  const isRTL = direction === "rtl";
+
+  return (
+    <>
+      {/* Desktop Sidebar — matches Stitch: h-screen w-72 fixed bg-white border-r border-outline */}
+      <aside
+        className={cn(
+          "hidden md:flex fixed top-0 h-screen z-40 flex-col",
+          isRTL ? "right-0 border-l" : "left-0 border-r"
+        )}
+        style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#e2e8f0" }}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile Sidebar */}
+      <AnimatePresence>
+        {isMobileSidebarOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 md:hidden bg-black/40 backdrop-blur-sm"
+              onClick={() => setMobileSidebarOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: isRTL ? "100%" : "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: isRTL ? "100%" : "-100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className={cn(
+                "fixed top-0 h-screen z-50 md:hidden flex flex-col",
+                isRTL ? "right-0 border-l" : "left-0 border-r"
+              )}
+              style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#e2e8f0" }}
+            >
+              <SidebarContent onClose={() => setMobileSidebarOpen(false)} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
