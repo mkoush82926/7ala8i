@@ -21,7 +21,7 @@ export default function LoginPage() {
     }
   }
 
-  const { FF, dir } = useTranslation()
+  const { t, FF, dir } = useTranslation()
 
   return (
     <div
@@ -119,10 +119,10 @@ export default function LoginPage() {
                 fontFamily: "'Manrope',system-ui,sans-serif",
               }}
             >
-              Welcome back
+              {t.auth.welcomeBack}
             </h1>
             <p style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500 }}>
-              Sign in to manage your appointments and profile.
+              {t.auth.signInToManage}
             </p>
           </div>
 
@@ -141,7 +141,7 @@ export default function LoginPage() {
                   color: '#6b7280',
                 }}
               >
-                Email Address
+                {t.auth.emailAddress}
               </label>
               <div style={{ position: 'relative' }}>
                 <span
@@ -207,7 +207,7 @@ export default function LoginPage() {
                     color: '#6b7280',
                   }}
                 >
-                  Password
+                  {t.auth.password}
                 </label>
                 <Link
                   href="/auth/forgot-password"
@@ -218,7 +218,7 @@ export default function LoginPage() {
                     textDecoration: 'none',
                   }}
                 >
-                  Forgot password?
+                  {t.auth.forgotPassword}
                 </Link>
               </div>
               <div style={{ position: 'relative' }}>
@@ -369,12 +369,12 @@ export default function LoginPage() {
                       animation: 'spin 0.7s linear infinite',
                     }}
                   />
-                  Signing in…
+                  {t.auth.signingIn}
                 </>
               ) : (
                 <>
-                  Sign In
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
+                  {t.auth.signInBtn}
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{dir === 'rtl' ? 'arrow_back' : 'arrow_forward'}</span>
                 </>
               )}
             </button>
@@ -384,14 +384,14 @@ export default function LoginPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '24px 0' }}>
             <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: '#d1d5db', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              or
+              {t.auth.or}
             </span>
             <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />
           </div>
 
           {/* Create account */}
           <p style={{ textAlign: 'center', fontSize: 14, color: '#6b7280', fontWeight: 400 }}>
-            Don&apos;t have an account?{' '}
+            {t.auth.noAccount}{' '}
             <Link
               href="/auth/signup"
               style={{
@@ -401,7 +401,7 @@ export default function LoginPage() {
                 borderBottom: '2px solid rgba(17,24,39,0.15)',
               }}
             >
-              Create account
+              {t.auth.createAccount}
             </Link>
           </p>
         </motion.div>
@@ -419,10 +419,10 @@ export default function LoginPage() {
             fontWeight: 500,
           }}
         >
-          By signing in, you agree to our{' '}
-          <a href="#" style={{ color: '#9ca3af' }}>Terms</a>{' '}
-          and{' '}
-          <a href="#" style={{ color: '#9ca3af' }}>Privacy Policy</a>
+          {t.auth.termsNotice.split('{')[0]}
+          <a href="#" style={{ color: '#9ca3af' }}>{t.auth.terms}</a>
+          {' '}
+          <a href="#" style={{ color: '#9ca3af' }}>{t.auth.privacyText}</a>
         </motion.p>
       </div>
 

@@ -257,9 +257,9 @@ export default function SignupPage() {
 
           <div style={{ marginTop: 64, textAlign: "center" }}>
             <p style={{ fontSize: 14, color: "#666666", fontWeight: 300 }}>
-              Already have an account?{" "}
+              {t.auth.haveAccount}{" "}
               <Link href="/auth/login" style={{ color: "#000000", fontWeight: 600, marginLeft: 4, textDecoration: "none", borderBottom: "1px solid rgba(0,0,0,0.15)" }}>
-                Sign in
+                {t.auth.signInBtn}
               </Link>
             </p>
           </div>
@@ -294,9 +294,9 @@ export default function SignupPage() {
                 </span>
               </div>
               <h1 style={{ fontSize: 40, fontWeight: 800, fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", letterSpacing: "-0.03em", color: "#000000", marginBottom: 10 }}>
-                Create your account
+                {t.auth.createYourAccount}
               </h1>
-              <p style={{ color: "#666666", fontSize: 15, fontWeight: 300 }}>Start managing your barbershop with Halaqy</p>
+              <p style={{ color: "#666666", fontSize: 15, fontWeight: 300 }}>{t.auth.joinHalaqy}</p>
             </div>
 
             <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -304,18 +304,18 @@ export default function SignupPage() {
               {/* Full Name */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.8)" }}>
-                  Full Name
+                  {t.auth.fullName}
                 </label>
-                <StyledInput type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" required />
+                <StyledInput type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t.auth.fullName} required />
               </div>
 
               {/* Shop Name (admin only) */}
               {selectedRole === "shop_admin" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.8)" }}>
-                    Barbershop Name
+                    {t.auth.shopName}
                   </label>
-                  <StyledInput type="text" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="e.g. The Gentlemen's Den" required />
+                  <StyledInput type="text" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder={t.auth.shopName} required />
                 </div>
               )}
 
@@ -323,7 +323,7 @@ export default function SignupPage() {
               {selectedRole === "customer" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.8)" }}>
-                    Phone Number
+                    {t.booking.phoneNumber}
                   </label>
                   <StyledInput type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+962 7X XXX XXXX" />
                 </div>
@@ -332,7 +332,7 @@ export default function SignupPage() {
               {/* Email */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.8)" }}>
-                  Email Address
+                  {t.auth.emailAddress}
                 </label>
                 <StyledInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@domain.com" required />
               </div>
@@ -340,14 +340,14 @@ export default function SignupPage() {
               {/* Password */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(100,116,139,0.8)" }}>
-                  Password
+                  {t.auth.password}
                 </label>
                 <div style={{ position: "relative" }}>
                   <StyledInput
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Min. 6 characters"
+                    placeholder={t.auth.passwordRules}
                     required
                     minLength={6}
                     style={{ ...inputStyle(), paddingRight: 48 }}
@@ -376,8 +376,8 @@ export default function SignupPage() {
               >
                 {loading ? <Loader2 size={18} className="animate-spin" /> : (
                   <>
-                    <span>Create Account</span>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
+                    <span>{t.auth.createAccount}</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{dir === 'rtl' ? 'arrow_back' : 'arrow_forward'}</span>
                   </>
                 )}
               </button>
@@ -385,9 +385,9 @@ export default function SignupPage() {
 
             <div style={{ marginTop: 32, textAlign: "center" }}>
               <p style={{ fontSize: 13, color: "rgba(100,116,139,0.6)" }}>
-                Already have an account?{" "}
+                {t.auth.haveAccount}{" "}
                 <Link href="/auth/login" style={{ color: "#000000", fontWeight: 700, marginLeft: 4, textDecoration: "none" }}>
-                  Sign in
+                  {t.auth.signInBtn}
                 </Link>
               </p>
             </div>

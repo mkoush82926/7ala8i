@@ -273,6 +273,34 @@ const en = {
     terms: "Terms of Service",
     allRightsReserved: "All rights reserved.",
   },
+
+  // ─── Auth ───
+  auth: {
+    welcomeBack: "Welcome back",
+    signInToManage: "Sign in to manage your appointments and profile.",
+    emailAddress: "Email Address",
+    password: "Password",
+    forgotPassword: "Forgot password?",
+    signInBtn: "Sign In",
+    signingIn: "Signing in…",
+    or: "OR",
+    noAccount: "Don't have an account?",
+    createAccount: "Create account",
+    termsNotice: "By signing in, you agree to our {terms} and {privacy}",
+    terms: "Terms",
+    privacyText: "Privacy Policy",
+    
+    // Signup
+    createYourAccount: "Create your account",
+    joinHalaqy: "Join Halaqy and elevate your atelier.",
+    fullName: "Full Name",
+    shopName: "Shop Name",
+    passwordRules: "Must be at least 8 characters",
+    signUpBtn: "Sign Up",
+    signingUp: "Signing up…",
+    haveAccount: "Already have an account?",
+    signUpTerms: "By signing up, you agree to our {terms} and {privacy}",
+  },
 };
 
 export default en;

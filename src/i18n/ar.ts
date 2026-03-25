@@ -256,6 +256,34 @@ const ar: TranslationKeys = {
     terms: "شروط الخدمة",
     allRightsReserved: "جميع الحقوق محفوظة.",
   },
+
+  // ─── Auth ───
+  auth: {
+    welcomeBack: "مرحباً بعودتك",
+    signInToManage: "قم بتسجيل الدخول لإدارة مواعيدك وملفك الشخصي.",
+    emailAddress: "البريد الإلكتروني",
+    password: "كلمة المرور",
+    forgotPassword: "هل نسيت كلمة المرور؟",
+    signInBtn: "تسجيل الدخول",
+    signingIn: "جاري تسجيل الدخول…",
+    or: "أو",
+    noAccount: "ليس لديك حساب؟",
+    createAccount: "إنشاء حساب",
+    termsNotice: "بتسجيل دخولك، أنت توافق على {terms} و {privacy}",
+    terms: "الشروط",
+    privacyText: "سياسة الخصوصية",
+    
+    // Signup
+    createYourAccount: "أنشئ حسابك",
+    joinHalaqy: "انضم إلى حلقي وارتقِ بمشغلك.",
+    fullName: "الاسم الكامل",
+    shopName: "اسم المحل",
+    passwordRules: "يجب أن تكون 8 أحرف على الأقل",
+    signUpBtn: "إنشاء حساب",
+    signingUp: "جاري إنشاء الحساب…",
+    haveAccount: "لديك حساب بالفعل؟",
+    signUpTerms: "بتسجيلك، أنت توافق على {terms} و {privacy}",
+  },
 } as const;
 
 export default ar;

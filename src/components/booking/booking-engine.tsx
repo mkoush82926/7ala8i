@@ -289,7 +289,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
               </div>
 
               <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.035em", fontFamily: "'Manrope',system-ui,sans-serif", margin: "0 0 8px" }}>
-                Book Appointment
+                {t.booking.bookAppointment}
               </h2>
               <p style={{ fontSize: 14, color: C.subtle, marginBottom: 6, display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 14 }}>location_on</span>
@@ -343,8 +343,8 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 onMouseEnter={e => { e.currentTarget.style.background = "#1f2937"; e.currentTarget.style.transform = "translateY(-1px)"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = C.black; e.currentTarget.style.transform = "none"; }}
               >
-                Book Appointment
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
+                {t.booking.bookAppointment}
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{isRTL ? 'arrow_back' : 'arrow_forward'}</span>
               </button>
               <p style={{ fontSize: 11, color: C.muted, marginTop: 12 }}>By continuing, you agree to our Terms of Service</p>
             </div>
@@ -358,9 +358,9 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 32 }}>
-              <StepLabel text="Step 1 of 4 · Services" />
-              <SectionTitle>Select Services</SectionTitle>
-              <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}>Choose one or more treatments. Multiple selections are supported.</p>
+              <StepLabel text={`${t.booking.step} 1 ${t.booking.of} 4 \u00B7 ${t.booking.services}`} />
+              <SectionTitle>{t.booking.selectServices}</SectionTitle>
+              <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
 
             {servicesLoading ? (
@@ -426,8 +426,8 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             <BottomBar>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 22, fontWeight: 900, color: C.black }}>{totalPrice.toFixed(2)} JOD</span>
-                  <span style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>Total</span>
+                  <span style={{ fontSize: 22, fontWeight: 900, color: C.black }}>{totalPrice.toFixed(2)} {isRTL ? "د.أ" : "JOD"}</span>
+                  <span style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>{t.booking.total}</span>
                 </div>
                 {selectedServices.length > 0 && (
                   <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>
@@ -450,9 +450,9 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 28 }}>
-              <StepLabel text="Step 2 of 4 · Select Professional" />
-              <SectionTitle>The Hands Behind<br />The Craft.</SectionTitle>
-              <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}>Choose your preferred barber or go with any available.</p>
+              <StepLabel text={`${t.booking.step} 2 ${t.booking.of} 4 \u00B7 ${t.booking.chooseBarber}`} />
+              <SectionTitle>{t.booking.chooseBarber}</SectionTitle>
+              <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 28 }}>
@@ -471,8 +471,8 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                   <span className="material-symbols-outlined" style={{ fontSize: 26, color: C.muted }}>group</span>
                 </div>
                 <div>
-                  <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 4px" }}>Any Available</p>
-                  <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Best for immediate availability</p>
+                  <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 4px" }}>{t.booking.anyBarber}</p>
+                  <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>{t.booking.anyBarberDesc}</p>
                 </div>
               </button>
 
@@ -529,9 +529,9 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 28 }}>
-              <StepLabel text="Step 3 of 4 · Date & Time" />
-              <SectionTitle>Schedule your session</SectionTitle>
-              <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}>Select a date and time that fits your schedule.</p>
+              <StepLabel text={`${t.booking.step} 3 ${t.booking.of} 4 \u00B7 ${t.booking.pickDateTime}`} />
+              <SectionTitle>{t.booking.pickDateTime}</SectionTitle>
+              <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
 
             {/* Date scroller */}
@@ -566,7 +566,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             {/* Time slots */}
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: C.black }}>Available Times</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.black }}>{t.booking.availableTimes}</span>
                 <div style={{ display: "flex", gap: 16, fontSize: 11, fontWeight: 600, color: C.muted }}>
                   <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <span style={{ width: 8, height: 8, borderRadius: "50%", background: C.border, display: "inline-block" }} />Free
@@ -671,9 +671,9 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 28 }}>
-              <StepLabel text="Step 4 of 4 · Confirm Booking" />
-              <SectionTitle>Almost there!</SectionTitle>
-              <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}>Review your details and enter contact info to finalize.</p>
+              <StepLabel text={`${t.booking.step} 4 ${t.booking.of} 4 \u00B7 ${t.booking.confirmBooking}`} />
+              <SectionTitle>{t.booking.confirmBooking}</SectionTitle>
+              <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
 
             {/* Two-column layout on larger screens, single column on small */}
@@ -688,8 +688,8 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                   </h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                     {[
-                      { label: "Full Name",     value: clientName,  setter: setClientName,  type: "text", placeholder: "Your name" },
-                      { label: "Phone Number",  value: clientPhone, setter: setClientPhone, type: "tel",  placeholder: "+962 ..." },
+                      { label: t.booking.yourName,     value: clientName,  setter: setClientName,  type: "text", placeholder: "Your name" },
+                      { label: t.booking.phoneNumber,  value: clientPhone, setter: setClientPhone, type: "tel",  placeholder: "+962 ..." },
                     ].map(field => (
                       <div key={field.label}>
                         <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: C.muted, marginBottom: 6 }}>
@@ -795,7 +795,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                     transition: "all 150ms ease",
                   }}
                 >
-                  {submitting ? "Processing…" : "Confirm Booking →"}
+                  {submitting ? "Processing…" : t.booking.confirmBtn}
                 </button>
                 <p style={{ fontSize: 11, color: C.muted, textAlign: "center", marginTop: 10 }}>
                   By confirming you agree to our Terms & Privacy Policy.
