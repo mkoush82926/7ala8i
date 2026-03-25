@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { login } from '@/app/auth/actions'
+import { login } from '@/app/[locale]/auth/actions'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useTranslation } from '@/hooks/use-translation'
