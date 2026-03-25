@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle, Eye, EyeOff, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
-const FF = "'Inter', 'Manrope', system-ui, sans-serif";
+const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
 const T = {
   dark:    "#191c1e",
   muted:   "#76777d",

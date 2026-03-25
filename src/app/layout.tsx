@@ -1,19 +1,15 @@
 import type { Metadata } from "next";
-import { Manrope, Inter } from "next/font/google";
+import { Cairo } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+// ── Cairo: Best Arabic+Latin font for Halaqy ──────────────────────────────
+// Used by Careem, Noon, and major Arab-market tech brands.
+// Supports Arabic (wght 200–900) and Latin in the same geometric system.
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["latin", "arabic"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
@@ -36,12 +32,8 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
-        <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
-      <body className={`${manrope.variable} ${inter.variable} antialiased`} suppressHydrationWarning>
+      <body className={`${cairo.variable} antialiased`} suppressHydrationWarning>
         <ThemeProvider>
           {children}
         </ThemeProvider>

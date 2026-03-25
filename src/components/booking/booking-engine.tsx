@@ -11,7 +11,7 @@ import Link from "next/link";
 
 type BookingStep = "landing" | "services" | "barber" | "datetime" | "confirm";
 
-const FF = "'Inter','Manrope',system-ui,-apple-system,sans-serif";
+const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
 
 // ─── Colour tokens (inline so Tailwind purging can't break them) ───
 const C = {

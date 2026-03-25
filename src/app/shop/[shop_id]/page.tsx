@@ -149,7 +149,7 @@ export default function ShopProfilePage() {
     count: reviews.filter(r => r.rating === s).length,
   }));
 
-  const FF = "'Inter','Manrope',system-ui,sans-serif";
+  const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
 
   return (
     <div style={{ background: "#f9fafb", minHeight: "100vh", fontFamily: FF }}>

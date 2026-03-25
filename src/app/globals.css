@@ -72,11 +72,11 @@
   /* surface tint */
   --color-surface-tint:          #585e6f;
 
-  /* Fonts */
-  --font-sans:     var(--font-inter), system-ui, sans-serif;
-  --font-headline: var(--font-manrope), var(--font-inter), sans-serif;
-  --font-body:     var(--font-inter), var(--font-manrope), system-ui, sans-serif;
-  --font-label:    var(--font-inter), system-ui, sans-serif;
+  /* Fonts — Cairo: best Arabic+Latin font (used by Careem, Noon) */
+  --font-sans:     var(--font-cairo), 'Segoe UI', Tahoma, Arial, sans-serif;
+  --font-headline: var(--font-cairo), 'Segoe UI', Tahoma, Arial, sans-serif;
+  --font-body:     var(--font-cairo), 'Segoe UI', Tahoma, Arial, sans-serif;
+  --font-label:    var(--font-cairo), 'Segoe UI', Tahoma, Arial, sans-serif;
 
   /* Border Radius — exact Stitch values */
   --radius:     4px;
@@ -231,23 +231,25 @@ body {
   color: var(--color-on-surface);
   font-family: var(--font-body);
   font-weight: 400;
-  line-height: 1.75;        /* ↑ more breathing room between lines */
+  line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
-  letter-spacing: 0.005em;  /* subtle micro whitespace on body text */
+  letter-spacing: 0em;  /* Cairo has perfect natural spacing */
+  font-feature-settings: 'kern' 1, 'liga' 1;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-headline);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   font-weight: 700;
-  line-height: 1.2;  /* tight line height for headings — standard for premium design */
+  line-height: 1.15;
 }
 
-/* Arabic RTL */
+/* Arabic RTL — Cairo natively supports Arabic, no font switch needed */
 [dir="rtl"] body,
 [dir="rtl"] * {
-  font-family: 'IBM Plex Sans Arabic', 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-cairo), 'Segoe UI', Tahoma, Arial, sans-serif;
+  letter-spacing: 0;
 }
 
 /* ─── Scrollbar ─── */

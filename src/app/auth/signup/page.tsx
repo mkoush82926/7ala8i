@@ -39,7 +39,7 @@ const inputStyle = (isFocused = false): React.CSSProperties => ({
   background: isFocused ? "#ffffff" : "#f8fafc",
   color: "#0f172a",
   fontSize: 14,
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif",
   outline: "none",
   transition: "all 0.2s ease",
   boxShadow: isFocused ? "0 0 0 1px #000000" : "none",
@@ -132,7 +132,7 @@ export default function SignupPage() {
         borderBottom: "1px solid #f1f5f9",
       }}
     >
-      <Link href="/landing" style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em", fontFamily: "'Manrope', sans-serif", textDecoration: "none" }}>
+      <Link href="/landing" style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.03em", fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", textDecoration: "none" }}>
         Halaqy
       </Link>
       <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
@@ -162,7 +162,7 @@ export default function SignupPage() {
               <div style={{ width: 56, height: 56, background: "#000", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 32px" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#fff", fontVariationSettings: "'FILL' 1" }}>check</span>
               </div>
-              <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", marginBottom: 12, fontFamily: "'Manrope', sans-serif" }}>
+              <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", marginBottom: 12, fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif" }}>
                 Check your email
               </h2>
               <p style={{ color: "#64748b", fontSize: 14, fontWeight: 300, lineHeight: 1.7, marginBottom: 40 }}>
@@ -180,7 +180,7 @@ export default function SignupPage() {
 
 
   return (
-    <div style={{ minHeight: "100dvh", background: "#ffffff", color: "#000000", fontFamily: "'Manrope', 'Inter', sans-serif", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100dvh", background: "#ffffff", color: "#000000", fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", display: "flex", flexDirection: "column" }}>
       {navBar}
 
       {/* Step 1 — Role Selection */}
@@ -192,7 +192,7 @@ export default function SignupPage() {
             transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
             style={{ textAlign: "center", marginBottom: 72, maxWidth: 640 }}
           >
-            <h1 style={{ fontSize: 48, fontWeight: 300, fontFamily: "'Manrope', sans-serif", letterSpacing: "-0.03em", color: "#000000", marginBottom: 20 }}>
+            <h1 style={{ fontSize: 48, fontWeight: 300, fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", letterSpacing: "-0.03em", color: "#000000", marginBottom: 20 }}>
               How will you use Halaqy?
             </h1>
             <p style={{ color: "#666666", fontSize: 18, fontWeight: 300, maxWidth: 400, margin: "0 auto" }}>
@@ -270,7 +270,7 @@ export default function SignupPage() {
                   {roles.find((r) => r.id === selectedRole)?.title}
                 </span>
               </div>
-              <h1 style={{ fontSize: 40, fontWeight: 800, fontFamily: "'Manrope', sans-serif", letterSpacing: "-0.03em", color: "#000000", marginBottom: 10 }}>
+              <h1 style={{ fontSize: 40, fontWeight: 800, fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", letterSpacing: "-0.03em", color: "#000000", marginBottom: 10 }}>
                 Create your account
               </h1>
               <p style={{ color: "#666666", fontSize: 15, fontWeight: 300 }}>Start managing your barbershop with Halaqy</p>

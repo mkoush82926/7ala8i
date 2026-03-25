@@ -23,7 +23,7 @@ const RATINGS = [4.9, 4.7, 4.8, 4.6, 4.9, 4.7];
 const REVIEW_COUNTS = [127, 89, 204, 56, 341, 78];
 const CATEGORIES = ["All", "Classic Cuts", "Luxury Grooming", "Beard Studio", "Kids Friendly"];
 
-const FF = "'Inter', 'Manrope', system-ui, -apple-system, sans-serif";
+const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
 
 // Inline container style — guaranteed to work regardless of Tailwind purging
 const containerStyle: React.CSSProperties = {

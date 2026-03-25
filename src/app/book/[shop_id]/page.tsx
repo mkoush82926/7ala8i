@@ -6,7 +6,7 @@ import { useThemeStore } from "@/store/theme-store";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-const FF = "'Inter','Manrope',system-ui,-apple-system,sans-serif";
+const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
 
 export default function BookingShopPage() {
   const params = useParams();

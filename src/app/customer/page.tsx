@@ -47,7 +47,7 @@ const SHOP_IMAGES = [
 
 type Tab = "upcoming" | "past" | "cancelled";
 
-const FF = "'Inter','Manrope',system-ui,sans-serif";
+const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
 
 function SkeletonCard() {
   return (

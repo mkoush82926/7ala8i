@@ -46,7 +46,7 @@ export default function LandingPage() {
     document.documentElement.setAttribute("lang", isRTL ? "ar" : "en");
   }, [direction, isRTL]);
 
-  const FF = "'Manrope', 'Inter', system-ui, sans-serif";
+  const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
 
   const features = [
     { icon: "schedule",      title: isRTL ? "تقويم ذكي"        : "Smart Calendar",     desc: isRTL ? "إدارة جداول زمنية متكيفة تتزامن مع سير عمل فريقك الطبيعي."             : "Adaptive timeline management that synchronizes with your team's natural workflow." },

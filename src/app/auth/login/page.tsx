@@ -20,7 +20,7 @@ export default function LoginPage() {
     }
   }
 
-  const FF = "'Inter','Manrope',system-ui,sans-serif"
+  const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif"
 
   return (
     <div
