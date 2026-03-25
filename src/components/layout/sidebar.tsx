@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useTranslation } from "@/hooks/use-translation";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 const navItems = [
   { id: "dashboard", icon: LayoutDashboard, href: "/" },
@@ -39,6 +40,18 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const t = useTranslation();
   const router = useRouter();
+
+  const [currentUserRole, setCurrentUserRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data.user) {
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
+        setCurrentUserRole(profile?.role || null);
+      }
+    });
+  }, []);
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -72,19 +85,24 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             Digital Atelier
           </p>
         </div>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="md:hidden flex items-center justify-center w-11 h-11 rounded-lg text-on-surface-variant hover:bg-secondary-container transition-colors cursor-pointer"
-          >
-            <X size={18} />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="md:hidden flex items-center justify-center w-11 h-11 rounded-lg text-on-surface-variant hover:bg-secondary-container transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Navigation */}
       <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, padding: "0 16px" }}>
         {navItems.map((item) => {
+          if (item.id === "settings" && currentUserRole !== 'shop_admin') return null;
+
           const isActive =
             item.href === "/"
               ? pathname === "/"
@@ -164,8 +182,8 @@ export function Sidebar() {
       {/* Desktop Sidebar — matches Stitch: h-screen w-72 fixed bg-white border-r border-outline */}
       <aside
         className={cn(
-          "hidden md:flex fixed top-0 h-screen z-40 flex-col",
-          isRTL ? "right-0 border-l" : "left-0 border-r"
+          "hidden lg:flex fixed inset-y-0 z-40 w-72 bg-[var(--bg-primary)] border-e border-[var(--border-primary)] flex-col pt-20 transition-all",
+          "start-0"
         )}
         style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#e2e8f0" }}
       >
@@ -184,13 +202,12 @@ export function Sidebar() {
               onClick={() => setMobileSidebarOpen(false)}
             />
             <motion.aside
-              initial={{ x: isRTL ? "100%" : "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: isRTL ? "100%" : "-100%" }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              initial={{ x: isRTL ? 100 : -100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: isRTL ? 100 : -100, opacity: 0 }}
               className={cn(
-                "fixed top-0 h-screen z-50 md:hidden flex flex-col",
-                isRTL ? "right-0 border-l" : "left-0 border-r"
+                "fixed inset-y-0 z-50 w-72 bg-[var(--bg-primary)] border-e border-[var(--border-primary)] shadow-xl flex flex-col",
+                "start-0"
               )}
               style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#e2e8f0" }}
             >

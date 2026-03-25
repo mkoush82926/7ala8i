@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/container-queries";
 
 /* ═══════════════════════════════════════════════════════
    HALAQY DIGITAL ATELIER — Design System
@@ -6,7 +8,7 @@
    ═══════════════════════════════════════════════════════ */
 
 /* ─── Tailwind v4 Theme — exact Stitch color tokens ─── */
-@theme inline {
+@theme {
   /* ── Exact Stitch color tokens from all HTML files ── */
   /* primary = #000000 (ALL stitch pages: settings, analytics, calendar, clients) */
   --color-primary:               #000000;
@@ -71,10 +73,10 @@
   --color-surface-tint:          #585e6f;
 
   /* Fonts */
-  --font-sans:     'Manrope', 'Inter', system-ui, sans-serif;
-  --font-headline: 'Manrope', 'Inter', sans-serif;
-  --font-body:     'Inter', 'Manrope', system-ui, sans-serif;
-  --font-label:    'Inter', system-ui, sans-serif;
+  --font-sans:     var(--font-inter), system-ui, sans-serif;
+  --font-headline: var(--font-manrope), var(--font-inter), sans-serif;
+  --font-body:     var(--font-inter), var(--font-manrope), system-ui, sans-serif;
+  --font-label:    var(--font-inter), system-ui, sans-serif;
 
   /* Border Radius — exact Stitch values */
   --radius:     4px;
@@ -225,9 +227,9 @@ html {
 }
 
 body {
-  background: #f7f9fb;
-  color: #191c1e;
-  font-family: 'Manrope', 'Inter', system-ui, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  font-family: var(--font-body);
   font-weight: 400;
   line-height: 1.75;        /* ↑ more breathing room between lines */
   min-height: 100vh;
@@ -236,7 +238,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-headline);
   letter-spacing: -0.03em;
   font-weight: 700;
   line-height: 1.2;  /* tight line height for headings — standard for premium design */
@@ -864,3 +866,531 @@ h1, h2, h3, h4, h5, h6 {
     gap: 24px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOMER PORTAL PREMIUM DESIGN SYSTEM
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Premium accent color ─── */
+:root {
+  --accent: #18181b;         /* near-black brand */
+  --accent-soft: #f4f4f5;   /* zinc-100 */
+  --accent-muted: rgba(24,24,27,0.08);
+  --gold: #d4a853;
+  --gold-light: #fef9ec;
+  --emerald: #10b981;
+  --emerald-light: rgba(16,185,129,0.08);
+  --sky: #0ea5e9;
+  --sky-light: rgba(14,165,233,0.08);
+  --rose: #f43f5e;
+  --rose-light: rgba(244,63,94,0.08);
+  --amber: #f59e0b;
+  --amber-light: rgba(245,158,11,0.08);
+}
+
+/* ─── Utility: hide scrollbar but keep scroll ─── */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ─── Fade-slide page entrance (customer portal) ─── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-slide-up {
+  animation: fadeSlideUp 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+.fade-slide-up-delay-1 { animation-delay: 0.05s; }
+.fade-slide-up-delay-2 { animation-delay: 0.10s; }
+.fade-slide-up-delay-3 { animation-delay: 0.15s; }
+.fade-slide-up-delay-4 { animation-delay: 0.20s; }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .fade-slide-up, .skeleton, .card-skeleton, .confetti-dot { animation: none !important; }
+  * { transition-duration: 0ms !important; }
+}
+
+/* ─── Shimmer skeleton loader ─── */
+@keyframes shimmerMove {
+  0%   { background-position: -800px 0; }
+  100% { background-position: 800px 0; }
+}
+.shimmer-card {
+  background: linear-gradient(90deg, #f0f0f0 25%, #fafafa 50%, #f0f0f0 75%);
+  background-size: 800px 100%;
+  animation: shimmerMove 1.6s ease-in-out infinite;
+  border-radius: 20px;
+}
+
+/* ─── Premium shop card (explore + customer home) ─── */
+.shop-card {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  cursor: pointer;
+}
+.shop-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.10);
+  border-color: #e0e0e0;
+}
+.shop-card:active {
+  transform: scale(0.98);
+}
+.shop-card:focus-visible {
+  outline: 3px solid rgba(0,0,0,0.2);
+  outline-offset: 3px;
+}
+
+/* ─── Badge system ─── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.badge-upcoming { background: #dbeafe; color: #1d4ed8; }
+.badge-completed { background: #d1fae5; color: #065f46; }
+.badge-cancelled { background: #fee2e2; color: #991b1b; }
+.badge-pending   { background: #fef3c7; color: #92400e; }
+.badge-noshow    { background: #f3f4f6; color: #6b7280; }
+.badge-open      { background: rgba(16,185,129,0.12); color: #059669; }
+
+/* ─── Star rating ─── */
+.star-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.star-fill  { color: #f59e0b; }
+.star-empty { color: #e5e7eb; }
+
+/* ─── Customer portal nav (sidebar) ─── */
+.portal-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-decoration: none;
+  transition: all 120ms ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.portal-nav-item:hover {
+  background: #f9fafb;
+  color: #111827;
+}
+.portal-nav-item.active {
+  background: #111827;
+  color: #ffffff;
+}
+
+/* ─── Booking step progress indicator ─── */
+.booking-step-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.booking-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px solid transparent;
+  transition: all 200ms ease;
+  flex-shrink: 0;
+}
+.booking-step-dot.done    { background: #111827; color: #fff; border-color: #111827; }
+.booking-step-dot.active  { background: #fff; color: #111827; border-color: #111827; }
+.booking-step-dot.pending { background: #f3f4f6; color: #9ca3af; border-color: #e5e7eb; }
+.booking-step-line {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  transition: background 200ms ease;
+}
+.booking-step-line.done { background: #111827; }
+
+/* ─── Floating label inputs ─── */
+.float-group {
+  position: relative;
+}
+.float-input {
+  width: 100%;
+  height: 56px;
+  padding: 20px 16px 8px;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  outline: none;
+  transition: all 150ms ease;
+}
+.float-input:focus {
+  background: #fff;
+  border-color: #111827;
+  box-shadow: 0 0 0 3px rgba(17,24,39,0.08);
+}
+.float-input.error {
+  border-color: #f43f5e;
+  box-shadow: 0 0 0 3px rgba(244,63,94,0.08);
+}
+.float-label {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #9ca3af;
+  font-weight: 500;
+  pointer-events: none;
+  transition: all 150ms ease;
+}
+.float-input:focus ~ .float-label,
+.float-input:not(:placeholder-shown) ~ .float-label {
+  top: 10px;
+  transform: none;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+/* ─── Time slot pill ─── */
+.time-slot {
+  padding: 10px 0;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+  cursor: pointer;
+  transition: all 120ms ease;
+  user-select: none;
+}
+.time-slot:hover:not(:disabled) {
+  border-color: #111827;
+  background: #f9fafb;
+}
+.time-slot.selected {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+.time-slot:disabled {
+  background: #f9fafb;
+  border-color: #f0f0f0;
+  color: #d1d5db;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.time-slot:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* ─── Date pill (booking date scroller) ─── */
+.date-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  min-height: 76px;
+  border-radius: 16px;
+  border: 2px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  transition: all 120ms ease;
+  flex-shrink: 0;
+}
+.date-pill:hover { border-color: #111827; }
+.date-pill.selected {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+.date-pill:active { transform: scale(0.95); }
+
+/* ─── Animated checkmark SVG ─── */
+@keyframes draw-checkmark {
+  from { stroke-dashoffset: 80; }
+  to   { stroke-dashoffset: 0; }
+}
+.animated-check {
+  stroke-dasharray: 80;
+  stroke-dashoffset: 80;
+  animation: draw-checkmark 0.5s ease 0.3s forwards;
+}
+
+/* ─── Success scale-in ─── */
+@keyframes successPop {
+  0%   { opacity: 0; transform: scale(0.8); }
+  70%  { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.success-pop {
+  animation: successPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ─── Error shake ─── */
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px); }
+  40%       { transform: translateX(8px); }
+  60%       { transform: translateX(-5px); }
+  80%       { transform: translateX(5px); }
+}
+.error-shake { animation: errorShake 0.4s ease; }
+
+/* ─── Modal / Bottom Sheet ─── */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes fadeScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.modal-sheet-enter { animation: slideUp 0.32s cubic-bezier(0.25, 1, 0.5, 1) both; }
+.modal-dialog-enter { animation: fadeScale 0.25s cubic-bezier(0.25, 1, 0.5, 1) both; }
+
+/* ─── Tab underline transition ─── */
+.portal-tab-btn {
+  position: relative;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: color 150ms ease;
+  white-space: nowrap;
+}
+.portal-tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0; right: 0;
+  height: 2px;
+  background: #111827;
+  border-radius: 9999px;
+  transform: scaleX(0);
+  transition: transform 200ms ease;
+}
+.portal-tab-btn.active {
+  color: #111827;
+}
+.portal-tab-btn.active::after { transform: scaleX(1); }
+
+/* ─── Hero gradient background (landing page) ─── */
+.hero-gradient {
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 40%, rgba(213,227,252,0.25) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 20% 60%, rgba(16,185,129,0.06) 0%, transparent 50%),
+    #ffffff;
+}
+
+/* ─── Animated floating orb ─── */
+@keyframes orb-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(-20px) scale(1.05); }
+}
+.orb {
+  border-radius: 50%;
+  filter: blur(60px);
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  animation: orb-float 8s ease-in-out infinite;
+}
+
+/* ─── Open now pulse dot ─── */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.4); }
+}
+.pulse-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--emerald);
+  display: inline-block;
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+/* ─── Sticky booking header (shop profile) ─── */
+.sticky-booking-bar {
+  position: fixed;
+  top: 0;
+  left: 0; right: 0;
+  z-index: 60;
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid #f0f0f0;
+  transform: translateY(-100%);
+  transition: transform 300ms cubic-bezier(0.25,1,0.5,1);
+}
+.sticky-booking-bar.visible { transform: translateY(0); }
+
+/* ─── Barber avatar ring (selected state) ─── */
+.barber-avatar-ring {
+  border-radius: 50%;
+  padding: 3px;
+  background: transparent;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+.barber-avatar-ring.selected {
+  background: #111827;
+  box-shadow: 0 0 0 3px rgba(17,24,39,0.25);
+}
+
+/* ─── Review star interactive ─── */
+.review-star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 120ms ease;
+  display: inline-flex;
+}
+.review-star-btn:hover { transform: scale(1.2); }
+.review-star-btn:active { transform: scale(0.9); }
+
+/* ─── CTA button premium variants ─── */
+.btn-premium {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 32px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 150ms ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.btn-premium:active { transform: scale(0.97); }
+.btn-premium:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
+
+.btn-premium-dark {
+  background: #111827;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+.btn-premium-dark:hover:not(:disabled) {
+  background: #1f2937;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.20);
+  transform: translateY(-1px);
+}
+
+.btn-premium-outline {
+  background: #fff;
+  color: #111827;
+  border: 1.5px solid #e5e7eb;
+}
+.btn-premium-outline:hover:not(:disabled) {
+  border-color: #111827;
+  background: #f9fafb;
+}
+
+.btn-premium-ghost {
+  background: transparent;
+  color: #6b7280;
+  padding: 0 16px;
+  min-height: 40px;
+}
+.btn-premium-ghost:hover:not(:disabled) {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.btn-premium-danger {
+  background: var(--rose-light);
+  color: var(--rose);
+  border: 1px solid rgba(244,63,94,0.2);
+}
+.btn-premium-danger:hover:not(:disabled) {
+  background: #ffe4e6;
+}
+
+/* ─── Trust signal row (landing) ─── */
+.trust-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+/* ─── Section reveal (scroll animations) ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.25,1,0.5,1);
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Progress steps bar ─── */
+.progress-step {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.progress-step-circle {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  transition: all 200ms ease;
+  flex-shrink: 0;
+}
+.progress-step-circle.complete  { background: #111827; color: #fff; }
+.progress-step-circle.current   { background: #fff; color: #111827; border: 2.5px solid #111827; }
+.progress-step-circle.upcoming  { background: #f3f4f6; color: #9ca3af; border: 2px solid #e5e7eb; }
+.progress-step-connector {
+  flex: 1; height: 2px;
+  background: #e5e7eb;
+  transition: background 200ms ease;
+}
+.progress-step-connector.complete { background: #111827; }

@@ -95,7 +95,7 @@ export default function SignupPage() {
       metadata.phone = phone;
     }
 
-    const { error: err } = await supabase.auth.signUp({
+    const { data: signUpData, error: err } = await supabase.auth.signUp({
       email,
       password,
       options: { data: metadata },
@@ -107,6 +107,19 @@ export default function SignupPage() {
       return;
     }
 
+    // If email confirmation is disabled, we get a session immediately — redirect now
+    if (signUpData?.session) {
+      if (selectedRole === "customer") {
+        router.push("/customer");
+      } else if (selectedRole === "shop_admin") {
+        router.push("/");
+      } else {
+        router.push("/");
+      }
+      return;
+    }
+
+    // Otherwise show "check your email" screen
     setSuccess(true);
     setLoading(false);
   }

@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
 
 const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
 
@@ -26,6 +22,19 @@ const bookingSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+      },
+    }
+  );
+
   const shopId = req.nextUrl.searchParams.get("shopId");
   const date = req.nextUrl.searchParams.get("date");
 
@@ -66,6 +75,24 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized. Please log in to book." }, { status: 401 });
+  }
+
   try {
     const ip = req.headers.get("x-forwarded-for") || "anonymous";
     const { success } = rateLimit(`booking:${ip}`, 5);
@@ -99,10 +126,23 @@ export async function POST(req: NextRequest) {
 
     if (rpcErr || !appointmentId) {
       console.error("[Booking API] RPC failed:", rpcErr);
-      return NextResponse.json({ error: "Failed to schedule appointment" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to schedule appointment", details: rpcErr }, { status: 500 });
     }
 
-    return NextResponse.json({ appointment_id: appointmentId });
+    if (user?.email && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      // Link the client record to the user by setting the email, bypassing RLS using service role
+      const adminSupabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        { cookies: { getAll() { return [] } } }
+      );
+      const { data: appt } = await adminSupabase.from('appointments').select('client_id').eq('id', appointmentId).single();
+      if (appt?.client_id) {
+        await adminSupabase.from('clients').update({ email: user.email }).eq('id', appt.client_id);
+      }
+    }
+
+    return NextResponse.json({ success: true, appointment_id: appointmentId });
   } catch (err) {
     console.error("[Booking API] Unexpected error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

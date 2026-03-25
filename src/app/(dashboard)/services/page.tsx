@@ -10,6 +10,7 @@ import {
 import { useTranslation } from "@/hooks/use-translation";
 import { useThemeStore } from "@/store/theme-store";
 import { useServices, type ServiceItem } from "@/hooks/use-services";
+import { createClient } from "@/lib/supabase/client";
 
 const ICONS = ["✂️", "💈", "🧔", "💇", "🪒", "🧴", "💆", "🎨", "✨", "👑", "🧖", "💅"];
 
@@ -22,6 +23,18 @@ export default function ServicesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
+
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const supabase = React.useMemo(() => createClient(), []);
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data.user) {
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
+        setCurrentUserRole(profile?.role || null);
+      }
+    });
+  }, [supabase]);
 
   const [name, setName] = useState("");
   const [nameAr, setNameAr] = useState("");
@@ -131,22 +144,24 @@ export default function ServicesPage() {
         </div>
         <div className="flex items-center gap-3">
           <div className="relative w-full sm:w-64">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#76777d]" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#76777d]" />
             <input
               type="text"
               placeholder={svc.title || "Search..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 rounded-full bg-[#f2f4f6] border-none text-sm font-medium text-[#191c1e] placeholder-[#76777d] focus:outline-none focus:ring-2 focus:ring-[#191c1e]/20 transition-all"
+              className="w-full h-10 ps-10 pe-4 rounded-full bg-[#f2f4f6] border-none text-sm font-medium text-[#191c1e] placeholder-[#76777d] focus:outline-none focus:ring-2 focus:ring-[#191c1e]/20 transition-all"
             />
           </div>
-          <button
-            onClick={openAdd}
-            className="h-10 px-5 rounded-xl bg-[#191c1e] text-white font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap shadow-[0_8px_16px_rgba(0,0,0,0.1)]"
-          >
-            <Plus size={15} />
-            <span className="hidden sm:inline">{svc.addService || "Add Service"}</span>
-          </button>
+          {currentUserRole === 'shop_admin' && (
+            <button
+              onClick={openAdd}
+              className="h-10 px-5 rounded-xl bg-[#191c1e] text-white font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap shadow-[0_8px_16px_rgba(0,0,0,0.1)]"
+            >
+              <Plus size={15} />
+              <span className="hidden sm:inline">{svc.addService || "Add Service"}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -169,13 +184,15 @@ export default function ServicesPage() {
           <p className="text-[var(--text-muted)]" style={{ fontSize: 13, maxWidth: 280 }}>
             {svc.noServicesDesc || "Add your first service to get started"}
           </p>
-          <button
-            onClick={openAdd}
-            className="mt-6 h-10 px-6 rounded-xl bg-[var(--accent-mint)] text-[#0A0A0A] font-semibold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
-          >
-            <Plus size={15} />
-            {svc.addService || "Add Service"}
-          </button>
+          {currentUserRole === 'shop_admin' && (
+            <button
+              onClick={openAdd}
+              className="mt-6 h-10 px-6 rounded-xl bg-[var(--accent-mint)] text-[#0A0A0A] font-semibold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
+            >
+              <Plus size={15} />
+              {svc.addService || "Add Service"}
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: 20 }}>
@@ -217,30 +234,32 @@ export default function ServicesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => toggleActive(service.id, !service.is_active)}
-                    className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-mint)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
-                    title={service.is_active ? svc.inactive : svc.active}
-                    aria-label={service.is_active ? (svc.deactivate || "Deactivate service") : (svc.activate || "Activate service")}
-                  >
-                    {service.is_active ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
-                  </button>
-                  <button
-                    onClick={() => openEdit(service)}
-                    className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-lavender)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
-                    aria-label={svc.editService || "Edit service"}
-                  >
-                    <Pencil size={13} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(service.id)}
-                    className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-rose)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
-                    aria-label={svc.delete || "Delete service"}
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
+                {currentUserRole === 'shop_admin' && (
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => toggleActive(service.id, !service.is_active)}
+                      className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-mint)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
+                      title={service.is_active ? svc.inactive : svc.active}
+                      aria-label={service.is_active ? (svc.deactivate || "Deactivate service") : (svc.activate || "Activate service")}
+                    >
+                      {service.is_active ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
+                    </button>
+                    <button
+                      onClick={() => openEdit(service)}
+                      className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-lavender)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
+                      aria-label={svc.editService || "Edit service"}
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(service.id)}
+                      className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-rose)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
+                      aria-label={svc.delete || "Delete service"}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center" style={{ gap: 16 }}>
@@ -262,14 +281,16 @@ export default function ServicesPage() {
                 )}
               </div>
 
-              <div
-                className={cn(
-                  "absolute top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing",
-                  isRTL ? "left-2" : "right-2",
-                )}
-              >
-                <GripVertical size={14} />
-              </div>
+              {currentUserRole === 'shop_admin' && (
+                <div
+                  className={cn(
+                    "absolute top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing",
+                    isRTL ? "left-2" : "right-2",
+                  )}
+                >
+                  <GripVertical size={14} />
+                </div>
+              )}
             </div>
           ))}
         </div>

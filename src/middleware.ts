@@ -1,11 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const PUBLIC_ROUTES = ["/landing", "/book", "/join", "/auth/login", "/auth/signup", "/auth/callback", "/auth/reset-password", "/api/booking", "/api/invite"];
+// Routes that don't require authentication
+const PUBLIC_ROUTES = [
+  "/landing",
+  "/signup",
+  "/join",
+  "/auth",
+  "/api/invite",
+  "/api/booking",
+  // Customer-facing browsing — guests can view but booking requires login
+  "/explore",
+  "/shop",
+  "/book",
+  "/customer/explore",
+  "/customer/shops",
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Always allow static/public routes
   if (PUBLIC_ROUTES.some((r) => pathname.startsWith(r))) {
     return NextResponse.next();
   }
@@ -33,28 +48,38 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user && !pathname.startsWith("/auth")) {
+  // Not logged in — redirect to login for protected routes
+  if (!user) {
     const url = request.nextUrl.clone();
-    // Root and landing: show marketing. Other protected routes: require login.
     url.pathname = pathname === "/" ? "/landing" : "/auth/login";
     const nextPath = pathname + (request.nextUrl.search || "");
     url.searchParams.set("next", nextPath);
     return NextResponse.redirect(url);
   }
 
+  // Logged in — role-based routing
   if (user) {
     const role = user.user_metadata?.role;
 
-    if (role === "customer" && !pathname.startsWith("/customer")) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/customer";
-      return NextResponse.redirect(url);
+    // Customers: allow all customer/* and browsing routes
+    if (role === "customer") {
+      const allowedPrefixes = [
+        "/customer",
+        "/explore",
+        "/book",
+        "/shop",
+        "/api/booking",
+        "/auth",
+      ];
+      if (!allowedPrefixes.some((p) => pathname.startsWith(p))) {
+        // For root, redirect to customer portal
+        return NextResponse.redirect(new URL("/customer", request.url));
+      }
     }
 
+    // Non-customers: block customer-only routes
     if (role !== "customer" && pathname.startsWith("/customer")) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(new URL("/", request.url));
     }
   }
 

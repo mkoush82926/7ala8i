@@ -47,7 +47,7 @@ export default function LoginPage() {
                         <span className="material-symbols-outlined" style={{ fontSize: 20 }}>language</span>
                     </button>
                     <Link
-                        href="/signup"
+                        href="/auth/signup"
                         className="font-semibold text-[11px] uppercase transition-opacity hover:opacity-70"
                         style={{ color: '#000000', letterSpacing: '0.1em' }}
                     >
@@ -318,7 +318,7 @@ export default function LoginPage() {
                             <p style={{ fontSize: 13, color: 'rgba(100,116,139,0.6)' }}>
                                 New to Halaqy?{' '}
                                 <Link
-                                    href="/signup"
+                                    href="/auth/signup"
                                     style={{
                                         color: '#000000',
                                         fontWeight: 700,

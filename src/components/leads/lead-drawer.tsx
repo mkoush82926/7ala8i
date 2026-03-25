@@ -107,13 +107,10 @@ export function LeadDrawer() {
             animate={{ x: 0 }}
             exit={{ x: isRTL ? "-100%" : "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={cn(
-              "fixed top-0 h-screen w-[420px] z-50",
-              "bg-[var(--bg-secondary)] flex flex-col",
-              isRTL
-                ? "left-0 border-e border-[var(--border-primary)]"
-                : "right-0 border-s border-[var(--border-primary)]",
-            )}
+              className={cn(
+                "fixed inset-y-0 z-50 w-full md:w-[480px] bg-[var(--bg-primary)] shadow-2xl flex flex-col",
+                "end-0 border-s border-[var(--border-primary)]"
+              )}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-primary)]">
