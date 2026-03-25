@@ -8,10 +8,11 @@ import { getPublicServices } from "@/lib/queries/services";
 import { getAvailableSlots } from "@/lib/queries/appointments";
 import { format, addDays, parseISO } from "date-fns";
 import Link from "next/link";
+import { useTranslation } from "@/hooks/use-translation";
 
 type BookingStep = "landing" | "services" | "barber" | "datetime" | "confirm";
 
-const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
+const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 
 // ─── Colour tokens (inline so Tailwind purging can't break them) ───
 const C = {
@@ -133,6 +134,7 @@ function NextBtn({ onClick, disabled, children }: { onClick: () => void; disable
 
 export function BookingEngine({ shopId }: { shopId?: string }) {
   const supabase = createClient();
+  const { FF, dir, isRTL, t } = useTranslation();
 
   const [step, setStep]  = useState<BookingStep>("landing");
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -261,7 +263,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
   // ─── Render ────────────────────────────────────────────────────
 
   return (
-    <div style={{ width: "100%", fontFamily: FF, color: C.black, maxWidth: 720, margin: "0 auto" }}>
+    <div style={{ width: "100%", fontFamily: FF, color: C.black, maxWidth: 720, margin: "0 auto", direction: dir }}>
       <AnimatePresence mode="wait">
 
         {/* ══════════════ STEP 1 — LANDING ══════════════ */}
@@ -404,13 +406,15 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                       </div>
 
                       <div>
-                        <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 3px", letterSpacing: "-0.01em" }}>{service.name}</p>
+                        <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 3px", letterSpacing: "-0.01em" }}>
+                          {isRTL && service.name_ar ? service.name_ar : service.name}
+                        </p>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
                           <span style={{ fontSize: 12, color: C.muted, display: "flex", alignItems: "center", gap: 3 }}>
                             <span className="material-symbols-outlined" style={{ fontSize: 12 }}>schedule</span>
-                            {service.duration} min
+                            {service.duration} {isRTL ? "دقيقة" : "min"}
                           </span>
-                          <span style={{ fontSize: 15, fontWeight: 800, color: C.black }}>{service.price.toFixed(2)} JOD</span>
+                          <span style={{ fontSize: 15, fontWeight: 800, color: C.black }}>{service.price.toFixed(2)} {isRTL ? "د.أ" : "JOD"}</span>
                         </div>
                       </div>
                     </button>

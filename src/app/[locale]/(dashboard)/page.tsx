@@ -58,7 +58,7 @@ function statusBadge(status: string, paymentStatus: string) {
 }
 
 function UpcomingAppointments() {
-  const t = useTranslation();
+  const { t } = useTranslation();
   const { direction } = useThemeStore();
   const isRTL = direction === "rtl";
   const shopId = useWorkspaceStore((s) => s.shopId);
@@ -257,7 +257,7 @@ export default function DashboardPage() {
   const hydrated = useWorkspaceStore((s) => s.hydrated);
   const { direction } = useThemeStore();
   const isRTL = direction === "rtl";
-  const t = useTranslation();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), 600);

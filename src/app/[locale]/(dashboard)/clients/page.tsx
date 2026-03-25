@@ -23,7 +23,7 @@ const avatarColors = [
 ];
 
 export default function ClientsPage() {
-  const t = useTranslation();
+  const { t } = useTranslation();
   const { direction } = useThemeStore();
   const { shopId } = useWorkspaceStore();
   const isRTL = direction === "rtl";

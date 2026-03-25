@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+const LOCALES = ["en", "ar"];
+const DEFAULT_LOCALE = "en";
+
 // Routes that don't require authentication
 const PUBLIC_ROUTES = [
   "/landing",
@@ -9,7 +12,6 @@ const PUBLIC_ROUTES = [
   "/auth",
   "/api/invite",
   "/api/booking",
-  // Customer-facing browsing — guests can view but booking requires login
   "/explore",
   "/shop",
   "/book",
@@ -17,11 +19,42 @@ const PUBLIC_ROUTES = [
   "/customer/shops",
 ];
 
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Ignore static assets and API
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.includes('/favicon.ico') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next();
+  }
+
+  // 1. Determine if the pathname has a locale
+  const pathnameHasLocale = LOCALES.some(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  );
+
+  let currentLocale = null;
+  if (pathnameHasLocale) {
+    currentLocale = pathname.split('/')[1];
+  }
+
+  // 2. If no locale, redirect to the default locale
+  if (!pathnameHasLocale) {
+    const localeToUse = request.cookies.get('NEXT_LOCALE')?.value || DEFAULT_LOCALE;
+    request.nextUrl.pathname = `/${localeToUse}${pathname}`;
+    return NextResponse.redirect(request.nextUrl);
+  }
+
+  // 3. Remove locale prefix from pathname for routing logic
+  const pathnameWithoutLocale = pathname.replace(`/${currentLocale}`, '') || '/';
+
   // Always allow static/public routes
-  if (PUBLIC_ROUTES.some((r) => pathname.startsWith(r))) {
+  if (PUBLIC_ROUTES.some((r) => pathnameWithoutLocale.startsWith(r))) {
     return NextResponse.next();
   }
 
@@ -51,8 +84,8 @@ export async function middleware(request: NextRequest) {
   // Not logged in — redirect to login for protected routes
   if (!user) {
     const url = request.nextUrl.clone();
-    url.pathname = pathname === "/" ? "/landing" : "/auth/login";
-    const nextPath = pathname + (request.nextUrl.search || "");
+    url.pathname = pathnameWithoutLocale === "/" ? `/${currentLocale}/landing` : `/${currentLocale}/auth/login`;
+    const nextPath = pathnameWithoutLocale + (request.nextUrl.search || "");
     url.searchParams.set("next", nextPath);
     return NextResponse.redirect(url);
   }
@@ -71,15 +104,15 @@ export async function middleware(request: NextRequest) {
         "/api/booking",
         "/auth",
       ];
-      if (!allowedPrefixes.some((p) => pathname.startsWith(p))) {
+      if (!allowedPrefixes.some((p) => pathnameWithoutLocale.startsWith(p))) {
         // For root, redirect to customer portal
-        return NextResponse.redirect(new URL("/customer", request.url));
+        return NextResponse.redirect(new URL(`/${currentLocale}/customer`, request.url));
       }
     }
 
     // Non-customers: block customer-only routes
-    if (role !== "customer" && pathname.startsWith("/customer")) {
-      return NextResponse.redirect(new URL("/", request.url));
+    if (role !== "customer" && pathnameWithoutLocale.startsWith("/customer")) {
+      return NextResponse.redirect(new URL(`/${currentLocale}`, request.url));
     }
   }
 

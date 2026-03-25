@@ -29,7 +29,7 @@ export function SettingsPage() {
   const { shopName, barbers, shopId } = useWorkspaceStore();
   const [copied, setCopied] = useState(false);
   const bookingLink = `halaqy.booking/${shopName.toLowerCase().replace(/\s+/g, "-")}`;
-  const t = useTranslation();
+  const { t } = useTranslation();
   const { direction } = useThemeStore();
   const isRTL = direction === "rtl";
 

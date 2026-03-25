@@ -20,7 +20,7 @@ interface Sale {
 }
 
 export function DailyReceipt() {
-  const t = useTranslation();
+  const { t } = useTranslation();
   const { shopId } = useWorkspaceStore();
   const supabase = createClient();
 

@@ -28,7 +28,7 @@ import type { Lead } from "@/lib/types";
 import { useTranslation } from "@/hooks/use-translation";
 
 function useStages() {
-  const t = useTranslation();
+  const { t } = useTranslation();
   return [
     {
       id: "new" as LeadStage,
@@ -62,7 +62,7 @@ export function KanbanBoard() {
   const { leads, moveLead, selectLead, drawerOpen, setDrawerOpen, addLead } =
     useLeadsStore();
 
-  const t = useTranslation();
+  const { t } = useTranslation();
   const stages = useStages();
 
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -260,7 +260,7 @@ function LeadListView({
 }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { deleteLeads } = useLeadsStore();
-  const t = useTranslation();
+  const { t } = useTranslation();
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>

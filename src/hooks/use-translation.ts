@@ -1,19 +1,42 @@
-import { useThemeStore } from "@/store/theme-store";
+"use client";
+
+import { useParams } from "next/navigation";
 import en from "@/i18n/en";
 import ar from "@/i18n/ar";
 import type { TranslationKeys } from "@/i18n/en";
 
 const translations: Record<string, TranslationKeys> = { en, ar };
 
+// ── Font constants ─────────────────────────────────────────────────────────
+// EN: Plus Jakarta Sans (Styrene-like — clean, geometric, premium)
+// AR: Tajawal (light, clean, designed for Arabic readability)
+export const FONT_EN = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
+export const FONT_AR = "var(--font-tajawal),'Segoe UI',Tahoma,Arial,sans-serif";
+
 /**
- * Hook to get the current translation object based on locale.
+ * useTranslation — one-liner for translations + direction + font.
+ *
  * Usage:
- *   const t = useTranslation();
- *   t.sidebar.dashboard → "Dashboard" | "لوحة التحكم"
+ *   const { t, dir, isRTL, FF } = useTranslation();
+ *   <div style={{ fontFamily: FF, direction: dir }}>
+ *     <h1>{t.landing.heroTitle}</h1>
+ *   </div>
  */
-export function useTranslation(): TranslationKeys {
-  const locale = useThemeStore((s) => s.locale);
-  return translations[locale] || en;
+export function useTranslation() {
+  const params = useParams();
+  const localeParam = params?.locale as string;
+  console.log('useTranslation -> params:', params, 'localeParam:', localeParam);
+  const locale = localeParam === "ar" ? "ar" : "en";
+  const direction = locale === "ar" ? "rtl" : "ltr";
+  const t = translations[locale] || en;
+  return {
+    t,
+    locale,
+    dir: direction as "ltr" | "rtl",
+    isRTL: direction === "rtl",
+    /** Font family string for inline styles */
+    FF: locale === "ar" ? FONT_AR : FONT_EN,
+  };
 }
 
 /**

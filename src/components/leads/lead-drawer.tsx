@@ -23,7 +23,7 @@ import { useThemeStore } from "@/store/theme-store";
 export function LeadDrawer() {
   const { selectedLead, drawerOpen, setDrawerOpen, updateLead, deleteLead } =
     useLeadsStore();
-  const t = useTranslation();
+  const { t } = useTranslation();
   const isRTL = useThemeStore((s) => s.direction) === "rtl";
 
   const stageOptions: { value: LeadStage; label: string; color: string }[] = [

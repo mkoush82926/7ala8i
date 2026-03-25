@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface ShopRow {
   id: string;
@@ -23,7 +24,8 @@ const RATINGS = [4.9, 4.7, 4.8, 4.6, 4.9, 4.7];
 const REVIEW_COUNTS = [127, 89, 204, 56, 341, 78];
 const CATEGORIES = ["All", "Classic Cuts", "Luxury Grooming", "Beard Studio", "Kids Friendly"];
 
-const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
+// FF is direction-aware — set per render from useTranslation hook
+const FF_DEFAULT = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 
 // Inline container style — guaranteed to work regardless of Tailwind purging
 const containerStyle: React.CSSProperties = {
@@ -67,6 +69,10 @@ export default function ExplorePage() {
   const [shops, setShops] = useState<ShopRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const { FF, dir, t } = useTranslation();
+  const categories = dir === "rtl"
+    ? ["الكل", "قصات كلاسيكية", "عناية فاخرة", "استوديو اللحية", "مناسب للأطفال"]
+    : ["All", "Classic Cuts", "Luxury Grooming", "Beard Studio", "Kids Friendly"];
   const [activeCategory, setActiveCategory] = useState("All");
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -99,7 +105,7 @@ export default function ExplorePage() {
   });
 
   return (
-    <div style={{ background: "#f9fafb", minHeight: "100vh", fontFamily: FF, color: "#111827" }}>
+    <div style={{ background: "#f9fafb", minHeight: "100vh", fontFamily: FF, color: "#111827", direction: dir }}>
 
       {/* ── Global shimmer keyframes ── */}
       <style>{`

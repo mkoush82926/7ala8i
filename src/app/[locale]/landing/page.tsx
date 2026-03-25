@@ -6,6 +6,8 @@ import { useRef } from "react";
 import { useInView } from "framer-motion";
 import Link from "next/link";
 import { useThemeStore } from "@/store/theme-store";
+import { useTranslation } from "@/hooks/use-translation";
+import { useRouter, usePathname } from "next/navigation";
 
 // ─── Design tokens (no Tailwind token dependency) ───
 const T = {
@@ -37,16 +39,15 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 }
 
 export default function LandingPage() {
-  const { direction, toggleLocale } = useThemeStore();
-  const isRTL = direction === "rtl";
+  const { FF, dir, isRTL, locale } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", "light");
-    document.documentElement.setAttribute("dir", direction);
-    document.documentElement.setAttribute("lang", isRTL ? "ar" : "en");
-  }, [direction, isRTL]);
-
-  const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
+  const handleToggleLocale = () => {
+    const newLocale = locale === "en" ? "ar" : "en";
+    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
+    router.push(newPath || `/${newLocale}`);
+  };
 
   const features = [
     { icon: "schedule",      title: isRTL ? "تقويم ذكي"        : "Smart Calendar",     desc: isRTL ? "إدارة جداول زمنية متكيفة تتزامن مع سير عمل فريقك الطبيعي."             : "Adaptive timeline management that synchronizes with your team's natural workflow." },
@@ -101,7 +102,7 @@ export default function LandingPage() {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
           <button
-            onClick={() => toggleLocale()}
+            onClick={handleToggleLocale}
             className="nav-link"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>language</span>
@@ -371,7 +372,7 @@ export default function LandingPage() {
               The Digital Standard.
             </p>
             <button
-              onClick={() => toggleLocale()}
+              onClick={handleToggleLocale}
               className="nav-link"
               style={{ marginTop: 32 }}
             >

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Loader2, ArrowLeft, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
-const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
+const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 
 const T = {
   dark:    "#191c1e",

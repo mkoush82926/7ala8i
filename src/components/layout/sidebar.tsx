@@ -38,7 +38,7 @@ const navItems = [
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
-  const t = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
 
   const [currentUserRole, setCurrentUserRole] = React.useState<string | null>(null);

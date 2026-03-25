@@ -47,7 +47,7 @@ function AnimatedNumber({ value }: { value: string }) {
 }
 
 export function MetricCards() {
-  const t = useTranslation();
+  const { t } = useTranslation();
   const { shopId } = useWorkspaceStore();
   const supabase = createClient();
 

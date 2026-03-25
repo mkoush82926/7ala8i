@@ -2,16 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import { BookingEngine } from "@/components/booking/booking-engine";
-import { useThemeStore } from "@/store/theme-store";
+import { useTranslation } from "@/hooks/use-translation";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
 
 export default function BookingShopPage() {
   const params = useParams();
   const shopId = params.shop_id as string;
-  const isRTL  = useThemeStore((s) => s.direction) === "rtl";
+  const { FF, dir, isRTL } = useTranslation();
   const supabase = createClient();
   const router   = useRouter();
   const [shopName, setShopName] = useState("");
@@ -23,7 +22,7 @@ export default function BookingShopPage() {
   }, [shopId, supabase]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f3f4f6", fontFamily: FF, color: "#111827" }}>
+    <div style={{ minHeight: "100vh", background: "#f3f4f6", fontFamily: FF, color: "#111827", direction: dir }}>
 
       {/* ── Fixed minimal header ── */}
       <header style={{

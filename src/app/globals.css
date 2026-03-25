@@ -72,11 +72,13 @@
   /* surface tint */
   --color-surface-tint:          #585e6f;
 
-  /* Fonts — Cairo: best Arabic+Latin font (used by Careem, Noon) */
-  --font-sans:     var(--font-cairo), 'Segoe UI', Tahoma, Arial, sans-serif;
-  --font-headline: var(--font-cairo), 'Segoe UI', Tahoma, Arial, sans-serif;
-  --font-body:     var(--font-cairo), 'Segoe UI', Tahoma, Arial, sans-serif;
-  --font-label:    var(--font-cairo), 'Segoe UI', Tahoma, Arial, sans-serif;
+  /* Fonts — direction-aware dual font system:
+     EN/LTR: Plus Jakarta Sans (Styrene-like — clean, geometric, premium)
+     AR/RTL: Tajawal (light, clean, designed for Arabic readability) */
+  --font-sans:     var(--font-jakarta), 'Segoe UI', system-ui, sans-serif;
+  --font-headline: var(--font-jakarta), 'Segoe UI', system-ui, sans-serif;
+  --font-body:     var(--font-jakarta), 'Segoe UI', system-ui, sans-serif;
+  --font-label:    var(--font-jakarta), 'Segoe UI', system-ui, sans-serif;
 
   /* Border Radius — exact Stitch values */
   --radius:     4px;
@@ -245,11 +247,16 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.15;
 }
 
-/* Arabic RTL — Cairo natively supports Arabic, no font switch needed */
-[dir="rtl"] body,
-[dir="rtl"] * {
-  font-family: var(--font-cairo), 'Segoe UI', Tahoma, Arial, sans-serif;
+/* Arabic RTL — switch to Tajawal automatically */
+[lang="ar"],
+[dir="rtl"] {
+  --font-sans:     var(--font-tajawal), 'Segoe UI', Tahoma, Arial, sans-serif;
+  --font-headline: var(--font-tajawal), 'Segoe UI', Tahoma, Arial, sans-serif;
+  --font-body:     var(--font-tajawal), 'Segoe UI', Tahoma, Arial, sans-serif;
+  --font-label:    var(--font-tajawal), 'Segoe UI', Tahoma, Arial, sans-serif;
+  font-family: var(--font-tajawal), 'Segoe UI', Tahoma, Arial, sans-serif;
   letter-spacing: 0;
+  word-spacing: 0.05em;
 }
 
 /* ─── Scrollbar ─── */

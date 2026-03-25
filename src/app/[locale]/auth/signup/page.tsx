@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation, FONT_EN, FONT_AR } from "@/hooks/use-translation";
 
 type UserType = "shop_admin" | "customer" | "barber";
 
@@ -39,7 +40,7 @@ const inputStyle = (isFocused = false): React.CSSProperties => ({
   background: isFocused ? "#ffffff" : "#f8fafc",
   color: "#0f172a",
   fontSize: 14,
-  fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif",
+  fontFamily: "var(--font-jakarta),'Segoe UI',system-ui,sans-serif",
   outline: "none",
   transition: "all 0.2s ease",
   boxShadow: isFocused ? "0 0 0 1px #000000" : "none",
@@ -71,6 +72,28 @@ export default function SignupPage() {
   const [success, setSuccess] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const { FF, dir, isRTL, t } = useTranslation();
+
+  const roles = [
+    {
+      id: "shop_admin" as UserType,
+      icon: "storefront",
+      title: isRTL ? "مدير محل" : "Shop Manager",
+      desc: isRTL ? "إدارة العمليات والفريق وتنمية عملك." : "Directing operations, managing staff, and scaling your business.",
+    },
+    {
+      id: "customer" as UserType,
+      icon: "person",
+      title: isRTL ? "عميل" : "Customer",
+      desc: isRTL ? "حجز المواعيد والعناية الشخصية." : "Booking appointments and curating your personal grooming journey.",
+    },
+    {
+      id: "barber" as UserType,
+      icon: "content_cut",
+      title: isRTL ? "محترف" : "Professional",
+      desc: isRTL ? "إدارة مواعيدك وعملائك ومحفظتك الإبداعية." : "Managing your individual schedule, clients, and creative portfolio.",
+    },
+  ];
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -180,7 +203,7 @@ export default function SignupPage() {
 
 
   return (
-    <div style={{ minHeight: "100dvh", background: "#ffffff", color: "#000000", fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100dvh", background: "#ffffff", color: "#000000", fontFamily: FF, direction: dir, display: "flex", flexDirection: "column" }}>
       {navBar}
 
       {/* Step 1 — Role Selection */}
@@ -192,8 +215,8 @@ export default function SignupPage() {
             transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
             style={{ textAlign: "center", marginBottom: 72, maxWidth: 640 }}
           >
-            <h1 style={{ fontSize: 48, fontWeight: 300, fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", letterSpacing: "-0.03em", color: "#000000", marginBottom: 20 }}>
-              How will you use Halaqy?
+            <h1 style={{ fontSize: 48, fontWeight: 300, fontFamily: FF, letterSpacing: "-0.02em", color: "#000000", marginBottom: 20 }}>
+              {isRTL ? "كيف ستستخدم حلاقي؟" : "How will you use Halaqy?"}
             </h1>
             <p style={{ color: "#666666", fontSize: 18, fontWeight: 300, maxWidth: 400, margin: "0 auto" }}>
               Select the role that best describes your daily operations and goals.

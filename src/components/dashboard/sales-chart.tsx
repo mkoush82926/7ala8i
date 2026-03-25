@@ -43,7 +43,7 @@ function CustomTooltip({
 
 export function SalesChart() {
   const [period, setPeriod] = useState<Period>("week");
-  const t = useTranslation();
+  const { t } = useTranslation();
   const { shopId } = useWorkspaceStore();
   const supabase = createClient();
 

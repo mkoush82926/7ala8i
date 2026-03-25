@@ -61,9 +61,9 @@ function IconBtn({
 }
 
 export function Topbar() {
-  const { theme, toggleTheme, toggleLocale, direction } = useThemeStore();
+  const { theme, toggleTheme, direction } = useThemeStore();
   const { shopId, shopName, role, currentView, barbers, setCurrentView, toggleMobileSidebar } = useWorkspaceStore();
-  const t = useTranslation();
+  const { t, locale } = useTranslation();
   const isRTL = direction === "rtl";
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -93,8 +93,15 @@ export function Topbar() {
     const supabase = createClient();
     await supabase.auth.signOut();
     toast("success", "You have been successfully signed out.");
-    router.push("/auth/login");
+    router.push(`/${locale}/auth/login`);
   }
+
+  const handleToggleLocale = () => {
+    const newLocale = locale === "en" ? "ar" : "en";
+    // If pathname starts with /locale, replace it, else push new locale
+    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
+    router.push(newPath || `/${newLocale}`);
+  };
 
   const getPageTitle = () => {
     if (pathname.includes('/analytics')) return isRTL ? "التحليلات" : "Analytics";
@@ -323,7 +330,7 @@ export function Topbar() {
         </div>
 
         {/* Language */}
-        <IconBtn onClick={toggleLocale}>
+        <IconBtn onClick={handleToggleLocale}>
           <Globe size={17} />
         </IconBtn>
 

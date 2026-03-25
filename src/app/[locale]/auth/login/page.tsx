@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { login } from '@/app/auth/actions'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { useTranslation } from '@/hooks/use-translation'
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
@@ -20,7 +21,7 @@ export default function LoginPage() {
     }
   }
 
-  const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif"
+  const { FF, dir } = useTranslation()
 
   return (
     <div
@@ -28,6 +29,7 @@ export default function LoginPage() {
         minHeight: '100vh',
         background: '#f9fafb',
         fontFamily: FF,
+        direction: dir,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

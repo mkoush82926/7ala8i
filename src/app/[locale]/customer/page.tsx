@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { format, isAfter, startOfDay } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "@/hooks/use-translation";
 
 function useWindowWidth() {
   const [w, setW] = useState(1280);
@@ -47,7 +48,7 @@ const SHOP_IMAGES = [
 
 type Tab = "upcoming" | "past" | "cancelled";
 
-const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
+const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 
 function SkeletonCard() {
   return (
@@ -104,6 +105,7 @@ export default function CustomerDashboard() {
 
   const supabase = useRef(createClient()).current;
   const router = useRouter();
+  const { dir } = useTranslation();
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -359,7 +361,7 @@ export default function CustomerDashboard() {
   const windowW = useWindowWidth();
 
   return (
-    <div style={{ background: "#f9fafb", minHeight: "100vh", fontFamily: FF }}>
+    <div style={{ background: "#f9fafb", minHeight: "100vh", fontFamily: FF, direction: dir }}>
 
       {/* ── Toast notification ── */}
       <AnimatePresence>

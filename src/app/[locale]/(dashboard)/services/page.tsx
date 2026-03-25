@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 const ICONS = ["✂️", "💈", "🧔", "💇", "🪒", "🧴", "💆", "🎨", "✨", "👑", "🧖", "💅"];
 
 export default function ServicesPage() {
-  const t = useTranslation();
+  const { t } = useTranslation();
   const { direction } = useThemeStore();
   const isRTL = direction === "rtl";
   const { services, loading, addService, updateService, deleteService, toggleActive, reorderServices } = useServices();
