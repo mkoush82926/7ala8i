@@ -184,7 +184,7 @@ export default function ExplorePage() {
               ref={inputRef}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Search shops, services or area…"
+              placeholder={t.explore.searchPlaceholder}
               style={{
                 flex: 1,
                 background: "none",
@@ -234,14 +234,14 @@ export default function ExplorePage() {
                 onMouseLeave={e => (e.currentTarget.style.background = "none")}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>event_note</span>
-                My Bookings
+                {t.explore.myBookings}
               </Link>
             ) : (
               <Link
                 href="/auth/login"
                 style={{ fontSize: 13, fontWeight: 600, color: "#6b7280", textDecoration: "none", padding: "6px 12px" }}
               >
-                Sign In
+                {t.explore.signIn}
               </Link>
             )}
             <Link
@@ -258,7 +258,7 @@ export default function ExplorePage() {
               onMouseEnter={e => { e.currentTarget.style.background = "#1f2937"; e.currentTarget.style.transform = "translateY(-1px)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "#111827"; e.currentTarget.style.transform = "none"; }}
             >
-              {isLoggedIn ? "Dashboard" : "Get Started"}
+              {isLoggedIn ? t.explore.dashboard : t.explore.getStarted}
             </Link>
           </div>
         </div>
@@ -316,7 +316,7 @@ export default function ExplorePage() {
                   }}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: 13, fontVariationSettings: "'FILL' 1", color: "#10b981" }}>location_city</span>
-                  Jordan&apos;s Premier Grooming Directory
+                  {t.explore.premierDir}
                 </div>
 
                 {/* Headline */}
@@ -331,8 +331,8 @@ export default function ExplorePage() {
                     margin: "0 0 20px",
                   }}
                 >
-                  Find your next<br />
-                  <span style={{ color: "#9ca3af" }}>perfect cut.</span>
+                  {t.explore.findNext}<br />
+                  <span style={{ color: "#9ca3af" }}>{t.explore.perfectCut}</span>
                 </h1>
 
                 <p
@@ -345,16 +345,16 @@ export default function ExplorePage() {
                     fontWeight: 400,
                   }}
                 >
-                  Curated barbershops and master barbers across Jordan — book your appointment in under a minute.
+                  {t.explore.subtitle}
                 </p>
 
                 {/* Trust pills */}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                   {[
-                    { icon: "storefront",       text: `${loading ? "—" : shops.length}+ Shops` },
-                    { icon: "star",             text: "4.8 Avg Rating" },
-                    { icon: "event_available",  text: "Free Cancellation" },
-                    { icon: "payments",         text: "Pay In Shop" },
+                    { icon: "storefront",       text: t.explore.shopsInfo.replace('{count}', loading ? "—" : shops.length.toString()) },
+                    { icon: "star",             text: t.explore.avgRating },
+                    { icon: "event_available",  text: t.explore.freeCancel },
+                    { icon: "payments",         text: t.explore.payInShop },
                   ].map(t => (
                     <span
                       key={t.text}
@@ -417,7 +417,7 @@ export default function ExplorePage() {
             ))}
             {!loading && (
               <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 600, color: "#d1d5db", whiteSpace: "nowrap", flexShrink: 0 }}>
-                {filtered.length} found
+                {t.explore.found.replace('{count}', filtered.length.toString())}
               </span>
             )}
           </div>
@@ -456,9 +456,9 @@ export default function ExplorePage() {
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 32, color: "#9ca3af" }}>search_off</span>
               </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginBottom: 8 }}>No results found</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginBottom: 8 }}>{t.explore.noResults}</h3>
               <p style={{ fontSize: 14, color: "#9ca3af", marginBottom: 24, maxWidth: 320 }}>
-                Try a different search term or browse all shops.
+                {t.explore.tryDifferent}
               </p>
               <button
                 onClick={() => setSearchTerm("")}
@@ -468,7 +468,7 @@ export default function ExplorePage() {
                   fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", fontFamily: FF,
                 }}
               >
-                Clear Search
+                {t.explore.clearSearch}
               </button>
             </div>
           ) : (
@@ -534,7 +534,7 @@ export default function ExplorePage() {
                                 fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase",
                               }}
                             >
-                              ★ Featured
+                              ★ {t.explore.featured}
                             </span>
                           )}
                           {isOpen && (
@@ -553,7 +553,7 @@ export default function ExplorePage() {
                                   flexShrink: 0,
                                 }}
                               />
-                              Open Now
+                              {t.explore.openNow}
                             </span>
                           )}
                         </div>
@@ -608,8 +608,8 @@ export default function ExplorePage() {
                           }}
                         >
                           <div>
-                            <span style={{ fontSize: 15, fontWeight: 800, color: "#111827" }}>From 8 JOD</span>
-                            <span style={{ fontSize: 12, color: "#9ca3af", marginLeft: 6 }}>· 30 min</span>
+                            <span style={{ fontSize: 15, fontWeight: 800, color: "#111827" }}>{t.explore.fromPrice}</span>
+                            <span style={{ fontSize: 12, color: "#9ca3af", marginLeft: 6 }}>· {t.explore.thirtyMin}</span>
                           </div>
                           <div style={{ display: "flex", gap: 8 }}>
                             <Link
@@ -624,7 +624,7 @@ export default function ExplorePage() {
                               onMouseEnter={e => (e.currentTarget.style.background = "#e5e7eb")}
                               onMouseLeave={e => (e.currentTarget.style.background = "#f3f4f6")}
                             >
-                              View
+                              {t.explore.view}
                             </Link>
                             <Link
                               href={`/book/${shop.id}`}
@@ -638,7 +638,7 @@ export default function ExplorePage() {
                               onMouseEnter={e => { e.currentTarget.style.background = "#1f2937"; e.currentTarget.style.transform = "translateY(-1px)"; }}
                               onMouseLeave={e => { e.currentTarget.style.background = "#111827"; e.currentTarget.style.transform = "none"; }}
                             >
-                              Book Now
+                              {t.explore.bookNow}
                             </Link>
                           </div>
                         </div>
@@ -675,10 +675,10 @@ export default function ExplorePage() {
                   margin: "0 0 12px",
                 }}
               >
-                Ready to look your best?
+                {t.explore.readyToLook}
               </h2>
               <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, margin: "0 0 32px" }}>
-                {isLoggedIn ? "Book your next appointment in seconds." : "Create a free account and start booking today."}
+                {isLoggedIn ? t.explore.bookNextInSeconds : t.explore.createFreeAccount}
               </p>
               <Link
                 href={isLoggedIn ? "/customer" : "/auth/signup"}
@@ -693,7 +693,7 @@ export default function ExplorePage() {
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 32px rgba(0,0,0,0.3)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.25)"; }}
               >
-                {isLoggedIn ? "Go to Dashboard →" : "Get Started — Free →"}
+                {isLoggedIn ? t.explore.goToDashboard : t.explore.getStartedFree}
               </Link>
             </div>
           </div>
@@ -718,15 +718,15 @@ export default function ExplorePage() {
           <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#fff" }}>search</span>
           </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "#111827" }}>Explore</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#111827" }}>{t.explore.navExplore}</span>
         </Link>
         <Link href="/customer" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none" }}>
           <span className="material-symbols-outlined" style={{ fontSize: 22, color: "#9ca3af" }}>event_note</span>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af" }}>Bookings</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af" }}>{t.explore.navBookings}</span>
         </Link>
         <Link href={isLoggedIn ? "/customer" : "/auth/login"} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none" }}>
           <span className="material-symbols-outlined" style={{ fontSize: 22, color: "#9ca3af" }}>person</span>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af" }}>Account</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af" }}>{t.explore.navAccount}</span>
         </Link>
       </nav>
 

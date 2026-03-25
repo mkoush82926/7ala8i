@@ -167,7 +167,7 @@ export function SettingsPage() {
           <div style={{ background: C.white, padding: 32, borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px 48px" }}>
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={labelStyle}>Shop Name</label>
+                <label style={labelStyle}>{t.settings.shopName}</label>
                 <input
                   style={inputStyle}
                   type="text"
@@ -176,7 +176,7 @@ export function SettingsPage() {
                 />
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
-                <label style={labelStyle}>Description</label>
+                <label style={labelStyle}>{t.settings.shopDescription}</label>
                 <textarea
                   style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
                   rows={3}
@@ -185,7 +185,7 @@ export function SettingsPage() {
                 />
               </div>
               <div>
-                <label style={labelStyle}>Contact Email</label>
+                <label style={labelStyle}>{t.settings.contactEmail}</label>
                 <input
                   style={inputStyle}
                   type="email"
@@ -203,14 +203,14 @@ export function SettingsPage() {
                 />
               </div>
               <div>
-                <label style={labelStyle}>Currency</label>
+                <label style={labelStyle}>{t.settings.currency}</label>
                 <select style={inputStyle}>
                   <option>JOD (Jordanian Dinar)</option>
                   <option>USD ($)</option>
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Timezone</label>
+                <label style={labelStyle}>{t.settings.timezone}</label>
                 <select style={inputStyle}>
                   <option>(GMT+03:00) Amman</option>
                   <option>(GMT+00:00) London</option>
@@ -226,7 +226,7 @@ export function SettingsPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <div>
             <h2 style={{ fontFamily: "Manrope, sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
-              {isRTL ? "إدارة الفريق" : "Team Management"}
+              {t.settings.teamMembers}
             </h2>
             <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
               {isRTL ? "تنظيم الحلاقين والموظفين الإداريين." : "Organize your barbers and administrative staff."}
@@ -263,7 +263,7 @@ export function SettingsPage() {
                   type="email"
                 />
                 <button className="btn btn-primary">
-                  {isRTL ? "دعوة عضو" : "Invite Member"}
+                  {t.settings.inviteBarber}
                 </button>
               </div>
             </div>
@@ -276,7 +276,7 @@ export function SettingsPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <div>
             <h2 style={{ fontFamily: "Manrope, sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
-              {isRTL ? "بوابة الحجز" : "Booking Portal"}
+              {t.settings.bookingLink}
             </h2>
             <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
               {isRTL ? "واجهتك العامة لحجوزات العملاء." : "Your public facing interface for client bookings."}
@@ -288,7 +288,7 @@ export function SettingsPage() {
               <div style={{ position: "relative", zIndex: 1 }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 99, background: "rgba(255,255,255,0.1)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 24 }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", animation: "pulse 2s infinite" }} />
-                  {isRTL ? "صفحة حجز مباشرة" : "Live Booking Page"}
+                  {t.settings.onlineBookingLink}
                 </span>
                 <h3 style={{ fontFamily: "Manrope, sans-serif", fontSize: 28, fontWeight: 900, letterSpacing: "-0.03em", color: C.white, margin: 0 }}>
                   {bookingLink}

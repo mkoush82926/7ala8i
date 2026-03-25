@@ -105,7 +105,7 @@ export default function CustomerDashboard() {
 
   const supabase = useRef(createClient()).current;
   const router = useRouter();
-  const { dir } = useTranslation();
+  const { t, dir } = useTranslation();
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -432,10 +432,10 @@ export default function CustomerDashboard() {
 
         {/* Nav items */}
         <nav style={{ padding: "12px 10px", flex: 1, overflowY: "auto" }}>
-          <NavItem icon="calendar_today" label="My Appointments" href="/customer" exact />
-          <NavItem icon="explore" label="Discover Shops" href="/customer/explore" />
-          <NavItem icon="add_circle" label="Book Appointment" href="/customer/explore" />
-          <NavItem icon="settings" label="Settings" href="/customer" />
+          <NavItem icon="calendar_today" label={t.customer.myAppointments} href="/customer" exact />
+          <NavItem icon="explore" label={t.customer.discoverShops} href="/customer/explore" />
+          <NavItem icon="add_circle" label={t.customer.bookAppointment} href="/customer/explore" />
+          <NavItem icon="settings" label={t.customer.settings} href="/customer" />
         </nav>
 
         <div style={{ padding: "12px 10px 20px" }}>
@@ -445,7 +445,7 @@ export default function CustomerDashboard() {
             style={{ color: "#ef4444" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>logout</span>
-            Sign Out
+            {t.customer.signOut}
           </button>
         </div>
       </aside>
@@ -468,7 +468,7 @@ export default function CustomerDashboard() {
             href="/customer/explore"
             style={{ background: "#111827", color: "#fff", padding: "8px 16px", borderRadius: 9999, fontSize: 13, fontWeight: 700, textDecoration: "none" }}
           >
-            Book Now
+            {t.customer.bookNow}
           </Link>
           <button
             onClick={() => setLogoutConfirm(true)}
@@ -488,7 +488,7 @@ export default function CustomerDashboard() {
             {/* Page header */}
             <div style={{ paddingTop: 32, paddingBottom: 24 }}>
               <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#9ca3af", marginBottom: 4 }}>
-                Welcome back 👋
+                {t.customer.welcomeBack}
               </p>
               {loading ? (
                 <div className="shimmer-card rounded-xl" style={{ height: 40, width: 220, marginTop: 8 }} />
@@ -511,9 +511,9 @@ export default function CustomerDashboard() {
             {/* Stats row */}
             <div className="grid grid-cols-3 gap-3 mb-8">
               {[
-                { label: "Completed", value: loading ? "—" : completedCount, icon: "check_circle", color: "#10b981" },
-                { label: "Upcoming",  value: loading ? "—" : upcoming.length,  icon: "schedule",      color: "#3b82f6" },
-                { label: "This Month",value: loading ? "—" : thisMonthCount,   icon: "calendar_month",color: "#8b5cf6" },
+                { label: t.customer.completed, value: loading ? "—" : completedCount, icon: "check_circle", color: "#10b981" },
+                { label: t.customer.upcoming,  value: loading ? "—" : upcoming.length,  icon: "schedule",      color: "#3b82f6" },
+                { label: t.customer.thisMonth, value: loading ? "—" : thisMonthCount,   icon: "calendar_month",color: "#8b5cf6" },
               ].map(stat => (
                 <div
                   key={stat.label}
@@ -548,10 +548,10 @@ export default function CustomerDashboard() {
               <div style={{ position: "absolute", inset: 0, opacity: 0.06, backgroundImage: "radial-gradient(circle at 80% 50%, white 0%, transparent 55%)" }} />
               <div style={{ position: "relative", zIndex: 1 }}>
                 <h2 style={{ color: "#fff", fontWeight: 900, fontSize: 17, fontFamily: "'Manrope',system-ui,sans-serif", margin: "0 0 4px" }}>
-                  Ready for your next look?
+                  {t.customer.readyForNext}
                 </h2>
                 <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, margin: 0 }}>
-                  Browse top-rated barbershops and book instantly.
+                  {t.customer.browseShops}
                 </p>
               </div>
               <Link
@@ -563,16 +563,16 @@ export default function CustomerDashboard() {
                   fontWeight: 700, fontSize: 13, textDecoration: "none", whiteSpace: "nowrap",
                 }}
               >
-                Explore →
+                {t.customer.explore} →
               </Link>
             </div>
 
             {/* Tab Bar */}
             <div style={{ borderBottom: "1px solid #f0f0f0", marginBottom: 0, display: "flex", gap: 0 }}>
               {([
-                { key: "upcoming",  label: "Upcoming",  count: upcoming.length  },
-                { key: "past",      label: "Past",      count: past.length      },
-                { key: "cancelled", label: "Cancelled", count: cancelled.length },
+                { key: "upcoming",  label: t.customer.upcoming,  count: upcoming.length  },
+                { key: "past",      label: t.customer.past,      count: past.length      },
+                { key: "cancelled", label: t.customer.cancelled, count: cancelled.length },
               ] as const).map(tab => (
                 <button
                   key={tab.key}
@@ -614,10 +614,10 @@ export default function CustomerDashboard() {
                     </span>
                   </div>
                   <h3 style={{ fontWeight: 700, color: "#111827", fontSize: 16, marginBottom: 6 }}>
-                    {activeTab === "upcoming" ? "No upcoming visits" : activeTab === "past" ? "No past visits yet" : "No cancelled bookings"}
+                    {activeTab === "upcoming" ? t.customer.noUpcoming : activeTab === "past" ? t.customer.noPast : t.customer.noCancelled}
                   </h3>
                   <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 20 }}>
-                    {activeTab === "upcoming" ? "Book your next appointment today." : "Your history will appear here."}
+                    {activeTab === "upcoming" ? t.customer.noUpcomingDesc : t.customer.noPastDesc}
                   </p>
                   {activeTab === "upcoming" && (
                     <Link
@@ -627,7 +627,7 @@ export default function CustomerDashboard() {
                         borderRadius: 9999, fontWeight: 700, fontSize: 13, textDecoration: "none",
                       }}
                     >
-                      Explore Shops
+                      {t.customer.exploreShops}
                     </Link>
                   )}
                 </div>
@@ -718,7 +718,7 @@ export default function CustomerDashboard() {
                                     textDecoration: "none",
                                   }}
                                 >
-                                  Reschedule
+                                  {t.customer.reschedule}
                                 </Link>
                                 <button
                                   onClick={() => setCancelConfirm(appt.id)}
@@ -729,7 +729,7 @@ export default function CustomerDashboard() {
                                     border: "1px solid rgba(244,63,94,0.2)", cursor: "pointer",
                                   }}
                                 >
-                                  Cancel
+                                  {t.customer.cancel}
                                 </button>
                               </>
                             ) : (
@@ -743,7 +743,7 @@ export default function CustomerDashboard() {
                                     textDecoration: "none",
                                   }}
                                 >
-                                  Book Again
+                                  {t.customer.bookAgain}
                                 </Link>
                                 {appt.status === "completed" && !userReviewedApptIds.has(appt.id) && (
                                   <button
@@ -755,7 +755,7 @@ export default function CustomerDashboard() {
                                       border: "1px solid #fde68a", cursor: "pointer",
                                     }}
                                   >
-                                    ★ Review
+                                    ★ {t.customer.review}
                                   </button>
                                 )}
                                 {userReviewedApptIds.has(appt.id) && (
@@ -790,7 +790,7 @@ export default function CustomerDashboard() {
       >
         <Link href="/customer/explore" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none", color: "#9ca3af" }}>
           <span className="material-symbols-outlined" style={{ fontSize: 22 }}>explore</span>
-          <span style={{ fontSize: 10, fontWeight: 700 }}>Explore</span>
+          <span style={{ fontSize: 10, fontWeight: 700 }}>{t.customer.explore}</span>
         </Link>
         <Link href="/customer" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, textDecoration: "none" }}>
           <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center" }}>
