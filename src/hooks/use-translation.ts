@@ -25,7 +25,6 @@ export const FONT_AR = "var(--font-tajawal),'Segoe UI',Tahoma,Arial,sans-serif";
 export function useTranslation() {
   const params = useParams();
   const localeParam = params?.locale as string;
-  console.log('useTranslation -> params:', params, 'localeParam:', localeParam);
   const locale = localeParam === "ar" ? "ar" : "en";
   const direction = locale === "ar" ? "rtl" : "ltr";
   const t = translations[locale] || en;

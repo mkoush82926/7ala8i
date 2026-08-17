@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # 68 pre-existing lint errors predate this pipeline (no CI ever ran lint
+      # before). Reported on every run, but not yet blocking so the pipeline
+      # doesn't fail every unrelated PR. Tracked as a follow-up: fix the
+      # existing errors, then remove `continue-on-error` here.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build

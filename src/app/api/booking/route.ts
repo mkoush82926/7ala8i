@@ -6,7 +6,7 @@ import { rateLimit } from "@/lib/rate-limit";
 
 const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
 
-const bookingSchema = z.object({
+export const bookingSchema = z.object({
   shopId: z.string().uuid("Invalid shop ID"),
   serviceIds: z.array(z.string().uuid("Invalid service ID")).optional(),
   barberId: z.string().nullable().optional(),
@@ -88,12 +88,12 @@ export async function POST(req: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized. Please log in to book." }, { status: 401 });
-  }
-
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized. Please log in to book." }, { status: 401 });
+    }
+
     const ip = req.headers.get("x-forwarded-for") || "anonymous";
     const { success } = rateLimit(`booking:${ip}`, 5);
     if (!success) {

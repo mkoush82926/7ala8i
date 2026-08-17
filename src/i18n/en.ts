@@ -25,6 +25,16 @@ const en = {
     optional: "Optional",
   },
 
+  // ─── Error / Not Found ───
+  error: {
+    title: "Something went wrong",
+    message: "An unexpected error occurred. Please try again.",
+    tryAgain: "Try Again",
+    notFoundTitle: "Page not found",
+    notFoundMessage: "The page you're looking for doesn't exist or has been moved.",
+    goHome: "Go Home",
+  },
+
   // ─── Sidebar ───
   sidebar: {
     dashboard: "Dashboard",

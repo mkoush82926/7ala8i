@@ -27,6 +27,16 @@ const ar: TranslationKeys = {
     optional: "اختياري",
   },
 
+  // ─── Error / Not Found ───
+  error: {
+    title: "حدث خطأ ما",
+    message: "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
+    tryAgain: "حاول مرة أخرى",
+    notFoundTitle: "الصفحة غير موجودة",
+    notFoundMessage: "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
+    goHome: "العودة للرئيسية",
+  },
+
   // ─── Sidebar ───
   sidebar: {
     dashboard: "لوحة التحكم",
