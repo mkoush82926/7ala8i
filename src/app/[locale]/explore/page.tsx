@@ -39,25 +39,23 @@ function SkeletonCard({ wide = false }: { wide?: boolean }) {
     <div
       style={{
         background: "#fff",
-        borderRadius: 20,
+        borderRadius: 12,
         overflow: "hidden",
-        border: "1px solid #f0f0f0",
-        boxShadow: "0 1px 6px rgba(0,0,0,0.04)",
+        border: "1px solid #e1e9f0",
         gridColumn: wide ? "span 2" : undefined,
       }}
     >
       <div
         style={{
           aspectRatio: wide ? "2/1" : "4/3",
-          background: "linear-gradient(90deg,#f0f0f0 25%,#fafafa 50%,#f0f0f0 75%)",
-          backgroundSize: "800px 100%",
+          background: "#f5f3ff",
           animation: "shimmerMove 1.6s ease-in-out infinite",
         }}
       />
       <div style={{ padding: 20 }}>
-        <div style={{ height: 10, width: "30%", background: "#f0f0f0", borderRadius: 6, marginBottom: 10 }} />
-        <div style={{ height: 20, width: "70%", background: "#f0f0f0", borderRadius: 8, marginBottom: 8 }} />
-        <div style={{ height: 14, width: "50%", background: "#f0f0f0", borderRadius: 6 }} />
+        <div style={{ height: 10, width: "30%", background: "#f5f3ff", borderRadius: 8, marginBottom: 10 }} />
+        <div style={{ height: 20, width: "70%", background: "#f5f3ff", borderRadius: 8, marginBottom: 8 }} />
+        <div style={{ height: 14, width: "50%", background: "#f5f3ff", borderRadius: 8 }} />
       </div>
     </div>
   );
@@ -103,17 +101,13 @@ export default function ExplorePage() {
   });
 
   return (
-    <div style={{ background: "#f9fafb", minHeight: "100vh", fontFamily: FF, color: "#111827", direction: dir }}>
+    <div style={{ background: "#ffffff", minHeight: "100vh", fontFamily: FF, color: "#091135", direction: dir }}>
 
       {/* ── Global shimmer keyframes ── */}
       <style>{`
         @keyframes shimmerMove {
-          0%   { background-position: -800px 0; }
-          100% { background-position:  800px 0; }
-        }
-        @keyframes orbFloat {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50%       { transform: translateY(-24px) scale(1.04); }
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.6; }
         }
         @keyframes pulseDot {
           0%, 100% { opacity: 1; transform: scale(1); }
@@ -132,11 +126,8 @@ export default function ExplorePage() {
           left: 0,
           right: 0,
           zIndex: 100,
-          background: scrolled ? "rgba(255,255,255,0.97)" : "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderBottom: `1px solid ${scrolled ? "#ebebeb" : "transparent"}`,
-          boxShadow: scrolled ? "0 1px 24px rgba(0,0,0,0.06)" : "none",
+          background: "#ffffff",
+          borderBottom: `1px solid ${scrolled ? "#e1e9f0" : "transparent"}`,
           transition: "all 280ms ease",
         }}
       >
@@ -148,10 +139,10 @@ export default function ExplorePage() {
             style={{
               fontSize: 20,
               fontWeight: 900,
-              color: "#111827",
+              color: "#091135",
               textDecoration: "none",
-              letterSpacing: "-0.045em",
-              fontFamily: "'Manrope', system-ui, sans-serif",
+              letterSpacing: "0.01em",
+              fontFamily: "var(--font-intervar), sans-serif",
               flexShrink: 0,
             }}
           >
@@ -169,15 +160,15 @@ export default function ExplorePage() {
               gap: 10,
               paddingLeft: 14,
               paddingRight: 12,
-              background: "#f3f4f6",
-              borderRadius: 12,
-              border: "1.5px solid #e5e7eb",
+              background: "#f5f3ff",
+              borderRadius: 8,
+              border: "1.5px solid #e1e9f0",
               transition: "all 150ms ease",
               cursor: "text",
             }}
             onClick={() => inputRef.current?.focus()}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 17, color: "#9ca3af", flexShrink: 0 }}>search</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 17, color: "#36394a", flexShrink: 0 }}>search</span>
             <input
               ref={inputRef}
               value={searchTerm}
@@ -190,27 +181,27 @@ export default function ExplorePage() {
                 outline: "none",
                 fontSize: 13,
                 fontWeight: 500,
-                color: "#111827",
+                color: "#091135",
                 fontFamily: FF,
                 minWidth: 0,
               }}
               onFocus={e => {
                 const p = e.currentTarget.parentElement!;
-                p.style.borderColor = "#111827";
+                p.style.borderColor = "#0f77ff";
                 p.style.background = "#fff";
-                p.style.boxShadow = "0 0 0 3px rgba(0,0,0,0.06)";
+                p.style.boxShadow = "var(--shadow-focus)";
               }}
               onBlur={e => {
                 const p = e.currentTarget.parentElement!;
-                p.style.borderColor = "#e5e7eb";
-                p.style.background = "#f3f4f6";
+                p.style.borderColor = "#e1e9f0";
+                p.style.background = "#f5f3ff";
                 p.style.boxShadow = "none";
               }}
             />
             {searchTerm && (
               <button
                 onClick={e => { e.stopPropagation(); setSearchTerm(""); }}
-                style={{ background: "none", border: "none", cursor: "pointer", display: "flex", color: "#9ca3af", padding: 0, flexShrink: 0 }}
+                style={{ background: "none", border: "none", cursor: "pointer", display: "flex", color: "#36394a", padding: 0, flexShrink: 0 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
               </button>
@@ -224,11 +215,11 @@ export default function ExplorePage() {
                 href="/customer"
                 style={{
                   display: "flex", alignItems: "center", gap: 6,
-                  fontSize: 13, fontWeight: 600, color: "#6b7280",
-                  textDecoration: "none", padding: "6px 12px", borderRadius: 10,
+                  fontSize: 13, fontWeight: 600, color: "#36394a",
+                  textDecoration: "none", padding: "6px 12px", borderRadius: 8,
                   transition: "background 120ms",
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#f3f4f6")}
+                onMouseEnter={e => (e.currentTarget.style.background = "#f5f3ff")}
                 onMouseLeave={e => (e.currentTarget.style.background = "none")}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>event_note</span>
@@ -237,7 +228,7 @@ export default function ExplorePage() {
             ) : (
               <Link
                 href="/auth/login"
-                style={{ fontSize: 13, fontWeight: 600, color: "#6b7280", textDecoration: "none", padding: "6px 12px" }}
+                style={{ fontSize: 13, fontWeight: 600, color: "#36394a", textDecoration: "none", padding: "6px 12px" }}
               >
                 {t.explore.signIn}
               </Link>
@@ -247,14 +238,13 @@ export default function ExplorePage() {
               style={{
                 display: "flex", alignItems: "center",
                 fontSize: 13, fontWeight: 700,
-                background: "#111827", color: "#fff",
+                background: "#127ee3", color: "#fff",
                 textDecoration: "none",
-                padding: "9px 20px", borderRadius: 10,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                padding: "9px 20px", borderRadius: 8,
                 transition: "all 150ms ease",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#1f2937"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#111827"; e.currentTarget.style.transform = "none"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#0f77ff"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#127ee3"; e.currentTarget.style.transform = "none"; }}
             >
               {isLoggedIn ? t.explore.dashboard : t.explore.getStarted}
             </Link>
@@ -270,33 +260,11 @@ export default function ExplorePage() {
         <section
           style={{
             background: "#fff",
-            borderBottom: "1px solid #f0f0f0",
+            borderBottom: "1px solid #e1e9f0",
             position: "relative",
             overflow: "hidden",
           }}
         >
-          {/* Decorative orbs */}
-          <div style={{
-            width: 600, height: 600,
-            borderRadius: "50%",
-            background: "rgba(213,227,252,0.4)",
-            filter: "blur(80px)",
-            position: "absolute",
-            top: -200, right: -100,
-            pointerEvents: "none",
-            animation: "orbFloat 10s ease-in-out infinite",
-          }} />
-          <div style={{
-            width: 350, height: 350,
-            borderRadius: "50%",
-            background: "rgba(16,185,129,0.08)",
-            filter: "blur(60px)",
-            position: "absolute",
-            bottom: -80, left: 60,
-            pointerEvents: "none",
-            animation: "orbFloat 14s ease-in-out infinite reverse",
-          }} />
-
           <div style={{ ...containerStyle, position: "relative", zIndex: 1 }}>
             <div style={{ padding: "72px 0 64px" }}>
               <motion.div
@@ -309,11 +277,11 @@ export default function ExplorePage() {
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
                     padding: "6px 14px", borderRadius: 9999,
-                    background: "#f3f4f6", marginBottom: 28,
-                    fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#6b7280",
+                    background: "#f5f3ff", marginBottom: 28,
+                    fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#36394a",
                   }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 13, fontVariationSettings: "'FILL' 1", color: "#10b981" }}>location_city</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 13, fontVariationSettings: "'FILL' 1", color: "#0f77ff" }}>location_city</span>
                   {t.explore.premierDir}
                 </div>
 
@@ -322,21 +290,21 @@ export default function ExplorePage() {
                   style={{
                     fontSize: "clamp(40px, 5.5vw, 68px)",
                     fontWeight: 900,
-                    fontFamily: "'Manrope', system-ui, sans-serif",
-                    letterSpacing: "-0.04em",
+                    fontFamily: "var(--font-intervar), sans-serif",
+                    letterSpacing: "0.018em",
                     lineHeight: 1.04,
-                    color: "#111827",
+                    color: "#091135",
                     margin: "0 0 20px",
                   }}
                 >
                   {t.explore.findNext}<br />
-                  <span style={{ color: "#9ca3af" }}>{t.explore.perfectCut}</span>
+                  <span style={{ color: "#36394a" }}>{t.explore.perfectCut}</span>
                 </h1>
 
                 <p
                   style={{
                     fontSize: 17,
-                    color: "#6b7280",
+                    color: "#36394a",
                     lineHeight: 1.65,
                     maxWidth: 520,
                     margin: "0 0 36px",
@@ -360,13 +328,12 @@ export default function ExplorePage() {
                         display: "inline-flex", alignItems: "center", gap: 7,
                         padding: "8px 16px",
                         background: "#fff",
-                        border: "1.5px solid #e5e7eb",
+                        border: "1.5px solid #e1e9f0",
                         borderRadius: 9999,
-                        fontSize: 13, fontWeight: 600, color: "#374151",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                        fontSize: 13, fontWeight: 600, color: "#36394a",
                       }}
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: 15, fontVariationSettings: "'FILL' 1", color: "#10b981" }}>{t.icon}</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: 15, fontVariationSettings: "'FILL' 1", color: "#0f77ff" }}>{t.icon}</span>
                       {t.text}
                     </span>
                   ))}
@@ -385,8 +352,7 @@ export default function ExplorePage() {
             top: 64,
             zIndex: 50,
             background: "#fff",
-            borderBottom: "1px solid #f0f0f0",
-            boxShadow: "0 1px 0 #f0f0f0",
+            borderBottom: "1px solid #e1e9f0",
           }}
         >
           <div style={{ ...containerStyle, display: "flex", alignItems: "center", gap: 8, paddingTop: 12, paddingBottom: 12, overflowX: "auto" }}>
@@ -403,9 +369,9 @@ export default function ExplorePage() {
                   cursor: "pointer",
                   flexShrink: 0,
                   border: "1.5px solid",
-                  background: activeCategory === cat ? "#111827" : "#fff",
-                  color: activeCategory === cat ? "#fff" : "#6b7280",
-                  borderColor: activeCategory === cat ? "#111827" : "#e5e7eb",
+                  background: activeCategory === cat ? "#f5f3ff" : "#fff",
+                  color: activeCategory === cat ? "#091135" : "#36394a",
+                  borderColor: activeCategory === cat ? "#f5f3ff" : "#e1e9f0",
                   transition: "all 120ms ease",
                   fontFamily: FF,
                 }}
@@ -414,7 +380,7 @@ export default function ExplorePage() {
               </button>
             ))}
             {!loading && (
-              <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 600, color: "#d1d5db", whiteSpace: "nowrap", flexShrink: 0 }}>
+              <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 600, color: "#b1bbcd", whiteSpace: "nowrap", flexShrink: 0 }}>
                 {t.explore.found.replace('{count}', filtered.length.toString())}
               </span>
             )}
@@ -449,20 +415,20 @@ export default function ExplorePage() {
             >
               <div
                 style={{
-                  width: 72, height: 72, borderRadius: "50%", background: "#f3f4f6",
+                  width: 72, height: 72, borderRadius: "50%", background: "#f5f3ff",
                   display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20,
                 }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 32, color: "#9ca3af" }}>search_off</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 32, color: "#36394a" }}>search_off</span>
               </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginBottom: 8 }}>{t.explore.noResults}</h3>
-              <p style={{ fontSize: 14, color: "#9ca3af", marginBottom: 24, maxWidth: 320 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#091135", marginBottom: 8 }}>{t.explore.noResults}</h3>
+              <p style={{ fontSize: 14, color: "#36394a", marginBottom: 24, maxWidth: 320 }}>
                 {t.explore.tryDifferent}
               </p>
               <button
                 onClick={() => setSearchTerm("")}
                 style={{
-                  background: "#111827", color: "#fff",
+                  background: "#091135", color: "#fff",
                   padding: "10px 28px", borderRadius: 9999,
                   fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", fontFamily: FF,
                 }}
@@ -492,15 +458,14 @@ export default function ExplorePage() {
                       transition={{ duration: 0.35, delay: idx * 0.05, ease: [0.25, 1, 0.5, 1] }}
                       style={{
                         background: "#fff",
-                        borderRadius: 20,
+                        borderRadius: 12,
                         overflow: "hidden",
-                        border: "1px solid #f0f0f0",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                        transition: "transform 150ms ease, box-shadow 150ms ease",
+                        border: "1px solid #e1e9f0",
+                        transition: "transform 150ms ease",
                         cursor: "pointer",
                         gridColumn: isFeatured ? "1 / span 2" : undefined,
                       }}
-                      whileHover={{ y: -4, boxShadow: "0 16px 48px rgba(0,0,0,0.10)" }}
+                      whileHover={{ y: -4 }}
                     >
                       {/* Cover image */}
                       <div
@@ -508,7 +473,7 @@ export default function ExplorePage() {
                           position: "relative",
                           overflow: "hidden",
                           aspectRatio: isFeatured ? "2.4/1" : "4/3",
-                          background: "#e5e7eb",
+                          background: "#e1e9f0",
                         }}
                       >
                         <img
@@ -518,15 +483,13 @@ export default function ExplorePage() {
                           onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.06)"; }}
                           onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
                         />
-                        {/* Gradient overlay */}
-                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)" }} />
 
                         {/* Top-left badges */}
                         <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6, alignItems: "center" }}>
                           {isFeatured && (
                             <span
                               style={{
-                                background: "#f59e0b", color: "#111827",
+                                background: "#f5f3ff", color: "#091135",
                                 padding: "3px 10px", borderRadius: 9999,
                                 fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase",
                               }}
@@ -544,9 +507,9 @@ export default function ExplorePage() {
                             style={{
                               fontSize: isFeatured ? 20 : 16,
                               fontWeight: 900,
-                              color: "#111827",
-                              letterSpacing: "-0.025em",
-                              fontFamily: "'Manrope', system-ui, sans-serif",
+                              color: "#091135",
+                              letterSpacing: "0.012em",
+                              fontFamily: "var(--font-intervar), sans-serif",
                               margin: "0 0 5px",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -557,8 +520,8 @@ export default function ExplorePage() {
                           </h3>
                         </Link>
                         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 16 }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 13, color: "#9ca3af" }}>location_on</span>
-                          <span style={{ fontSize: 13, color: "#9ca3af", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 13, color: "#36394a" }}>location_on</span>
+                          <span style={{ fontSize: 13, color: "#36394a", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {shop.address || "Amman, Jordan"}
                           </span>
                         </div>
@@ -567,12 +530,12 @@ export default function ExplorePage() {
                         <div
                           style={{
                             display: "flex", alignItems: "center", justifyContent: "space-between",
-                            paddingTop: 14, borderTop: "1px solid #f4f4f5",
+                            paddingTop: 14, borderTop: "1px solid #e1e9f0",
                           }}
                         >
                           <div>
-                            <span style={{ fontSize: 15, fontWeight: 800, color: "#111827" }}>{t.explore.fromPrice}</span>
-                            <span style={{ fontSize: 12, color: "#9ca3af", marginLeft: 6 }}>· {t.explore.thirtyMin}</span>
+                            <span style={{ fontSize: 15, fontWeight: 800, color: "#091135" }}>{t.explore.fromPrice}</span>
+                            <span style={{ fontSize: 12, color: "#36394a", marginLeft: 6 }}>· {t.explore.thirtyMin}</span>
                           </div>
                           <div style={{ display: "flex", gap: 8 }}>
                             <Link
@@ -580,12 +543,12 @@ export default function ExplorePage() {
                               style={{
                                 padding: "7px 14px", borderRadius: 9999,
                                 fontSize: 12, fontWeight: 700,
-                                background: "#f3f4f6", color: "#374151",
+                                background: "#f5f3ff", color: "#36394a",
                                 textDecoration: "none", border: "none",
                                 transition: "all 120ms ease",
                               }}
-                              onMouseEnter={e => (e.currentTarget.style.background = "#e5e7eb")}
-                              onMouseLeave={e => (e.currentTarget.style.background = "#f3f4f6")}
+                              onMouseEnter={e => (e.currentTarget.style.background = "#e1e9f0")}
+                              onMouseLeave={e => (e.currentTarget.style.background = "#f5f3ff")}
                             >
                               {t.explore.view}
                             </Link>
@@ -594,12 +557,12 @@ export default function ExplorePage() {
                               style={{
                                 padding: "7px 16px", borderRadius: 9999,
                                 fontSize: 12, fontWeight: 700,
-                                background: "#111827", color: "#fff",
+                                background: "#091135", color: "#fff",
                                 textDecoration: "none",
                                 transition: "all 120ms ease",
                               }}
-                              onMouseEnter={e => { e.currentTarget.style.background = "#1f2937"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = "#111827"; e.currentTarget.style.transform = "none"; }}
+                              onMouseEnter={e => { e.currentTarget.style.background = "#36394a"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = "#091135"; e.currentTarget.style.transform = "none"; }}
                             >
                               {t.explore.bookNow}
                             </Link>
@@ -620,21 +583,20 @@ export default function ExplorePage() {
         <div style={{ ...containerStyle, paddingBottom: 80 }}>
           <div
             style={{
-              borderRadius: 28,
+              borderRadius: 12,
               padding: "56px 48px",
               textAlign: "center",
-              background: "linear-gradient(135deg, #111827 0%, #1f2937 100%)",
+              background: "#091135",
               position: "relative",
               overflow: "hidden",
             }}
           >
-            <div style={{ position: "absolute", inset: 0, opacity: 0.07, backgroundImage: "radial-gradient(circle at 70% 30%, white 0%, transparent 55%)" }} />
             <div style={{ position: "relative", zIndex: 1 }}>
               <h2
                 style={{
                   fontSize: "clamp(24px, 3vw, 36px)", fontWeight: 900,
-                  color: "#fff", letterSpacing: "-0.03em",
-                  fontFamily: "'Manrope', system-ui, sans-serif",
+                  color: "#fff", letterSpacing: "0.014em",
+                  fontFamily: "var(--font-intervar), sans-serif",
                   margin: "0 0 12px",
                 }}
               >
@@ -648,13 +610,12 @@ export default function ExplorePage() {
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 8,
                   padding: "14px 36px", borderRadius: 9999,
-                  background: "#fff", color: "#111827",
+                  background: "#fff", color: "#091135",
                   fontWeight: 700, fontSize: 15, textDecoration: "none",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
                   transition: "all 150ms ease",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 32px rgba(0,0,0,0.3)"; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.25)"; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "none"; }}
               >
                 {isLoggedIn ? t.explore.goToDashboard : t.explore.getStartedFree}
               </Link>
@@ -670,26 +631,25 @@ export default function ExplorePage() {
         style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
           display: "flex", justifyContent: "space-around", alignItems: "center",
-          background: "rgba(255,255,255,0.97)",
-          backdropFilter: "blur(20px)",
-          borderTop: "1px solid #f0f0f0",
+          background: "#ffffff",
+          borderTop: "1px solid #e1e9f0",
           padding: "12px 16px max(16px, env(safe-area-inset-bottom))",
         }}
         className="md:hidden"
       >
         <Link href="/explore" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none" }}>
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#fff" }}>search</span>
+          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#091135" }}>search</span>
           </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "#111827" }}>{t.explore.navExplore}</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#091135" }}>{t.explore.navExplore}</span>
         </Link>
         <Link href="/customer" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none" }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 22, color: "#9ca3af" }}>event_note</span>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af" }}>{t.explore.navBookings}</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 22, color: "#36394a" }}>event_note</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#36394a" }}>{t.explore.navBookings}</span>
         </Link>
         <Link href={isLoggedIn ? "/customer" : "/auth/login"} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none" }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 22, color: "#9ca3af" }}>person</span>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af" }}>{t.explore.navAccount}</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 22, color: "#36394a" }}>person</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#36394a" }}>{t.explore.navAccount}</span>
         </Link>
       </nav>
 

@@ -22,13 +22,13 @@ export default function BookingShopPage() {
   }, [shopId, supabase]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f3f4f6", fontFamily: FF, color: "#111827", direction: dir }}>
+    <div style={{ minHeight: "100vh", background: "#f5f3ff", fontFamily: FF, color: "#091135", direction: dir }}>
 
       {/* ── Fixed minimal header ── */}
       <header style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        background: "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)",
-        borderBottom: "1px solid #e5e7eb",
+        background: "#ffffff",
+        borderBottom: "1px solid #e1e9f0",
         height: 60,
         display: "flex", alignItems: "center",
       }}>
@@ -42,7 +42,7 @@ export default function BookingShopPage() {
             style={{
               display: "flex", alignItems: "center", gap: 6,
               background: "none", border: "none", cursor: "pointer",
-              fontWeight: 700, fontSize: 14, color: "#374151", fontFamily: FF,
+              fontWeight: 700, fontSize: 14, color: "#36394a", fontFamily: FF,
               padding: 0,
             }}
           >
@@ -53,10 +53,10 @@ export default function BookingShopPage() {
           </button>
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: "-0.02em" }}>
+            <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: "0.008em" }}>
               {shopName || "Halaqy"}
             </span>
-            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#9ca3af" }}>
+            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#36394a" }}>
               Book Appointment
             </span>
           </div>

@@ -130,30 +130,30 @@ export default function ServicesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between" style={{ gap: 20 }}>
         <div>
           <h2
-            className="text-4xl font-extrabold tracking-tight text-[#191c1e]"
-            style={{ fontFamily: "Manrope, sans-serif", fontSize: 32 }}
+            className="text-4xl font-extrabold text-[#091135]"
+            style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 32, letterSpacing: "0.016em" }}
           >
             {svc.title || "Services"}
           </h2>
-          <p className="text-[#45464c] font-medium" style={{ fontSize: 14, marginTop: 8 }}>
+          <p className="text-[#36394a] font-medium" style={{ fontSize: 14, marginTop: 8 }}>
             {svc.subtitle || "Manage your barbershop service menu"}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative w-full sm:w-64">
-            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#76777d]" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#36394a]" />
             <input
               type="text"
               placeholder={svc.title || "Search..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-10 ps-10 pe-4 rounded-full bg-[#f2f4f6] border-none text-sm font-medium text-[#191c1e] placeholder-[#76777d] focus:outline-none focus:ring-2 focus:ring-[#191c1e]/20 transition-all"
+              className="w-full h-10 ps-10 pe-4 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-sm font-medium text-[#091135] placeholder-[#36394a] focus:outline-none focus:shadow-[var(--shadow-focus)] transition-all"
             />
           </div>
           {currentUserRole === 'shop_admin' && (
             <button
               onClick={openAdd}
-              className="h-10 px-5 rounded-xl bg-[#191c1e] text-white font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap shadow-[0_8px_16px_rgba(0,0,0,0.1)]"
+              className="h-10 px-5 rounded-[var(--radius-buttons)] bg-[#127ee3] text-white font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
             >
               <Plus size={15} />
               <span className="hidden sm:inline">{svc.addService || "Add Service"}</span>
@@ -171,9 +171,9 @@ export default function ServicesPage() {
         <div className="flex flex-col items-center justify-center text-center" style={{ paddingTop: 80 }}>
           <div
             className="rounded-2xl flex items-center justify-center"
-            style={{ width: 64, height: 64, background: "var(--accent-mint-muted)", marginBottom: 20 }}
+            style={{ width: 64, height: 64, background: "var(--bg-secondary)", marginBottom: 20 }}
           >
-            <Sparkles size={28} className="text-[var(--accent-mint)]" />
+            <Sparkles size={28} className="text-[var(--text-primary)]" />
           </div>
           <p className="text-[var(--text-secondary)] font-semibold" style={{ fontSize: 16, marginBottom: 8 }}>
             {svc.noServices || "No services yet"}
@@ -184,7 +184,7 @@ export default function ServicesPage() {
           {currentUserRole === 'shop_admin' && (
             <button
               onClick={openAdd}
-              className="mt-6 h-10 px-6 rounded-xl bg-[var(--accent-mint)] text-[#0A0A0A] font-semibold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
+              className="mt-6 h-10 px-6 rounded-[var(--radius-buttons)] bg-[var(--accent-mint)] text-white font-semibold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
             >
               <Plus size={15} />
               {svc.addService || "Add Service"}
@@ -202,24 +202,24 @@ export default function ServicesPage() {
               onDrop={() => handleDrop(service.id)}
               onDragEnd={() => { setDraggedId(null); setDragOverId(null); }}
               className={cn(
-                "group relative rounded-xl border bg-white p-6 transition-all duration-200 hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1",
+                "group relative rounded-xl border bg-white p-6 transition-all duration-200 hover:-translate-y-1",
                 "cursor-grab active:cursor-grabbing",
                 draggedId === service.id && "opacity-40",
-                dragOverId === service.id && "border-[#191c1e]/20 scale-[1.02]",
+                dragOverId === service.id && "border-[#091135]/20 scale-[1.02]",
                 !service.is_active && "opacity-60",
-                "border-[#eceef0] hover:border-[#c6c6cc]",
+                "border-[#e1e9f0] hover:border-[var(--border-hover)]",
               )}
             >
               <div className="flex items-start justify-between" style={{ marginBottom: 18 }}>
                 <div className="flex items-center gap-3">
                   <div
                     className="rounded-xl flex items-center justify-center text-lg cursor-grab active:cursor-grabbing"
-                    style={{ width: 44, height: 44, background: "#f2f4f6" }}
+                    style={{ width: 44, height: 44, background: "var(--bg-secondary)" }}
                   >
                     {service.icon || "✂️"}
                   </div>
                   <div>
-                    <p className="text-[#191c1e] font-bold" style={{ fontSize: 14, marginBottom: 2, fontFamily: "Manrope, sans-serif" }}>
+                    <p className="text-[#091135] font-bold" style={{ fontSize: 14, marginBottom: 2, fontFamily: "var(--font-intervar), sans-serif" }}>
                       {isRTL && service.name_ar ? service.name_ar : service.name}
                     </p>
                     {service.name_ar && !isRTL && (
@@ -235,7 +235,7 @@ export default function ServicesPage() {
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => toggleActive(service.id, !service.is_active)}
-                      className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-mint)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
+                      className="w-[30px] h-[30px] rounded-[var(--radius-buttons)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
                       title={service.is_active ? svc.inactive : svc.active}
                       aria-label={service.is_active ? (svc.deactivate || "Deactivate service") : (svc.activate || "Activate service")}
                     >
@@ -243,14 +243,14 @@ export default function ServicesPage() {
                     </button>
                     <button
                       onClick={() => openEdit(service)}
-                      className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-lavender)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
+                      className="w-[30px] h-[30px] rounded-[var(--radius-buttons)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-lavender)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
                       aria-label={svc.editService || "Edit service"}
                     >
                       <Pencil size={13} />
                     </button>
                     <button
                       onClick={() => handleDelete(service.id)}
-                      className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-rose)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
+                      className="w-[30px] h-[30px] rounded-[var(--radius-buttons)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-rose)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
                       aria-label={svc.delete || "Delete service"}
                     >
                       <Trash2 size={13} />
@@ -301,7 +301,7 @@ export default function ServicesPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/60 z-50"
               onClick={() => setShowForm(false)}
             />
             <motion.div
@@ -313,16 +313,16 @@ export default function ServicesPage() {
               onClick={(e) => e.target === e.currentTarget && setShowForm(false)}
             >
               <div
-                className="w-full max-w-md rounded-2xl bg-white border border-[#eceef0] shadow-2xl"
+                className="w-full max-w-md rounded-2xl bg-white border border-[#e1e9f0]"
                 style={{ padding: "28px 28px 24px" }}
               >
                 <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
-                  <h3 className="text-[#191c1e] font-extrabold" style={{ fontSize: 20, fontFamily: "Manrope, sans-serif" }}>
+                  <h3 className="text-[#091135] font-extrabold" style={{ fontSize: 20, fontFamily: "var(--font-intervar), sans-serif" }}>
                     {editingService ? (svc.editService || "Edit Service") : (svc.addService || "Add Service")}
                   </h3>
                   <button
                     onClick={() => setShowForm(false)}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[#76777d] hover:text-[#191c1e] hover:bg-[#f2f4f6] transition-all cursor-pointer"
+                    className="w-8 h-8 rounded-[var(--radius-buttons)] flex items-center justify-center text-[#36394a] hover:text-[#091135] hover:bg-[var(--bg-secondary)] transition-all cursor-pointer"
                   >
                     <X size={16} />
                   </button>
@@ -341,9 +341,9 @@ export default function ServicesPage() {
                           type="button"
                           onClick={() => setIcon(ic)}
                           className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all cursor-pointer border",
+                            "w-10 h-10 rounded-[var(--radius-buttons)] flex items-center justify-center text-lg transition-all cursor-pointer border",
                             icon === ic
-                              ? "bg-[var(--accent-mint-muted)] border-[var(--accent-mint)]/40 scale-110"
+                              ? "bg-[var(--bg-secondary)] border-[#091135]/20 scale-110"
                               : "bg-[var(--bg-surface)] border-transparent hover:border-[var(--border-hover)]",
                           )}
                         >
@@ -363,7 +363,7 @@ export default function ServicesPage() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
-                      className="w-full h-10 px-3 rounded-xl bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all"
+                      className="w-full h-10 px-3 rounded-[var(--radius-inputs)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all"
                       placeholder="e.g. Haircut"
                     />
                   </div>
@@ -378,7 +378,7 @@ export default function ServicesPage() {
                       value={nameAr}
                       onChange={(e) => setNameAr(e.target.value)}
                       dir="rtl"
-                      className="w-full h-10 px-3 rounded-xl bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all"
+                      className="w-full h-10 px-3 rounded-[var(--radius-inputs)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all"
                       placeholder="مثال: قص شعر"
                     />
                   </div>
@@ -395,7 +395,7 @@ export default function ServicesPage() {
                         onChange={(e) => setDuration(e.target.value)}
                         min="5"
                         step="5"
-                        className="w-full h-10 px-3 rounded-xl bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] transition-all"
+                        className="w-full h-10 px-3 rounded-[var(--radius-inputs)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] transition-all"
                       />
                     </div>
                     <div>
@@ -409,7 +409,7 @@ export default function ServicesPage() {
                         required
                         min="0"
                         step="0.5"
-                        className="w-full h-10 px-3 rounded-xl bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] transition-all"
+                        className="w-full h-10 px-3 rounded-[var(--radius-inputs)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] transition-all"
                       />
                     </div>
                   </div>
@@ -418,7 +418,7 @@ export default function ServicesPage() {
                   <button
                     type="submit"
                     disabled={saving || !name.trim() || !price.trim()}
-                    className="h-11 rounded-xl bg-[#191c1e] text-white font-bold text-[13px] flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
+                    className="h-11 rounded-[var(--radius-buttons)] bg-[#127ee3] text-white font-bold text-[13px] flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
                     style={{ marginTop: 8 }}
                   >
                     {saving ? <Loader2 size={15} className="animate-spin" /> : null}

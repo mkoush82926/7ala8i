@@ -26,11 +26,11 @@ interface TeamMember {
 }
 
 const avatarColors = [
-  { bg: "#dde2f6", text: "#151b29" },
-  { bg: "#d5e3fc", text: "#0d1c2e" },
-  { bg: "#ffdea5", text: "#261900" },
-  { bg: "#e0e3e5", text: "#191c1e" },
-  { bg: "#151b29", text: "#ffffff" },
+  { bg: "#f5f3ff", text: "#091135" },
+  { bg: "#e1e9f0", text: "#091135" },
+  { bg: "#091135", text: "#ffffff" },
+  { bg: "#b1bbcd", text: "#091135" },
+  { bg: "#36394a", text: "#ffffff" },
 ];
 
 export default function TeamPage() {
@@ -104,7 +104,7 @@ export default function TeamPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div>
-            <h2 style={{ fontFamily: "Manrope, sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text-primary)", margin: 0 }}>
+            <h2 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "0.016em", color: "var(--text-primary)", margin: 0 }}>
               {isRTL ? "فريق العمل" : "Team & Staff"}
             </h2>
             <p style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 6, fontWeight: 400 }}>
@@ -120,7 +120,7 @@ export default function TeamPage() {
                 placeholder={isRTL ? "ابحث عن موظف..." : "Search staff..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full sm:w-64 h-10 ps-10 pe-4 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-sm font-medium text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20 transition-all"
+                className="w-full sm:w-64 h-10 ps-10 pe-4 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-sm font-medium text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:shadow-[var(--shadow-focus)] transition-all"
               />
             </div>
             {currentUserRole === 'shop_admin' && (
@@ -153,7 +153,7 @@ export default function TeamPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-[var(--radius-lg)] p-6 shadow-sm hover:shadow-md transition-shadow relative group"
+              className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-[var(--radius-lg)] p-6 relative group"
             >
               {currentUserRole === 'shop_admin' && (
                 <button 
@@ -167,14 +167,14 @@ export default function TeamPage() {
               <div className="flex flex-col items-center text-center">
                 {/* Avatar */}
                 <div 
-                  className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold mb-4 shadow-sm"
+                  className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold mb-4"
                   style={{ background: color.bg, color: color.text }}
                 >
                   {initials}
                 </div>
                 
                 {/* Info */}
-                <h3 className="text-lg font-bold text-[var(--text-primary)] tracking-tight mb-1">
+                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">
                   {member.full_name || "Unnamed"}
                 </h3>
                 <div className="flex items-center gap-1 text-[13px] font-medium px-3 py-1 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-full mb-6">
@@ -238,12 +238,12 @@ function BarberSettingsModal({ editingBarber, shopServices, setEditingBarber, re
   const [activeTab, setActiveTab] = useState<"services" | "hours">("services");
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-        className="w-full max-w-xl bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-[var(--radius-xl)] shadow-xl flex flex-col overflow-hidden"
+        className="w-full max-w-xl bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-[var(--radius-xl)] flex flex-col overflow-hidden"
       >
         <div className="flex items-center justify-between p-4 border-b border-[var(--border-primary)]">
           <h3 className="text-lg font-bold text-[var(--text-primary)]">
@@ -379,14 +379,14 @@ function BarberWorkingHoursManager({ barber, onClose, isRTL }: { barber: TeamMem
                 type="time" 
                 value={day.start_time.substring(0, 5)} 
                 onChange={(e) => updateDay(i, "start_time", e.target.value + ":00")}
-                className="h-8 px-2 rounded-md bg-[var(--bg-primary)] border border-[var(--border-primary)] text-sm w-full md:w-28 text-center outline-none focus:border-[var(--text-primary)]"
+                className="h-8 px-2 rounded-[var(--radius-inputs)] bg-[var(--bg-primary)] border border-[var(--border-primary)] text-sm w-full md:w-28 text-center outline-none focus:border-[var(--text-primary)]"
               />
               <span className="text-[var(--text-muted)]">-</span>
               <input 
                 type="time" 
                 value={day.end_time.substring(0, 5)} 
                 onChange={(e) => updateDay(i, "end_time", e.target.value + ":00")}
-                className="h-8 px-2 rounded-md bg-[var(--bg-primary)] border border-[var(--border-primary)] text-sm w-full md:w-28 text-center outline-none focus:border-[var(--text-primary)]"
+                className="h-8 px-2 rounded-[var(--radius-inputs)] bg-[var(--bg-primary)] border border-[var(--border-primary)] text-sm w-full md:w-28 text-center outline-none focus:border-[var(--text-primary)]"
               />
             </div>
           </div>
@@ -448,15 +448,15 @@ function BarberServicesChecklist({ barber, services, onClose, onSaveSuccess, isR
               key={s.id} 
               onClick={() => toggleService(s.id)}
               className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                isSelected 
-                  ? "border-[var(--accent-mint)] bg-[var(--accent-mint-muted)]" 
+                isSelected
+                  ? "border-[#091135]/20 bg-[var(--bg-secondary)]"
                   : "border-[var(--border-primary)] hover:border-[var(--border-hover)]"
               }`}
             >
               <div className={`w-5 h-5 rounded-sm flex items-center justify-center border ${
                 isSelected ? "border-[var(--accent-mint)] bg-[var(--accent-mint)]" : "border-[var(--border-primary)]"
               }`}>
-                {isSelected && <Check size={14} className="text-[#0A0A0A]" />}
+                {isSelected && <Check size={14} className="text-white" />}
               </div>
               <span className="text-sm font-medium text-[var(--text-primary)]">
                 {isRTL && s.name_ar ? s.name_ar : s.name}

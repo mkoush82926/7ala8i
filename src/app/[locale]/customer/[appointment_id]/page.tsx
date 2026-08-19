@@ -24,7 +24,7 @@ interface AppointmentDetail {
 
 const STATUS_STYLES: Record<string, string> = {
   confirmed: "bg-secondary-container text-on-secondary-container",
-  pending: "bg-tertiary-fixed text-on-tertiary-fixed",
+  pending: "bg-surface-container text-on-surface",
   cancelled: "bg-error-container text-on-error-container",
   completed: "bg-surface-container-high text-on-surface",
 };
@@ -95,8 +95,8 @@ export default function BookingDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f7f9fb] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#091135] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -104,12 +104,12 @@ export default function BookingDetailPage() {
   if (!appt) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 rounded-full bg-surface-container-low flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mb-4">
           <span className="material-symbols-outlined text-outline">event_busy</span>
         </div>
         <h2 className="font-headline text-xl font-bold mb-2">Booking Not Found</h2>
         <p className="text-on-surface-variant text-sm mb-6">This appointment does not exist or you don&apos;t have access to it.</p>
-        <Link href="/customer" className="bg-primary text-on-primary px-6 py-3 rounded-lg font-bold text-sm">
+        <Link href="/customer" className="bg-tertiary-fixed text-on-tertiary-fixed px-6 py-3 rounded-[8px] font-bold text-sm">
           Back to My Bookings
         </Link>
       </div>
@@ -121,11 +121,11 @@ export default function BookingDetailPage() {
   const statusStyle = STATUS_STYLES[appt.status] || "bg-surface-container text-on-surface";
 
   return (
-    <div style={{ background: "#f7f9fb" }} className="font-body text-[#191c1e] min-h-screen">
+    <div style={{ background: "#ffffff" }} className="font-body text-[#091135] min-h-screen">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white h-16 border-b border-neutral-100">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white h-16 border-b border-outline-variant">
         <div className="flex justify-between items-center max-w-3xl mx-auto px-6 h-full">
-          <Link href="/customer" className="flex items-center gap-2 text-neutral-500 hover:text-black transition-colors">
+          <Link href="/customer" className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors">
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             <span className="text-sm font-bold">My Bookings</span>
           </Link>
@@ -139,14 +139,14 @@ export default function BookingDetailPage() {
           <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full ${statusStyle}`}>
             {statusLabel}
           </span>
-          <span className="text-xs font-medium text-neutral-400">Ref #{appt.id.slice(0, 7).toUpperCase()}</span>
+          <span className="text-xs font-medium text-on-surface-variant">Ref #{appt.id.slice(0, 7).toUpperCase()}</span>
         </div>
 
         {/* Main Detail Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden mb-6">
+        <div className="bg-white rounded-2xl border border-outline-variant overflow-hidden mb-6">
           {/* Shop Banner */}
-          <div className="bg-black p-8 relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 80% 50%, white 0%, transparent 60%)" }} />
+          <div className="bg-primary p-8 relative overflow-hidden">
+            <div className="absolute inset-0 opacity-10" />
             <div className="relative z-10">
               <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">Your Appointment</p>
               <h1 className="font-black text-3xl text-white">{appt.shop_name}</h1>
@@ -154,7 +154,7 @@ export default function BookingDetailPage() {
           </div>
 
           {/* Details Grid */}
-          <div className="p-6 space-y-0 divide-y divide-neutral-100">
+          <div className="p-6 space-y-0 divide-y divide-outline-variant">
             <div className="flex justify-between items-start py-5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">Date & Time</p>
@@ -221,14 +221,14 @@ export default function BookingDetailPage() {
             <>
               <Link
                 href={`/book/${appt.shop_id}`}
-                className="flex-1 text-center py-4 bg-primary text-on-primary rounded-lg font-bold text-sm hover:opacity-90 active:scale-95 transition-all"
+                className="flex-1 text-center py-4 bg-tertiary-fixed text-on-tertiary-fixed rounded-[8px] font-bold text-sm hover:opacity-90 active:scale-95 transition-all"
               >
                 Book a New Time
               </Link>
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="flex-1 py-4 bg-surface-container-lowest text-error border border-error/20 rounded-lg font-bold text-sm hover:bg-error/5 active:scale-95 transition-all disabled:opacity-50"
+                className="flex-1 py-4 bg-surface-container-lowest text-error border border-error/20 rounded-[8px] font-bold text-sm hover:bg-error/5 active:scale-95 transition-all disabled:opacity-50"
               >
                 {cancelling ? "Cancelling..." : "Cancel Appointment"}
               </button>
@@ -237,7 +237,7 @@ export default function BookingDetailPage() {
           {!isUpcoming && (
             <Link
               href={`/book/${appt.shop_id}`}
-              className="flex-1 text-center py-4 bg-primary text-on-primary rounded-lg font-bold text-sm hover:opacity-90 active:scale-95 transition-all"
+              className="flex-1 text-center py-4 bg-tertiary-fixed text-on-tertiary-fixed rounded-[8px] font-bold text-sm hover:opacity-90 active:scale-95 transition-all"
             >
               Book Again
             </Link>
@@ -258,15 +258,15 @@ export default function BookingDetailPage() {
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-6 pb-8 pt-4 md:hidden bg-white/80 backdrop-blur-xl border-t border-neutral-100 rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <Link className="flex flex-col items-center justify-center text-neutral-400" href="/explore">
+      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-6 pb-8 pt-4 md:hidden bg-white border-t border-outline-variant rounded-t-2xl">
+        <Link className="flex flex-col items-center justify-center text-on-surface-variant" href="/explore">
           <span className="material-symbols-outlined">search</span>
           <span className="font-headline text-[10px] font-bold uppercase tracking-widest mt-1">Explore</span>
         </Link>
-        <Link className="flex flex-col items-center justify-center bg-black text-white rounded-full w-12 h-12 scale-90 active:scale-100 transition-transform" href="/customer">
+        <Link className="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full w-12 h-12 scale-90 active:scale-100 transition-transform" href="/customer">
           <span className="material-symbols-outlined">event_note</span>
         </Link>
-        <Link className="flex flex-col items-center justify-center text-neutral-400" href="/customer">
+        <Link className="flex flex-col items-center justify-center text-on-surface-variant" href="/customer">
           <span className="material-symbols-outlined">person</span>
           <span className="font-headline text-[10px] font-bold uppercase tracking-widest mt-1">Account</span>
         </Link>

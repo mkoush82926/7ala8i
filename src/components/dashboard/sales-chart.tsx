@@ -27,14 +27,13 @@ function CustomTooltip({
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: "#191c1e",
+      background: "#091135",
       border: "none",
-      borderRadius: 10,
+      borderRadius: 12,
       padding: "10px 16px",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
     }}>
       <p style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p>
-      <p style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "Manrope, sans-serif" }}>
+      <p style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--font-intervar), sans-serif" }}>
         {payload[0].value.toFixed(1)} JOD
       </p>
     </div>
@@ -67,39 +66,35 @@ export function SalesChart() {
   return (
     <div style={{
       background: "#ffffff",
-      border: "1px solid #eceef0",
-      borderRadius: 20,
+      border: "1px solid #e1e9f0",
+      borderRadius: 12,
       padding: "32px 36px",
       height: "100%",
       display: "flex",
       flexDirection: "column",
-      boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-      transition: "box-shadow 0.2s ease",
     }}
-    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 28px rgba(0,0,0,0.08)"; }}
-    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 4px rgba(0,0,0,0.05)"; }}
     >
       {/* Header row */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
         <div>
           <h3 style={{
-            fontFamily: "Manrope, sans-serif",
+            fontFamily: "var(--font-intervar), sans-serif",
             fontSize: 18,
             fontWeight: 800,
-            color: "#191c1e",
-            letterSpacing: "-0.03em",
+            color: "#091135",
+            letterSpacing: "0.01em",
             margin: "0 0 4px",
           }}>
             {t.dashboard.revenueOverview || "Revenue Overview"}
           </h3>
-          <p style={{ fontSize: 12, color: "#b0b3b8", margin: 0 }}>Track your earnings over time</p>
+          <p style={{ fontSize: 12, color: "#b1bbcd", margin: 0 }}>Track your earnings over time</p>
         </div>
 
         {/* Period toggle — pill style */}
         <div style={{
           display: "flex",
-          background: "#f4f6f8",
-          borderRadius: 12,
+          background: "#e1e9f0",
+          borderRadius: 8,
           padding: 4,
           gap: 2,
         }}>
@@ -113,13 +108,12 @@ export function SalesChart() {
                 fontWeight: 700,
                 textTransform: "uppercase" as const,
                 letterSpacing: "0.08em",
-                borderRadius: 9,
+                borderRadius: 8,
                 border: "none",
                 cursor: "pointer",
                 transition: "all 0.18s ease",
-                background: period === p ? "#191c1e" : "transparent",
-                color: period === p ? "#ffffff" : "#76777d",
-                boxShadow: period === p ? "0 2px 8px rgba(0,0,0,0.18)" : "none",
+                background: period === p ? "#f5f3ff" : "transparent",
+                color: period === p ? "#091135" : "#36394a",
               }}
             >
               {periodLabels[p]}
@@ -138,7 +132,7 @@ export function SalesChart() {
       >
         {loading ? (
           <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Loader2 size={24} style={{ color: "#b0b3b8", animation: "spin 1s linear infinite" }} />
+            <Loader2 size={24} style={{ color: "#b1bbcd", animation: "spin 1s linear infinite" }} />
           </div>
         ) : data.length === 0 ? (
           <div style={{
@@ -150,41 +144,41 @@ export function SalesChart() {
             gap: 12,
           }}>
             <div style={{
-              width: 48, height: 48, borderRadius: 14,
-              background: "#f4f6f8",
+              width: 48, height: 48, borderRadius: 12,
+              background: "#e1e9f0",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <TrendingUp size={22} style={{ color: "#c6c6cc" }} />
+              <TrendingUp size={22} style={{ color: "#b1bbcd" }} />
             </div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#b0b3b8", margin: 0 }}>No revenue data for this period</p>
-            <p style={{ fontSize: 11, color: "#c6c6cc", margin: 0 }}>Bookings will appear here once completed</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#b1bbcd", margin: 0 }}>No revenue data for this period</p>
+            <p style={{ fontSize: 11, color: "#b1bbcd", margin: 0 }}>Bookings will appear here once completed</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 8, right: 4, left: -16, bottom: 0 }}>
               <defs>
                 <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#191c1e" stopOpacity={0.12} />
-                  <stop offset="100%" stopColor="#191c1e" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#091135" stopOpacity={0.12} />
+                  <stop offset="100%" stopColor="#091135" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f2f5" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e1e9f0" vertical={false} />
               <XAxis
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 10, fill: "#b0b3b8", fontWeight: 700 }}
+                tick={{ fontSize: 10, fill: "#b1bbcd", fontWeight: 700 }}
               />
-              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#b0b3b8" }} />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#eceef0", strokeWidth: 1 }} />
+              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#b1bbcd" }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#e1e9f0", strokeWidth: 1 }} />
               <Area
                 type="monotone"
                 dataKey="revenue"
-                stroke="#191c1e"
+                stroke="#091135"
                 strokeWidth={2.5}
                 fill="url(#revenueGrad)"
                 dot={false}
-                activeDot={{ r: 5, fill: "#191c1e", stroke: "#ffffff", strokeWidth: 2.5 }}
+                activeDot={{ r: 5, fill: "#091135", stroke: "#ffffff", strokeWidth: 2.5 }}
               />
             </AreaChart>
           </ResponsiveContainer>

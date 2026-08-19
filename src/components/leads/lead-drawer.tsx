@@ -91,7 +91,7 @@ export function LeadDrawer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[4px] z-50"
+            className="fixed inset-0 bg-[#091135]/40 z-50"
             onClick={() => setDrawerOpen(false)}
           />
 
@@ -102,7 +102,7 @@ export function LeadDrawer() {
             exit={{ x: isRTL ? "-100%" : "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className={cn(
-                "fixed inset-y-0 z-50 w-full md:w-[480px] bg-[var(--bg-primary)] shadow-2xl flex flex-col",
+                "fixed inset-y-0 z-50 w-full md:w-[480px] bg-[var(--bg-primary)] flex flex-col",
                 "end-0 border-s border-[var(--border-primary)]"
               )}
           >
@@ -121,8 +121,8 @@ export function LeadDrawer() {
 
             {/* Avatar + Name */}
             <div className="px-6 py-6 flex items-center gap-4 border-b border-[var(--border-primary)]">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--accent-lavender)] to-[var(--accent-blue)] flex items-center justify-center flex-shrink-0">
-                <span className="text-[14px] font-medium text-[#0A0A0A]">
+              <div className="w-12 h-12 rounded-full bg-[#f5f3ff] flex items-center justify-center flex-shrink-0">
+                <span className="text-[14px] font-medium text-[#091135]">
                   {form.name
                     .split(" ")
                     .map((n) => n[0])
@@ -195,7 +195,7 @@ export function LeadDrawer() {
                     onChange={(e) =>
                       setForm((f) => ({ ...f, phone: e.target.value }))
                     }
-                    className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--accent-mint)] focus:outline-none transition-colors"
+                    className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--border-hover)] focus:outline-none transition-colors"
                     placeholder="+962..."
                   />
                 </div>
@@ -212,7 +212,7 @@ export function LeadDrawer() {
                     onChange={(e) =>
                       setForm((f) => ({ ...f, value: e.target.value }))
                     }
-                    className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--accent-mint)] focus:outline-none transition-colors"
+                    className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--border-hover)] focus:outline-none transition-colors"
                     placeholder="0.00"
                   />
                 </div>
@@ -228,7 +228,7 @@ export function LeadDrawer() {
                     onChange={(e) =>
                       setForm((f) => ({ ...f, notes: e.target.value }))
                     }
-                    className="w-full h-24 px-3 py-2 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--accent-mint)] focus:outline-none transition-colors resize-none"
+                    className="w-full h-24 px-3 py-2 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--border-hover)] focus:outline-none transition-colors resize-none"
                     placeholder="Wedding groom, VIP package, allergies..."
                   />
                 </div>

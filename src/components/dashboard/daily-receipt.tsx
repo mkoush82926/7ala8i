@@ -83,37 +83,34 @@ export function DailyReceipt() {
     return (
       <div style={{
         background: "#ffffff",
-        border: "1px solid #eceef0",
-        borderRadius: 20,
+        border: "1px solid #e1e9f0",
+        borderRadius: 12,
         padding: "32px 36px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         height: "100%",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
       }}>
-        <Loader2 size={24} style={{ color: "#b0b3b8" }} className="animate-spin" />
+        <Loader2 size={24} style={{ color: "#b1bbcd" }} className="animate-spin" />
       </div>
     );
   }
 
   return (
     <div style={{
-      background: "#191c1e",   /* dark premium card */
-      border: "none",
-      borderRadius: 20,
+      background: "#091135",   /* dark premium card */
+      border: "1px solid #e1e9f0",
+      borderRadius: 12,
       padding: "32px 32px 28px",
       height: "100%",
       display: "flex",
       flexDirection: "column",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.20)",
       position: "relative",
       overflow: "hidden",
     }}>
       {/* Subtle background pattern */}
       <div style={{
         position: "absolute", inset: 0, opacity: 0.04,
-        backgroundImage: "radial-gradient(circle at 100% 0%, #fff 0%, transparent 60%)",
         pointerEvents: "none",
       }} />
 
@@ -125,18 +122,18 @@ export function DailyReceipt() {
               Today
             </p>
             <h3 style={{
-              fontFamily: "Manrope, sans-serif",
+              fontFamily: "var(--font-intervar), sans-serif",
               fontSize: 18,
               fontWeight: 800,
               color: "#ffffff",
-              letterSpacing: "-0.03em",
+              letterSpacing: "0.01em",
               margin: 0,
             }}>
               {t.dashboard.dailySummary || "Daily Summary"}
             </h3>
           </div>
           <div style={{
-            width: 36, height: 36, borderRadius: 10,
+            width: 36, height: 36, borderRadius: 12,
             background: "rgba(255,255,255,0.1)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
@@ -158,13 +155,13 @@ export function DailyReceipt() {
             justifyContent: "space-between",
             alignItems: "center",
             background: "rgba(255,255,255,0.07)",
-            borderRadius: 14,
+            borderRadius: 12,
             padding: "16px 20px",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{
-              width: 40, height: 40, borderRadius: 10,
+              width: 40, height: 40, borderRadius: 12,
               background: "rgba(255,255,255,0.12)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
@@ -179,7 +176,7 @@ export function DailyReceipt() {
               </p>
             </div>
           </div>
-          <span style={{ fontSize: 16, fontWeight: 800, color: "#ffffff", fontFamily: "Manrope, sans-serif", fontVariantNumeric: "tabular-nums" }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: "#ffffff", fontFamily: "var(--font-intervar), sans-serif", fontVariantNumeric: "tabular-nums" }}>
             {formatCurrency(cashTotal)}
           </span>
         </motion.div>
@@ -194,13 +191,13 @@ export function DailyReceipt() {
             justifyContent: "space-between",
             alignItems: "center",
             background: "rgba(255,255,255,0.07)",
-            borderRadius: 14,
+            borderRadius: 12,
             padding: "16px 20px",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{
-              width: 40, height: 40, borderRadius: 10,
+              width: 40, height: 40, borderRadius: 12,
               background: "rgba(255,255,255,0.12)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
@@ -215,7 +212,7 @@ export function DailyReceipt() {
               </p>
             </div>
           </div>
-          <span style={{ fontSize: 16, fontWeight: 800, color: "#ffffff", fontFamily: "Manrope, sans-serif", fontVariantNumeric: "tabular-nums" }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: "#ffffff", fontFamily: "var(--font-intervar), sans-serif", fontVariantNumeric: "tabular-nums" }}>
             {formatCurrency(cardTotal)}
           </span>
         </motion.div>
@@ -275,11 +272,11 @@ export function DailyReceipt() {
             <p style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", margin: 0 }}>VAT Included (16%)</p>
           </div>
           <span style={{
-            fontFamily: "Manrope, sans-serif",
+            fontFamily: "var(--font-intervar), sans-serif",
             fontSize: 28,
             fontWeight: 900,
             color: "#ffffff",
-            letterSpacing: "-0.04em",
+            letterSpacing: "0.018em",
             lineHeight: 1,
           }}>
             {formatCurrency(totalSales)}

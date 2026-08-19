@@ -15,16 +15,19 @@ type BookingStep = "landing" | "services" | "barber" | "datetime" | "confirm";
 const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 
 // ─── Colour tokens (inline so Tailwind purging can't break them) ───
+// Data Observatory on Cloud Paper palette — see design-system/clearbit-reference.md
 const C = {
-  black:   "#111827",
-  white:   "#ffffff",
-  surface: "#f9fafb",
-  border:  "#e5e7eb",
-  muted:   "#9ca3af",
-  subtle:  "#6b7280",
-  green:   "#10b981",
-  yellow:  "#f59e0b",
-  red:     "#ef4444",
+  black:   "#091135", // Midnight Ink — structural dark ink / primary text
+  white:   "#ffffff", // Paper — card & canvas surfaces
+  surface: "#f5f3ff", // Lavender Wash — section tint zones + repeated/structural selection state
+  border:  "#e1e9f0", // Frost Border — hairline borders
+  muted:   "#36394a", // Slate — secondary/muted text
+  subtle:  "#36394a", // Slate — secondary/muted text
+  mist:    "#b1bbcd", // Mist — soft secondary neutral, disabled states
+  blue:    "#0f77ff", // Electric Blue — focus outline, checkmarks, star icon (never CTA fill)
+  green:   "#127ee3", // Cobalt Surface — the single primary-CTA fill color
+  yellow:  "#0f77ff", // Electric Blue — reused for star ratings
+  red:     "#ba1a1a", // destructive/error — separate semantic channel
 };
 
 function generateDays(count: number) {
@@ -71,7 +74,7 @@ function StepLabel({ text }: { text: string }) {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.035em", color: C.black, fontFamily: "'Manrope',system-ui,sans-serif", margin: "0 0 8px" }}>
+    <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "0.014em", color: C.black, fontFamily: "var(--font-intervar),sans-serif", margin: "0 0 8px" }}>
       {children}
     </h1>
   );
@@ -98,13 +101,13 @@ function NavBtn({ onClick, icon }: { onClick: () => void; icon: string }) {
     <button
       onClick={onClick}
       style={{
-        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-        background: C.surface, border: `1px solid ${C.border}`,
+        width: 44, height: 44, borderRadius: 8, flexShrink: 0,
+        background: C.white, border: `1px solid ${C.border}`,
         display: "flex", alignItems: "center", justifyContent: "center",
         cursor: "pointer", transition: "all 120ms ease",
       }}
-      onMouseEnter={e => { e.currentTarget.style.background = "#f0f0f0"; }}
-      onMouseLeave={e => { e.currentTarget.style.background = C.surface; }}
+      onMouseEnter={e => { e.currentTarget.style.background = C.surface; }}
+      onMouseLeave={e => { e.currentTarget.style.background = C.white; }}
     >
       <span className="material-symbols-outlined" style={{ fontSize: 20, color: C.subtle }}>{icon}</span>
     </button>
@@ -117,9 +120,9 @@ function NextBtn({ onClick, disabled, children }: { onClick: () => void; disable
       onClick={onClick}
       disabled={disabled}
       style={{
-        height: 48, padding: "0 28px", borderRadius: 12,
-        background: disabled ? "#d1d5db" : C.black,
-        color: C.white,
+        height: 48, padding: "0 28px", borderRadius: 8,
+        background: disabled ? C.border : C.green,
+        color: disabled ? C.mist : C.white,
         fontWeight: 700, fontSize: 14, fontFamily: FF,
         border: "none", cursor: disabled ? "not-allowed" : "pointer",
         display: "flex", alignItems: "center", gap: 8,
@@ -275,22 +278,21 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}
           >
             <div style={{
-              background: C.white, borderRadius: 24,
+              background: C.white, borderRadius: 12,
               border: `1px solid ${C.border}`,
-              boxShadow: "0 4px 40px rgba(0,0,0,0.07)",
               padding: "48px 40px",
               display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
             }}>
               {/* Icon */}
               <div style={{
-                width: 80, height: 80, borderRadius: 20,
+                width: 80, height: 80, borderRadius: 12,
                 background: C.black, display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: 28, boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+                marginBottom: 28,
               }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 36, color: C.white, fontVariationSettings: "'FILL' 1" }}>content_cut</span>
               </div>
 
-              <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.035em", fontFamily: "'Manrope',system-ui,sans-serif", margin: "0 0 8px" }}>
+              <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "0.014em", fontFamily: "var(--font-intervar),sans-serif", margin: "0 0 8px" }}>
                 {t.booking.bookAppointment}
               </h2>
               <p style={{ fontSize: 14, color: C.subtle, marginBottom: 36, display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
@@ -307,13 +309,13 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 ].map(f => (
                   <div key={f.icon} style={{
                     display: "flex", alignItems: "center", gap: 16,
-                    padding: "16px 20px", background: C.surface, borderRadius: 14,
+                    padding: "16px 20px", background: C.surface, borderRadius: 12,
                     textAlign: "left", border: `1px solid ${C.border}`,
                   }}>
                     <div style={{
                       width: 44, height: 44, borderRadius: 12, background: C.white,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      boxShadow: "0 2px 6px rgba(0,0,0,0.07)", flexShrink: 0,
+                      flexShrink: 0,
                       border: `1px solid ${C.border}`,
                     }}>
                       <span className="material-symbols-outlined" style={{ fontSize: 20, color: C.black }}>{f.icon}</span>
@@ -330,15 +332,14 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 onClick={() => setStep("services")}
                 style={{
                   width: "100%", height: 52,
-                  background: C.black, color: C.white,
-                  borderRadius: 14, border: "none", cursor: "pointer",
+                  background: C.green, color: C.white,
+                  borderRadius: 8, border: "none", cursor: "pointer",
                   fontWeight: 700, fontSize: 15, fontFamily: FF,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                   transition: "all 150ms ease",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#1f2937"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = C.black; e.currentTarget.style.transform = "none"; }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "none"; }}
               >
                 {t.booking.bookAppointment}
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{isRTL ? 'arrow_back' : 'arrow_forward'}</span>
@@ -355,7 +356,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 32 }}>
-              <StepLabel text={`${t.booking.step} 1 ${t.booking.of} 4 \u00B7 ${t.booking.services}`} />
+              <StepLabel text={`${t.booking.step} 1 ${t.booking.of} 4 · ${t.booking.services}`} />
               <SectionTitle>{t.booking.selectServices}</SectionTitle>
               <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
@@ -373,10 +374,9 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                       key={service.id}
                       onClick={() => setSelectedServices(prev => isSelected ? prev.filter(id => id !== service.id) : [...prev, service.id])}
                       style={{
-                        padding: "20px", borderRadius: 16, textAlign: "left", cursor: "pointer",
+                        padding: "20px", borderRadius: 12, textAlign: "left", cursor: "pointer",
                         border: isSelected ? `2px solid ${C.black}` : `1.5px solid ${C.border}`,
-                        background: isSelected ? "#f9fafb" : C.white,
-                        boxShadow: isSelected ? "0 0 0 3px rgba(0,0,0,0.06)" : "0 1px 4px rgba(0,0,0,0.04)",
+                        background: isSelected ? C.surface : C.white,
                         transition: "all 140ms ease",
                         display: "flex", flexDirection: "column", gap: 12,
                         fontFamily: FF,
@@ -394,7 +394,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                         <div style={{
                           width: 22, height: 22, borderRadius: "50%",
                           border: isSelected ? "none" : `2px solid ${C.border}`,
-                          background: isSelected ? C.black : "transparent",
+                          background: isSelected ? C.blue : "transparent",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           flexShrink: 0,
                         }}>
@@ -403,7 +403,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                       </div>
 
                       <div>
-                        <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 3px", letterSpacing: "-0.01em" }}>
+                        <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 3px", letterSpacing: "0.008em" }}>
                           {isRTL && service.name_ar ? service.name_ar : service.name}
                         </p>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
@@ -447,7 +447,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 28 }}>
-              <StepLabel text={`${t.booking.step} 2 ${t.booking.of} 4 \u00B7 ${t.booking.chooseBarber}`} />
+              <StepLabel text={`${t.booking.step} 2 ${t.booking.of} 4 · ${t.booking.chooseBarber}`} />
               <SectionTitle>{t.booking.chooseBarber}</SectionTitle>
               <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
@@ -457,7 +457,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
               <button
                 onClick={() => { setSelectedBarber("any"); setStep("datetime"); }}
                 style={{
-                  padding: "24px 20px", borderRadius: 16, textAlign: "left", cursor: "pointer",
+                  padding: "24px 20px", borderRadius: 12, textAlign: "left", cursor: "pointer",
                   border: selectedBarber === "any" ? `2px solid ${C.black}` : `1.5px solid ${C.border}`,
                   background: selectedBarber === "any" ? C.surface : C.white,
                   display: "flex", flexDirection: "column", gap: 12, fontFamily: FF,
@@ -478,7 +478,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                   key={barber.id}
                   onClick={() => { setSelectedBarber(barber.id); setStep("datetime"); }}
                   style={{
-                    padding: "24px 20px", borderRadius: 16, textAlign: "left", cursor: "pointer",
+                    padding: "24px 20px", borderRadius: 12, textAlign: "left", cursor: "pointer",
                     border: selectedBarber === barber.id ? `2px solid ${C.black}` : `1.5px solid ${C.border}`,
                     background: selectedBarber === barber.id ? C.surface : C.white,
                     display: "flex", flexDirection: "column", gap: 12, fontFamily: FF,
@@ -498,7 +498,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
 
             {/* Selection summary */}
             {selectedServices.length > 0 && (
-              <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 20px", marginBottom: 24 }}>
+              <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 20px", marginBottom: 24 }}>
                 <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.muted, marginBottom: 6 }}>Your Selection</p>
                 <p style={{ fontSize: 14, fontWeight: 700, color: C.black, marginBottom: 4 }}>
                   {serviceList.filter(s => selectedServices.includes(s.id)).map(s => s.name).join(", ")}
@@ -526,7 +526,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 28 }}>
-              <StepLabel text={`${t.booking.step} 3 ${t.booking.of} 4 \u00B7 ${t.booking.pickDateTime}`} />
+              <StepLabel text={`${t.booking.step} 3 ${t.booking.of} 4 · ${t.booking.pickDateTime}`} />
               <SectionTitle>{t.booking.pickDateTime}</SectionTitle>
               <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
@@ -545,10 +545,10 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                     key={d.full}
                     onClick={() => { setSelectedDate(d.full); setSelectedTime(null); }}
                     style={{
-                      width: 60, minHeight: 76, borderRadius: 14, flexShrink: 0,
+                      width: 60, minHeight: 76, borderRadius: 8, flexShrink: 0,
                       border: selectedDate === d.full ? "none" : `1.5px solid ${C.border}`,
-                      background: selectedDate === d.full ? C.black : C.white,
-                      color: selectedDate === d.full ? C.white : C.black,
+                      background: selectedDate === d.full ? C.surface : C.white,
+                      color: C.black,
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
                       cursor: "pointer", transition: "all 120ms ease", fontFamily: FF,
                     }}
@@ -593,10 +593,10 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                               disabled={isOccupied}
                               onClick={() => setSelectedTime(time)}
                               style={{
-                                padding: "12px 0", borderRadius: 10, border: "2px solid",
-                                borderColor: isSelected ? C.black : isOccupied ? C.border : C.border,
-                                background: isSelected ? C.black : isOccupied ? C.surface : C.white,
-                                color: isSelected ? C.white : isOccupied ? C.muted : C.black,
+                                padding: "12px 0", borderRadius: 8, border: "2px solid",
+                                borderColor: isSelected ? C.black : C.border,
+                                background: isSelected ? C.surface : C.white,
+                                color: isSelected ? C.black : isOccupied ? C.mist : C.black,
                                 fontSize: 13, fontWeight: 700, fontFamily: FF,
                                 cursor: isOccupied ? "not-allowed" : "pointer",
                                 textDecoration: isOccupied ? "line-through" : "none",
@@ -622,10 +622,10 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                               disabled={isOccupied}
                               onClick={() => setSelectedTime(time)}
                               style={{
-                                padding: "12px 0", borderRadius: 10, border: "2px solid",
+                                padding: "12px 0", borderRadius: 8, border: "2px solid",
                                 borderColor: isSelected ? C.black : C.border,
-                                background: isSelected ? C.black : isOccupied ? C.surface : C.white,
-                                color: isSelected ? C.white : isOccupied ? C.muted : C.black,
+                                background: isSelected ? C.surface : C.white,
+                                color: isSelected ? C.black : isOccupied ? C.mist : C.black,
                                 fontSize: 13, fontWeight: 700, fontFamily: FF,
                                 cursor: isOccupied ? "not-allowed" : "pointer",
                                 textDecoration: isOccupied ? "line-through" : "none",
@@ -668,7 +668,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 28 }}>
-              <StepLabel text={`${t.booking.step} 4 ${t.booking.of} 4 \u00B7 ${t.booking.confirmBooking}`} />
+              <StepLabel text={`${t.booking.step} 4 ${t.booking.of} 4 · ${t.booking.confirmBooking}`} />
               <SectionTitle>{t.booking.confirmBooking}</SectionTitle>
               <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
@@ -678,7 +678,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
 
               {/* Left: forms */}
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28 }}>
+                <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: 28 }}>
                   <h2 style={{ fontSize: 16, fontWeight: 700, color: C.black, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
                     <span className="material-symbols-outlined" style={{ fontSize: 18 }}>person_outline</span>
                     Your Information
@@ -699,13 +699,13 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                           onChange={e => field.setter(e.target.value)}
                           style={{
                             width: "100%", height: 48, padding: "0 16px",
-                            borderRadius: 12, border: `1.5px solid ${C.border}`,
-                            background: C.surface, fontSize: 14, fontWeight: 500,
+                            borderRadius: 8, border: `1.5px solid ${C.border}`,
+                            background: C.white, fontSize: 14, fontWeight: 500,
                             color: C.black, outline: "none", fontFamily: FF,
                             boxSizing: "border-box", transition: "all 150ms ease",
                           }}
-                          onFocus={e => { e.target.style.borderColor = C.black; e.target.style.background = C.white; e.target.style.boxShadow = "0 0 0 3px rgba(0,0,0,0.06)"; }}
-                          onBlur={e => { e.target.style.borderColor = C.border; e.target.style.background = C.surface; e.target.style.boxShadow = "none"; }}
+                          onFocus={e => { e.target.style.borderColor = C.blue; e.target.style.background = C.white; e.target.style.boxShadow = "var(--shadow-focus)"; }}
+                          onBlur={e => { e.target.style.borderColor = C.border; e.target.style.background = C.white; e.target.style.boxShadow = "none"; }}
                         />
                       </div>
                     ))}
@@ -715,11 +715,10 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 {/* Payment notice */}
                 <div style={{
                   display: "flex", gap: 16, padding: "18px 20px",
-                  background: "#f0fdf4", borderRadius: 14,
-                  border: "1px solid rgba(16,185,129,0.2)",
-                  borderLeft: "4px solid #10b981",
+                  background: C.surface, borderRadius: 12,
+                  border: `1px solid ${C.border}`,
                 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 20, color: C.green, flexShrink: 0 }}>payments</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 20, color: C.blue, flexShrink: 0 }}>payments</span>
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 700, color: C.black, margin: "0 0 4px" }}>No payment today</p>
                     <p style={{ fontSize: 12, color: C.subtle, margin: 0, lineHeight: 1.5 }}>
@@ -730,9 +729,9 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
               </div>
 
               {/* Right: summary card */}
-              <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 28, position: "sticky", top: 88, alignSelf: "start" }}>
+              <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 28, position: "sticky", top: 88, alignSelf: "start" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 900, color: C.black, letterSpacing: "-0.02em", margin: 0 }}>Summary</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 900, color: C.black, letterSpacing: "0.01em", margin: 0 }}>Summary</h3>
                   <span style={{ fontSize: 10, fontWeight: 700, background: C.black, color: C.white, padding: "3px 10px", borderRadius: 9999, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                     Estimated
                   </span>
@@ -740,9 +739,9 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
                   {serviceList.filter(s => selectedServices.includes(s.id)).map(s => (
-                    <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", background: C.white, borderRadius: 10, border: `1px solid ${C.border}` }}>
+                    <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", background: C.white, borderRadius: 12, border: `1px solid ${C.border}` }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: C.surface, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 12, background: C.surface, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <span className="material-symbols-outlined" style={{ fontSize: 16, color: C.subtle }}>{getServiceIcon(s.name)}</span>
                         </div>
                         <div>
@@ -771,11 +770,11 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.muted }}>Total</span>
-                  <span style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.04em", color: C.black }}>{totalPrice.toFixed(2)} JOD</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, letterSpacing: "0.016em", color: C.black }}>{totalPrice.toFixed(2)} JOD</span>
                 </div>
 
                 {bookingError && (
-                  <div style={{ padding: "12px 16px", background: "#fee2e2", borderRadius: 10, fontSize: 13, color: "#991b1b", marginBottom: 16 }}>
+                  <div style={{ padding: "12px 16px", background: "#fee2e2", borderRadius: 12, fontSize: 13, color: C.red, marginBottom: 16 }}>
                     {bookingError}
                   </div>
                 )}
@@ -785,8 +784,8 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                   onClick={handleBooking}
                   style={{
                     width: "100%", height: 52,
-                    background: (!clientName.trim() || !clientPhone.trim() || submitting) ? "#d1d5db" : C.black,
-                    color: C.white, borderRadius: 12, border: "none",
+                    background: (!clientName.trim() || !clientPhone.trim() || submitting) ? C.border : C.green,
+                    color: (!clientName.trim() || !clientPhone.trim() || submitting) ? C.mist : C.white, borderRadius: 8, border: "none",
                     fontWeight: 700, fontSize: 15, fontFamily: FF,
                     cursor: (!clientName.trim() || !clientPhone.trim() || submitting) ? "not-allowed" : "pointer",
                     transition: "all 150ms ease",
@@ -817,26 +816,24 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
           >
             <div style={{
-              background: C.white, border: `1px solid ${C.border}`, borderRadius: 24,
+              background: C.white, border: `1px solid ${C.border}`, borderRadius: 12,
               padding: "56px 40px", textAlign: "center",
-              boxShadow: "0 8px 40px rgba(0,0,0,0.08)",
             }}>
               <div style={{
-                width: 88, height: 88, borderRadius: "50%", background: C.black,
+                width: 88, height: 88, borderRadius: "50%", background: C.blue,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 margin: "0 auto 24px",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
               }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 44, color: C.white, fontVariationSettings: "'FILL' 1" }}>check_circle</span>
               </div>
-              <h2 style={{ fontSize: 40, fontWeight: 900, letterSpacing: "-0.04em", fontFamily: "'Manrope',system-ui,sans-serif", margin: "0 0 12px" }}>
+              <h2 style={{ fontSize: 40, fontWeight: 900, letterSpacing: "0.018em", fontFamily: "var(--font-intervar),sans-serif", margin: "0 0 12px" }}>
                 You&apos;re All Set!
               </h2>
               <p style={{ fontSize: 16, color: C.subtle, marginBottom: 36, maxWidth: 400, margin: "0 auto 36px" }}>
                 Your appointment at <strong style={{ color: C.black }}>{shop?.name}</strong> is confirmed.
               </p>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px 24px", marginBottom: 32, textAlign: "left" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "20px 24px", marginBottom: 32, textAlign: "left" }}>
                 {[
                   { label: "Barber",  value: selectedBarberName || "Any" },
                   { label: "Date",    value: format(new Date(selectedDate), "MMM d") },
@@ -853,8 +850,8 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
               <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
                 <Link href="/customer" style={{
                   display: "flex", alignItems: "center", gap: 8,
-                  padding: "13px 28px", borderRadius: 12,
-                  background: C.black, color: C.white,
+                  padding: "13px 28px", borderRadius: 8,
+                  background: C.green, color: C.white,
                   fontWeight: 700, fontSize: 14, textDecoration: "none",
                 }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>event_note</span>
@@ -862,8 +859,8 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 </Link>
                 <Link href="/explore" style={{
                   display: "flex", alignItems: "center", gap: 6,
-                  padding: "13px 28px", borderRadius: 12,
-                  background: C.surface, color: C.black, border: `1px solid ${C.border}`,
+                  padding: "13px 28px", borderRadius: 8,
+                  background: C.white, color: C.black, border: `1px solid ${C.border}`,
                   fontWeight: 700, fontSize: 14, textDecoration: "none",
                 }}>
                   Explore More

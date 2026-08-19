@@ -50,7 +50,7 @@ function Stars({ rating, size = 16 }: { rating: number; size?: number }) {
         <span
           key={s}
           className="material-symbols-outlined"
-          style={{ fontSize: size, color: s <= Math.round(rating) ? "#f59e0b" : "#e5e7eb", fontVariationSettings: s <= Math.round(rating) ? "'FILL' 1" : "'FILL' 0" }}
+          style={{ fontSize: size, color: s <= Math.round(rating) ? "#0f77ff" : "#e1e9f0", fontVariationSettings: s <= Math.round(rating) ? "'FILL' 1" : "'FILL' 0" }}
         >star</span>
       ))}
     </div>
@@ -61,12 +61,12 @@ function RatingBar({ star, count, total }: { star: number; count: number; total:
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
     <div className="flex items-center gap-2 text-sm">
-      <span className="text-xs font-semibold text-neutral-500 w-4">{star}</span>
-      <span className="material-symbols-outlined text-amber-400 text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-      <div className="flex-1 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-        <div className="h-full bg-amber-400 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+      <span className="text-xs font-semibold text-[#36394a] w-4">{star}</span>
+      <span className="material-symbols-outlined text-[#0f77ff] text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+      <div className="flex-1 h-1.5 bg-[#e1e9f0] rounded-full overflow-hidden">
+        <div className="h-full bg-[#0f77ff] rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs text-neutral-400 w-6 text-right">{count}</span>
+      <span className="text-xs text-[#36394a] w-6 text-right">{count}</span>
     </div>
   );
 }
@@ -116,10 +116,10 @@ export default function ShopProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-neutral-400 font-medium">Loading shop…</p>
+          <div className="w-10 h-10 border-2 border-[#091135] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-[#36394a] font-medium">Loading shop…</p>
         </div>
       </div>
     );
@@ -127,12 +127,12 @@ export default function ShopProfilePage() {
 
   if (!shop) {
     return (
-      <div className="min-h-screen bg-[#f9fafb] flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-neutral-100 flex items-center justify-center mb-6">
-          <span className="material-symbols-outlined text-neutral-400 text-4xl">storefront</span>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-[#f5f3ff] flex items-center justify-center mb-6">
+          <span className="material-symbols-outlined text-[#36394a] text-4xl">storefront</span>
         </div>
         <h2 className="text-2xl font-bold mb-2">Shop Not Found</h2>
-        <p className="text-neutral-500 mb-8 max-w-sm">The shop you're looking for doesn't exist or has been removed.</p>
+        <p className="text-[#36394a] mb-8 max-w-sm">The shop you&apos;re looking for doesn&apos;t exist or has been removed.</p>
         <Link href="/explore" className="btn-premium btn-premium-dark">← Back to Explore</Link>
       </div>
     );
@@ -152,19 +152,19 @@ export default function ShopProfilePage() {
   const FF = "'Cairo','Segoe UI',Tahoma,Arial,sans-serif";
 
   return (
-    <div style={{ background: "#f9fafb", minHeight: "100vh", fontFamily: FF }}>
+    <div style={{ background: "#ffffff", minHeight: "100vh", fontFamily: FF }}>
 
       {/* ── Sticky booking bar (appears on scroll) ── */}
       <div className={`sticky-booking-bar ${stickyVisible ? "visible" : ""}`}>
         <div className="max-w-5xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <div>
-            <p className="font-black text-zinc-900 text-base" style={{ fontFamily: "'Manrope',system-ui,sans-serif" }}>
+            <p className="font-black text-[#091135] text-base" style={{ fontFamily: "var(--font-intervar),sans-serif" }}>
               {shop.name}
             </p>
             {numReviews > 0 && (
               <div className="flex items-center gap-1">
                 <Stars rating={avgRating} size={12} />
-                <span className="text-xs text-neutral-500 font-semibold">{avgRating.toFixed(1)} ({numReviews})</span>
+                <span className="text-xs text-[#36394a] font-semibold">{avgRating.toFixed(1)} ({numReviews})</span>
               </div>
             )}
           </div>
@@ -183,7 +183,7 @@ export default function ShopProfilePage() {
         <div className="max-w-5xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm text-zinc-700 hover:text-zinc-900 transition-colors h-9 px-3.5 rounded-full shadow-sm border border-white/50 text-sm font-semibold"
+            className="flex items-center gap-1.5 bg-white text-[#36394a] hover:text-[#091135] transition-colors h-9 px-3.5 rounded-[8px] border border-[#e1e9f0] text-sm font-semibold"
             style={{ cursor: "pointer" }}
           >
             <span className="material-symbols-outlined text-[18px]">arrow_back</span>
@@ -191,7 +191,7 @@ export default function ShopProfilePage() {
           </button>
           <Link
             href={`/book/${shop.id}`}
-            className="bg-white/90 backdrop-blur-sm text-zinc-900 h-9 px-4 rounded-full shadow-sm border border-white/50 text-sm font-bold hover:bg-white transition-all"
+            className="bg-white text-[#091135] h-9 px-4 rounded-[8px] border border-[#e1e9f0] text-sm font-bold hover:border-[#0f77ff] transition-all"
           >
             Book Now
           </Link>
@@ -199,13 +199,13 @@ export default function ShopProfilePage() {
       </header>
 
       {/* ── Hero ── */}
-      <div ref={heroRef} className="relative h-72 sm:h-96 overflow-hidden bg-zinc-800">
+      <div ref={heroRef} className="relative h-72 sm:h-96 overflow-hidden bg-[#091135]">
         <img
           src={SERVICE_IMAGES[0]}
           alt={shop.name}
           className="w-full h-full object-cover opacity-60"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
+        <div className="absolute inset-0 bg-[#091135]/60" />
         <div className="absolute bottom-0 left-0 right-0 px-5 sm:px-8 pb-8 max-w-5xl mx-auto">
           {numReviews > 0 && (
             <div className="flex items-center gap-2 mb-3">
@@ -215,8 +215,8 @@ export default function ShopProfilePage() {
             </div>
           )}
           <h1
-            className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-2"
-            style={{ fontFamily: "'Manrope',system-ui,sans-serif", letterSpacing: "-0.03em" }}
+            className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-2"
+            style={{ fontFamily: "var(--font-intervar),sans-serif", letterSpacing: "0.018em" }}
           >
             {shop.name}
           </h1>
@@ -255,7 +255,7 @@ export default function ShopProfilePage() {
                 value: "View on Map",
                 external: true,
               },
-            ].filter(Boolean).map((info: any, i) => (
+            ].filter((info): info is { href: string; icon: string; label: string; value: string; external?: boolean } => Boolean(info)).map((info, i) => (
               <motion.a
                 key={i}
                 href={info.href}
@@ -264,14 +264,14 @@ export default function ShopProfilePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: i * 0.06 }}
-                className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-neutral-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 group transition-all"
+                className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-[#e1e9f0] hover:border-[#0f77ff] hover:-translate-y-0.5 group transition-all"
               >
-                <div className="w-11 h-11 rounded-full bg-neutral-100 flex items-center justify-center group-hover:bg-zinc-900 group-hover:text-white transition-colors shrink-0">
-                  <span className="material-symbols-outlined text-lg text-neutral-500 group-hover:text-white transition-colors">{info.icon}</span>
+                <div className="w-11 h-11 rounded-full bg-[#f5f3ff] flex items-center justify-center group-hover:bg-[#091135] group-hover:text-white transition-colors shrink-0">
+                  <span className="material-symbols-outlined text-lg text-[#36394a] group-hover:text-white transition-colors">{info.icon}</span>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">{info.label}</p>
-                  <p className="font-bold text-sm text-zinc-900">{info.value}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#36394a]">{info.label}</p>
+                  <p className="font-bold text-sm text-[#091135]">{info.value}</p>
                 </div>
               </motion.a>
             ))}
@@ -281,11 +281,11 @@ export default function ShopProfilePage() {
           {services.length > 0 && (
             <section className="mb-14">
               <div className="flex items-center gap-4 mb-7">
-                <h2 className="text-xl font-black text-zinc-900 shrink-0" style={{ fontFamily: "'Manrope',system-ui,sans-serif" }}>
+                <h2 className="text-xl font-black text-[#091135] shrink-0" style={{ fontFamily: "var(--font-intervar),sans-serif" }}>
                   Services
                 </h2>
-                <div className="flex-1 h-px bg-neutral-100" />
-                <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider shrink-0">{services.length} Available</span>
+                <div className="flex-1 h-px bg-[#e1e9f0]" />
+                <span className="text-xs font-bold text-[#36394a] uppercase tracking-wider shrink-0">{services.length} Available</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {services.map((service, idx) => (
@@ -294,7 +294,7 @@ export default function ShopProfilePage() {
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: idx * 0.05 }}
-                    className="flex items-center justify-between p-4 bg-white rounded-2xl border border-neutral-100 shadow-sm hover:shadow-md hover:border-neutral-200 hover:-translate-y-0.5 transition-all group"
+                    className="flex items-center justify-between p-4 bg-white rounded-2xl border border-[#e1e9f0] hover:border-[#0f77ff] hover:-translate-y-0.5 transition-all group"
                   >
                     <div className="flex items-center gap-3.5">
                       <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
@@ -305,18 +305,18 @@ export default function ShopProfilePage() {
                         />
                       </div>
                       <div>
-                        <h3 className="font-bold text-zinc-900 text-sm">{service.name}</h3>
-                        <div className="flex items-center gap-1 mt-0.5 text-xs text-neutral-400 font-medium">
+                        <h3 className="font-bold text-[#091135] text-sm">{service.name}</h3>
+                        <div className="flex items-center gap-1 mt-0.5 text-xs text-[#36394a] font-medium">
                           <span className="material-symbols-outlined text-[13px]">schedule</span>
                           {service.duration} min
                         </div>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <span className="font-black text-zinc-900 text-base">{service.price} JOD</span>
+                      <span className="font-black text-[#091135] text-base">{service.price} JOD</span>
                       <Link
                         href={`/book/${shop.id}`}
-                        className="text-xs font-bold text-zinc-900 underline underline-offset-2 hover:no-underline transition-all"
+                        className="text-xs font-bold text-[#091135] underline underline-offset-2 hover:no-underline transition-all"
                       >
                         Book →
                       </Link>
@@ -331,11 +331,11 @@ export default function ShopProfilePage() {
           {barbers.length > 0 && (
             <section className="mb-14">
               <div className="flex items-center gap-4 mb-7">
-                <h2 className="text-xl font-black text-zinc-900 shrink-0" style={{ fontFamily: "'Manrope',system-ui,sans-serif" }}>
+                <h2 className="text-xl font-black text-[#091135] shrink-0" style={{ fontFamily: "var(--font-intervar),sans-serif" }}>
                   Our Team
                 </h2>
-                <div className="flex-1 h-px bg-neutral-100" />
-                <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider shrink-0">{barbers.length} Barbers</span>
+                <div className="flex-1 h-px bg-[#e1e9f0]" />
+                <span className="text-xs font-bold text-[#36394a] uppercase tracking-wider shrink-0">{barbers.length} Barbers</span>
               </div>
               {/* Horizontal scroll row */}
               <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1">
@@ -348,18 +348,18 @@ export default function ShopProfilePage() {
                     className="flex flex-col items-center gap-2 shrink-0 cursor-pointer group"
                     style={{ width: 88 }}
                   >
-                    <div className="w-16 h-16 rounded-full bg-neutral-100 overflow-hidden border-2 border-transparent group-hover:border-zinc-900 transition-all">
+                    <div className="w-16 h-16 rounded-full bg-[#f5f3ff] overflow-hidden border-2 border-transparent group-hover:border-[#091135] transition-all">
                       {barber.avatar_url ? (
                         <img src={barber.avatar_url} alt={barber.full_name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xl font-black text-neutral-500 group-hover:text-zinc-900 transition-colors">
+                        <div className="w-full h-full flex items-center justify-center text-xl font-black text-[#36394a] group-hover:text-[#091135] transition-colors">
                           {barber.full_name.charAt(0).toUpperCase()}
                         </div>
                       )}
                     </div>
                     <div className="text-center">
-                      <p className="text-xs font-bold text-zinc-900 line-clamp-1">{barber.full_name.split(" ")[0]}</p>
-                      <p className="text-[10px] text-neutral-400">Barber</p>
+                      <p className="text-xs font-bold text-[#091135] line-clamp-1">{barber.full_name.split(" ")[0]}</p>
+                      <p className="text-[10px] text-[#36394a]">Barber</p>
                     </div>
                   </motion.div>
                 ))}
@@ -371,25 +371,25 @@ export default function ShopProfilePage() {
           {reviews.length > 0 && (
             <section className="mb-14">
               <div className="flex items-center gap-4 mb-7">
-                <h2 className="text-xl font-black text-zinc-900 shrink-0" style={{ fontFamily: "'Manrope',system-ui,sans-serif" }}>
+                <h2 className="text-xl font-black text-[#091135] shrink-0" style={{ fontFamily: "var(--font-intervar),sans-serif" }}>
                   Reviews
                 </h2>
-                <div className="flex-1 h-px bg-neutral-100" />
+                <div className="flex-1 h-px bg-[#e1e9f0]" />
               </div>
 
               {/* Rating summary */}
-              <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm p-6 mb-6">
+              <div className="bg-white rounded-2xl border border-[#e1e9f0] p-6 mb-6">
                 <div className="flex gap-8 items-start">
                   {/* Big number */}
                   <div className="text-center shrink-0">
                     <div
-                      className="text-5xl font-black text-zinc-900 leading-none"
-                      style={{ fontFamily: "'Manrope',system-ui,sans-serif", letterSpacing: "-0.04em" }}
+                      className="text-5xl font-black text-[#091135] leading-none"
+                      style={{ fontFamily: "var(--font-intervar),sans-serif", letterSpacing: "0.018em" }}
                     >
                       {avgRating.toFixed(1)}
                     </div>
                     <Stars rating={avgRating} size={16} />
-                    <p className="text-xs text-neutral-400 font-semibold mt-1">{numReviews} reviews</p>
+                    <p className="text-xs text-[#36394a] font-semibold mt-1">{numReviews} reviews</p>
                   </div>
                   {/* Bar chart */}
                   <div className="flex-1 space-y-2">
@@ -408,26 +408,26 @@ export default function ShopProfilePage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: i * 0.05 }}
-                    className="bg-white rounded-2xl border border-neutral-100 shadow-sm p-5"
+                    className="bg-white rounded-2xl border border-[#e1e9f0] p-5"
                   >
                     <div className="flex items-start gap-3 mb-3">
                       <div
-                        className="w-9 h-9 rounded-full bg-zinc-900 text-white flex items-center justify-center text-sm font-bold shrink-0"
+                        className="w-9 h-9 rounded-full bg-[#091135] text-white flex items-center justify-center text-sm font-bold shrink-0"
                       >
                         {review.clients?.name?.charAt(0)?.toUpperCase() || "C"}
                       </div>
                       <div className="flex-1">
-                        <p className="font-bold text-sm text-zinc-900">{review.clients?.name || "Customer"}</p>
+                        <p className="font-bold text-sm text-[#091135]">{review.clients?.name || "Customer"}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <Stars rating={review.rating} size={12} />
-                          <span className="text-xs text-neutral-400">
+                          <span className="text-xs text-[#36394a]">
                             {new Date(review.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                           </span>
                         </div>
                       </div>
                     </div>
                     {review.comment && (
-                      <p className="text-sm text-neutral-500 leading-relaxed pl-12 italic">
+                      <p className="text-sm text-[#36394a] leading-relaxed pl-12 italic">
                         &ldquo;{review.comment}&rdquo;
                       </p>
                     )}
@@ -439,14 +439,14 @@ export default function ShopProfilePage() {
 
           {/* ── Book CTA Banner ── */}
           <section
-            className="rounded-3xl p-8 md:p-12 text-center relative overflow-hidden mb-8"
-            style={{ background: "linear-gradient(135deg, #111827 0%, #1f2937 100%)" }}
+            className="rounded-2xl p-8 md:p-12 text-center relative overflow-hidden mb-8"
+            style={{ background: "#091135" }}
           >
-            <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(circle at 70% 30%, white 0%, transparent 60%)" }} />
+            <div className="absolute inset-0 opacity-[0.06]" />
             <div className="relative z-10">
               <h2
                 className="text-2xl sm:text-3xl font-black text-white mb-3"
-                style={{ fontFamily: "'Manrope',system-ui,sans-serif", letterSpacing: "-0.025em" }}
+                style={{ fontFamily: "var(--font-intervar),sans-serif", letterSpacing: "0.016em" }}
               >
                 Ready for your next cut?
               </h2>
@@ -466,11 +466,11 @@ export default function ShopProfilePage() {
       </main>
 
       {/* ── Mobile Bottom Nav ── */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-5 pt-3 md:hidden bg-white/95 backdrop-blur-xl"
-        style={{ borderTop: "1px solid #f0f0f0", paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}>
+      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-5 pt-3 md:hidden bg-white"
+        style={{ borderTop: "1px solid #e1e9f0", paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}>
         <button
           onClick={() => router.back()}
-          className="flex flex-col items-center text-neutral-400"
+          className="flex flex-col items-center text-[#36394a]"
           style={{ background: "none", border: "none", cursor: "pointer" }}
         >
           <span className="material-symbols-outlined text-[22px]">arrow_back</span>
@@ -478,12 +478,12 @@ export default function ShopProfilePage() {
         </button>
         <Link
           href={`/book/${shop.id}`}
-          className="flex items-center gap-2 bg-zinc-900 text-white px-8 py-3 rounded-full text-sm font-bold hover:bg-zinc-700 active:scale-95 transition-all"
+          className="flex items-center gap-2 bg-[#127ee3] text-white px-8 py-3 rounded-[8px] text-sm font-bold hover:opacity-90 active:scale-95 transition-all"
         >
           <span className="material-symbols-outlined text-[16px]">event_available</span>
           Book Now
         </Link>
-        <Link className="flex flex-col items-center text-neutral-400" href="/customer">
+        <Link className="flex flex-col items-center text-[#36394a]" href="/customer">
           <span className="material-symbols-outlined text-[22px]">person</span>
           <span className="text-[10px] font-bold mt-0.5">Account</span>
         </Link>

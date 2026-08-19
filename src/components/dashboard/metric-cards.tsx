@@ -122,21 +122,21 @@ export function MetricCards() {
       <div className="card-grid-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} style={{
-            padding: 28, borderRadius: 16,
-            border: "1px solid #eceef0",
+            padding: 28, borderRadius: 12,
+            border: "1px solid #e1e9f0",
             background: "#fff",
             minHeight: 152,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
             {/* Label + icon row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ height: 10, width: 80, borderRadius: 6, background: "#f0f2f5" }} />
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: "#f0f2f5" }} />
+              <div style={{ height: 10, width: 80, borderRadius: 9999, background: "#e1e9f0" }} />
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: "#e1e9f0" }} />
             </div>
             {/* Value placeholder */}
-            <div style={{ height: 36, width: 110, borderRadius: 8, background: "#f0f2f5" }} />
+            <div style={{ height: 36, width: 110, borderRadius: 8, background: "#e1e9f0" }} />
             {/* Change badge placeholder */}
-            <div style={{ height: 14, width: 90, borderRadius: 6, background: "#f0f2f5" }} />
+            <div style={{ height: 14, width: 90, borderRadius: 9999, background: "#e1e9f0" }} />
           </div>
         ))}
       </div>
@@ -153,36 +153,24 @@ export function MetricCards() {
           transition={{ delay: index * 0.08, type: "spring", stiffness: 300, damping: 25 }}
           style={{
             position: "relative", overflow: "hidden",
-            borderRadius: 16, display: "flex", flexDirection: "column",
+            borderRadius: 12, display: "flex", flexDirection: "column",
             justifyContent: "space-between",
             // Practice #3 — 28px padding (7×4 base unit)
             padding: 28,
             // Practice #5 — fixed min-height for visual consistency
             minHeight: 152,
-            background: metric.isDark ? "#191c1e" : "#ffffff",
-            border: metric.isDark ? "none" : "1px solid #eceef0",
-            // Practice #1 — contrasting shadow and border
-            boxShadow: metric.isDark
-              ? "0 8px 32px rgba(0,0,0,0.18)"
-              : "0 1px 4px rgba(0,0,0,0.05)",
+            background: metric.isDark ? "#091135" : "#ffffff",
+            // Practice #1 — every card gets a 1px Frost Border hairline, never a shadow
+            border: "1px solid #e1e9f0",
             // Practice #8 — transitions for interactive states
-            transition: "box-shadow 0.2s ease, transform 0.2s ease",
+            transition: "transform 0.2s ease",
             cursor: "default",
           }}
           // Practice #8 — hover + active states
           onMouseEnter={(e) => {
-            if (!metric.isDark) {
-              (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 28px rgba(0,0,0,0.09)";
-              (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
-            } else {
-              (e.currentTarget as HTMLDivElement).style.boxShadow = "0 12px 40px rgba(0,0,0,0.24)";
-              (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
-            }
+            (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLDivElement).style.boxShadow = metric.isDark
-              ? "0 8px 32px rgba(0,0,0,0.18)"
-              : "0 1px 4px rgba(0,0,0,0.05)";
             (e.currentTarget as HTMLDivElement).style.transform = "";
           }}
         >
@@ -195,7 +183,7 @@ export function MetricCards() {
             <span style={{
               fontSize: 9, fontWeight: 800, textTransform: "uppercase",
               letterSpacing: "0.2em", lineHeight: 1.5,
-              color: metric.isDark ? "rgba(255,255,255,0.6)" : "#76777d"
+              color: metric.isDark ? "rgba(255,255,255,0.6)" : "#36394a"
             }}>
               {metric.label}
             </span>
@@ -205,10 +193,10 @@ export function MetricCards() {
               </span>
             ) : (
               <div style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: "#f8fafc", border: "1px solid #e2e8f0",
+                width: 40, height: 40, borderRadius: 12,
+                background: "#ffffff", border: "1px solid #e1e9f0",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#191c1e",
+                color: "#091135",
               }}>
                 {metric.icon}
               </div>
@@ -220,14 +208,14 @@ export function MetricCards() {
             {!metric.isDark && (
               <>
                 <div
-                  style={{ fontSize: 36, fontWeight: 800, letterSpacing: "-0.03em", color: "#191c1e", lineHeight: 1, fontFamily: "Manrope, sans-serif" }}
+                  style={{ fontSize: 36, fontWeight: 800, letterSpacing: "0.016em", color: "#091135", lineHeight: 1, fontFamily: "var(--font-intervar), sans-serif" }}
                 >
                   <AnimatedNumber value={metric.value} />
                 </div>
 
                 {/* Change badge */}
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, color: metric.change >= 0 ? "#10b981" : "#ef4444" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, color: metric.change >= 0 ? "#0f77ff" : "#ba1a1a" }}>
                     {metric.change >= 0 ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
                     {metric.change >= 0 ? "+" : ""}{metric.change}% vs yesterday
                   </span>
@@ -238,9 +226,9 @@ export function MetricCards() {
             {/* Goal progress bar (dark card) */}
             {metric.isDark && (
               <div style={{ marginTop: 32 }}>
-                <div style={{ width: "100%", height: 3, background: "rgba(255,255,255,0.15)", borderRadius: 999, overflow: "hidden", marginBottom: 16 }}>
+                <div style={{ width: "100%", height: 3, background: "rgba(255,255,255,0.15)", borderRadius: 9999, overflow: "hidden", marginBottom: 16 }}>
                   <motion.div
-                    style={{ height: "100%", background: "#ffffff", borderRadius: 999, boxShadow: "0 0 12px rgba(255,255,255,0.4)" }}
+                    style={{ height: "100%", background: "#ffffff", borderRadius: 9999 }}
                     initial={{ width: 0 }}
                     animate={{ width: `${goalPct}%` }}
                     transition={{ delay: 0.5, duration: 1.2, ease: [0.25, 1, 0.5, 1] }}

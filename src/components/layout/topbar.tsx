@@ -40,7 +40,7 @@ function IconBtn({
         position: "relative",
         width: 44,
         height: 44,
-        borderRadius: 10,
+        borderRadius: 8,
         border: "none",
         background: hover ? "var(--bg-secondary)" : "transparent",
         display: "flex",
@@ -57,7 +57,7 @@ function IconBtn({
         <span style={{
           position: "absolute", top: 7, right: 7,
           width: 7, height: 7,
-          background: "#ef4444",
+          background: "#ba1a1a",
           borderRadius: "50%",
           border: "1.5px solid var(--bg-primary)",
         }} />
@@ -200,7 +200,6 @@ export function Topbar() {
                   background: "var(--bg-primary)",
                   border: "1px solid var(--border-primary)",
                   borderRadius: 12,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
                   padding: "6px",
                   zIndex: 50,
                 }}>
@@ -335,7 +334,7 @@ export function Topbar() {
               <div style={{
                 position: "absolute", top: "calc(100% + 8px)", right: isRTL ? "auto" : 0, left: isRTL ? 0 : "auto",
                 width: 280, background: "var(--bg-primary)", border: "1px solid var(--border-primary)",
-                borderRadius: 12, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", zIndex: 50, padding: 12
+                borderRadius: 12, zIndex: 50, padding: 12
               }}>
                 <h4 style={{ fontSize: 13, fontWeight: 700, margin: "0 0 8px", color: "var(--text-primary)" }}>Recent Bookings</h4>
                 {notifications.length === 0 ? <p style={{ fontSize: 12, color: "var(--text-tertiary)" }}>No recent bookings.</p> : (
@@ -401,7 +400,7 @@ export function Topbar() {
             <div style={{
               width: 44,
               height: 44,
-              borderRadius: 10,
+              borderRadius: 8,
               background: "var(--brand-primary)",
               display: "flex",
               alignItems: "center",
@@ -430,8 +429,7 @@ export function Topbar() {
                 minWidth: 200,
                 background: "var(--bg-primary)",
                 border: "1px solid var(--border-primary)",
-                borderRadius: 14,
-                boxShadow: "0 12px 32px rgba(0,0,0,0.12)",
+                borderRadius: 12,
                 padding: "8px",
                 zIndex: 50,
               }}>
@@ -488,7 +486,7 @@ export function Topbar() {
                     transition: "background 0.15s",
                     cursor: "pointer",
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5"; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(186,26,26,0.08)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
                 >
                   <LogOut size={15} />

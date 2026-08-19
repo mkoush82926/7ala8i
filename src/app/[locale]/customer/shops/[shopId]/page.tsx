@@ -13,8 +13,8 @@ export default function CustomerShopRedirect() {
   }, [shopId, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f9fafb]">
-      <div className="w-8 h-8 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen flex items-center justify-center bg-[#ffffff]">
+      <div className="w-8 h-8 border-2 border-[#091135] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }

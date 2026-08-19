@@ -8,10 +8,10 @@ import type { TranslationKeys } from "@/i18n/en";
 const translations: Record<string, TranslationKeys> = { en, ar };
 
 // ── Font constants ─────────────────────────────────────────────────────────
-// EN: Plus Jakarta Sans (Styrene-like — clean, geometric, premium)
-// AR: Tajawal (light, clean, designed for Arabic readability)
-export const FONT_EN = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
-export const FONT_AR = "var(--font-tajawal),'Segoe UI',Tahoma,Arial,sans-serif";
+// Single-family "data observatory" system: InterVar (EN) paired with
+// Noto Sans Arabic (AR) — modern humanist sans, no serif clash.
+export const FONT_EN = "var(--font-intervar),'Segoe UI',system-ui,sans-serif";
+export const FONT_AR = "var(--font-noto-arabic),'Segoe UI',Tahoma,Arial,sans-serif";
 
 /**
  * useTranslation — one-liner for translations + direction + font.

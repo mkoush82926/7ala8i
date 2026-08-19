@@ -76,11 +76,11 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       <div style={{ padding: "36px 24px 32px", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
           <h1
-            style={{ fontFamily: "Manrope, sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", color: "#191c1e", lineHeight: 1 }}
+            style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: "0.012em", color: "#091135", lineHeight: 1 }}
           >
             Halaqy
           </h1>
-          <p style={{ fontSize: 9, fontWeight: 700, color: "#76777d", textTransform: "uppercase", letterSpacing: "0.22em", marginTop: 8 }}>
+          <p style={{ fontSize: 9, fontWeight: 700, color: "#36394a", textTransform: "uppercase", letterSpacing: "0.22em", marginTop: 8 }}>
             Digital Atelier
           </p>
         </div>
@@ -122,12 +122,12 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
               onClick={onClose}
               style={{
                 display: "flex", alignItems: "center", gap: 12,
-                padding: "13px 16px", borderRadius: 10,
+                padding: "13px 16px", borderRadius: 8,
                 textDecoration: "none", fontSize: 13, fontWeight: 600,
                 letterSpacing: "0.01em",
                 transition: "all 0.2s",
-                background: isActive ? "#191c1e" : "transparent",
-                color: isActive ? "#ffffff" : "#76777d",
+                background: isActive ? "#f5f3ff" : "transparent",
+                color: isActive ? "#091135" : "#36394a",
               }}
             >
               <item.icon size={18} style={{ flexShrink: 0 }} />
@@ -140,7 +140,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       {/* Book Appointment CTA + Sign Out */}
       <div style={{ padding: "24px 20px 32px", marginTop: "auto" }}>
         {/* Divider line */}
-        <div style={{ height: 1, background: "#f0f2f5", marginBottom: 20 }} />
+        <div style={{ height: 1, background: "#e1e9f0", marginBottom: 20 }} />
         <Link
           href={`/${locale}/calendar`}
           onClick={onClose}
@@ -155,19 +155,19 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             width: "100%", height: 40,
-            borderRadius: 10, border: "1px solid #eceef0",
+            borderRadius: 8, border: "1px solid #e1e9f0",
             background: "transparent", fontSize: 13, fontWeight: 600,
-            color: "#76777d", cursor: "pointer",
+            color: "#36394a", cursor: "pointer",
             transition: "all 0.15s",
           }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLButtonElement).style.color = "#ba1a1a";
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "#fecdd3";
-            (e.currentTarget as HTMLButtonElement).style.background = "#fff5f5";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(186,26,26,0.3)";
+            (e.currentTarget as HTMLButtonElement).style.background = "rgba(186,26,26,0.08)";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.color = "#76777d";
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "#eceef0";
+            (e.currentTarget as HTMLButtonElement).style.color = "#36394a";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "#e1e9f0";
             (e.currentTarget as HTMLButtonElement).style.background = "transparent";
           }}
         >
@@ -191,7 +191,7 @@ export function Sidebar() {
           "hidden lg:flex fixed inset-y-0 z-40 w-72 bg-[var(--bg-primary)] border-e border-[var(--border-primary)] flex-col pt-20 transition-all",
           "start-0"
         )}
-        style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#e2e8f0" }}
+        style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#e1e9f0" }}
       >
         <SidebarContent />
       </aside>
@@ -204,7 +204,7 @@ export function Sidebar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 md:hidden bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 z-40 md:hidden bg-black/40"
               onClick={() => setMobileSidebarOpen(false)}
             />
             <motion.aside
@@ -212,10 +212,10 @@ export function Sidebar() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: isRTL ? 100 : -100, opacity: 0 }}
               className={cn(
-                "fixed inset-y-0 z-50 w-72 bg-[var(--bg-primary)] border-e border-[var(--border-primary)] shadow-xl flex flex-col",
+                "fixed inset-y-0 z-50 w-72 bg-[var(--bg-primary)] border-e border-[var(--border-primary)] flex flex-col",
                 "start-0"
               )}
-              style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#e2e8f0" }}
+              style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#e1e9f0" }}
             >
               <SidebarContent onClose={() => setMobileSidebarOpen(false)} />
             </motion.aside>

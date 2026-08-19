@@ -156,12 +156,12 @@ export function KanbanBoard() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h2
-            className="text-4xl font-extrabold tracking-tight text-[#191c1e]"
-            style={{ fontFamily: "Manrope, sans-serif" }}
+            className="text-4xl font-extrabold text-[#091135]"
+            style={{ fontFamily: "var(--font-intervar), sans-serif", letterSpacing: "0.016em" }}
           >
             {t.leads.crmPipeline}
           </h2>
-          <p className="text-[#45464c] mt-2 font-medium text-sm">
+          <p className="text-[#36394a] mt-2 font-medium text-sm">
             {leads.length} {t.leads.leadsAcross} {stages.length}{" "}
             {t.leads.stages}
           </p>
@@ -174,7 +174,7 @@ export function KanbanBoard() {
               onClick={() => setView("kanban")}
               className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "kanban"
-                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
+                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
                   : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -184,7 +184,7 @@ export function KanbanBoard() {
               onClick={() => setView("list")}
               className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "list"
-                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
+                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
                   : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -284,7 +284,7 @@ function LeadListView({
   };
 
   return (
-    <div className="rounded-xl border border-[#eceef0] bg-white overflow-hidden shadow-sm">
+    <div className="rounded-xl border border-[#e1e9f0] bg-white overflow-hidden">
       {/* Bulk actions bar */}
       <AnimatePresence>
         {selectedIds.length > 0 && (
@@ -314,25 +314,25 @@ function LeadListView({
       </AnimatePresence>
 
       {/* Table header */}
-      <div className="flex items-center border-b border-[#eceef0] px-6 py-3 bg-[#f7f9fb]">
+      <div className="flex items-center border-b border-[#e1e9f0] px-6 py-3 bg-[#f5f3ff]">
         <div className="w-8 flex-shrink-0">
           <input
             type="checkbox"
             checked={selectedIds.length === leads.length && leads.length > 0}
             onChange={toggleAll}
-            className="w-3.5 h-3.5 rounded cursor-pointer"
+            className="w-3.5 h-3.5 rounded-[8px] cursor-pointer"
           />
         </div>
-        <div className="flex-1 text-[11px] text-[#76777d] font-bold uppercase tracking-wider">
+        <div className="flex-1 text-[11px] text-[#36394a] font-bold uppercase tracking-wider">
           {t.leads.name}
         </div>
-        <div className="w-36 text-[11px] text-[#76777d] font-bold uppercase tracking-wider">
+        <div className="w-36 text-[11px] text-[#36394a] font-bold uppercase tracking-wider">
           {t.leads.phone}
         </div>
-        <div className="w-28 text-[11px] text-[#76777d] font-bold uppercase tracking-wider">
+        <div className="w-28 text-[11px] text-[#36394a] font-bold uppercase tracking-wider">
           {t.leads.stage}
         </div>
-        <div className="w-24 text-[11px] text-[#76777d] font-bold uppercase tracking-wider text-end">
+        <div className="w-24 text-[11px] text-[#36394a] font-bold uppercase tracking-wider text-end">
           {t.leads.value}
         </div>
       </div>
@@ -347,9 +347,9 @@ function LeadListView({
             exit={{ opacity: 0, height: 0 }}
             transition={{ delay: i * 0.02 }}
             className={cn(
-              "flex items-center px-6 py-4 border-b border-[#eceef0] last:border-b-0",
-              "hover:bg-[#f7f9fb] transition-colors cursor-pointer",
-              selectedIds.includes(lead.id) && "bg-[#f2f4f6]",
+              "flex items-center px-6 py-4 border-b border-[#e1e9f0] last:border-b-0",
+              "hover:bg-[#f5f3ff] transition-colors cursor-pointer",
+              selectedIds.includes(lead.id) && "bg-[#f5f3ff]",
             )}
             onClick={() => onLeadClick(lead)}
           >
@@ -364,28 +364,28 @@ function LeadListView({
                 type="checkbox"
                 checked={selectedIds.includes(lead.id)}
                 onChange={() => toggleSelect(lead.id)}
-                className="w-3.5 h-3.5 rounded cursor-pointer"
+                className="w-3.5 h-3.5 rounded-[8px] cursor-pointer"
               />
             </div>
             <div className="flex-1 flex items-center gap-3 min-w-0">
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
-                style={{ background: "#dde2f6", color: "#151b29", fontFamily: "Manrope, sans-serif" }}
+                style={{ background: "#f5f3ff", color: "#091135", fontFamily: "var(--font-intervar), sans-serif" }}
               >
                 {lead.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-[#191c1e] truncate">
+                <p className="text-sm font-bold text-[#091135] truncate">
                   {lead.name}
                 </p>
                 {lead.notes && (
-                  <p className="text-xs text-[#76777d] truncate">
+                  <p className="text-xs text-[#36394a] truncate">
                     {lead.notes}
                   </p>
                 )}
               </div>
             </div>
-            <div className="w-36 text-sm text-[#45464c] font-medium tabular-nums">
+            <div className="w-36 text-sm text-[#36394a] font-medium tabular-nums">
               {lead.phone}
             </div>
             <div className="w-28">
@@ -398,7 +398,7 @@ function LeadListView({
                 {stages.find((s) => s.id === lead.stage)?.label || lead.stage}
               </span>
             </div>
-            <div className="w-24 text-end text-sm text-[#191c1e] font-bold tabular-nums">
+            <div className="w-24 text-end text-sm text-[#091135] font-bold tabular-nums">
               {lead.value ? `${lead.value} ${t.common.jod}` : "—"}
             </div>
           </motion.div>

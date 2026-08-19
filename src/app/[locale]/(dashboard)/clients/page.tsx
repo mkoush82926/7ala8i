@@ -15,11 +15,11 @@ import { getClients } from "@/lib/queries/clients";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 
 const avatarColors = [
-  { bg: "#dde2f6", text: "#151b29" },
-  { bg: "#d5e3fc", text: "#0d1c2e" },
-  { bg: "#ffdea5", text: "#261900" },
-  { bg: "#e0e3e5", text: "#191c1e" },
-  { bg: "#151b29", text: "#ffffff" },
+  { bg: "#f5f3ff", text: "#091135" },
+  { bg: "#e1e9f0", text: "#091135" },
+  { bg: "#f5f3ff", text: "#091135" },
+  { bg: "#e1e9f0", text: "#091135" },
+  { bg: "#091135", text: "#ffffff" },
 ];
 
 export default function ClientsPage() {
@@ -58,39 +58,39 @@ export default function ClientsPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
-            <h2 style={{ fontFamily: "Manrope, sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", color: "#191c1e", margin: 0 }}>
+            <h2 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "0.014em", color: "#091135", margin: 0 }}>
               {t.sidebar.clients}
             </h2>
-            <p style={{ fontSize: 14, color: "#76777d", marginTop: 6, fontWeight: 400 }}>
+            <p style={{ fontSize: 14, color: "#36394a", marginTop: 6, fontWeight: 400 }}>
               {isRTL ? "إدارة قاعدة بيانات" : "Manage your database of"}{" "}
-              <strong style={{ color: "#191c1e" }}>{clients.length}</strong>{" "}
+              <strong style={{ color: "#091135" }}>{clients.length}</strong>{" "}
               {isRTL ? "عميل نشط" : "active clients"}
             </p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             {/* Search */}
             <div style={{ position: "relative" }}>
-              <span className="material-symbols-outlined" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#76777d", fontSize: 18 }}>search</span>
+              <span className="material-symbols-outlined" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#36394a", fontSize: 18 }}>search</span>
               <input
                 type="text"
                 placeholder={isRTL ? "البحث بالاسم أو الهاتف..." : "Search by name, phone, or email..."}
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 style={{
-                  width: 280, background: "#f8fafc", border: "1px solid #e2e8f0",
-                  borderRadius: 24, padding: "10px 16px 10px 40px",
-                  fontSize: 13, outline: "none", color: "#191c1e",
+                  width: 280, background: "#ffffff", border: "1px solid #e1e9f0",
+                  borderRadius: 8, padding: "10px 16px 10px 40px",
+                  fontSize: 13, outline: "none", color: "#091135",
                   transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#191c1e";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(25,28,30,0.08)";
-                  e.currentTarget.style.background = "#fff";
+                  e.currentTarget.style.borderColor = "#0f77ff";
+                  e.currentTarget.style.boxShadow = "var(--shadow-focus)";
+                  e.currentTarget.style.background = "#ffffff";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#e2e8f0";
+                  e.currentTarget.style.borderColor = "#e1e9f0";
                   e.currentTarget.style.boxShadow = "none";
-                  e.currentTarget.style.background = "#f8fafc";
+                  e.currentTarget.style.background = "#ffffff";
                 }}
               />
             </div>
@@ -112,11 +112,11 @@ export default function ClientsPage() {
           textAlign: "center", padding: "80px 0",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
         }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 56, color: "#c6c6cc" }}>group</span>
-          <p style={{ fontWeight: 700, color: "#76777d", fontSize: 16 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 56, color: "#e1e9f0" }}>group</span>
+          <p style={{ fontWeight: 700, color: "#36394a", fontSize: 16 }}>
             {isRTL ? "لا يوجد عملاء بعد" : "No clients yet"}
           </p>
-          <p style={{ fontSize: 13, color: "#b0b3b8", maxWidth: 320 }}>
+          <p style={{ fontSize: 13, color: "#b1bbcd", maxWidth: 320 }}>
             {isRTL ? "سيظهر العملاء هنا عند حجز مواعيدهم" : "Clients will appear here when they book appointments"}
           </p>
         </div>
@@ -140,8 +140,8 @@ export default function ClientsPage() {
                 style={{
                   // Practice #1 — white card on #f7f9fb bg with border + shadow
                   background: "#ffffff",
-                  border: "1px solid #eceef0",
-                  borderRadius: 16,
+                  border: "1px solid #e1e9f0",
+                  borderRadius: 12,
                   // Practice #3 — 24px = 6×4 base unit padding
                   padding: 24,
                   // Practice #5 — fixed min-height for grid consistency
@@ -149,18 +149,15 @@ export default function ClientsPage() {
                   display: "flex", flexDirection: "column", gap: 16,
                   cursor: "pointer",
                   position: "relative", overflow: "hidden",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-                  transition: "border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease",
+                  transition: "border-color 0.18s ease, transform 0.18s ease",
                 }}
                 // Practice #8 — hover, active states
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = "#d0d3d8";
-                  (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 28px rgba(0,0,0,0.09)";
+                  (e.currentTarget as HTMLDivElement).style.borderColor = "#b1bbcd";
                   (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = "#eceef0";
-                  (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 4px rgba(0,0,0,0.05)";
+                  (e.currentTarget as HTMLDivElement).style.borderColor = "#e1e9f0";
                   (e.currentTarget as HTMLDivElement).style.transform = "";
                 }}
                 onMouseDown={(e) => {
@@ -179,7 +176,7 @@ export default function ClientsPage() {
                       display: "flex", alignItems: "center", justifyContent: "center",
                       // Practice #2 — avatar initials ≥12px
                       fontSize: 14, fontWeight: 700,
-                      fontFamily: "Manrope, sans-serif",
+                      fontFamily: "var(--font-intervar), sans-serif",
                     }}
                   >
                     {initials}
@@ -192,7 +189,7 @@ export default function ClientsPage() {
                         if (phone) window.location.href = `tel:${phone}`;
                       }}
                       style={{
-                        padding: 8, background: "#f8fafc", border: "1px solid #eceef0",
+                        padding: 8, background: "#ffffff", border: "1px solid #e1e9f0",
                         borderRadius: "50%", cursor: "pointer",
                       }}
                     >
@@ -204,14 +201,14 @@ export default function ClientsPage() {
                 {/* Practice #2 — name 16px bold (min body size), phone 13px */}
                 <div style={{ flex: 1 }}>
                   <h3 style={{
-                    fontFamily: "Manrope, sans-serif",
-                    fontSize: 16, fontWeight: 700, color: "#191c1e",
+                    fontFamily: "var(--font-intervar), sans-serif",
+                    fontSize: 16, fontWeight: 700, color: "#091135",
                     margin: 0, lineHeight: 1.3,
                     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                   }}>
                     {name}
                   </h3>
-                  <p style={{ fontSize: 13, color: "#76777d", marginTop: 4, fontWeight: 400 }}>
+                  <p style={{ fontSize: 13, color: "#36394a", marginTop: 4, fontWeight: 400 }}>
                     {(client.phone as string) ?? "—"}
                   </p>
                 </div>
@@ -219,26 +216,26 @@ export default function ClientsPage() {
                 {/* Stats footer — isolated from card body by border */}
                 <div style={{
                   display: "flex", justifyContent: "space-between", alignItems: "center",
-                  paddingTop: 14, borderTop: "1px solid #f2f4f6",
+                  paddingTop: 14, borderTop: "1px solid #e1e9f0",
                   marginTop: "auto",
                 }}>
                   <div>
                     {/* Practice #2 — labels 9px UPPERCASE, values 13px bold */}
-                    <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.15em", color: "#b0b3b8", fontWeight: 700, display: "block" }}>
+                    <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.15em", color: "#b1bbcd", fontWeight: 700, display: "block" }}>
                       {isRTL ? "إجمالي الإنفاق" : "Total Spent"}
                     </span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: "#191c1e", fontFamily: "Manrope, sans-serif" }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#091135", fontFamily: "var(--font-intervar), sans-serif" }}>
                       {totalSpent.toFixed(0)} JOD
                     </span>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.15em", color: "#b0b3b8", fontWeight: 700, display: "block" }}>
+                    <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.15em", color: "#b1bbcd", fontWeight: 700, display: "block" }}>
                       {isRTL ? "البريد" : "Email"}
                     </span>
                     {hasEmail ? (
-                      <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#10b981", fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#0f77ff", fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                     ) : (
-                      <Minus size={16} style={{ color: "#c6c6cc", marginTop: 2 }} />
+                      <Minus size={16} style={{ color: "#e1e9f0", marginTop: 2 }} />
                     )}
                   </div>
                 </div>
@@ -284,7 +281,7 @@ export default function ClientsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/30 z-50 backdrop-blur-sm"
+              className="fixed inset-0 bg-[rgba(9,17,53,0.3)] z-50"
               onClick={() => setSelectedClient(null)}
             />
             <motion.div
@@ -292,12 +289,12 @@ export default function ClientsPage() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: isRTL ? -400 : 400, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className={`fixed top-0 ${isRTL ? "start-0" : "end-0"} w-full sm:w-[380px] h-full bg-surface-container-lowest border-s border-surface-container z-[60] overflow-y-auto shadow-2xl`}
+              className={`fixed top-0 ${isRTL ? "start-0" : "end-0"} w-full sm:w-[380px] h-full bg-surface-container-lowest border-s border-surface-container z-[60] overflow-y-auto`}
             >
               <div className="p-6">
                 {/* Close */}
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-on-surface" style={{ fontFamily: "Manrope, sans-serif" }}>
+                  <h3 className="text-lg font-bold text-on-surface" style={{ fontFamily: "var(--font-intervar), sans-serif" }}>
                     {isRTL ? "ملف العميل" : "Client Profile"}
                   </h3>
                   <button
@@ -312,11 +309,11 @@ export default function ClientsPage() {
                 <div className="text-center mb-6">
                   <div
                     className="w-16 h-16 rounded-full flex items-center justify-center text-[20px] font-bold mx-auto mb-3"
-                    style={{ background: "#000000", color: "#ffffff", fontFamily: "Manrope, sans-serif" }}
+                    style={{ background: "#091135", color: "#ffffff", fontFamily: "var(--font-intervar), sans-serif" }}
                   >
                     {(selectedClient.name as string)?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
                   </div>
-                  <h4 className="text-xl font-bold text-on-surface" style={{ fontFamily: "Manrope, sans-serif" }}>
+                  <h4 className="text-xl font-bold text-on-surface" style={{ fontFamily: "var(--font-intervar), sans-serif" }}>
                     {selectedClient.name as string}
                   </h4>
                 </div>

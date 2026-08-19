@@ -9,13 +9,14 @@ import { motion } from "framer-motion";
 const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 
 const T = {
-  dark:    "#191c1e",
-  mid:     "#45464c",
-  muted:   "#76777d",
-  outline: "#e2e8f0",
-  surfLow: "#f8fafc",
+  dark:    "#091135",
+  mid:     "#36394a",
+  muted:   "#36394a",
+  outline: "#e1e9f0",
+  surfLow: "#ffffff",
   white:   "#ffffff",
-  black:   "#000000",
+  black:   "#091135",
+  accent:  "#127ee3",
   error:   "#ba1a1a",
   errBg:   "#ffdad6",
 };
@@ -50,11 +51,11 @@ export default function ForgotPasswordPage() {
     <div style={{ background: T.white, minHeight: "100dvh", fontFamily: FF }}>
       {/* NavBar */}
       <nav className="auth-nav" style={{
-        background: "rgba(255,255,255,0.9)", backdropFilter: "blur(12px)",
+        background: T.white,
         borderBottom: `1px solid ${T.outline}`,
       }}>
         <Link href="/landing" style={{ textDecoration: "none" }}>
-          <span style={{ fontFamily: "'Manrope', sans-serif", fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", color: T.dark }}>
+          <span style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 20, fontWeight: 800, letterSpacing: "0.012em", color: T.dark }}>
             Halaqy
           </span>
         </Link>
@@ -62,7 +63,7 @@ export default function ForgotPasswordPage() {
           <Link
             href="/auth/login"
             className="btn btn-secondary"
-            style={{ borderRadius: 999, minHeight: 36, padding: "0 16px", fontSize: 12 }}
+            style={{ borderRadius: 9999, minHeight: 36, padding: "0 16px", fontSize: 12 }}
           >
             Back to Sign In
           </Link>
@@ -78,21 +79,21 @@ export default function ForgotPasswordPage() {
           style={{ width: "100%", maxWidth: 480 }}
         >
           <div className="auth-card" style={{
-            background: T.white, borderRadius: 24,
+            background: T.white, borderRadius: 12,
             border: `1px solid ${T.outline}`,
           }}>
             {sent ? (
               /* ── Success State ── */
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 16 }}>
                 <div style={{
-                  width: 64, height: 64, borderRadius: 20,
-                  background: "#d1fae5",
+                  width: 64, height: 64, borderRadius: 12,
+                  background: "rgba(15,119,255,0.1)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   marginBottom: 8,
                 }}>
-                  <CheckCircle size={28} style={{ color: "#059669" }} />
+                  <CheckCircle size={28} style={{ color: "#0f77ff" }} />
                 </div>
-                <h1 style={{ fontFamily: "'Manrope', sans-serif", fontSize: 24, fontWeight: 700, color: T.dark, margin: 0 }}>
+                <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 24, fontWeight: 700, color: T.dark, margin: 0 }}>
                   Check your email
                 </h1>
                 <p style={{ fontSize: 14, color: T.muted, maxWidth: 340, lineHeight: 1.6, margin: 0 }}>
@@ -105,8 +106,8 @@ export default function ForgotPasswordPage() {
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                       width: "100%", height: 52,
-                      background: T.black, color: T.white,
-                      borderRadius: 12, fontSize: 14, fontWeight: 700,
+                      background: T.accent, color: T.white,
+                      borderRadius: 8, fontSize: 14, fontWeight: 700,
                       textDecoration: "none",
                     }}
                   >
@@ -135,7 +136,7 @@ export default function ForgotPasswordPage() {
                       lock_reset
                     </span>
                   </div>
-                  <h1 style={{ fontFamily: "'Manrope', sans-serif", fontSize: 28, fontWeight: 300, letterSpacing: "-0.02em", color: T.dark, marginBottom: 10 }}>
+                  <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 300, letterSpacing: "0.016em", color: T.dark, marginBottom: 10 }}>
                     Reset password
                   </h1>
                   <p style={{ fontSize: 14, color: T.muted, fontWeight: 300, letterSpacing: "0.01em", textAlign: "center" }}>
@@ -171,14 +172,14 @@ export default function ForgotPasswordPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       style={{
                         height: 52, padding: "0 18px",
-                        borderRadius: 12, border: `1px solid ${T.outline}`,
+                        borderRadius: 8, border: `1px solid ${T.outline}`,
                         background: T.surfLow, fontFamily: FF, fontSize: 14,
                         color: T.dark, outline: "none", transition: "all 0.15s",
                       }}
                       onFocus={(e) => {
                         e.currentTarget.style.background = T.white;
-                        e.currentTarget.style.border = `1px solid ${T.black}`;
-                        e.currentTarget.style.boxShadow = `0 0 0 2px ${T.black}22`;
+                        e.currentTarget.style.border = "1px solid #0f77ff";
+                        e.currentTarget.style.boxShadow = "var(--shadow-focus)";
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.background = T.surfLow;

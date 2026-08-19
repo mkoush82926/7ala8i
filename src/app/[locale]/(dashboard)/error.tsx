@@ -27,7 +27,7 @@ export default function DashboardError({
         </p>
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 h-11 px-6 rounded-xl bg-[var(--accent-mint)] text-[#0A0A0A] font-semibold text-[14px] hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 h-11 px-6 rounded bg-[var(--accent-mint)] text-white font-semibold text-[14px] hover:opacity-90 transition-opacity"
         >
           <RefreshCw size={16} /> Try Again
         </button>

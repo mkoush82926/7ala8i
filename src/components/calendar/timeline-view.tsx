@@ -162,7 +162,7 @@ export function TimelineView() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <h2 className="text-[20px] tracking-tight text-[var(--text-primary)] font-light">
+          <h2 className="text-[20px] tracking-[0.012em] text-[var(--text-primary)] font-light">
             Calendar
           </h2>
           <div className="flex items-center gap-2 text-[var(--text-secondary)]">
@@ -186,12 +186,12 @@ export function TimelineView() {
 
         <div className="flex items-center gap-6">
           {/* View Toggle */}
-          <div className="flex items-center gap-1 p-1 rounded-[12px] bg-[var(--bg-secondary)] border border-[var(--border-primary)]">
+          <div className="flex items-center gap-1 p-1 rounded-[8px] bg-[var(--bg-secondary)] border border-[var(--border-primary)]">
             <button
               onClick={() => setView("timeline")}
               className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "timeline"
-                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
+                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
                   : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -201,7 +201,7 @@ export function TimelineView() {
               onClick={() => setView("list")}
               className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "list"
-                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
+                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
                   : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               }`}
             >
@@ -293,8 +293,8 @@ export function TimelineView() {
                 >
                   <div className="w-32 flex-shrink-0 p-3 flex items-center">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[var(--accent-lavender)] to-[var(--accent-blue)] flex items-center justify-center">
-                        <span className="text-[9px] font-medium text-[#0A0A0A]">
+                      <div className="w-7 h-7 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center">
+                        <span className="text-[9px] font-medium text-[var(--text-primary)]">
                           {barber.name
                             .split(" ")
                             .map((n) => n[0])
@@ -325,7 +325,7 @@ export function TimelineView() {
                           className="absolute top-0 bottom-0 w-[1px] bg-[var(--accent-mint)]/50 z-20 pointer-events-none"
                           style={{ left: `${currentPosition}%` }}
                         >
-                          <div className="absolute top-0 -translate-x-1/2 -mt-1 w-2 h-2 rounded-full bg-[var(--accent-mint)] shadow-[0_0_8px_var(--accent-mint)]" />
+                          <div className="absolute top-0 -translate-x-1/2 -mt-1 w-2 h-2 rounded-full bg-[var(--accent-mint)]" />
                         </div>
                       )}
 
@@ -356,7 +356,6 @@ export function TimelineView() {
                             "border transition-all duration-200 group",
                             colors.bg,
                             colors.border,
-                            "hover:shadow-[var(--shadow-md)]",
                           )}
                           style={{
                             left: `${(startSlot / 12) * 100}%`,
@@ -378,7 +377,7 @@ export function TimelineView() {
                           </p>
 
                           {/* Tooltip with actions */}
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max min-w-[160px] p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-primary)] shadow-xl opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all z-50 flex flex-col gap-2">
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max min-w-[160px] p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-primary)] opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all z-50 flex flex-col gap-2">
                             <p className="text-[12px] text-[var(--text-primary)] font-medium">
                               {appt.client_name}
                             </p>

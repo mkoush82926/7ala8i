@@ -18,13 +18,16 @@ export function Skeleton({ className, variant = "text" }: SkeletonProps) {
     card:    "h-32 w-full",
     circle:  "h-10 w-10 rounded-full",
     chart:   "h-48 w-full",
-    button:  "h-10 w-24 rounded-lg",
+    button:  "h-10 w-24 rounded",
   };
 
   return (
     <div
       className={cn("skeleton", variantStyles[variant], className)}
-      style={{ borderRadius: variant === "card" ? 16 : undefined }}
+      style={{
+        borderRadius:
+          variant === "card" ? 12 : variant === "button" ? 8 : variant === "circle" ? "50%" : undefined,
+      }}
     />
   );
 }
@@ -43,9 +46,9 @@ export function DashboardSkeleton() {
           <div
             key={i}
             style={{
-              background: "#fff",
-              border: "1px solid #eceef0",
-              borderRadius: 16,
+              background: "#ffffff",
+              border: "1px solid #e1e9f0",
+              borderRadius: 12,
               padding: 28,
               minHeight: 152,
               display: "flex", flexDirection: "column", justifyContent: "space-between",
@@ -54,7 +57,7 @@ export function DashboardSkeleton() {
             {/* Top row: label + trend badge */}
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Skeleton className="h-3 w-20" variant="text" />
-              <div className="skeleton" style={{ height: 16, width: 44, borderRadius: 6 }} />
+              <div className="skeleton" style={{ height: 16, width: 44, borderRadius: 9999 }} />
             </div>
             {/* Value */}
             <Skeleton className="h-8 w-28" variant="text" />
@@ -69,8 +72,8 @@ export function DashboardSkeleton() {
         {/* Chart card skeleton */}
         <div
           style={{
-            background: "#fff", border: "1px solid #eceef0",
-            borderRadius: 16, padding: 28, minHeight: 320,
+            background: "#ffffff", border: "1px solid #e1e9f0",
+            borderRadius: 12, padding: 28, minHeight: 320,
             display: "flex", flexDirection: "column", gap: 20,
           }}
         >
@@ -78,7 +81,7 @@ export function DashboardSkeleton() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Skeleton className="h-4 w-32" variant="text" />
             <div style={{ display: "flex", gap: 8 }}>
-              {[1,2,3].map(i => <Skeleton key={i} className="h-6 w-14 rounded-md" variant="text" />)}
+              {[1,2,3].map(i => <Skeleton key={i} className="h-6 w-14 rounded" variant="text" />)}
             </div>
           </div>
           {/* Chart area */}
@@ -88,8 +91,8 @@ export function DashboardSkeleton() {
         {/* Receipt card skeleton */}
         <div
           style={{
-            background: "#fff", border: "1px solid #eceef0",
-            borderRadius: 16, padding: 28, minHeight: 320,
+            background: "#ffffff", border: "1px solid #e1e9f0",
+            borderRadius: 12, padding: 28, minHeight: 320,
             display: "flex", flexDirection: "column", gap: 20,
           }}
         >
@@ -107,7 +110,7 @@ export function DashboardSkeleton() {
             </div>
           ))}
           {/* Total row */}
-          <div style={{ marginTop: "auto", borderTop: "1px solid #f2f4f6", paddingTop: 20 }}>
+          <div style={{ marginTop: "auto", borderTop: "1px solid #e1e9f0", paddingTop: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Skeleton className="h-3 w-16" variant="text" />
               <Skeleton className="h-6 w-20" variant="text" />

@@ -46,7 +46,7 @@ export function ConfirmDialog({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
+            className="fixed inset-0 bg-black/50 z-[100]"
             onClick={onClose}
           />
 
@@ -58,10 +58,10 @@ export function ConfirmDialog({
             transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
             className="fixed inset-0 flex items-center justify-center z-[101] p-4"
           >
-            <div className="w-full max-w-sm rounded-[var(--radius-lg)] border border-[var(--border-primary)] bg-[var(--bg-secondary)] shadow-2xl p-6">
+            <div className="w-full max-w-sm rounded-[var(--radius-lg)] border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-6">
               {/* Icon */}
               {destructive && (
-                <div className="w-10 h-10 rounded-[var(--radius-md)] bg-[var(--accent-rose-muted)] flex items-center justify-center mb-4">
+                <div className="w-10 h-10 rounded-[var(--radius-cards)] bg-[var(--accent-rose-muted)] flex items-center justify-center mb-4">
                   <AlertTriangle size={18} className="text-[var(--accent-rose)]" />
                 </div>
               )}
@@ -81,17 +81,17 @@ export function ConfirmDialog({
                 <button
                   onClick={onClose}
                   disabled={loading}
-                  className="h-9 px-4 rounded-[var(--radius-md)] text-[13px] text-[var(--text-secondary)] font-light border border-[var(--border-primary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-9 px-4 rounded-[var(--radius-buttons)] text-[13px] text-[var(--text-secondary)] font-light border border-[var(--border-primary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {cancelLabel}
                 </button>
                 <button
                   onClick={handleConfirm}
                   disabled={loading}
-                  className={`h-9 px-5 rounded-[var(--radius-md)] text-[13px] font-medium flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`h-9 px-5 rounded-[var(--radius-buttons)] text-[13px] font-medium flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                     destructive
                       ? "bg-[var(--accent-rose)] text-white hover:opacity-90"
-                      : "bg-[var(--accent-mint)] text-[#0A0A0A] hover:opacity-90"
+                      : "bg-[var(--accent-mint)] text-white hover:opacity-90"
                   }`}
                 >
                   {loading && (

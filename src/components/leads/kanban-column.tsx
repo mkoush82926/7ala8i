@@ -36,9 +36,9 @@ export function KanbanColumn({ stage, leads, onLeadClick }: KanbanColumnProps) {
         width: 284,           // Practice #6 — fixed column width
         display: "flex",
         flexDirection: "column",
-        borderRadius: 14,
+        borderRadius: 12,
         // Practice #8 — isOver state
-        outline: isOver ? "2px solid rgba(25,28,30,0.18)" : "2px solid transparent",
+        outline: isOver ? "2px solid rgba(9,17,53,0.18)" : "2px solid transparent",
         outlineOffset: 2,
         transition: "outline-color 0.15s ease",
       }}
@@ -56,18 +56,18 @@ export function KanbanColumn({ stage, leads, onLeadClick }: KanbanColumnProps) {
           }} />
           <span style={{
             // Practice #2 — 13px column label
-            fontSize: 13, fontWeight: 700, color: "#191c1e",
-            fontFamily: "Manrope, sans-serif",
+            fontSize: 13, fontWeight: 700, color: "#091135",
+            fontFamily: "var(--font-intervar), sans-serif",
           }}>
             {stage.label}
           </span>
         </div>
         {/* Count badge */}
         <span style={{
-          padding: "2px 8px", borderRadius: 20,
-          background: "#eceef0",
+          padding: "2px 8px", borderRadius: 9999,
+          background: "#f5f3ff",
           // Practice #2 — 11px count
-          fontSize: 11, fontWeight: 800, color: "#45464c",
+          fontSize: 11, fontWeight: 800, color: "#091135",
         }}>
           {leads.length}
         </span>
@@ -104,21 +104,21 @@ export function KanbanColumn({ stage, leads, onLeadClick }: KanbanColumnProps) {
             style={{
               width: "100%",
               padding: "20px 16px",
-              border: "2px dashed #dde0e4",
+              border: "2px dashed #e1e9f0",
               borderRadius: 12,
-              color: "#76777d",
+              color: "#36394a",
               fontSize: 12, fontWeight: 600,
               background: "transparent",
               cursor: "pointer",
               transition: "border-color 0.2s, background 0.2s",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "#f2f4f6";
-              (e.currentTarget as HTMLButtonElement).style.borderColor = "#b8bcc4";
+              (e.currentTarget as HTMLButtonElement).style.background = "#f5f3ff";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "#e1e9f0";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-              (e.currentTarget as HTMLButtonElement).style.borderColor = "#dde0e4";
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "#e1e9f0";
             }}
           >
             + Drop here to add

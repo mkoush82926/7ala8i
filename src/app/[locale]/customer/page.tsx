@@ -34,11 +34,11 @@ interface CustomerAppointment {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; bgColor: string; textColor: string }> = {
-  confirmed:  { label: "Upcoming",  bgColor: "#dbeafe", textColor: "#1d4ed8" },
-  pending:    { label: "Pending",   bgColor: "#fef3c7", textColor: "#92400e" },
-  cancelled:  { label: "Cancelled", bgColor: "#fee2e2", textColor: "#991b1b" },
-  completed:  { label: "Completed", bgColor: "#d1fae5", textColor: "#065f46" },
-  no_show:    { label: "No-show",   bgColor: "#f3f4f6", textColor: "#6b7280" },
+  confirmed:  { label: "Upcoming",  bgColor: "#f5f3ff", textColor: "#0f77ff" },
+  pending:    { label: "Pending",   bgColor: "#f5f3ff", textColor: "#36394a" },
+  cancelled:  { label: "Cancelled", bgColor: "#f5f3ff", textColor: "#ba1a1a" },
+  completed:  { label: "Completed", bgColor: "#f5f3ff", textColor: "#0f77ff" },
+  no_show:    { label: "No-show",   bgColor: "#f5f3ff", textColor: "#36394a" },
 };
 
 const SHOP_IMAGES = [
@@ -52,7 +52,7 @@ const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 
 function SkeletonCard() {
   return (
-    <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #f0f0f0", padding: 20 }}>
+    <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e1e9f0", padding: 20 }}>
       <div className="flex items-start gap-4">
         <div className="shimmer-card rounded-xl shrink-0" style={{ width: 56, height: 56 }} />
         <div className="flex-1 space-y-2">
@@ -362,7 +362,7 @@ export default function CustomerDashboard() {
   const windowW = useWindowWidth();
 
   return (
-    <div style={{ background: "#f9fafb", minHeight: "100vh", fontFamily: FF, direction: dir }}>
+    <div style={{ background: "#ffffff", minHeight: "100vh", fontFamily: FF, direction: dir }}>
 
       {/* ── Toast notification ── */}
       <AnimatePresence>
@@ -373,13 +373,13 @@ export default function CustomerDashboard() {
             exit={{ opacity: 0, y: -20 }}
             style={{
               position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
-              zIndex: 200, background: "#111827", color: "#fff",
+              zIndex: 200, background: "#091135", color: "#fff",
               padding: "12px 20px", borderRadius: 12, fontSize: 13, fontWeight: 600,
-              display: "flex", alignItems: "center", gap: 8, boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+              display: "flex", alignItems: "center", gap: 8,
               whiteSpace: "nowrap",
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16, fontVariationSettings: "'FILL' 1", color: "#10b981" }}>check_circle</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 16, fontVariationSettings: "'FILL' 1", color: "#0f77ff" }}>check_circle</span>
             {toast}
           </motion.div>
         )}
@@ -391,18 +391,18 @@ export default function CustomerDashboard() {
           display: windowW >= 1024 ? "flex" : "none",
           flexDirection: "column",
           position: "fixed", left: 0, top: 0, height: "100%",
-          width: 240, background: "#fff", borderRight: "1px solid #f0f0f0", zIndex: 40
+          width: 240, background: "#fff", borderRight: "1px solid #e1e9f0", zIndex: 40
         }}
       >
         {/* Logo */}
-        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #f0f0f0" }}>
-          <Link href="/landing" style={{ fontSize: 18, fontWeight: 900, color: "#111827", textDecoration: "none", letterSpacing: "-0.04em", fontFamily: "'Manrope',system-ui,sans-serif" }}>
+        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #e1e9f0" }}>
+          <Link href="/landing" style={{ fontSize: 18, fontWeight: 900, color: "#091135", textDecoration: "none", letterSpacing: "0.015em", fontFamily: "var(--font-intervar),sans-serif" }}>
             Halaqy.
           </Link>
         </div>
 
         {/* User avatar */}
-        <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid #f0f0f0" }}>
+        <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid #e1e9f0" }}>
           {loading ? (
             <div className="flex items-center gap-3">
               <div className="shimmer-card rounded-full shrink-0" style={{ width: 40, height: 40 }} />
@@ -415,15 +415,15 @@ export default function CustomerDashboard() {
             <div className="flex items-center gap-3">
               <div
                 className="shrink-0 flex items-center justify-center font-bold text-sm"
-                style={{ width: 40, height: 40, borderRadius: "50%", background: "#111827", color: "#fff" }}
+                style={{ width: 40, height: 40, borderRadius: "50%", background: "#091135", color: "#fff" }}
               >
                 {initials}
               </div>
               <div className="min-w-0">
-                <p style={{ fontSize: 13, fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: "#091135", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {user?.full_name || "Customer"}
                 </p>
-                <p style={{ fontSize: 11, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <p style={{ fontSize: 11, color: "#36394a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {user?.email}
                 </p>
               </div>
@@ -443,7 +443,7 @@ export default function CustomerDashboard() {
           <button
             onClick={() => setLogoutConfirm(true)}
             className="portal-nav-item w-full"
-            style={{ color: "#ef4444" }}
+            style={{ color: "#ba1a1a" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 20 }}>logout</span>
             {t.customer.signOut}
@@ -458,22 +458,22 @@ export default function CustomerDashboard() {
           alignItems: "center", justifyContent: "space-between",
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
           height: 64, padding: "0 20px",
-          background: "#fff", borderBottom: "1px solid #f0f0f0"
+          background: "#fff", borderBottom: "1px solid #e1e9f0"
         }}
       >
-        <Link href="/landing" style={{ fontSize: 17, fontWeight: 900, color: "#111827", textDecoration: "none", letterSpacing: "-0.04em", fontFamily: "'Manrope',system-ui,sans-serif" }}>
+        <Link href="/landing" style={{ fontSize: 17, fontWeight: 900, color: "#091135", textDecoration: "none", letterSpacing: "0.015em", fontFamily: "var(--font-intervar),sans-serif" }}>
           Halaqy.
         </Link>
         <div className="flex items-center gap-2">
           <Link
             href="/customer/explore"
-            style={{ background: "#111827", color: "#fff", padding: "8px 16px", borderRadius: 9999, fontSize: 13, fontWeight: 700, textDecoration: "none" }}
+            style={{ background: "#091135", color: "#fff", padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: "none" }}
           >
             {t.customer.bookNow}
           </Link>
           <button
             onClick={() => setLogoutConfirm(true)}
-            style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#f3f4f6", border: "none", cursor: "pointer", color: "#6b7280" }}
+            style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#f5f3ff", border: "none", cursor: "pointer", color: "#36394a" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
           </button>
@@ -488,7 +488,7 @@ export default function CustomerDashboard() {
 
             {/* Page header */}
             <div style={{ paddingTop: 32, paddingBottom: 24 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#9ca3af", marginBottom: 4 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#36394a", marginBottom: 4 }}>
                 {t.customer.welcomeBack}
               </p>
               {loading ? (
@@ -498,9 +498,9 @@ export default function CustomerDashboard() {
                   style={{
                     fontSize: "clamp(24px, 4vw, 36px)",
                     fontWeight: 900,
-                    color: "#111827",
-                    letterSpacing: "-0.03em",
-                    fontFamily: "'Manrope',system-ui,sans-serif",
+                    color: "#091135",
+                    letterSpacing: "0.015em",
+                    fontFamily: "var(--font-intervar),sans-serif",
                     margin: 0,
                   }}
                 >
@@ -512,21 +512,21 @@ export default function CustomerDashboard() {
             {/* Stats row */}
             <div className="grid grid-cols-3 gap-3 mb-8">
               {[
-                { label: t.customer.completed, value: loading ? "—" : completedCount, icon: "check_circle", color: "#10b981" },
-                { label: t.customer.upcoming,  value: loading ? "—" : upcoming.length,  icon: "schedule",      color: "#3b82f6" },
-                { label: t.customer.thisMonth, value: loading ? "—" : thisMonthCount,   icon: "calendar_month",color: "#8b5cf6" },
+                { label: t.customer.completed, value: loading ? "—" : completedCount, icon: "check_circle", color: "#0f77ff" },
+                { label: t.customer.upcoming,  value: loading ? "—" : upcoming.length,  icon: "schedule",      color: "#0f77ff" },
+                { label: t.customer.thisMonth, value: loading ? "—" : thisMonthCount,   icon: "calendar_month",color: "#36394a" },
               ].map(stat => (
                 <div
                   key={stat.label}
-                  style={{ background: "#fff", borderRadius: 16, padding: "14px 16px", border: "1px solid #f0f0f0", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
+                  style={{ background: "#fff", borderRadius: 12, padding: "14px 16px", border: "1px solid #e1e9f0" }}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: 16, color: stat.color, fontVariationSettings: "'FILL' 1" }}>
                     {stat.icon}
                   </span>
-                  <p style={{ fontSize: 26, fontWeight: 900, color: "#111827", margin: "4px 0 2px", fontFamily: "'Manrope',system-ui,sans-serif" }}>
+                  <p style={{ fontSize: 26, fontWeight: 900, color: "#091135", margin: "4px 0 2px", fontFamily: "var(--font-intervar),sans-serif" }}>
                     {stat.value}
                   </p>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af" }}>{stat.label}</p>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: "#36394a" }}>{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -534,7 +534,7 @@ export default function CustomerDashboard() {
             {/* CTA Banner */}
             <div
               style={{
-                borderRadius: 20,
+                borderRadius: 12,
                 padding: "24px 28px",
                 marginBottom: 28,
                 display: "flex",
@@ -543,15 +543,15 @@ export default function CustomerDashboard() {
                 gap: 16,
                 overflow: "hidden",
                 position: "relative",
-                background: "linear-gradient(135deg, #111827 0%, #1f2937 100%)",
+                background: "#f5f3ff",
               }}
             >
-              <div style={{ position: "absolute", inset: 0, opacity: 0.06, backgroundImage: "radial-gradient(circle at 80% 50%, white 0%, transparent 55%)" }} />
+              <div style={{ position: "absolute", inset: 0, opacity: 0.06 }} />
               <div style={{ position: "relative", zIndex: 1 }}>
-                <h2 style={{ color: "#fff", fontWeight: 900, fontSize: 17, fontFamily: "'Manrope',system-ui,sans-serif", margin: "0 0 4px" }}>
+                <h2 style={{ color: "#091135", fontWeight: 900, fontSize: 17, fontFamily: "var(--font-intervar),sans-serif", margin: "0 0 4px" }}>
                   {t.customer.readyForNext}
                 </h2>
-                <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, margin: 0 }}>
+                <p style={{ color: "#36394a", fontSize: 13, margin: 0 }}>
                   {t.customer.browseShops}
                 </p>
               </div>
@@ -559,8 +559,8 @@ export default function CustomerDashboard() {
                 href="/customer/explore"
                 style={{
                   position: "relative", zIndex: 1, flexShrink: 0,
-                  background: "#fff", color: "#111827",
-                  padding: "10px 20px", borderRadius: 9999,
+                  background: "#127ee3", color: "#fff",
+                  padding: "10px 20px", borderRadius: 8,
                   fontWeight: 700, fontSize: 13, textDecoration: "none", whiteSpace: "nowrap",
                 }}
               >
@@ -569,7 +569,7 @@ export default function CustomerDashboard() {
             </div>
 
             {/* Tab Bar */}
-            <div style={{ borderBottom: "1px solid #f0f0f0", marginBottom: 0, display: "flex", gap: 0 }}>
+            <div style={{ borderBottom: "1px solid #e1e9f0", marginBottom: 0, display: "flex", gap: 0 }}>
               {([
                 { key: "upcoming",  label: t.customer.upcoming,  count: upcoming.length  },
                 { key: "past",      label: t.customer.past,      count: past.length      },
@@ -586,8 +586,8 @@ export default function CustomerDashboard() {
                       style={{
                         marginLeft: 5, fontSize: 11, fontWeight: 700,
                         padding: "1px 6px", borderRadius: 9999,
-                        background: activeTab === tab.key ? "#111827" : "#f3f4f6",
-                        color: activeTab === tab.key ? "#fff" : "#6b7280",
+                        background: activeTab === tab.key ? "#f5f3ff" : "#ffffff",
+                        color: activeTab === tab.key ? "#091135" : "#36394a",
                       }}
                     >
                       {tab.count}
@@ -604,28 +604,28 @@ export default function CustomerDashboard() {
               ) : displayList.length === 0 ? (
                 <div
                   style={{
-                    background: "#fff", borderRadius: 20, border: "1px solid #f0f0f0",
+                    background: "#fff", borderRadius: 12, border: "1px solid #e1e9f0",
                     padding: "48px 24px", display: "flex", flexDirection: "column",
                     alignItems: "center", textAlign: "center",
                   }}
                 >
-                  <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-                    <span className="material-symbols-outlined text-neutral-400" style={{ fontSize: 28 }}>
+                  <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+                    <span className="material-symbols-outlined text-[#36394a]" style={{ fontSize: 28 }}>
                       {activeTab === "upcoming" ? "calendar_today" : activeTab === "past" ? "history" : "cancel"}
                     </span>
                   </div>
-                  <h3 style={{ fontWeight: 700, color: "#111827", fontSize: 16, marginBottom: 6 }}>
+                  <h3 style={{ fontWeight: 700, color: "#091135", fontSize: 16, marginBottom: 6 }}>
                     {activeTab === "upcoming" ? t.customer.noUpcoming : activeTab === "past" ? t.customer.noPast : t.customer.noCancelled}
                   </h3>
-                  <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 20 }}>
+                  <p style={{ fontSize: 13, color: "#36394a", marginBottom: 20 }}>
                     {activeTab === "upcoming" ? t.customer.noUpcomingDesc : t.customer.noPastDesc}
                   </p>
                   {activeTab === "upcoming" && (
                     <Link
                       href="/customer/explore"
                       style={{
-                        background: "#111827", color: "#fff", padding: "10px 24px",
-                        borderRadius: 9999, fontWeight: 700, fontSize: 13, textDecoration: "none",
+                        background: "#091135", color: "#fff", padding: "10px 24px",
+                        borderRadius: 8, fontWeight: 700, fontSize: 13, textDecoration: "none",
                       }}
                     >
                       {t.customer.exploreShops}
@@ -646,16 +646,15 @@ export default function CustomerDashboard() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.28, delay: i * 0.04 }}
                         style={{
-                          background: "#fff", borderRadius: 16, border: "1px solid #f0f0f0",
-                          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                          transition: "box-shadow 150ms ease, transform 150ms ease",
+                          background: "#fff", borderRadius: 12, border: "1px solid #e1e9f0",
+                          transition: "transform 150ms ease",
                         }}
-                        whileHover={{ y: -2, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}
+                        whileHover={{ y: -2 }}
                       >
                         <div style={{ padding: 20 }}>
                           <div className="flex items-start gap-4">
                             {/* Shop thumbnail */}
-                            <div style={{ width: 52, height: 52, borderRadius: 12, overflow: "hidden", background: "#e5e7eb", flexShrink: 0 }}>
+                            <div style={{ width: 52, height: 52, borderRadius: 12, overflow: "hidden", background: "#f5f3ff", flexShrink: 0 }}>
                               <img
                                 src={SHOP_IMAGES[i % SHOP_IMAGES.length]}
                                 alt={appt.shop_name}
@@ -676,20 +675,20 @@ export default function CustomerDashboard() {
                                 >
                                   {sc.label}
                                 </span>
-                                <span style={{ fontSize: 11, color: "#d1d5db" }}>#{appt.id.slice(0, 7).toUpperCase()}</span>
+                                <span style={{ fontSize: 11, color: "#b1bbcd" }}>#{appt.id.slice(0, 7).toUpperCase()}</span>
                               </div>
                               <h3
                                 style={{
-                                  fontWeight: 800, color: "#111827", fontSize: 15,
+                                  fontWeight: 800, color: "#091135", fontSize: 15,
                                   lineHeight: 1.3, margin: 0, overflow: "hidden",
                                   textOverflow: "ellipsis", whiteSpace: "nowrap",
-                                  fontFamily: "'Manrope',system-ui,sans-serif",
+                                  fontFamily: "var(--font-intervar),sans-serif",
                                 }}
                               >
                                 {appt.shop_name}
                               </h3>
                               {appt.service_name && (
-                                <p style={{ fontSize: 13, color: "#9ca3af", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                <p style={{ fontSize: 13, color: "#36394a", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                   {appt.service_name}{appt.barber_name ? ` · ${appt.barber_name}` : ""}
                                 </p>
                               )}
@@ -697,16 +696,16 @@ export default function CustomerDashboard() {
 
                             {/* Date + price */}
                             <div style={{ textAlign: "right", flexShrink: 0 }}>
-                              <p style={{ fontWeight: 700, color: "#111827", fontSize: 14, margin: 0 }}>{format(date, "MMM d")}</p>
-                              <p style={{ fontSize: 12, color: "#9ca3af", margin: "1px 0" }}>{format(date, "h:mm a")}</p>
-                              <p style={{ fontWeight: 800, color: "#111827", fontSize: 14, margin: 0 }}>{appt.price} JOD</p>
+                              <p style={{ fontWeight: 700, color: "#091135", fontSize: 14, margin: 0 }}>{format(date, "MMM d")}</p>
+                              <p style={{ fontSize: 12, color: "#36394a", margin: "1px 0" }}>{format(date, "h:mm a")}</p>
+                              <p style={{ fontWeight: 800, color: "#091135", fontSize: 14, margin: 0 }}>{appt.price} JOD</p>
                             </div>
                           </div>
 
                           {/* Actions */}
                           <div
                             className="flex gap-2 mt-4 pt-3"
-                            style={{ borderTop: "1px solid #f4f4f5" }}
+                            style={{ borderTop: "1px solid #e1e9f0" }}
                           >
                             {isUpcoming ? (
                               <>
@@ -714,8 +713,8 @@ export default function CustomerDashboard() {
                                   href={`/book/${appt.shop_id}`}
                                   style={{
                                     flex: 1, textAlign: "center", padding: "8px",
-                                    borderRadius: 9999, background: "#f3f4f6",
-                                    color: "#374151", fontSize: 12, fontWeight: 700,
+                                    borderRadius: 8, background: "#f5f3ff",
+                                    color: "#36394a", fontSize: 12, fontWeight: 700,
                                     textDecoration: "none",
                                   }}
                                 >
@@ -725,9 +724,9 @@ export default function CustomerDashboard() {
                                   onClick={() => setCancelConfirm(appt.id)}
                                   style={{
                                     flex: 1, textAlign: "center", padding: "8px",
-                                    borderRadius: 9999, background: "rgba(244,63,94,0.06)",
-                                    color: "#f43f5e", fontSize: 12, fontWeight: 700,
-                                    border: "1px solid rgba(244,63,94,0.2)", cursor: "pointer",
+                                    borderRadius: 8, background: "rgba(186,26,26,0.06)",
+                                    color: "#ba1a1a", fontSize: 12, fontWeight: 700,
+                                    border: "1px solid rgba(186,26,26,0.2)", cursor: "pointer",
                                   }}
                                 >
                                   {t.customer.cancel}
@@ -739,7 +738,7 @@ export default function CustomerDashboard() {
                                   href={`/book/${appt.shop_id}`}
                                   style={{
                                     flex: 1, textAlign: "center", padding: "8px",
-                                    borderRadius: 9999, background: "#111827",
+                                    borderRadius: 8, background: "#091135",
                                     color: "#fff", fontSize: 12, fontWeight: 700,
                                     textDecoration: "none",
                                   }}
@@ -751,18 +750,18 @@ export default function CustomerDashboard() {
                                     onClick={() => setReviewAppt(appt)}
                                     style={{
                                       flex: 1, textAlign: "center", padding: "8px",
-                                      borderRadius: 9999, background: "#fffbeb",
-                                      color: "#92400e", fontSize: 12, fontWeight: 700,
-                                      border: "1px solid #fde68a", cursor: "pointer",
+                                      borderRadius: 8, background: "#f5f3ff",
+                                      color: "#091135", fontSize: 12, fontWeight: 700,
+                                      border: "none", cursor: "pointer",
                                     }}
                                   >
                                     ★ {t.customer.review}
                                   </button>
                                 )}
                                 {userReviewedApptIds.has(appt.id) && (
-                                  <div style={{ display: "flex", alignItems: "center", gap: 2, padding: "8px 12px", background: "#fffbeb", borderRadius: 9999 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 2, padding: "8px 12px", background: "#f5f3ff", borderRadius: 9999 }}>
                                     {[1,2,3,4,5].map(s => (
-                                      <span key={s} className="material-symbols-outlined" style={{ fontSize: 13, color: "#f59e0b", fontVariationSettings: "'FILL' 1" }}>star</span>
+                                      <span key={s} className="material-symbols-outlined" style={{ fontSize: 13, color: "#0f77ff", fontVariationSettings: "'FILL' 1" }}>star</span>
                                     ))}
                                   </div>
                                 )}
@@ -789,23 +788,23 @@ export default function CustomerDashboard() {
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center px-4 pt-2.5"
         style={{
-          background: "rgba(255,255,255,0.96)", backdropFilter: "blur(20px)",
-          borderTop: "1px solid #f0f0f0",
+          background: "#ffffff",
+          borderTop: "1px solid #e1e9f0",
           paddingBottom: "max(20px, env(safe-area-inset-bottom))",
         }}
       >
-        <Link href="/customer/explore" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none", color: "#9ca3af" }}>
+        <Link href="/customer/explore" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none", color: "#36394a" }}>
           <span className="material-symbols-outlined" style={{ fontSize: 22 }}>explore</span>
           <span style={{ fontSize: 10, fontWeight: 700 }}>{t.customer.explore}</span>
         </Link>
         <Link href="/customer" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, textDecoration: "none" }}>
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#111827", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#091135", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>event_note</span>
           </div>
         </Link>
         <button
           onClick={() => setEditProfile(true)}
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer", color: "#36394a" }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 22 }}>person</span>
           <span style={{ fontSize: 10, fontWeight: 700 }}>Account</span>
@@ -819,23 +818,23 @@ export default function CustomerDashboard() {
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setEditProfile(false)}
-              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }}
             />
             <motion.div
               initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ duration: 0.28, ease: [0.25,1,0.5,1] }}
               style={{
                 position: "relative", width: "100%", maxWidth: 480,
-                background: "#fff", borderRadius: "24px 24px 0 0",
-                padding: "32px 28px", boxShadow: "0 -8px 40px rgba(0,0,0,0.15)",
+                background: "#fff", borderRadius: "12px 12px 0 0",
+                padding: "32px 28px",
               }}
-              className="sm:rounded-3xl sm:mb-4"
+              className="sm:rounded-xl sm:mb-4"
             >
               <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
-                <h3 style={{ fontSize: 20, fontWeight: 900, color: "#111827", fontFamily: "'Manrope',system-ui,sans-serif" }}>Edit Profile</h3>
+                <h3 style={{ fontSize: 20, fontWeight: 900, color: "#091135", fontFamily: "var(--font-intervar),sans-serif" }}>Edit Profile</h3>
                 <button
                   onClick={() => setEditProfile(false)}
-                  style={{ width: 32, height: 32, borderRadius: "50%", background: "#f3f4f6", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  style={{ width: 32, height: 32, borderRadius: "50%", background: "#f5f3ff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
                 </button>
@@ -847,7 +846,7 @@ export default function CustomerDashboard() {
                   { label: "Phone", value: editPhone, setter: setEditPhone, type: "tel", readOnly: false },
                 ].map(field => (
                   <div key={field.label}>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#6b7280", marginBottom: 6 }}>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#36394a", marginBottom: 6 }}>
                       {field.label}
                     </label>
                     <input
@@ -856,15 +855,15 @@ export default function CustomerDashboard() {
                       onChange={e => field.setter(e.target.value)}
                       readOnly={field.readOnly}
                       style={{
-                        width: "100%", height: 48, padding: "0 16px", borderRadius: 12,
-                        background: field.readOnly ? "#f9fafb" : "#f3f4f6",
-                        border: "1.5px solid #e5e7eb", outline: "none",
-                        fontSize: 14, fontWeight: 500, color: field.readOnly ? "#9ca3af" : "#111827",
+                        width: "100%", height: 48, padding: "0 16px", borderRadius: 8,
+                        background: field.readOnly ? "#ffffff" : "#f5f3ff",
+                        border: "1.5px solid #e1e9f0", outline: "none",
+                        fontSize: 14, fontWeight: 500, color: field.readOnly ? "#36394a" : "#091135",
                         fontFamily: FF, boxSizing: "border-box",
                         opacity: field.readOnly ? 0.7 : 1,
                       }}
-                      onFocus={e => { if (!field.readOnly) { e.target.style.borderColor = "#111827"; e.target.style.background = "#fff"; } }}
-                      onBlur={e => { if (!field.readOnly) { e.target.style.borderColor = "#e5e7eb"; e.target.style.background = "#f3f4f6"; } }}
+                      onFocus={e => { if (!field.readOnly) { e.target.style.borderColor = "#0f77ff"; e.target.style.background = "#fff"; e.target.style.boxShadow = "var(--shadow-focus)"; } }}
+                      onBlur={e => { if (!field.readOnly) { e.target.style.borderColor = "#e1e9f0"; e.target.style.background = "#f5f3ff"; e.target.style.boxShadow = "none"; } }}
                     />
                   </div>
                 ))}
@@ -872,8 +871,8 @@ export default function CustomerDashboard() {
                   onClick={handleSaveProfile}
                   disabled={saving}
                   style={{
-                    width: "100%", height: 48, background: saving ? "#374151" : "#111827",
-                    color: "#fff", borderRadius: 12, border: "none", fontWeight: 700,
+                    width: "100%", height: 48, background: saving ? "#0f77ff" : "#127ee3",
+                    color: "#fff", borderRadius: 8, border: "none", fontWeight: 700,
                     fontSize: 14, cursor: saving ? "not-allowed" : "pointer",
                     marginTop: 4, fontFamily: FF,
                   }}
@@ -893,30 +892,30 @@ export default function CustomerDashboard() {
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setCancelConfirm(null)}
-              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }}
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.22 }}
               style={{
                 position: "relative", width: "100%", maxWidth: 360,
-                background: "#fff", borderRadius: 24, padding: "32px 28px",
-                boxShadow: "0 20px 60px rgba(0,0,0,0.2)", textAlign: "center",
+                background: "#fff", borderRadius: 12, padding: "32px 28px",
+                textAlign: "center",
               }}
             >
-              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#ef4444" }}>event_busy</span>
+              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(186,26,26,0.08)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#ba1a1a" }}>event_busy</span>
               </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginBottom: 8 }}>Cancel this appointment?</h3>
-              <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 24 }}>This cannot be undone. The slot will be released.</p>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#091135", marginBottom: 8 }}>Cancel this appointment?</h3>
+              <p style={{ fontSize: 13, color: "#36394a", marginBottom: 24 }}>This cannot be undone. The slot will be released.</p>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setCancelConfirm(null)}
-                  style={{ height: 44, borderRadius: 12, background: "#f3f4f6", color: "#374151", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
+                  style={{ height: 44, borderRadius: 8, background: "#f5f3ff", color: "#36394a", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
                 >Keep It</button>
                 <button
                   onClick={() => handleCancel(cancelConfirm)}
-                  style={{ height: 44, borderRadius: 12, background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
+                  style={{ height: 44, borderRadius: 8, background: "#ba1a1a", color: "#fff", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
                 >Cancel Booking</button>
               </div>
             </motion.div>
@@ -931,27 +930,27 @@ export default function CustomerDashboard() {
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setLogoutConfirm(false)}
-              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }}
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.22 }}
               style={{
                 position: "relative", width: "100%", maxWidth: 320,
-                background: "#fff", borderRadius: 24, padding: "28px 24px",
-                boxShadow: "0 20px 60px rgba(0,0,0,0.2)", textAlign: "center",
+                background: "#fff", borderRadius: 12, padding: "28px 24px",
+                textAlign: "center",
               }}
             >
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111827", marginBottom: 8 }}>Sign out of Halaqy?</h3>
-              <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 24 }}>You can always sign back in at any time.</p>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: "#091135", marginBottom: 8 }}>Sign out of Halaqy?</h3>
+              <p style={{ fontSize: 13, color: "#36394a", marginBottom: 24 }}>You can always sign back in at any time.</p>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setLogoutConfirm(false)}
-                  style={{ height: 44, borderRadius: 12, background: "#f3f4f6", color: "#374151", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
+                  style={{ height: 44, borderRadius: 8, background: "#f5f3ff", color: "#36394a", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
                 >Stay</button>
                 <button
                   onClick={handleSignOut}
-                  style={{ height: 44, borderRadius: 12, background: "#111827", color: "#fff", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
+                  style={{ height: 44, borderRadius: 8, background: "#127ee3", color: "#fff", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
                 >Sign Out</button>
               </div>
             </motion.div>
@@ -966,29 +965,29 @@ export default function CustomerDashboard() {
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => { setReviewAppt(null); setReviewRating(0); }}
-              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }}
             />
             <motion.div
               initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.25,1,0.5,1] }}
               style={{
                 position: "relative", width: "100%", maxWidth: 480,
-                background: "#fff", borderRadius: "24px 24px 0 0",
-                padding: "32px 28px", boxShadow: "0 -8px 40px rgba(0,0,0,0.15)",
+                background: "#fff", borderRadius: "12px 12px 0 0",
+                padding: "32px 28px",
               }}
-              className="sm:rounded-3xl sm:mb-4"
+              className="sm:rounded-xl sm:mb-4"
             >
               <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
-                <h3 style={{ fontSize: 20, fontWeight: 900, color: "#111827", fontFamily: "'Manrope',system-ui,sans-serif" }}>Leave a Review</h3>
+                <h3 style={{ fontSize: 20, fontWeight: 900, color: "#091135", fontFamily: "var(--font-intervar),sans-serif" }}>Leave a Review</h3>
                 <button
                   onClick={() => { setReviewAppt(null); setReviewRating(0); }}
-                  style={{ width: 32, height: 32, borderRadius: "50%", background: "#f3f4f6", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  style={{ width: 32, height: 32, borderRadius: "50%", background: "#f5f3ff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
                 </button>
               </div>
-              <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 20 }}>
-                How was your visit at <strong style={{ color: "#111827" }}>{reviewAppt.shop_name}</strong>?
+              <p style={{ fontSize: 13, color: "#36394a", marginBottom: 20 }}>
+                How was your visit at <strong style={{ color: "#091135" }}>{reviewAppt.shop_name}</strong>?
               </p>
               {/* Stars */}
               <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 20 }}>
@@ -1006,7 +1005,7 @@ export default function CustomerDashboard() {
                       className="material-symbols-outlined"
                       style={{
                         fontSize: 40,
-                        color: star <= (reviewHover || reviewRating) ? "#f59e0b" : "#e5e7eb",
+                        color: star <= (reviewHover || reviewRating) ? "#0f77ff" : "#e1e9f0",
                         fontVariationSettings: star <= (reviewHover || reviewRating) ? "'FILL' 1" : "'FILL' 0",
                         transition: "color 100ms ease",
                       }}
@@ -1019,20 +1018,20 @@ export default function CustomerDashboard() {
                 onChange={e => setReviewComment(e.target.value.slice(0, 280))}
                 placeholder="Tell us what you loved… (optional)"
                 style={{
-                  width: "100%", height: 100, padding: 14, borderRadius: 12,
-                  background: "#f3f4f6", border: "none", outline: "none",
+                  width: "100%", height: 100, padding: 14, borderRadius: 8,
+                  background: "#f5f3ff", border: "none", outline: "none",
                   fontSize: 14, fontWeight: 500, fontFamily: FF, resize: "none",
-                  marginBottom: 16, boxSizing: "border-box", color: "#111827",
+                  marginBottom: 16, boxSizing: "border-box", color: "#091135",
                 }}
-                onFocus={e => { e.target.style.background = "#fff"; e.target.style.boxShadow = "0 0 0 2px #111827"; }}
-                onBlur={e => { e.target.style.background = "#f3f4f6"; e.target.style.boxShadow = "none"; }}
+                onFocus={e => { e.target.style.background = "#fff"; e.target.style.boxShadow = "var(--shadow-focus)"; }}
+                onBlur={e => { e.target.style.background = "#f5f3ff"; e.target.style.boxShadow = "none"; }}
               />
               <button
                 onClick={handleSubmitReview}
                 disabled={submittingReview || reviewRating === 0}
                 style={{
-                  width: "100%", height: 48, background: submittingReview || reviewRating === 0 ? "#d1d5db" : "#111827",
-                  color: "#fff", borderRadius: 12, border: "none", fontWeight: 700,
+                  width: "100%", height: 48, background: submittingReview || reviewRating === 0 ? "#b1bbcd" : "#127ee3",
+                  color: "#fff", borderRadius: 8, border: "none", fontWeight: 700,
                   fontSize: 14, cursor: submittingReview || reviewRating === 0 ? "not-allowed" : "pointer",
                   fontFamily: FF,
                 }}

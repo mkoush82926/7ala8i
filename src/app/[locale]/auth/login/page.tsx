@@ -27,7 +27,7 @@ export default function LoginPage() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#f9fafb',
+        background: '#f5f3ff',
         fontFamily: FF,
         direction: dir,
         display: 'flex',
@@ -36,40 +36,6 @@ export default function LoginPage() {
         padding: '24px',
       }}
     >
-      {/* Background decoration */}
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 0,
-          overflow: 'hidden',
-          pointerEvents: 'none',
-        }}
-      >
-        <div
-          className="orb"
-          style={{
-            width: 600,
-            height: 600,
-            top: -200,
-            right: -200,
-            background: 'rgba(213,227,252,0.5)',
-            animationDelay: '0s',
-          }}
-        />
-        <div
-          className="orb"
-          style={{
-            width: 400,
-            height: 400,
-            bottom: -100,
-            left: -100,
-            background: 'rgba(16,185,129,0.12)',
-            animationDelay: '4s',
-          }}
-        />
-      </div>
-
       <div style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 10 }}>
 
         {/* Logo */}
@@ -84,10 +50,10 @@ export default function LoginPage() {
             style={{
               fontSize: 28,
               fontWeight: 900,
-              color: '#111827',
+              color: '#091135',
               textDecoration: 'none',
-              letterSpacing: '-0.04em',
-              fontFamily: "'Manrope',system-ui,sans-serif",
+              letterSpacing: '0.016em',
+              fontFamily: "var(--font-intervar),sans-serif",
             }}
           >
             Halaqy.
@@ -101,10 +67,9 @@ export default function LoginPage() {
           transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
           style={{
             background: '#fff',
-            borderRadius: 24,
+            borderRadius: 12,
             padding: '40px 36px',
-            boxShadow: '0 4px 40px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04)',
-            border: '1px solid #f0f0f0',
+            border: '1px solid #e1e9f0',
           }}
         >
           {/* Heading */}
@@ -113,15 +78,15 @@ export default function LoginPage() {
               style={{
                 fontSize: 28,
                 fontWeight: 900,
-                color: '#111827',
-                letterSpacing: '-0.03em',
+                color: '#091135',
+                letterSpacing: '0.014em',
                 marginBottom: 6,
-                fontFamily: "'Manrope',system-ui,sans-serif",
+                fontFamily: "var(--font-intervar),sans-serif",
               }}
             >
               {t.auth.welcomeBack}
             </h1>
-            <p style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500 }}>
+            <p style={{ color: '#36394a', fontSize: 14, fontWeight: 500 }}>
               {t.auth.signInToManage}
             </p>
           </div>
@@ -138,7 +103,7 @@ export default function LoginPage() {
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
-                  color: '#6b7280',
+                  color: '#36394a',
                 }}
               >
                 {t.auth.emailAddress}
@@ -152,7 +117,7 @@ export default function LoginPage() {
                     top: '50%',
                     transform: 'translateY(-50%)',
                     fontSize: 18,
-                    color: '#9ca3af',
+                    color: '#36394a',
                     pointerEvents: 'none',
                   }}
                 >
@@ -169,25 +134,23 @@ export default function LoginPage() {
                     height: 52,
                     paddingLeft: 44,
                     paddingRight: 16,
-                    background: '#f9fafb',
-                    border: '1.5px solid #e5e7eb',
-                    borderRadius: 14,
+                    background: '#ffffff',
+                    border: '1.5px solid #e1e9f0',
+                    borderRadius: 8,
                     fontSize: 14,
                     fontWeight: 500,
-                    color: '#111827',
+                    color: '#091135',
                     outline: 'none',
                     transition: 'all 150ms ease',
                     fontFamily: FF,
                     boxSizing: 'border-box',
                   }}
                   onFocus={e => {
-                    e.target.style.background = '#fff'
-                    e.target.style.borderColor = '#111827'
-                    e.target.style.boxShadow = '0 0 0 3px rgba(17,24,39,0.08)'
+                    e.target.style.borderColor = '#0f77ff'
+                    e.target.style.boxShadow = 'var(--shadow-focus)'
                   }}
                   onBlur={e => {
-                    e.target.style.background = '#f9fafb'
-                    e.target.style.borderColor = '#e5e7eb'
+                    e.target.style.borderColor = '#e1e9f0'
                     e.target.style.boxShadow = 'none'
                   }}
                 />
@@ -204,7 +167,7 @@ export default function LoginPage() {
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
-                    color: '#6b7280',
+                    color: '#36394a',
                   }}
                 >
                   {t.auth.password}
@@ -214,7 +177,7 @@ export default function LoginPage() {
                   style={{
                     fontSize: 12,
                     fontWeight: 600,
-                    color: '#6b7280',
+                    color: '#36394a',
                     textDecoration: 'none',
                   }}
                 >
@@ -230,7 +193,7 @@ export default function LoginPage() {
                     top: '50%',
                     transform: 'translateY(-50%)',
                     fontSize: 18,
-                    color: '#9ca3af',
+                    color: '#36394a',
                     pointerEvents: 'none',
                   }}
                 >
@@ -248,25 +211,23 @@ export default function LoginPage() {
                     height: 52,
                     paddingLeft: 44,
                     paddingRight: 46,
-                    background: '#f9fafb',
-                    border: '1.5px solid #e5e7eb',
-                    borderRadius: 14,
+                    background: '#ffffff',
+                    border: '1.5px solid #e1e9f0',
+                    borderRadius: 8,
                     fontSize: 14,
                     fontWeight: 500,
-                    color: '#111827',
+                    color: '#091135',
                     outline: 'none',
                     transition: 'all 150ms ease',
                     fontFamily: FF,
                     boxSizing: 'border-box',
                   }}
                   onFocus={e => {
-                    e.target.style.background = '#fff'
-                    e.target.style.borderColor = '#111827'
-                    e.target.style.boxShadow = '0 0 0 3px rgba(17,24,39,0.08)'
+                    e.target.style.borderColor = '#0f77ff'
+                    e.target.style.boxShadow = 'var(--shadow-focus)'
                   }}
                   onBlur={e => {
-                    e.target.style.background = '#f9fafb'
-                    e.target.style.borderColor = '#e5e7eb'
+                    e.target.style.borderColor = '#e1e9f0'
                     e.target.style.boxShadow = 'none'
                   }}
                 />
@@ -281,7 +242,7 @@ export default function LoginPage() {
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    color: '#9ca3af',
+                    color: '#b1bbcd',
                     display: 'flex',
                     alignItems: 'center',
                     padding: 0,
@@ -302,18 +263,18 @@ export default function LoginPage() {
                 className="error-shake"
                 style={{
                   padding: '12px 16px',
-                  background: 'rgba(244,63,94,0.06)',
-                  border: '1px solid rgba(244,63,94,0.2)',
+                  background: 'rgba(186,26,26,0.06)',
+                  border: '1px solid rgba(186,26,26,0.2)',
                   borderRadius: 12,
                   display: 'flex',
                   gap: 10,
                   alignItems: 'flex-start',
                 }}
               >
-                <span className="material-symbols-outlined shrink-0" style={{ fontSize: 16, color: '#f43f5e', fontVariationSettings: "'FILL' 1" }}>
+                <span className="material-symbols-outlined shrink-0" style={{ fontSize: 16, color: '#ba1a1a', fontVariationSettings: "'FILL' 1" }}>
                   error
                 </span>
-                <p style={{ color: '#e11d48', fontSize: 13, fontWeight: 500 }}>{error}</p>
+                <p style={{ color: '#ba1a1a', fontSize: 13, fontWeight: 500 }}>{error}</p>
               </motion.div>
             )}
 
@@ -325,11 +286,12 @@ export default function LoginPage() {
                 marginTop: 4,
                 width: '100%',
                 height: 52,
-                background: loading ? '#374151' : '#111827',
+                background: '#127ee3',
+                opacity: loading ? 0.7 : 1,
                 color: '#fff',
-                borderRadius: 14,
+                borderRadius: 8,
                 border: 'none',
-                fontFamily: "'Manrope',system-ui,sans-serif",
+                fontFamily: "var(--font-intervar),sans-serif",
                 fontWeight: 700,
                 fontSize: 14,
                 cursor: loading ? 'not-allowed' : 'pointer',
@@ -338,19 +300,16 @@ export default function LoginPage() {
                 justifyContent: 'center',
                 gap: 8,
                 transition: 'all 150ms ease',
-                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
               }}
               onMouseEnter={e => {
                 if (!loading) {
-                  e.currentTarget.style.background = '#1f2937'
-                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.20)'
+                  e.currentTarget.style.opacity = '0.92'
                   e.currentTarget.style.transform = 'translateY(-1px)'
                 }
               }}
               onMouseLeave={e => {
                 if (!loading) {
-                  e.currentTarget.style.background = '#111827'
-                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.15)'
+                  e.currentTarget.style.opacity = '1'
                   e.currentTarget.style.transform = 'none'
                 }
               }}
@@ -382,23 +341,23 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '24px 0' }}>
-            <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#d1d5db', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <div style={{ flex: 1, height: 1, background: '#e1e9f0' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#b1bbcd', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               {t.auth.or}
             </span>
-            <div style={{ flex: 1, height: 1, background: '#f0f0f0' }} />
+            <div style={{ flex: 1, height: 1, background: '#e1e9f0' }} />
           </div>
 
           {/* Create account */}
-          <p style={{ textAlign: 'center', fontSize: 14, color: '#6b7280', fontWeight: 400 }}>
+          <p style={{ textAlign: 'center', fontSize: 14, color: '#36394a', fontWeight: 400 }}>
             {t.auth.noAccount}{' '}
             <Link
               href="/auth/signup"
               style={{
-                color: '#111827',
+                color: '#091135',
                 fontWeight: 700,
                 textDecoration: 'none',
-                borderBottom: '2px solid rgba(17,24,39,0.15)',
+                borderBottom: '2px solid #e1e9f0',
               }}
             >
               {t.auth.createAccount}
@@ -415,14 +374,14 @@ export default function LoginPage() {
             textAlign: 'center',
             marginTop: 24,
             fontSize: 11,
-            color: '#d1d5db',
+            color: '#b1bbcd',
             fontWeight: 500,
           }}
         >
           {t.auth.termsNotice.split('{')[0]}
-          <a href="#" style={{ color: '#9ca3af' }}>{t.auth.terms}</a>
+          <a href="#" style={{ color: '#36394a' }}>{t.auth.terms}</a>
           {' '}
-          <a href="#" style={{ color: '#9ca3af' }}>{t.auth.privacyText}</a>
+          <a href="#" style={{ color: '#36394a' }}>{t.auth.privacyText}</a>
         </motion.p>
       </div>
 

@@ -1,25 +1,26 @@
 import type { Metadata } from "next";
-import { Tajawal, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Noto_Sans_Arabic } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "../globals.css";
 
-// ── Arabic font: Tajawal ──────────────────────────────────────────────────
-// Clean, modern, light — the premium choice for Arab-market apps.
-// Designed for readability at all weights. Used extensively in KSA/Jordan tech.
-const tajawal = Tajawal({
-  variable: "--font-tajawal",
-  subsets: ["arabic", "latin"],
-  weight: ["200", "300", "400", "500", "700", "800", "900"],
+// ── Arabic font: Noto Sans Arabic ──────────────────────────────────────────
+// Modern, humanist sans with no serif clash against InterVar — keeps the
+// "data observatory" system feeling like one typographic voice across
+// both languages instead of pairing in a second personality.
+const notoSansArabic = Noto_Sans_Arabic({
+  variable: "--font-noto-arabic",
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-// ── English font: Plus Jakarta Sans ──────────────────────────────────────
-// The closest free equivalent to Styrene (used by Claude/Anthropic).
-// Geometric, clean, slightly distinctive letterforms — very premium feel.
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
+// ── English font: Inter (variable) — "InterVar" ────────────────────────────
+// Sole typeface across nav, body, buttons, and headings. Google's Inter
+// export already loads as a variable font across the full weight range.
+const interVar = Inter({
+  variable: "--font-intervar",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -48,7 +49,7 @@ export default async function RootLayout(props: {
         />
       </head>
       <body
-        className={`${tajawal.variable} ${plusJakarta.variable} antialiased`}
+        className={`${notoSansArabic.variable} ${interVar.variable} antialiased`}
         suppressHydrationWarning
       >
         <ThemeProvider>
