@@ -121,6 +121,30 @@ const en = {
     value: "Value",
   },
 
+  // ─── Services ───
+  services: {
+    title: "Services",
+    subtitle: "Manage your barbershop service menu",
+    searchPlaceholder: "Search services...",
+    addService: "Add Service",
+    editService: "Edit Service",
+    saveChanges: "Save Changes",
+    deleteService: "Delete Service",
+    deleteConfirm: "Delete this service? This cannot be undone.",
+    noServices: "No services yet",
+    noServicesDesc: "Add your first service to get started",
+    icon: "Icon",
+    serviceName: "Service Name",
+    serviceNameAr: "Service Name (Arabic)",
+    duration: "Duration",
+    minutes: "min",
+    price: "Price",
+    active: "Active",
+    inactive: "Inactive",
+    activate: "Activate Service",
+    deactivate: "Deactivate Service",
+  },
+
   // ─── Booking Engine ───
   booking: {
     bookAppointment: "Book Appointment",

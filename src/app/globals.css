@@ -156,7 +156,7 @@
   --text-tertiary:  #36394a;
   --text-muted:     #b1bbcd;
 
-  --border-primary: #e1e9f0;
+  --border-primary: #8c919d;
   --border-hover:   #0f77ff;
 
   --brand-primary:    #091135;
@@ -181,6 +181,7 @@
      focus ring, defined separately below */
   --glass-blur: 0px;
   --glass-bg:   #ffffff;
+  --glass-bg-elevated: #ffffff; /* solid paper surface — no blur/transparency, per flat system */
 
   --shadow-sm: none;
   --shadow-md: none;
@@ -228,7 +229,7 @@
   --text-tertiary:  #36394a;
   --text-muted:     #b1bbcd;
 
-  --border-primary: #e1e9f0;
+  --border-primary: #8c919d;
   --border-hover:   #0f77ff;
 
   --brand-primary:    #091135;
@@ -243,7 +244,6 @@
 }
 
 html {
-  font-size: 14px;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -812,7 +812,7 @@ h1, h2, h3, h4, h5, h6 {
   --text-tertiary:  #36394a;
   --text-muted:     #b1bbcd;
 
-  --border-primary: #e1e9f0;
+  --border-primary: #8c919d;
   --border-hover:   #0f77ff;
 
   --brand-primary:    #091135;
@@ -953,10 +953,10 @@ h1, h2, h3, h4, h5, h6 {
   white-space: nowrap;
   border: 1px solid #e1e9f0;
 }
-.badge-upcoming { background: #ffffff; color: #091135; }
-.badge-completed { background: rgba(18,126,227,0.1); color: #091135; border-color: #127ee3; }
+.badge-upcoming { background: rgba(18,126,227,0.1); color: #091135; border-color: #127ee3; }
+.badge-completed { background: #f5f3ff; color: #36394a; }
 .badge-cancelled { background: rgba(186,26,26,0.08); color: #ba1a1a; border-color: #ba1a1a; }
-.badge-pending   { background: #ffffff; color: #091135; }
+.badge-pending   { background: #f5f3ff; color: #36394a; }
 .badge-noshow    { background: #f5f3ff; color: #36394a; }
 .badge-open      { background: rgba(18,126,227,0.1); color: #091135; border-color: #127ee3; }
 

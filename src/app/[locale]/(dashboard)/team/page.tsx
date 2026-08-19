@@ -2,10 +2,10 @@
 
 import React, { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { 
-  UserPlus, Search, MoreVertical, 
+import {
+  UserPlus, Search, MoreVertical,
   Mail, Phone, ShieldCheck, Clock,
-  X, Check
+  X, Check, UserMinus
 } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
@@ -13,6 +13,7 @@ import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface TeamMember {
   id: string;
@@ -41,10 +42,12 @@ export default function TeamPage() {
   const supabase = createClient();
 
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   React.useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (data.user) {
+        setCurrentUserId(data.user.id);
         const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
         setCurrentUserRole(profile?.role || null);
       }
@@ -82,13 +85,24 @@ export default function TeamPage() {
   const shopServices = (servicesData as unknown as {id: string, name: string, name_ar: string | null}[]) ?? [];
 
   const [editingBarber, setEditingBarber] = useState<TeamMember | null>(null);
+  const [removingMember, setRemovingMember] = useState<TeamMember | null>(null);
 
-  const filtered = teamMembers.filter((member) => 
+  const filtered = teamMembers.filter((member) =>
     member.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleInvite = () => {
     toast("info", isRTL ? "دعوات الفريق قيد التطوير قريبًا." : "Team invites are coming soon.");
+  };
+
+  const handleRemoveMember = async (member: TeamMember) => {
+    const { error } = await supabase.from("profiles").update({ shop_id: null }).eq("id", member.id);
+    if (error) {
+      toast("error", isRTL ? "فشلت إزالة العضو من الفريق." : "Failed to remove team member.");
+      return;
+    }
+    toast("success", isRTL ? "تمت إزالة العضو من الفريق." : "Team member removed.");
+    refetchTeam();
   };
 
   if (loading) return <DashboardSkeleton />;
@@ -156,11 +170,21 @@ export default function TeamPage() {
               className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-[var(--radius-lg)] p-6 relative group"
             >
               {currentUserRole === 'shop_admin' && (
-                <button 
+                <button
                   onClick={() => setEditingBarber(member)}
                   className="absolute top-4 end-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors opacity-0 group-hover:opacity-100"
                 >
                   <MoreVertical size={18} />
+                </button>
+              )}
+              {currentUserRole === 'shop_admin' && member.id !== currentUserId && (
+                <button
+                  onClick={() => setRemovingMember(member)}
+                  className="absolute top-4 start-4 text-[var(--text-muted)] hover:text-[var(--accent-rose)] transition-colors opacity-0 group-hover:opacity-100"
+                  aria-label={isRTL ? "إزالة من الفريق" : "Remove from team"}
+                  title={isRTL ? "إزالة من الفريق" : "Remove from team"}
+                >
+                  <UserMinus size={18} />
                 </button>
               )}
               
@@ -208,14 +232,36 @@ export default function TeamPage() {
 
       {/* Editing Modal */}
       {editingBarber && (
-        <BarberSettingsModal 
-          editingBarber={editingBarber} 
-          shopServices={shopServices} 
-          setEditingBarber={setEditingBarber} 
-          refetchTeam={refetchTeam} 
-          isRTL={isRTL} 
+        <BarberSettingsModal
+          editingBarber={editingBarber}
+          shopServices={shopServices}
+          setEditingBarber={setEditingBarber}
+          refetchTeam={refetchTeam}
+          isRTL={isRTL}
         />
       )}
+
+      {/* Remove confirmation */}
+      <ConfirmDialog
+        open={!!removingMember}
+        onClose={() => setRemovingMember(null)}
+        onConfirm={async () => {
+          if (removingMember) await handleRemoveMember(removingMember);
+        }}
+        title={
+          isRTL
+            ? `إزالة ${removingMember?.full_name || "هذا العضو"} من الفريق؟`
+            : `Remove ${removingMember?.full_name || "this member"} from the team?`
+        }
+        description={
+          isRTL
+            ? "سيفقد هذا العضو صلاحية الوصول إلى لوحة تحكم المحل فوراً."
+            : "This member will immediately lose access to the shop dashboard."
+        }
+        confirmLabel={isRTL ? "إزالة" : "Remove"}
+        cancelLabel={isRTL ? "إلغاء" : "Cancel"}
+        destructive
+      />
     </motion.div>
   );
 }

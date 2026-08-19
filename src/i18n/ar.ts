@@ -123,6 +123,30 @@ const ar: TranslationKeys = {
     value: "القيمة",
   },
 
+  // ─── Services ───
+  services: {
+    title: "الخدمات",
+    subtitle: "إدارة قائمة خدمات محلك",
+    searchPlaceholder: "ابحث عن خدمة...",
+    addService: "إضافة خدمة",
+    editService: "تعديل الخدمة",
+    saveChanges: "حفظ التغييرات",
+    deleteService: "حذف الخدمة",
+    deleteConfirm: "هل تريد حذف هذه الخدمة؟ لا يمكن التراجع عن هذا الإجراء.",
+    noServices: "لا توجد خدمات بعد",
+    noServicesDesc: "أضف خدمتك الأولى للبدء",
+    icon: "الأيقونة",
+    serviceName: "اسم الخدمة",
+    serviceNameAr: "اسم الخدمة (بالعربية)",
+    duration: "المدة",
+    minutes: "دقيقة",
+    price: "السعر",
+    active: "نشطة",
+    inactive: "غير نشطة",
+    activate: "تفعيل الخدمة",
+    deactivate: "إلغاء تفعيل الخدمة",
+  },
+
   // ─── Booking Engine ───
   booking: {
     bookAppointment: "احجز موعد",

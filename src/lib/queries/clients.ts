@@ -3,7 +3,14 @@ import type { Database } from "@/lib/supabase/database.types";
 
 type Client = SupabaseClient<Database>;
 
-const PAGE_SIZE = 20;
+export const PAGE_SIZE = 20;
+
+// PostgREST's `.or()` filter string uses `,` to separate conditions and
+// `(` `)` `*` have syntactic meaning too — strip them from user input so a
+// pasted phone number or name can't break the filter (and silently fail).
+function sanitizeFilterValue(value: string): string {
+  return value.replace(/[,()*]/g, "");
+}
 
 // ─── Get clients (paginated + searchable) ───
 export async function getClients(
@@ -22,9 +29,10 @@ export async function getClients(
     .order("created_at", { ascending: false })
     .range(from, to);
 
-  if (search.trim()) {
+  const safeSearch = sanitizeFilterValue(search.trim());
+  if (safeSearch) {
     query = query.or(
-      `name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`,
+      `name.ilike.%${safeSearch}%,phone.ilike.%${safeSearch}%,email.ilike.%${safeSearch}%`,
     );
   }
 

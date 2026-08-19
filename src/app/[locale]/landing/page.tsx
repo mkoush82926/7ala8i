@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRef } from "react";
 import { useInView } from "framer-motion";
@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useThemeStore } from "@/store/theme-store";
 import { useTranslation } from "@/hooks/use-translation";
 import { useRouter, usePathname } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Design tokens ("Data Observatory on Cloud Paper") ───
 const T = {
@@ -42,6 +43,38 @@ export default function LandingPage() {
   const { FF, dir, isRTL, locale } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setIsLoggedIn(!!user));
+  }, []);
+
+  // Close the mobile drawer if the viewport grows past the md breakpoint
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth >= 768) setMobileMenuOpen(false);
+    }
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const navLinks = isLoggedIn
+    ? [
+        { label: isRTL ? "لوحة التحكم" : "Dashboard", href: "/" },
+        { label: isRTL ? "التقويم" : "Calendar", href: "/calendar" },
+        { label: isRTL ? "العملاء المحتملين" : "Leads", href: "/leads" },
+      ]
+    : [
+        { label: isRTL ? "الميزات" : "Features", href: "#features" },
+        { label: isRTL ? "التسعير" : "Pricing", href: "#pricing" },
+      ];
+
+  const ctaHref = isLoggedIn ? "/" : "/auth/signup";
+  const ctaLabel = isLoggedIn
+    ? (isRTL ? "لوحة التحكم" : "Dashboard")
+    : (isRTL ? "ابدأ الآن" : "GET STARTED");
 
   const handleToggleLocale = () => {
     const newLocale = locale === "en" ? "ar" : "en";
@@ -85,8 +118,8 @@ export default function LandingPage() {
         { label: "Journal" },
       ] },
     { title: isRTL ? "القانوني": "Legal", links: [
-        { label: isRTL ? "الخصوصية": "Privacy" },
-        { label: isRTL ? "الشروط"  : "Terms" },
+        { label: isRTL ? "الخصوصية": "Privacy", href: "/privacy" },
+        { label: isRTL ? "الشروط"  : "Terms", href: "/terms" },
         { label: "Support" },
       ] },
   ];
@@ -100,19 +133,19 @@ export default function LandingPage() {
           <span style={{ fontFamily: FF, fontSize: 20, fontWeight: 800, letterSpacing: "0.008em", color: T.dark }}>
             Halaqy.
           </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-            {["Dashboard", "Calendar", "Leads"].map((item) => (
+          <div className="hidden md:flex" style={{ alignItems: "center", gap: 32 }}>
+            {navLinks.map((item) => (
               <Link
-                key={item}
-                href={item === "Dashboard" ? "/" : `/${item.toLowerCase()}`}
+                key={item.label}
+                href={item.href}
                 style={{ fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: T.mid, textDecoration: "none" }}
               >
-                {item}
+                {item.label}
               </Link>
             ))}
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+        <div className="hidden md:flex" style={{ alignItems: "center", gap: 24 }}>
           <button
             onClick={handleToggleLocale}
             className="nav-link"
@@ -121,14 +154,70 @@ export default function LandingPage() {
             <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em" }}>{isRTL ? "EN" : "عربي"}</span>
           </button>
           <Link
-            href="/auth/signup"
+            href={ctaHref}
             className="btn btn-primary"
             style={{ borderRadius: 8 }}
           >
-            {isRTL ? "ابدأ الآن" : "GET STARTED"}
+            {ctaLabel}
           </Link>
         </div>
+
+        {/* Mobile hamburger toggle */}
+        <button
+          className="md:hidden"
+          onClick={() => setMobileMenuOpen((v) => !v)}
+          aria-label={isRTL ? "فتح القائمة" : "Toggle menu"}
+          aria-expanded={mobileMenuOpen}
+          style={{
+            background: "none", border: "none", cursor: "pointer", color: T.dark,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 40, height: 40,
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 26 }}>
+            {mobileMenuOpen ? "close" : "menu"}
+          </span>
+        </button>
       </nav>
+
+      {/* Mobile nav drawer */}
+      {mobileMenuOpen && (
+        <div
+          style={{
+            display: "flex", flexDirection: "column", gap: 20,
+            padding: "24px", background: T.white,
+            borderBottom: `1px solid ${T.outline}`,
+          }}
+        >
+          {navLinks.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em", color: T.mid, textDecoration: "none" }}
+            >
+              {item.label}
+            </Link>
+          ))}
+          <div style={{ height: 1, background: T.outline }} />
+          <button
+            onClick={() => { handleToggleLocale(); setMobileMenuOpen(false); }}
+            className="nav-link"
+            style={{ alignSelf: "flex-start" }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>language</span>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em" }}>{isRTL ? "EN" : "عربي"}</span>
+          </button>
+          <Link
+            href={ctaHref}
+            className="btn btn-primary"
+            style={{ borderRadius: 8, justifyContent: "center" }}
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            {ctaLabel}
+          </Link>
+        </div>
+      )}
 
       {/* ═══ HERO ═══ */}
       <section className="landing-section" style={{ background: T.white, position: "relative" }}>
@@ -400,9 +489,9 @@ export default function LandingPage() {
                 {col.links.map((link) => (
                   <li key={link.label}>
                     {link.href ? (
-                      <a href={link.href} className="nav-link">
+                      <Link href={link.href} className="nav-link">
                         {link.label}
-                      </a>
+                      </Link>
                     ) : (
                       <span style={{ color: T.mid, fontWeight: 500 }}>{link.label}</span>
                     )}

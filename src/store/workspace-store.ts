@@ -71,11 +71,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         .select("id, full_name, avatar_url, role")
         .eq("shop_id", profile.shop_id);
 
-      const barbers = (team ?? []).map((member) => ({
-        id: member.id,
-        name: member.full_name,
-        avatar: member.avatar_url ?? undefined,
-      }));
+      const barbers = (team ?? [])
+        .filter((member) => member.role === "barber")
+        .map((member) => ({
+          id: member.id,
+          name: member.full_name,
+          avatar: member.avatar_url ?? undefined,
+        }));
 
       set({
         shopId: profile.shop_id,

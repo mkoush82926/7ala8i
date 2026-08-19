@@ -17,6 +17,8 @@ const PUBLIC_ROUTES = [
   "/book",
   "/customer/explore",
   "/customer/shops",
+  "/terms",
+  "/privacy",
 ];
 
 

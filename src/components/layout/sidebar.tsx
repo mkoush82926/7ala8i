@@ -22,7 +22,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useTranslation } from "@/hooks/use-translation";
-import { NotificationBell } from "@/components/notifications/notification-bell";
 
 const navItems = [
   { id: "dashboard", icon: LayoutDashboard, href: "/" },
@@ -85,7 +84,6 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <NotificationBell />
           {onClose && (
             <button
               onClick={onClose}

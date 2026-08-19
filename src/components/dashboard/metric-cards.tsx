@@ -10,6 +10,7 @@ import {
   Target,
   ArrowUpRight,
   ArrowDownRight,
+  AlertTriangle,
 } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
@@ -51,7 +52,7 @@ export function MetricCards() {
   const { shopId } = useWorkspaceStore();
   const supabase = createClient();
 
-  const { data: metrics, loading } = useSupabaseQuery(
+  const { data: metrics, loading, error, refetch } = useSupabaseQuery(
     async () => {
       const result = await getDashboardMetrics(supabase, shopId);
       return { data: result, error: null };
@@ -139,6 +140,35 @@ export function MetricCards() {
             <div style={{ height: 14, width: 90, borderRadius: 9999, background: "#e1e9f0" }} />
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{
+        padding: 28, borderRadius: 12,
+        border: "1px solid #e1e9f0",
+        background: "#fff",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: 16, flexWrap: "wrap",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 12,
+            background: "rgba(186,26,26,0.1)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <AlertTriangle size={20} style={{ color: "#ba1a1a" }} />
+          </div>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#091135", margin: "0 0 2px" }}>
+              Couldn&apos;t load metrics
+            </p>
+            <p style={{ fontSize: 12, color: "#36394a", margin: 0 }}>{error}</p>
+          </div>
+        </div>
+        <button onClick={refetch} className="btn btn-secondary">Retry</button>
       </div>
     );
   }

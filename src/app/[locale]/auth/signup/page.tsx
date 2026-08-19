@@ -64,6 +64,7 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [shopName, setShopName] = useState("");
   const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -100,8 +101,14 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 8) {
+      setError(t.auth.passwordRules);
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError(isRTL ? "كلمتا المرور غير متطابقتين." : "Passwords do not match.");
       setLoading(false);
       return;
     }
@@ -348,7 +355,7 @@ export default function SignupPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={t.auth.passwordRules}
                     required
-                    minLength={6}
+                    minLength={8}
                     style={{ ...inputStyle(), paddingRight: 48 }}
                   />
                   <button
@@ -359,6 +366,30 @@ export default function SignupPage() {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#36394a" }}>
+                  {isRTL ? "تأكيد كلمة المرور" : "Confirm Password"}
+                </label>
+                <input
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder={isRTL ? "أعد إدخال كلمة المرور" : "Repeat your password"}
+                  style={{
+                    ...inputStyle(),
+                    border: confirmPassword && confirmPassword !== password ? "1px solid #ba1a1a" : inputStyle().border,
+                  }}
+                />
+                {confirmPassword && confirmPassword !== password && (
+                  <p style={{ fontSize: 12, color: "#ba1a1a", margin: 0 }}>
+                    {isRTL ? "كلمتا المرور غير متطابقتين" : "Passwords do not match"}
+                  </p>
+                )}
               </div>
 
               {error && (

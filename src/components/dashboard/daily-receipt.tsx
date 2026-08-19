@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { formatCurrency } from "@/lib/utils";
-import { FileText, CreditCard, Banknote, Loader2, Download } from "lucide-react";
+import { FileText, CreditCard, Banknote, Loader2, Download, AlertTriangle } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
@@ -24,7 +24,7 @@ export function DailyReceipt() {
   const { shopId } = useWorkspaceStore();
   const supabase = createClient();
 
-  const { data: rawAppts, loading } = useSupabaseQuery(
+  const { data: rawAppts, loading, error, refetch } = useSupabaseQuery(
     () => getTodayAppointments(supabase, shopId),
     [shopId],
     { enabled: !!shopId },
@@ -40,7 +40,7 @@ export function DailyReceipt() {
       time: new Date(a.start_time as string).toLocaleTimeString("en-US", {
         hour: "2-digit", minute: "2-digit", hour12: false,
       }),
-      paymentMethod: "cash" as const,
+      paymentMethod: (a.payment_method as string) === "card" ? "card" : "cash",
     }));
 
   const totalSales = sales.reduce((sum, s) => sum + s.amount, 0);
@@ -92,6 +92,46 @@ export function DailyReceipt() {
         height: "100%",
       }}>
         <Loader2 size={24} style={{ color: "#b1bbcd" }} className="animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{
+        background: "#091135",
+        border: "1px solid #e1e9f0",
+        borderRadius: 12,
+        padding: "32px 32px 28px",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 14,
+        textAlign: "center",
+      }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 12,
+          background: "rgba(186,26,26,0.18)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <AlertTriangle size={20} style={{ color: "#ba1a1a" }} />
+        </div>
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", margin: "0 0 6px" }}>
+            Couldn&apos;t load today&apos;s sales
+          </p>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", margin: 0 }}>{error}</p>
+        </div>
+        <button onClick={refetch} className="btn" style={{
+          background: "rgba(255,255,255,0.1)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          color: "rgba(255,255,255,0.8)",
+          padding: "0 20px", minHeight: 40, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em",
+        }}>
+          Retry
+        </button>
       </div>
     );
   }

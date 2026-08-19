@@ -81,14 +81,14 @@ export function ConfirmDialog({
                 <button
                   onClick={onClose}
                   disabled={loading}
-                  className="h-9 px-4 rounded-[var(--radius-buttons)] text-[13px] text-[var(--text-secondary)] font-light border border-[var(--border-primary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-11 px-4 rounded-[var(--radius-buttons)] text-[13px] text-[var(--text-secondary)] font-light border border-[var(--border-primary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {cancelLabel}
                 </button>
                 <button
                   onClick={handleConfirm}
                   disabled={loading}
-                  className={`h-9 px-5 rounded-[var(--radius-buttons)] text-[13px] font-medium flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`h-11 px-5 rounded-[var(--radius-buttons)] text-[13px] font-medium flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                     destructive
                       ? "bg-[var(--accent-rose)] text-white hover:opacity-90"
                       : "bg-[var(--accent-mint)] text-white hover:opacity-90"

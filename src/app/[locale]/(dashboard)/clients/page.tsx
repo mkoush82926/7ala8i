@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,8 +11,11 @@ import { useTranslation } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
-import { getClients } from "@/lib/queries/clients";
+import { getClients, PAGE_SIZE } from "@/lib/queries/clients";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
+
+// Keystrokes shouldn't each fire a new request — wait for a short pause.
+const SEARCH_DEBOUNCE_MS = 300;
 
 const avatarColors = [
   { bg: "#f5f3ff", text: "#091135" },
@@ -26,24 +29,36 @@ export default function ClientsPage() {
   const { t, isRTL } = useTranslation();
   const { shopId } = useWorkspaceStore();
   const router = useRouter();
+  const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [selectedClient, setSelectedClient] = useState<Record<string, unknown> | null>(null);
 
   const supabase = createClient();
 
-  const { data, loading } = useSupabaseQuery(
-    () => getClients(supabase, shopId, page, searchTerm),
+  // Debounce the search input so every keystroke doesn't trigger a new query.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setSearchTerm(inputValue);
+      setPage(1);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(handle);
+  }, [inputValue]);
+
+  const { data: queryResult, loading } = useSupabaseQuery(
+    async () => {
+      const { data, error, count } = await getClients(supabase, shopId, page, searchTerm);
+      return {
+        data: { rows: (data ?? []) as Record<string, unknown>[], count: count ?? 0 },
+        error,
+      };
+    },
     [shopId, page, searchTerm],
     { enabled: !!shopId },
   );
 
-  const handleSearch = useCallback((value: string) => {
-    setSearchTerm(value);
-    setPage(1);
-  }, []);
-
-  const clients = (data as unknown as Record<string, unknown>[]) ?? [];
+  const clients = queryResult?.rows ?? [];
+  const totalCount = queryResult?.count ?? 0;
 
   if (loading && page === 1) return <DashboardSkeleton />;
 
@@ -63,7 +78,7 @@ export default function ClientsPage() {
             </h2>
             <p style={{ fontSize: 14, color: "#36394a", marginTop: 6, fontWeight: 400 }}>
               {isRTL ? "إدارة قاعدة بيانات" : "Manage your database of"}{" "}
-              <strong style={{ color: "#091135" }}>{clients.length}</strong>{" "}
+              <strong style={{ color: "#091135" }}>{totalCount}</strong>{" "}
               {isRTL ? "عميل نشط" : "active clients"}
             </p>
           </div>
@@ -74,8 +89,8 @@ export default function ClientsPage() {
               <input
                 type="text"
                 placeholder={isRTL ? "البحث بالاسم أو الهاتف..." : "Search by name, phone, or email..."}
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
                 style={{
                   width: 280, background: "#ffffff", border: "1px solid #e1e9f0",
                   borderRadius: 8, padding: "10px 16px 10px 40px",
@@ -122,7 +137,7 @@ export default function ClientsPage() {
         </div>
       ) : (
         /* Practice #6 — grid respects content variation without breaking layout */
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20 }}>
+        <div className="card-grid-4">
           {clients.map((client: Record<string, unknown>, i: number) => {
             const colorScheme = avatarColors[i % avatarColors.length];
             const name = client.name as string ?? "—";
@@ -246,11 +261,13 @@ export default function ClientsPage() {
       )}
 
       {/* Pagination */}
-      {clients.length >= 20 && (
+      {totalCount > PAGE_SIZE && (
         <div className="flex items-center justify-between pt-4">
           <p className="text-sm text-on-surface-variant font-medium">
             {isRTL ? "عرض" : "Showing"}&nbsp;
-            <span className="font-bold text-on-surface">{(page - 1) * 20 + 1} - {(page - 1) * 20 + clients.length}</span>
+            <span className="font-bold text-on-surface">{(page - 1) * PAGE_SIZE + 1} - {(page - 1) * PAGE_SIZE + clients.length}</span>
+            {" "}{isRTL ? "من" : "of"}{" "}
+            <span className="font-bold text-on-surface">{totalCount}</span>
           </p>
           <div className="flex items-center gap-1">
             <button
@@ -265,7 +282,8 @@ export default function ClientsPage() {
             </button>
             <button
               onClick={() => setPage((p) => p + 1)}
-              className="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
+              disabled={page * PAGE_SIZE >= totalCount}
+              className="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
             >
               <ChevronRight size={18} />
             </button>

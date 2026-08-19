@@ -8,11 +8,14 @@ import { getPublicServices } from "@/lib/queries/services";
 import { getAvailableSlots } from "@/lib/queries/appointments";
 import { format, addDays, parseISO } from "date-fns";
 import Link from "next/link";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 
 type BookingStep = "landing" | "services" | "barber" | "datetime" | "confirm";
 
 const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
+
+// Mirrors the server-side pattern in src/app/api/booking/route.ts
+const PHONE_REGEX = /^\+?[0-9\s\-()]{7,20}$/;
 
 // ─── Colour tokens (inline so Tailwind purging can't break them) ───
 // Data Observatory on Cloud Paper palette — see design-system/clearbit-reference.md
@@ -114,6 +117,28 @@ function NavBtn({ onClick, icon }: { onClick: () => void; icon: string }) {
   );
 }
 
+function ErrorState({ message, onRetry, retryLabel }: { message: string; onRetry: () => void; retryLabel: string }) {
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+      padding: "40px 20px", textAlign: "center",
+    }}>
+      <span className="material-symbols-outlined" style={{ fontSize: 30, color: C.red }}>error_outline</span>
+      <p style={{ fontSize: 14, color: C.muted, margin: 0, maxWidth: 320 }}>{message}</p>
+      <button
+        onClick={onRetry}
+        style={{
+          padding: "10px 20px", borderRadius: 8, border: `1.5px solid ${C.border}`,
+          background: C.white, color: C.black, fontWeight: 700, fontSize: 13,
+          fontFamily: FF, cursor: "pointer",
+        }}
+      >
+        {retryLabel}
+      </button>
+    </div>
+  );
+}
+
 function NextBtn({ onClick, disabled, children }: { onClick: () => void; disabled: boolean; children?: React.ReactNode }) {
   return (
     <button
@@ -151,6 +176,8 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
   const [booked,           setBooked]            = useState(false);
   const [submitting,       setSubmitting]        = useState(false);
   const [bookingError,     setBookingError]      = useState<string | null>(null);
+  const [phoneTouched,     setPhoneTouched]      = useState(false);
+  const phoneFormatValid = PHONE_REGEX.test(clientPhone.trim());
 
   const weekDays = useMemo(() => generateDays(14), []);
   const [resolvedShopId, setResolvedShopId] = useState(shopId ?? "");
@@ -168,14 +195,14 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
   );
   const shop = shopData as { id: string; name: string; address: string } | null;
 
-  const { data: services, loading: servicesLoading } = useSupabaseQuery<ServiceRow[]>(
+  const { data: services, loading: servicesLoading, error: servicesError, refetch: refetchServices } = useSupabaseQuery<ServiceRow[]>(
     () => getPublicServices(supabase, resolvedShopId),
     [resolvedShopId], { enabled: !!resolvedShopId }
   );
 
-  const { data: barbers } = useSupabaseQuery<BarberRow[]>(
+  const { data: barbers, loading: barbersLoading, error: barbersError, refetch: refetchBarbers } = useSupabaseQuery<BarberRow[]>(
     async () => {
-      const r = await supabase.from("profiles").select("id, full_name").eq("shop_id", resolvedShopId).eq("role", "barber");
+      const r = await supabase.from("profiles").select("id, full_name, barber_services(service_id)").eq("shop_id", resolvedShopId).eq("role", "barber");
       return r as { data: BarberRow[] | null; error: { message: string } | null };
     },
     [resolvedShopId], { enabled: !!resolvedShopId }
@@ -184,7 +211,21 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
   const serviceList = services  ?? [];
   const barberList  = barbers   ?? [];
 
-  const { data: workingHoursRaw } = useSupabaseQuery(
+  // Only barbers who can perform every currently-selected service — unless a barber
+  // has no barber_services rows at all, meaning capability data isn't populated for them.
+  const filteredBarbers = useMemo(() => {
+    if (selectedServices.length === 0) return barberList;
+    return barberList.filter(b => {
+      if (!b.barber_services || b.barber_services.length === 0) return true;
+      return b.barber_services.some(bs => selectedServices.includes(bs.service_id));
+    });
+  }, [barberList, selectedServices]);
+
+  const totalPrice    = serviceList.filter(s => selectedServices.includes(s.id)).reduce((a, s) => a + s.price, 0);
+  const totalDuration = serviceList.filter(s => selectedServices.includes(s.id)).reduce((a, s) => a + s.duration, 0);
+  const selectedBarberName = selectedBarber === "any" ? t.booking.anyBarber : barberList.find(b => b.id === selectedBarber)?.full_name;
+
+  const { data: workingHoursRaw, error: workingHoursError, refetch: refetchWorkingHours } = useSupabaseQuery(
     async () => {
       const ids = barberList.map(b => b.id);
       if (!ids.length) return { data: [], error: null };
@@ -193,26 +234,53 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
     [barberList], { enabled: barberList.length > 0 && step === "datetime" }
   );
 
-  const availableTimes = useMemo(() => {
-    const fallback = ["09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30"];
-    if (!workingHoursRaw || !selectedDate) return fallback;
-    const dayNum = new Date(selectedDate).getDay();
-    const set = new Set<string>();
-    for (const b of barberList) {
-      const h = (workingHoursRaw as WorkingHourRow[]).find(x => x.barber_id === b.id && x.day_of_week === dayNum);
-      if (!h) { fallback.forEach(t => set.add(t)); continue; }
-      if (!h.is_working) continue;
-      const [sh, sm] = h.start_time.split(":").map(Number);
-      const [eh, em] = h.end_time.split(":").map(Number);
-      for (let m = sh * 60 + sm; m < eh * 60 + em; m += 30) {
-        set.add(`${Math.floor(m/60).toString().padStart(2,"0")}:${(m%60).toString().padStart(2,"0")}`);
-      }
-    }
-    const arr = Array.from(set).sort();
-    return arr.length ? arr : fallback;
-  }, [workingHoursRaw, selectedDate, barberList]);
+  // Only the specifically-chosen barber's hours count toward availability; "any" pools every barber.
+  const barbersForAvailability = useMemo(() => (
+    selectedBarber && selectedBarber !== "any" ? barberList.filter(b => b.id === selectedBarber) : barberList
+  ), [barberList, selectedBarber]);
 
-  const { data: occupiedSlots, loading: slotsLoading } = useSupabaseQuery(
+  const availableTimes = useMemo(() => {
+    const toMinutes = (time: string) => { const [h, m] = time.split(":").map(Number); return h * 60 + m; };
+    const toTimeStr = (mins: number) => `${Math.floor(mins / 60).toString().padStart(2, "0")}:${(mins % 60).toString().padStart(2, "0")}`;
+    const FALLBACK_START = 9 * 60;   // 09:00
+    const FALLBACK_CLOSE = 18 * 60;  // 18:00 — matches the old generic list's last 17:30 slot + 30min
+
+    if (!selectedDate) return [];
+
+    const dayNum = new Date(selectedDate).getDay();
+    const isToday = selectedDate === format(new Date(), "yyyy-MM-dd");
+    const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+    const set = new Set<string>();
+
+    const addWindow = (startMin: number, closeMin: number) => {
+      for (let m = startMin; m + totalDuration <= closeMin; m += 30) {
+        if (isToday && m < nowMinutes) continue; // already passed
+        set.add(toTimeStr(m));
+      }
+    };
+
+    if (!workingHoursRaw) {
+      // Working-hours config hasn't loaded yet — show the generic window as a placeholder.
+      addWindow(FALLBACK_START, FALLBACK_CLOSE);
+      return Array.from(set).sort();
+    }
+
+    for (const b of barbersForAvailability) {
+      const barberHours = (workingHoursRaw as WorkingHourRow[]).filter(x => x.barber_id === b.id);
+      if (barberHours.length === 0) {
+        // No working_hours rows at all for this barber — unconfigured, fall back to the generic window.
+        addWindow(FALLBACK_START, FALLBACK_CLOSE);
+        continue;
+      }
+      const h = barberHours.find(x => x.day_of_week === dayNum);
+      if (!h || !h.is_working) continue; // explicitly closed, or no entry for this day — no slots
+      addWindow(toMinutes(h.start_time), toMinutes(h.end_time));
+    }
+
+    return Array.from(set).sort();
+  }, [workingHoursRaw, selectedDate, barbersForAvailability, totalDuration]);
+
+  const { data: occupiedSlots, loading: slotsLoading, error: slotsError, refetch: refetchSlots } = useSupabaseQuery(
     () => getAvailableSlots(supabase, resolvedShopId, selectedDate, selectedBarber !== "any" ? selectedBarber ?? undefined : undefined),
     [resolvedShopId, selectedDate, selectedBarber], { enabled: !!resolvedShopId && step === "datetime" }
   );
@@ -232,10 +300,6 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
     });
     return set;
   }, [occupiedSlots, availableTimes]);
-
-  const totalPrice    = serviceList.filter(s => selectedServices.includes(s.id)).reduce((a, s) => a + s.price, 0);
-  const totalDuration = serviceList.filter(s => selectedServices.includes(s.id)).reduce((a, s) => a + s.duration, 0);
-  const selectedBarberName = selectedBarber === "any" ? "Any Available Barber" : barberList.find(b => b.id === selectedBarber)?.full_name;
 
   const morningTimes   = availableTimes.filter(t => parseInt(t) < 12);
   const afternoonTimes = availableTimes.filter(t => parseInt(t) >= 12);
@@ -365,6 +429,10 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
               <div style={{ display: "flex", justifyContent: "center", padding: "64px 0" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 32, color: C.muted, animation: "spin 1s linear infinite" }}>refresh</span>
               </div>
+            ) : servicesError ? (
+              <ErrorState message={t.error.message} onRetry={refetchServices} retryLabel={t.error.tryAgain} />
+            ) : serviceList.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "48px 0", color: C.muted, fontSize: 14 }}>{t.common.noData}</div>
             ) : (
               <div className="booking-service-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 24 }}>
                 {serviceList.map(service => {
@@ -428,7 +496,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 </div>
                 {selectedServices.length > 0 && (
                   <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>
-                    {selectedServices.length} service{selectedServices.length > 1 ? "s" : ""} · {totalDuration} min
+                    {selectedServices.length} {t.booking.service} · {totalDuration} min
                   </p>
                 )}
               </div>
@@ -473,27 +541,43 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 </div>
               </button>
 
-              {barberList.map(barber => (
-                <button
-                  key={barber.id}
-                  onClick={() => { setSelectedBarber(barber.id); setStep("datetime"); }}
-                  style={{
-                    padding: "24px 20px", borderRadius: 12, textAlign: "left", cursor: "pointer",
-                    border: selectedBarber === barber.id ? `2px solid ${C.black}` : `1.5px solid ${C.border}`,
-                    background: selectedBarber === barber.id ? C.surface : C.white,
-                    display: "flex", flexDirection: "column", gap: 12, fontFamily: FF,
-                    transition: "all 140ms ease",
-                  }}
-                >
-                  <div style={{ width: 60, height: 60, borderRadius: "50%", background: C.black, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontSize: 22, fontWeight: 700, color: C.white }}>{barber.full_name[0]?.toUpperCase()}</span>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 4px" }}>{barber.full_name}</p>
-                    <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Master Barber</p>
-                  </div>
-                </button>
-              ))}
+              {barbersLoading ? (
+                <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "center", padding: "32px 0" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 28, color: C.muted, animation: "spin 1s linear infinite" }}>refresh</span>
+                </div>
+              ) : barbersError ? (
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <ErrorState message={t.error.message} onRetry={refetchBarbers} retryLabel={t.error.tryAgain} />
+                </div>
+              ) : barberList.length === 0 ? (
+                <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "24px 0", color: C.muted, fontSize: 13 }}>{t.common.noData}</div>
+              ) : filteredBarbers.length === 0 ? (
+                <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "24px 0", color: C.muted, fontSize: 13 }}>
+                  {isRTL ? "لا يوجد حلاق متاح لهذه الخدمة" : "No barber available for this service"}
+                </div>
+              ) : (
+                filteredBarbers.map(barber => (
+                  <button
+                    key={barber.id}
+                    onClick={() => { setSelectedBarber(barber.id); setStep("datetime"); }}
+                    style={{
+                      padding: "24px 20px", borderRadius: 12, textAlign: "left", cursor: "pointer",
+                      border: selectedBarber === barber.id ? `2px solid ${C.black}` : `1.5px solid ${C.border}`,
+                      background: selectedBarber === barber.id ? C.surface : C.white,
+                      display: "flex", flexDirection: "column", gap: 12, fontFamily: FF,
+                      transition: "all 140ms ease",
+                    }}
+                  >
+                    <div style={{ width: 60, height: 60, borderRadius: "50%", background: C.black, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: 22, fontWeight: 700, color: C.white }}>{barber.full_name[0]?.toUpperCase()}</span>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 4px" }}>{barber.full_name}</p>
+                      <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Master Barber</p>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
 
             {/* Selection summary */}
@@ -574,9 +658,19 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 </div>
               </div>
 
-              {slotsLoading ? (
+              {(workingHoursError || slotsError) ? (
+                <ErrorState
+                  message={t.error.message}
+                  onRetry={() => { refetchWorkingHours(); refetchSlots(); }}
+                  retryLabel={t.error.tryAgain}
+                />
+              ) : slotsLoading ? (
                 <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 28, color: C.muted, animation: "spin 1s linear infinite" }}>refresh</span>
+                </div>
+              ) : availableTimes.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "32px 0", color: C.muted, fontSize: 13 }}>
+                  {isRTL ? "لا توجد أوقات متاحة في هذا اليوم" : "No available times for this day"}
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -595,12 +689,10 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                               style={{
                                 padding: "12px 0", borderRadius: 8, border: "2px solid",
                                 borderColor: isSelected ? C.black : C.border,
-                                background: isSelected ? C.surface : C.white,
-                                color: isSelected ? C.black : isOccupied ? C.mist : C.black,
-                                fontSize: 13, fontWeight: 700, fontFamily: FF,
+                                background: isSelected ? C.surface : isOccupied ? C.border : C.white,
+                                color: isSelected ? C.black : isOccupied ? C.muted : C.black,
+                                fontSize: 13, fontWeight: isOccupied ? 500 : 700, fontFamily: FF,
                                 cursor: isOccupied ? "not-allowed" : "pointer",
-                                textDecoration: isOccupied ? "line-through" : "none",
-                                opacity: isOccupied ? 0.4 : 1,
                                 transition: "all 120ms ease",
                               }}
                             >{formatTime(time)}</button>
@@ -624,12 +716,10 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                               style={{
                                 padding: "12px 0", borderRadius: 8, border: "2px solid",
                                 borderColor: isSelected ? C.black : C.border,
-                                background: isSelected ? C.surface : C.white,
-                                color: isSelected ? C.black : isOccupied ? C.mist : C.black,
-                                fontSize: 13, fontWeight: 700, fontFamily: FF,
+                                background: isSelected ? C.surface : isOccupied ? C.border : C.white,
+                                color: isSelected ? C.black : isOccupied ? C.muted : C.black,
+                                fontSize: 13, fontWeight: isOccupied ? 500 : 700, fontFamily: FF,
                                 cursor: isOccupied ? "not-allowed" : "pointer",
-                                textDecoration: isOccupied ? "line-through" : "none",
-                                opacity: isOccupied ? 0.4 : 1,
                                 transition: "all 120ms ease",
                               }}
                             >{formatTime(time)}</button>
@@ -687,7 +777,10 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                     {[
                       { label: t.booking.yourName,     value: clientName,  setter: setClientName,  type: "text", placeholder: "Your name" },
                       { label: t.booking.phoneNumber,  value: clientPhone, setter: setClientPhone, type: "tel",  placeholder: "+962 ..." },
-                    ].map(field => (
+                    ].map(field => {
+                      const isPhone = field.type === "tel";
+                      const phoneShowsError = isPhone && phoneTouched && field.value.trim().length > 0 && !PHONE_REGEX.test(field.value.trim());
+                      return (
                       <div key={field.label}>
                         <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: C.muted, marginBottom: 6 }}>
                           {field.label}
@@ -699,16 +792,22 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                           onChange={e => field.setter(e.target.value)}
                           style={{
                             width: "100%", height: 48, padding: "0 16px",
-                            borderRadius: 8, border: `1.5px solid ${C.border}`,
+                            borderRadius: 8, border: `1.5px solid ${phoneShowsError ? C.red : C.border}`,
                             background: C.white, fontSize: 14, fontWeight: 500,
                             color: C.black, outline: "none", fontFamily: FF,
                             boxSizing: "border-box", transition: "all 150ms ease",
                           }}
                           onFocus={e => { e.target.style.borderColor = C.blue; e.target.style.background = C.white; e.target.style.boxShadow = "var(--shadow-focus)"; }}
-                          onBlur={e => { e.target.style.borderColor = C.border; e.target.style.background = C.white; e.target.style.boxShadow = "none"; }}
+                          onBlur={e => { if (isPhone) setPhoneTouched(true); e.target.style.borderColor = phoneShowsError ? C.red : C.border; e.target.style.background = C.white; e.target.style.boxShadow = "none"; }}
                         />
+                        {phoneShowsError && (
+                          <p style={{ fontSize: 12, color: C.red, margin: "6px 0 0" }}>
+                            {isRTL ? "أدخل رقم هاتف صالح (٧-٢٠ أرقام)" : "Enter a valid phone number (7–20 digits)"}
+                          </p>
+                        )}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -722,7 +821,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 700, color: C.black, margin: "0 0 4px" }}>No payment today</p>
                     <p style={{ fontSize: 12, color: C.subtle, margin: 0, lineHeight: 1.5 }}>
-                      You pay at the shop after your visit. Please give 24h notice if you need to cancel.
+                      {interpolate(t.booking.paymentNotice, { amount: totalPrice.toFixed(2) })}
                     </p>
                   </div>
                 </div>
@@ -769,7 +868,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 </div>
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.muted }}>Total</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.muted }}>{t.booking.total}</span>
                   <span style={{ fontSize: 32, fontWeight: 900, letterSpacing: "0.016em", color: C.black }}>{totalPrice.toFixed(2)} JOD</span>
                 </div>
 
@@ -780,14 +879,14 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 )}
 
                 <button
-                  disabled={!clientName.trim() || !clientPhone.trim() || submitting}
+                  disabled={!clientName.trim() || !clientPhone.trim() || !phoneFormatValid || submitting}
                   onClick={handleBooking}
                   style={{
                     width: "100%", height: 52,
-                    background: (!clientName.trim() || !clientPhone.trim() || submitting) ? C.border : C.green,
-                    color: (!clientName.trim() || !clientPhone.trim() || submitting) ? C.mist : C.white, borderRadius: 8, border: "none",
+                    background: (!clientName.trim() || !clientPhone.trim() || !phoneFormatValid || submitting) ? C.border : C.green,
+                    color: (!clientName.trim() || !clientPhone.trim() || !phoneFormatValid || submitting) ? C.mist : C.white, borderRadius: 8, border: "none",
                     fontWeight: 700, fontSize: 15, fontFamily: FF,
-                    cursor: (!clientName.trim() || !clientPhone.trim() || submitting) ? "not-allowed" : "pointer",
+                    cursor: (!clientName.trim() || !clientPhone.trim() || !phoneFormatValid || submitting) ? "not-allowed" : "pointer",
                     transition: "all 150ms ease",
                   }}
                 >
@@ -827,10 +926,14 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 <span className="material-symbols-outlined" style={{ fontSize: 44, color: C.white, fontVariationSettings: "'FILL' 1" }}>check_circle</span>
               </div>
               <h2 style={{ fontSize: 40, fontWeight: 900, letterSpacing: "0.018em", fontFamily: "var(--font-intervar),sans-serif", margin: "0 0 12px" }}>
-                You&apos;re All Set!
+                {t.booking.allSet}
               </h2>
               <p style={{ fontSize: 16, color: C.subtle, marginBottom: 36, maxWidth: 400, margin: "0 auto 36px" }}>
-                Your appointment at <strong style={{ color: C.black }}>{shop?.name}</strong> is confirmed.
+                {interpolate(t.booking.confirmationMsg, {
+                  barber: selectedBarberName || t.booking.anyBarber,
+                  date: format(new Date(selectedDate), "MMM d, yyyy"),
+                  time: selectedTime ? formatTime(selectedTime) : "",
+                })}
               </p>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "20px 24px", marginBottom: 32, textAlign: "left" }}>
@@ -838,7 +941,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                   { label: "Barber",  value: selectedBarberName || "Any" },
                   { label: "Date",    value: format(new Date(selectedDate), "MMM d") },
                   { label: "Time",    value: selectedTime ? formatTime(selectedTime) : "" },
-                  { label: "Total",   value: `${totalPrice.toFixed(2)} JOD` },
+                  { label: t.booking.total, value: `${totalPrice.toFixed(2)} JOD` },
                 ].map(r => (
                   <div key={r.label}>
                     <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.muted, margin: "0 0 4px" }}>{r.label}</p>

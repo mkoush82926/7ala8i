@@ -1,2 +1,6 @@
-// /customer/bookings → same as /customer (the main dashboard)
-export { default } from "@/app/[locale]/customer/page";
+import { redirect } from "next/navigation";
+
+// /customer/bookings → the real destination: the My Appointments dashboard.
+export default function CustomerBookingsRedirect() {
+  redirect("/customer");
+}

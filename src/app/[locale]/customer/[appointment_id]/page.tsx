@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface AppointmentDetail {
   id: string;
@@ -34,10 +36,18 @@ export default function BookingDetailPage() {
   const appointmentId = params.appointment_id as string;
   const router = useRouter();
   const supabase = createClient();
+  const { t, dir, isRTL } = useTranslation();
 
   const [appt, setAppt] = useState<AppointmentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -81,16 +91,16 @@ export default function BookingDetailPage() {
 
   async function handleCancel() {
     if (!appt) return;
-    if (!confirm("Are you sure you want to cancel this appointment?")) return;
     setCancelling(true);
     const { error } = await supabase.rpc("cancel_customer_booking", { p_appointment_id: appt.id });
+    setCancelling(false);
     if (error) {
-      alert("Failed to cancel: " + error.message);
-      setCancelling(false);
+      showToast(isRTL ? `فشل الإلغاء: ${error.message}` : `Failed to cancel: ${error.message}`);
       return;
     }
     setAppt((prev) => prev ? { ...prev, status: "cancelled" } : prev);
-    setCancelling(false);
+    setShowCancelConfirm(false);
+    showToast(isRTL ? "تم إلغاء الموعد." : "Appointment cancelled.");
   }
 
   if (loading) {
@@ -103,33 +113,55 @@ export default function BookingDetailPage() {
 
   if (!appt) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center" dir={dir}>
         <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mb-4">
           <span className="material-symbols-outlined text-outline">event_busy</span>
         </div>
-        <h2 className="font-headline text-xl font-bold mb-2">Booking Not Found</h2>
-        <p className="text-on-surface-variant text-sm mb-6">This appointment does not exist or you don&apos;t have access to it.</p>
+        <h2 className="font-headline text-xl font-bold mb-2">{isRTL ? "الحجز غير موجود" : "Booking Not Found"}</h2>
+        <p className="text-on-surface-variant text-sm mb-6">{isRTL ? "هذا الموعد غير موجود أو لا تملك صلاحية الوصول إليه." : "This appointment does not exist or you don't have access to it."}</p>
         <Link href="/customer" className="bg-tertiary-fixed text-on-tertiary-fixed px-6 py-3 rounded-[8px] font-bold text-sm">
-          Back to My Bookings
+          {isRTL ? "العودة إلى مواعيدي" : "Back to My Bookings"}
         </Link>
       </div>
     );
   }
 
   const isUpcoming = new Date(appt.start_time) >= new Date() && appt.status !== "cancelled";
-  const statusLabel = appt.status.charAt(0).toUpperCase() + appt.status.slice(1);
+  const STATUS_LABELS: Record<string, string> = {
+    confirmed: t.customer.upcoming,
+    pending: isRTL ? "قيد الانتظار" : "Pending",
+    cancelled: t.customer.cancelled,
+    completed: t.customer.completed,
+    no_show: isRTL ? "لم يحضر" : "No-show",
+  };
+  const statusLabel = STATUS_LABELS[appt.status] || (appt.status.charAt(0).toUpperCase() + appt.status.slice(1));
   const statusStyle = STATUS_STYLES[appt.status] || "bg-surface-container text-on-surface";
 
   return (
-    <div style={{ background: "#ffffff" }} className="font-body text-[#091135] min-h-screen">
+    <div style={{ background: "#ffffff" }} className="font-body text-[#091135] min-h-screen" dir={dir}>
+      {/* ── Toast notification ── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-5 left-1/2 -translate-x-1/2 z-[200] bg-primary text-on-primary px-5 py-3 rounded-xl text-[13px] font-bold flex items-center gap-2 whitespace-nowrap"
+          >
+            <span className="material-symbols-outlined text-[16px]">check_circle</span>
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white h-16 border-b border-outline-variant">
         <div className="flex justify-between items-center max-w-3xl mx-auto px-6 h-full">
           <Link href="/customer" className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors">
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-            <span className="text-sm font-bold">My Bookings</span>
+            <span className="text-sm font-bold">{t.customer.myAppointments}</span>
           </Link>
-          <span className="font-bold text-sm">Appointment Detail</span>
+          <span className="font-bold text-sm">{isRTL ? "تفاصيل الموعد" : "Appointment Detail"}</span>
         </div>
       </header>
 
@@ -139,7 +171,7 @@ export default function BookingDetailPage() {
           <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full ${statusStyle}`}>
             {statusLabel}
           </span>
-          <span className="text-xs font-medium text-on-surface-variant">Ref #{appt.id.slice(0, 7).toUpperCase()}</span>
+          <span className="text-xs font-medium text-on-surface-variant">{isRTL ? "مرجع #" : "Ref #"}{appt.id.slice(0, 7).toUpperCase()}</span>
         </div>
 
         {/* Main Detail Card */}
@@ -148,7 +180,7 @@ export default function BookingDetailPage() {
           <div className="bg-primary p-8 relative overflow-hidden">
             <div className="absolute inset-0 opacity-10" />
             <div className="relative z-10">
-              <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">Your Appointment</p>
+              <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">{isRTL ? "موعدك" : "Your Appointment"}</p>
               <h1 className="font-black text-3xl text-white">{appt.shop_name}</h1>
             </div>
           </div>
@@ -157,7 +189,7 @@ export default function BookingDetailPage() {
           <div className="p-6 space-y-0 divide-y divide-outline-variant">
             <div className="flex justify-between items-start py-5">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">Date & Time</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">{isRTL ? "التاريخ والوقت" : "Date & Time"}</p>
                 <p className="font-headline font-bold text-lg">{format(new Date(appt.start_time), "EEEE, MMMM d, yyyy")}</p>
                 <p className="text-on-surface-variant text-sm">{format(new Date(appt.start_time), "h:mm a")} — {format(new Date(appt.end_time), "h:mm a")}</p>
               </div>
@@ -167,7 +199,7 @@ export default function BookingDetailPage() {
             {appt.service_name && (
               <div className="flex justify-between items-start py-5">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">Service</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">{isRTL ? "الخدمة" : "Service"}</p>
                   <p className="font-bold">{appt.service_name}</p>
                 </div>
                 <span className="material-symbols-outlined text-outline">content_cut</span>
@@ -177,7 +209,7 @@ export default function BookingDetailPage() {
             {appt.barber_name && (
               <div className="flex justify-between items-start py-5">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">Barber</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">{isRTL ? "الحلاق" : "Barber"}</p>
                   <p className="font-bold">{appt.barber_name}</p>
                 </div>
                 <span className="material-symbols-outlined text-outline">person</span>
@@ -187,7 +219,7 @@ export default function BookingDetailPage() {
             {appt.shop_address && (
               <div className="flex justify-between items-start py-5">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">Location</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">{isRTL ? "الموقع" : "Location"}</p>
                   <p className="font-bold">{appt.shop_address}</p>
                 </div>
                 <span className="material-symbols-outlined text-outline">location_on</span>
@@ -197,7 +229,7 @@ export default function BookingDetailPage() {
             {appt.shop_phone && (
               <div className="flex justify-between items-start py-5">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">Contact</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">{isRTL ? "التواصل" : "Contact"}</p>
                   <a href={`tel:${appt.shop_phone}`} className="font-bold hover:underline">{appt.shop_phone}</a>
                 </div>
                 <span className="material-symbols-outlined text-outline">call</span>
@@ -206,9 +238,9 @@ export default function BookingDetailPage() {
 
             <div className="flex justify-between items-center py-5">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">Total</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-outline mb-1">{isRTL ? "الإجمالي" : "Total"}</p>
                 <p className="font-headline font-black text-2xl">{appt.price} JOD</p>
-                <p className="text-xs text-on-surface-variant">Payment in-store</p>
+                <p className="text-xs text-on-surface-variant">{isRTL ? "الدفع في المتجر" : "Payment in-store"}</p>
               </div>
               <span className="material-symbols-outlined text-outline">payments</span>
             </div>
@@ -223,14 +255,14 @@ export default function BookingDetailPage() {
                 href={`/book/${appt.shop_id}`}
                 className="flex-1 text-center py-4 bg-tertiary-fixed text-on-tertiary-fixed rounded-[8px] font-bold text-sm hover:opacity-90 active:scale-95 transition-all"
               >
-                Book a New Time
+                {isRTL ? "احجز موعداً جديداً" : "Book a New Time"}
               </Link>
               <button
-                onClick={handleCancel}
+                onClick={() => setShowCancelConfirm(true)}
                 disabled={cancelling}
                 className="flex-1 py-4 bg-surface-container-lowest text-error border border-error/20 rounded-[8px] font-bold text-sm hover:bg-error/5 active:scale-95 transition-all disabled:opacity-50"
               >
-                {cancelling ? "Cancelling..." : "Cancel Appointment"}
+                {cancelling ? (isRTL ? "جارٍ الإلغاء..." : "Cancelling...") : (isRTL ? "إلغاء الموعد" : "Cancel Appointment")}
               </button>
             </>
           )}
@@ -239,20 +271,22 @@ export default function BookingDetailPage() {
               href={`/book/${appt.shop_id}`}
               className="flex-1 text-center py-4 bg-tertiary-fixed text-on-tertiary-fixed rounded-[8px] font-bold text-sm hover:opacity-90 active:scale-95 transition-all"
             >
-              Book Again
+              {t.customer.bookAgain}
             </Link>
           )}
         </div>
         {isUpcoming && (
           <p className="text-xs text-on-surface-variant mt-3 text-center sm:text-left">
-            Your current booking stays active — cancel it above if you don&apos;t need it anymore.
+            {isRTL
+              ? "يبقى حجزك الحالي فعالاً — قم بإلغائه أعلاه إذا لم تعد بحاجة إليه."
+              : "Your current booking stays active — cancel it above if you don't need it anymore."}
           </p>
         )}
 
         {/* Shop Link */}
         <div className="mt-6 text-center">
           <Link href={`/shop/${appt.shop_id}`} className="text-sm font-bold text-on-surface-variant underline underline-offset-4 decoration-2 hover:text-on-surface transition-colors">
-            View Shop Profile
+            {isRTL ? "عرض ملف المتجر" : "View Shop Profile"}
           </Link>
         </div>
       </main>
@@ -261,16 +295,57 @@ export default function BookingDetailPage() {
       <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-6 pb-8 pt-4 md:hidden bg-white border-t border-outline-variant rounded-t-2xl">
         <Link className="flex flex-col items-center justify-center text-on-surface-variant" href="/explore">
           <span className="material-symbols-outlined">search</span>
-          <span className="font-headline text-[10px] font-bold uppercase tracking-widest mt-1">Explore</span>
+          <span className="font-headline text-[10px] font-bold uppercase tracking-widest mt-1">{t.customer.explore}</span>
         </Link>
         <Link className="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full w-12 h-12 scale-90 active:scale-100 transition-transform" href="/customer">
           <span className="material-symbols-outlined">event_note</span>
         </Link>
         <Link className="flex flex-col items-center justify-center text-on-surface-variant" href="/customer">
           <span className="material-symbols-outlined">person</span>
-          <span className="font-headline text-[10px] font-bold uppercase tracking-widest mt-1">Account</span>
+          <span className="font-headline text-[10px] font-bold uppercase tracking-widest mt-1">{isRTL ? "الحساب" : "Account"}</span>
         </Link>
       </nav>
+
+      {/* ── Cancel Confirm Modal ── */}
+      <AnimatePresence>
+        {showCancelConfirm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowCancelConfirm(false)}
+              className="absolute inset-0 bg-black/50"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              className="relative w-full max-w-sm bg-white rounded-2xl p-7 text-center"
+            >
+              <div className="w-14 h-14 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined text-error">event_busy</span>
+              </div>
+              <h3 className="font-bold text-lg mb-2">{isRTL ? "إلغاء هذا الموعد؟" : "Cancel this appointment?"}</h3>
+              <p className="text-sm text-on-surface-variant mb-6">
+                {isRTL ? "لا يمكن التراجع عن هذا. سيتم تحرير الموعد." : "This cannot be undone. The slot will be released."}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setShowCancelConfirm(false)}
+                  className="h-11 rounded-[8px] bg-surface-container text-on-surface-variant font-bold text-sm"
+                >
+                  {isRTL ? "الاحتفاظ به" : "Keep It"}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                  className="h-11 rounded-[8px] bg-error text-on-error font-bold text-sm disabled:opacity-50"
+                >
+                  {cancelling ? (isRTL ? "جارٍ الإلغاء…" : "Cancelling…") : (isRTL ? "إلغاء الحجز" : "Cancel Booking")}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

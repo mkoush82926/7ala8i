@@ -23,8 +23,8 @@ const variants = {
 };
 
 const sizes = {
-  sm: "h-7 px-3 text-xs gap-1.5 rounded-[var(--radius-buttons)]",
-  md: "h-9 px-4 text-sm gap-2 rounded-[var(--radius-buttons)]",
+  sm: "h-9 px-3 text-xs gap-1.5 rounded-[var(--radius-buttons)]",
+  md: "h-11 px-4 text-sm gap-2 rounded-[var(--radius-buttons)]",
   lg: "h-11 px-6 text-sm gap-2.5 rounded-[var(--radius-buttons)]",
 };
 

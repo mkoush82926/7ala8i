@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -23,9 +23,70 @@ import { useLeadsStore, type LeadStage } from "@/store/leads-store";
 import { KanbanColumn } from "./kanban-column";
 import { LeadCard, LeadCardOverlay } from "./lead-card";
 import { LeadDrawer } from "./lead-drawer";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { toast } from "@/components/ui/toast";
 import { Plus, List, Kanban, Upload } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import { useTranslation } from "@/hooks/use-translation";
+
+// ─── CSV parsing for "Import CSV" ───
+// Minimal RFC-4180-ish parser: handles quoted cells and escaped quotes ("").
+function parseCsvLine(line: string): string[] {
+  const cells: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      cells.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+function parseLeadsCsv(text: string): Lead[] {
+  const lines = text.split(/\r\n|\n/).filter((line) => line.trim().length > 0);
+  if (lines.length === 0) return [];
+
+  const header = parseCsvLine(lines[0]).map((h) => h.toLowerCase());
+  const nameIdx = header.indexOf("name");
+  const phoneIdx = header.findIndex((h) => h === "phone" || h === "contact");
+  const valueIdx = header.indexOf("value");
+  const notesIdx = header.indexOf("notes");
+  const hasHeader = nameIdx !== -1 || phoneIdx !== -1;
+  const rows = hasHeader ? lines.slice(1) : lines;
+
+  return rows
+    .map((line, i) => {
+      const cells = parseCsvLine(line);
+      const name = (hasHeader ? cells[nameIdx] : cells[0]) || "";
+      const phone = (hasHeader ? cells[phoneIdx] : cells[1]) || "";
+      const rawValue = hasHeader && valueIdx !== -1 ? parseFloat(cells[valueIdx]) : NaN;
+      const notes = hasHeader && notesIdx !== -1 ? cells[notesIdx] : "";
+
+      return {
+        id: `import-${Date.now()}-${i}`,
+        name,
+        phone,
+        stage: "new" as LeadStage,
+        value: Number.isFinite(rawValue) ? rawValue : null,
+        notes: notes || null,
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+    })
+    .filter((lead) => lead.name.trim().length > 0);
+}
 
 function useStages() {
   const { t } = useTranslation();
@@ -59,15 +120,16 @@ function useStages() {
 }
 
 export function KanbanBoard() {
-  const { leads, moveLead, selectLead, drawerOpen, setDrawerOpen, addLead } =
+  const { leads, moveLead, selectLead, drawerOpen, setDrawerOpen, addLead, importLeads } =
     useLeadsStore();
 
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const stages = useStages();
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [view, setView] = useState<"kanban" | "list">("kanban");
   const [showNewLeadForm, setShowNewLeadForm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -150,6 +212,31 @@ export function KanbanBoard() {
     selectLead(newLead);
   }
 
+  function handleImportClick() {
+    fileInputRef.current?.click();
+  }
+
+  function handleImportFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      const parsed = parseLeadsCsv(text);
+      if (parsed.length === 0) {
+        toast("error", isRTL ? "لم يتم العثور على عملاء محتملين صالحين في هذا الملف" : "No valid leads found in that CSV file.");
+        return;
+      }
+      importLeads(parsed);
+    };
+    reader.onerror = () => {
+      toast("error", isRTL ? "تعذرت قراءة الملف" : "Could not read that file.");
+    };
+    reader.readAsText(file);
+  }
+
   return (
     <div className="space-y-8 h-full">
       {/* Header */}
@@ -194,7 +281,14 @@ export function KanbanBoard() {
 
           <div className="h-8 w-px bg-[var(--border-primary)] hidden md:block mx-1" />
 
-          <button className="btn btn-secondary">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            onChange={handleImportFileChange}
+            className="hidden"
+          />
+          <button className="btn btn-secondary" onClick={handleImportClick}>
             <Upload size={15} />
             {t.leads.importCsv}
           </button>
@@ -259,8 +353,9 @@ function LeadListView({
   stages: { id: LeadStage; label: string; color: string }[];
 }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const { deleteLeads } = useLeadsStore();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -301,10 +396,7 @@ function LeadListView({
               <GlassButton
                 variant="danger"
                 size="sm"
-                onClick={() => {
-                  deleteLeads(selectedIds);
-                  setSelectedIds([]);
-                }}
+                onClick={() => setConfirmDeleteOpen(true)}
               >
                 {t.leads.deleteSelected}
               </GlassButton>
@@ -404,6 +496,28 @@ function LeadListView({
           </motion.div>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={() => {
+          deleteLeads(selectedIds);
+          setSelectedIds([]);
+        }}
+        title={
+          isRTL
+            ? `حذف ${selectedIds.length} من العملاء المحتملين؟`
+            : `Delete ${selectedIds.length} lead${selectedIds.length === 1 ? "" : "s"}?`
+        }
+        description={
+          isRTL
+            ? "لا يمكن التراجع عن هذا الإجراء."
+            : "This action cannot be undone."
+        }
+        confirmLabel={t.common.delete}
+        cancelLabel={t.common.cancel}
+        destructive
+      />
     </div>
   );
 }

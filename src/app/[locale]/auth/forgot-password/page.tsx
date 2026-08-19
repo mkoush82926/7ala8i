@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { Loader2, ArrowLeft, CheckCircle } from "lucide-react";
+import { Loader2, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "@/hooks/use-translation";
 
 const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 
@@ -27,6 +28,8 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const supabase = createClient();
+  const { t, dir, isRTL } = useTranslation();
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,7 +51,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div style={{ background: T.white, minHeight: "100dvh", fontFamily: FF }}>
+    <div style={{ background: T.white, minHeight: "100dvh", fontFamily: FF, direction: dir }}>
       {/* NavBar */}
       <nav className="auth-nav" style={{
         background: T.white,
@@ -65,7 +68,7 @@ export default function ForgotPasswordPage() {
             className="btn btn-secondary"
             style={{ borderRadius: 9999, minHeight: 36, padding: "0 16px", fontSize: 12 }}
           >
-            Back to Sign In
+            {isRTL ? "العودة لتسجيل الدخول" : "Back to Sign In"}
           </Link>
         </div>
       </nav>
@@ -94,11 +97,12 @@ export default function ForgotPasswordPage() {
                   <CheckCircle size={28} style={{ color: "#0f77ff" }} />
                 </div>
                 <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 24, fontWeight: 700, color: T.dark, margin: 0 }}>
-                  Check your email
+                  {isRTL ? "تحقق من بريدك الإلكتروني" : "Check your email"}
                 </h1>
                 <p style={{ fontSize: 14, color: T.muted, maxWidth: 340, lineHeight: 1.6, margin: 0 }}>
-                  We sent a password reset link to <strong style={{ color: T.dark }}>{email}</strong>. 
-                  Check your inbox and follow the instructions.
+                  {isRTL ? "لقد أرسلنا رابط إعادة تعيين كلمة المرور إلى " : "We sent a password reset link to "}
+                  <strong style={{ color: T.dark }}>{email}</strong>
+                  {isRTL ? ". تحقق من بريدك الوارد واتبع التعليمات." : ". Check your inbox and follow the instructions."}
                 </p>
                 <div style={{ marginTop: 24, width: "100%" }}>
                   <Link
@@ -111,16 +115,16 @@ export default function ForgotPasswordPage() {
                       textDecoration: "none",
                     }}
                   >
-                    <ArrowLeft size={16} /> Back to Sign In
+                    <BackArrow size={16} /> {isRTL ? "العودة لتسجيل الدخول" : "Back to Sign In"}
                   </Link>
                 </div>
                 <p style={{ fontSize: 12, color: T.muted, marginTop: 8 }}>
-                  Didn&apos;t receive the email?{" "}
+                  {isRTL ? "لم تستلم البريد الإلكتروني؟" : "Didn't receive the email?"}{" "}
                   <button
                     onClick={() => setSent(false)}
                     style={{ background: "none", border: "none", color: T.dark, fontWeight: 700, cursor: "pointer", fontSize: 12 }}
                   >
-                    Try again
+                    {isRTL ? "حاول مرة أخرى" : "Try again"}
                   </button>
                 </p>
               </div>
@@ -137,10 +141,10 @@ export default function ForgotPasswordPage() {
                     </span>
                   </div>
                   <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 300, letterSpacing: "0.016em", color: T.dark, marginBottom: 10 }}>
-                    Reset password
+                    {isRTL ? "إعادة تعيين كلمة المرور" : "Reset password"}
                   </h1>
                   <p style={{ fontSize: 14, color: T.muted, fontWeight: 300, letterSpacing: "0.01em", textAlign: "center" }}>
-                    Enter your email address and we&apos;ll send you a reset link.
+                    {isRTL ? "أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين." : "Enter your email address and we'll send you a reset link."}
                   </p>
                 </div>
 
@@ -160,7 +164,7 @@ export default function ForgotPasswordPage() {
                       htmlFor="email"
                       style={{ fontFamily: FF, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: T.muted }}
                     >
-                      Email Address
+                      {t.auth.emailAddress}
                     </label>
                     <input
                       id="email"
@@ -199,8 +203,8 @@ export default function ForgotPasswordPage() {
                       <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
                     ) : (
                       <>
-                        <span>Send Reset Link</span>
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
+                        <span>{isRTL ? "إرسال رابط إعادة التعيين" : "Send Reset Link"}</span>
+                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{isRTL ? "arrow_back" : "arrow_forward"}</span>
                       </>
                     )}
                   </button>
@@ -208,9 +212,9 @@ export default function ForgotPasswordPage() {
 
                 <div style={{ marginTop: 32, textAlign: "center" }}>
                   <p style={{ fontSize: 12, color: T.muted, opacity: 0.7 }}>
-                    Remember your password?{" "}
+                    {isRTL ? "تتذكر كلمة مرورك؟" : "Remember your password?"}{" "}
                     <Link href="/auth/login" style={{ fontWeight: 700, color: T.dark, textDecoration: "none" }}>
-                      Sign in
+                      {t.auth.signInBtn}
                     </Link>
                   </p>
                 </div>

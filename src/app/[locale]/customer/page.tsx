@@ -105,7 +105,7 @@ export default function CustomerDashboard() {
 
   const [supabase] = useState(() => createClient());
   const router = useRouter();
-  const { t, dir } = useTranslation();
+  const { t, dir, isRTL } = useTranslation();
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -142,6 +142,12 @@ export default function CustomerDashboard() {
       });
       setEditName(profile?.full_name || "");
       setEditPhone(phone);
+
+      // 2.5. Establish a durable client<->auth link for future reliability.
+      // Idempotent (returns the existing link if already linked, does nothing
+      // destructive if no match found) — safe to call on every load. Does not
+      // replace the fuzzy matching below in this pass.
+      await supabase.rpc("link_customer_client");
 
       // 3. Find customer's appointments via multiple strategies
       const email = authUser.email || "";
@@ -635,7 +641,13 @@ export default function CustomerDashboard() {
               ) : (
                 <AnimatePresence>
                   {displayList.map((appt, i) => {
-                    const sc = STATUS_CONFIG[appt.status] || STATUS_CONFIG.pending;
+                    // A lapsed (past-dated) appointment that was never explicitly
+                    // marked completed/no-show/cancelled must not still read as
+                    // "Upcoming" just because its raw status is still "confirmed" —
+                    // the badge must match the tab it's actually rendered in.
+                    const sc = (activeTab === "past" && appt.status === "confirmed")
+                      ? STATUS_CONFIG.completed
+                      : (STATUS_CONFIG[appt.status] || STATUS_CONFIG.pending);
                     const date = new Date(appt.start_time);
                     const isUpcoming = activeTab === "upcoming";
 
@@ -831,7 +843,7 @@ export default function CustomerDashboard() {
               className="sm:rounded-xl sm:mb-4"
             >
               <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
-                <h3 style={{ fontSize: 20, fontWeight: 900, color: "#091135", fontFamily: "var(--font-intervar),sans-serif" }}>Edit Profile</h3>
+                <h3 style={{ fontSize: 20, fontWeight: 900, color: "#091135", fontFamily: "var(--font-intervar),sans-serif" }}>{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h3>
                 <button
                   onClick={() => setEditProfile(false)}
                   style={{ width: 32, height: 32, borderRadius: "50%", background: "#f5f3ff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -841,9 +853,9 @@ export default function CustomerDashboard() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {[
-                  { label: "Full Name", value: editName, setter: setEditName, type: "text", readOnly: false },
-                  { label: "Email", value: user?.email || "", setter: () => {}, type: "email", readOnly: true },
-                  { label: "Phone", value: editPhone, setter: setEditPhone, type: "tel", readOnly: false },
+                  { label: isRTL ? "الاسم الكامل" : "Full Name", value: editName, setter: setEditName, type: "text", readOnly: false },
+                  { label: isRTL ? "البريد الإلكتروني" : "Email", value: user?.email || "", setter: () => {}, type: "email", readOnly: true },
+                  { label: isRTL ? "الهاتف" : "Phone", value: editPhone, setter: setEditPhone, type: "tel", readOnly: false },
                 ].map(field => (
                   <div key={field.label}>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#36394a", marginBottom: 6 }}>
@@ -877,7 +889,7 @@ export default function CustomerDashboard() {
                     marginTop: 4, fontFamily: FF,
                   }}
                 >
-                  {saving ? "Saving…" : "Save Changes"}
+                  {saving ? (isRTL ? "جارٍ الحفظ…" : "Saving…") : (isRTL ? "حفظ التغييرات" : "Save Changes")}
                 </button>
               </div>
             </motion.div>
@@ -906,17 +918,17 @@ export default function CustomerDashboard() {
               <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(186,26,26,0.08)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#ba1a1a" }}>event_busy</span>
               </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#091135", marginBottom: 8 }}>Cancel this appointment?</h3>
-              <p style={{ fontSize: 13, color: "#36394a", marginBottom: 24 }}>This cannot be undone. The slot will be released.</p>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#091135", marginBottom: 8 }}>{isRTL ? "إلغاء هذا الموعد؟" : "Cancel this appointment?"}</h3>
+              <p style={{ fontSize: 13, color: "#36394a", marginBottom: 24 }}>{isRTL ? "لا يمكن التراجع عن هذا. سيتم تحرير الموعد." : "This cannot be undone. The slot will be released."}</p>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setCancelConfirm(null)}
                   style={{ height: 44, borderRadius: 8, background: "#f5f3ff", color: "#36394a", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
-                >Keep It</button>
+                >{isRTL ? "الاحتفاظ به" : "Keep It"}</button>
                 <button
                   onClick={() => handleCancel(cancelConfirm)}
                   style={{ height: 44, borderRadius: 8, background: "#ba1a1a", color: "#fff", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
-                >Cancel Booking</button>
+                >{isRTL ? "إلغاء الحجز" : "Cancel Booking"}</button>
               </div>
             </motion.div>
           </div>
@@ -941,17 +953,17 @@ export default function CustomerDashboard() {
                 textAlign: "center",
               }}
             >
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: "#091135", marginBottom: 8 }}>Sign out of Halaqy?</h3>
-              <p style={{ fontSize: 13, color: "#36394a", marginBottom: 24 }}>You can always sign back in at any time.</p>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: "#091135", marginBottom: 8 }}>{isRTL ? "تسجيل الخروج من حلاقي؟" : "Sign out of Halaqy?"}</h3>
+              <p style={{ fontSize: 13, color: "#36394a", marginBottom: 24 }}>{isRTL ? "يمكنك تسجيل الدخول مرة أخرى في أي وقت." : "You can always sign back in at any time."}</p>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setLogoutConfirm(false)}
                   style={{ height: 44, borderRadius: 8, background: "#f5f3ff", color: "#36394a", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
-                >Stay</button>
+                >{isRTL ? "البقاء" : "Stay"}</button>
                 <button
                   onClick={handleSignOut}
                   style={{ height: 44, borderRadius: 8, background: "#127ee3", color: "#fff", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
-                >Sign Out</button>
+                >{t.customer.signOut}</button>
               </div>
             </motion.div>
           </div>
@@ -978,7 +990,7 @@ export default function CustomerDashboard() {
               className="sm:rounded-xl sm:mb-4"
             >
               <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
-                <h3 style={{ fontSize: 20, fontWeight: 900, color: "#091135", fontFamily: "var(--font-intervar),sans-serif" }}>Leave a Review</h3>
+                <h3 style={{ fontSize: 20, fontWeight: 900, color: "#091135", fontFamily: "var(--font-intervar),sans-serif" }}>{isRTL ? "أضف تقييماً" : "Leave a Review"}</h3>
                 <button
                   onClick={() => { setReviewAppt(null); setReviewRating(0); }}
                   style={{ width: 32, height: 32, borderRadius: "50%", background: "#f5f3ff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -987,7 +999,11 @@ export default function CustomerDashboard() {
                 </button>
               </div>
               <p style={{ fontSize: 13, color: "#36394a", marginBottom: 20 }}>
-                How was your visit at <strong style={{ color: "#091135" }}>{reviewAppt.shop_name}</strong>?
+                {isRTL ? (
+                  <>كيف كانت زيارتك إلى <strong style={{ color: "#091135" }}>{reviewAppt.shop_name}</strong>؟</>
+                ) : (
+                  <>How was your visit at <strong style={{ color: "#091135" }}>{reviewAppt.shop_name}</strong>?</>
+                )}
               </p>
               {/* Stars */}
               <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 20 }}>
@@ -1016,7 +1032,7 @@ export default function CustomerDashboard() {
               <textarea
                 value={reviewComment}
                 onChange={e => setReviewComment(e.target.value.slice(0, 280))}
-                placeholder="Tell us what you loved… (optional)"
+                placeholder={isRTL ? "أخبرنا بما أعجبك… (اختياري)" : "Tell us what you loved… (optional)"}
                 style={{
                   width: "100%", height: 100, padding: 14, borderRadius: 8,
                   background: "#f5f3ff", border: "none", outline: "none",
@@ -1036,7 +1052,7 @@ export default function CustomerDashboard() {
                   fontFamily: FF,
                 }}
               >
-                {submittingReview ? "Submitting…" : "Submit Review"}
+                {submittingReview ? (isRTL ? "جارٍ الإرسال…" : "Submitting…") : (isRTL ? "إرسال التقييم" : "Submit Review")}
               </button>
             </motion.div>
           </div>

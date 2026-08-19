@@ -11,7 +11,7 @@ import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
 import { getRevenueChart } from "@/lib/queries/analytics";
-import { TrendingUp, Loader2 } from "lucide-react";
+import { TrendingUp, Loader2, AlertTriangle } from "lucide-react";
 
 type Period = "week" | "month" | "year";
 
@@ -46,7 +46,7 @@ export function SalesChart() {
   const { shopId } = useWorkspaceStore();
   const supabase = createClient();
 
-  const { data: chartResult, loading } = useSupabaseQuery(
+  const { data: chartResult, loading, error, refetch } = useSupabaseQuery(
     async () => {
       const result = await getRevenueChart(supabase, shopId, period);
       return { data: result, error: result.error };
@@ -133,6 +133,26 @@ export function SalesChart() {
         {loading ? (
           <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Loader2 size={24} style={{ color: "#b1bbcd", animation: "spin 1s linear infinite" }} />
+          </div>
+        ) : error ? (
+          <div style={{
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+          }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 12,
+              background: "rgba(186,26,26,0.1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <AlertTriangle size={22} style={{ color: "#ba1a1a" }} />
+            </div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#091135", margin: 0 }}>Couldn&apos;t load revenue data</p>
+            <p style={{ fontSize: 11, color: "#b1bbcd", margin: 0 }}>{error}</p>
+            <button onClick={refetch} className="btn btn-secondary" style={{ marginTop: 4 }}>Retry</button>
           </div>
         ) : data.length === 0 ? (
           <div style={{

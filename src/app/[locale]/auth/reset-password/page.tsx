@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle, Eye, EyeOff, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "@/hooks/use-translation";
 
 const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 const T = {
@@ -32,6 +33,7 @@ export default function ResetPasswordPage() {
   const [tokenReady, setTokenReady] = useState(false);
   const redirectTimer               = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
+  const { t, dir, isRTL } = useTranslation();
 
   useEffect(() => {
     const supabase = createClient();
@@ -50,8 +52,8 @@ export default function ResetPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
-    if (password !== confirm) { setError("Passwords do not match."); return; }
+    if (password.length < 8) { setError(t.auth.passwordRules); return; }
+    if (password !== confirm) { setError(isRTL ? "كلمتا المرور غير متطابقتين." : "Passwords do not match."); return; }
 
     setLoading(true);
     const supabase = createClient();
@@ -72,11 +74,11 @@ export default function ResetPasswordPage() {
     if (/[^A-Za-z0-9]/.test(password)) s++;
     return s;
   })();
-  const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"][strength];
+  const strengthLabel = (isRTL ? ["", "ضعيفة", "مقبولة", "جيدة", "قوية"] : ["", "Weak", "Fair", "Good", "Strong"])[strength];
   const strengthColor = ["", "#ba1a1a", "#0f77ff", "#0f77ff", "#127ee3"][strength];
 
   return (
-    <div style={{ background: T.white, minHeight: "100dvh", fontFamily: FF }}>
+    <div style={{ background: T.white, minHeight: "100dvh", fontFamily: FF, direction: dir }}>
       <nav className="auth-nav" style={{ background: T.white, borderBottom: `1px solid ${T.outline}` }}>
         <Link href="/landing" style={{ textDecoration: "none" }}>
           <span style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 20, fontWeight: 800, letterSpacing: "0.012em", color: T.dark }}>Halaqy</span>
@@ -92,12 +94,12 @@ export default function ResetPasswordPage() {
                 <div style={{ width: 64, height: 64, borderRadius: 12, background: T.greenBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
                   <CheckCircle size={28} style={{ color: T.green }} />
                 </div>
-                <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 24, fontWeight: 700, color: T.dark, margin: 0 }}>Password updated!</h1>
+                <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 24, fontWeight: 700, color: T.dark, margin: 0 }}>{isRTL ? "تم تحديث كلمة المرور!" : "Password updated!"}</h1>
                 <p style={{ fontSize: 14, color: T.muted, maxWidth: 340, lineHeight: 1.6, margin: 0 }}>
-                  Your password has been changed. Redirecting you to sign in…
+                  {isRTL ? "تم تغيير كلمة مرورك. جارٍ تحويلك لتسجيل الدخول…" : "Your password has been changed. Redirecting you to sign in…"}
                 </p>
                 <Link href="/auth/login" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: 52, background: T.accent, color: T.white, borderRadius: 8, fontSize: 14, fontWeight: 700, textDecoration: "none", marginTop: 12 }}>
-                  Go to Sign In
+                  {isRTL ? "الذهاب لتسجيل الدخول" : "Go to Sign In"}
                 </Link>
               </div>
             ) : !tokenReady ? (
@@ -105,12 +107,12 @@ export default function ResetPasswordPage() {
                 <div style={{ width: 64, height: 64, borderRadius: 12, background: T.errBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
                   <XCircle size={28} style={{ color: T.error }} />
                 </div>
-                <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 22, fontWeight: 700, color: T.dark, margin: 0 }}>Invalid or expired link</h1>
+                <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 22, fontWeight: 700, color: T.dark, margin: 0 }}>{isRTL ? "الرابط غير صالح أو منتهي الصلاحية" : "Invalid or expired link"}</h1>
                 <p style={{ fontSize: 14, color: T.muted, maxWidth: 340, lineHeight: 1.6, margin: 0 }}>
-                  This reset link has expired. Please request a new one.
+                  {isRTL ? "انتهت صلاحية رابط إعادة التعيين هذا. الرجاء طلب رابط جديد." : "This reset link has expired. Please request a new one."}
                 </p>
                 <Link href="/auth/forgot-password" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: 52, background: T.accent, color: T.white, borderRadius: 8, fontSize: 14, fontWeight: 700, textDecoration: "none", marginTop: 12 }}>
-                  Request New Link
+                  {isRTL ? "طلب رابط جديد" : "Request New Link"}
                 </Link>
               </div>
             ) : (
@@ -119,8 +121,8 @@ export default function ResetPasswordPage() {
                   <div style={{ width: 44, height: 44, background: T.black, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
                     <span style={{ color: T.white, fontSize: 20 }}>🔒</span>
                   </div>
-                  <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 300, letterSpacing: "0.016em", color: T.dark, marginBottom: 10 }}>New password</h1>
-                  <p style={{ fontSize: 14, color: T.muted, fontWeight: 300, textAlign: "center" }}>Choose a strong password for your account.</p>
+                  <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 300, letterSpacing: "0.016em", color: T.dark, marginBottom: 10 }}>{isRTL ? "كلمة مرور جديدة" : "New password"}</h1>
+                  <p style={{ fontSize: 14, color: T.muted, fontWeight: 300, textAlign: "center" }}>{isRTL ? "اختر كلمة مرور قوية لحسابك." : "Choose a strong password for your account."}</p>
                 </div>
 
                 {error && (
@@ -132,11 +134,11 @@ export default function ResetPasswordPage() {
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                   {/* New Password */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <label htmlFor="password" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: T.muted }}>New Password</label>
+                    <label htmlFor="password" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: T.muted }}>{isRTL ? "كلمة المرور الجديدة" : "New Password"}</label>
                     <div style={{ position: "relative" }}>
                       <input
                         id="password" type={showPw ? "text" : "password"} required autoComplete="new-password"
-                        placeholder="Min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)}
+                        placeholder={t.auth.passwordRules} value={password} onChange={(e) => setPassword(e.target.value)}
                         style={{ height: 52, width: "100%", padding: "0 48px 0 18px", borderRadius: 8, border: `1px solid ${T.outline}`, background: T.surfLow, fontFamily: FF, fontSize: 14, color: T.dark, outline: "none", transition: "all 0.15s", boxSizing: "border-box" }}
                         onFocus={(e) => { e.currentTarget.style.background = T.white; e.currentTarget.style.border = "1px solid #0f77ff"; e.currentTarget.style.boxShadow = "var(--shadow-focus)"; }}
                         onBlur={(e) => { e.currentTarget.style.background = T.surfLow; e.currentTarget.style.border = `1px solid ${T.outline}`; e.currentTarget.style.boxShadow = "none"; }}
@@ -159,21 +161,21 @@ export default function ResetPasswordPage() {
 
                   {/* Confirm Password */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <label htmlFor="confirm" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: T.muted }}>Confirm Password</label>
+                    <label htmlFor="confirm" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: T.muted }}>{isRTL ? "تأكيد كلمة المرور" : "Confirm Password"}</label>
                     <input
                       id="confirm" type="password" required autoComplete="new-password"
-                      placeholder="Repeat your password" value={confirm} onChange={(e) => setConfirm(e.target.value)}
+                      placeholder={isRTL ? "أعد إدخال كلمة المرور" : "Repeat your password"} value={confirm} onChange={(e) => setConfirm(e.target.value)}
                       style={{ height: 52, width: "100%", padding: "0 18px", borderRadius: 8, border: `1px solid ${confirm && confirm !== password ? T.error : T.outline}`, background: T.surfLow, fontFamily: FF, fontSize: 14, color: T.dark, outline: "none", transition: "all 0.15s", boxSizing: "border-box" }}
                       onFocus={(e) => { e.currentTarget.style.background = T.white; e.currentTarget.style.boxShadow = "var(--shadow-focus)"; }}
                       onBlur={(e) => { e.currentTarget.style.background = T.surfLow; e.currentTarget.style.boxShadow = "none"; }}
                     />
                     {confirm && confirm !== password && (
-                      <p style={{ fontSize: 12, color: T.error, margin: 0 }}>Passwords do not match</p>
+                      <p style={{ fontSize: 12, color: T.error, margin: 0 }}>{isRTL ? "كلمتا المرور غير متطابقتين" : "Passwords do not match"}</p>
                     )}
                   </div>
 
                   <button type="submit" disabled={loading} className="btn btn-primary" style={{ height: 52, width: "100%", marginTop: 8, opacity: loading ? 0.7 : 1 }}>
-                    {loading ? <Loader2 size={18} className="animate-spin" /> : "Update Password"}
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : (isRTL ? "تحديث كلمة المرور" : "Update Password")}
                   </button>
                 </form>
               </>

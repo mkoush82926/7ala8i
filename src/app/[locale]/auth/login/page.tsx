@@ -1,13 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { login } from '@/app/[locale]/auth/actions'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useTranslation } from '@/hooks/use-translation'
 
-export default function LoginPage() {
-  const [error, setError] = useState<string | null>(null)
+function LoginForm() {
+  const { t, FF, dir, isRTL } = useTranslation()
+  const searchParams = useSearchParams()
+  const callbackError = searchParams.get('error') === 'auth_callback_error'
+    ? (isRTL
+        ? 'انتهت صلاحية رابط التأكيد أو أنه غير صالح. الرجاء إنشاء حساب من جديد أو طلب رابط جديد.'
+        : 'Your confirmation link expired or is invalid. Please sign up again or request a new one.')
+    : null
+
+  const [error, setError] = useState<string | null>(callbackError)
   const [loading, setLoading] = useState(false)
   const [showPass, setShowPass] = useState(false)
 
@@ -20,8 +29,6 @@ export default function LoginPage() {
       setLoading(false)
     }
   }
-
-  const { t, FF, dir } = useTranslation()
 
   return (
     <div
@@ -379,9 +386,9 @@ export default function LoginPage() {
           }}
         >
           {t.auth.termsNotice.split('{')[0]}
-          <a href="#" style={{ color: '#36394a' }}>{t.auth.terms}</a>
+          <Link href="/terms" style={{ color: '#36394a' }}>{t.auth.terms}</Link>
           {' '}
-          <a href="#" style={{ color: '#36394a' }}>{t.auth.privacyText}</a>
+          <Link href="/privacy" style={{ color: '#36394a' }}>{t.auth.privacyText}</Link>
         </motion.p>
       </div>
 
@@ -389,5 +396,13 @@ export default function LoginPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   )
 }

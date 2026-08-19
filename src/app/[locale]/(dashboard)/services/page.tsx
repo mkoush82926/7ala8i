@@ -87,8 +87,7 @@ export default function ServicesPage() {
   }
 
   async function handleDelete(id: string) {
-    const msg = (t as Record<string, Record<string, string>>).services?.deleteConfirm || "Delete this service?";
-    if (!confirm(msg)) return;
+    if (!confirm(t.services.deleteConfirm)) return;
     await deleteService(id);
   }
 
@@ -117,7 +116,7 @@ export default function ServicesPage() {
     setDragOverId(null);
   }
 
-  const svc = (t as Record<string, Record<string, string>>).services || {};
+  const svc = t.services;
 
   return (
     <motion.div
@@ -133,10 +132,10 @@ export default function ServicesPage() {
             className="text-4xl font-extrabold text-[#091135]"
             style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 32, letterSpacing: "0.016em" }}
           >
-            {svc.title || "Services"}
+            {svc.title}
           </h2>
           <p className="text-[#36394a] font-medium" style={{ fontSize: 14, marginTop: 8 }}>
-            {svc.subtitle || "Manage your barbershop service menu"}
+            {svc.subtitle}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -144,7 +143,7 @@ export default function ServicesPage() {
             <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#36394a]" />
             <input
               type="text"
-              placeholder={svc.title || "Search..."}
+              placeholder={svc.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full h-10 ps-10 pe-4 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-sm font-medium text-[#091135] placeholder-[#36394a] focus:outline-none focus:shadow-[var(--shadow-focus)] transition-all"
@@ -156,7 +155,7 @@ export default function ServicesPage() {
               className="h-10 px-5 rounded-[var(--radius-buttons)] bg-[#127ee3] text-white font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
             >
               <Plus size={15} />
-              <span className="hidden sm:inline">{svc.addService || "Add Service"}</span>
+              <span className="hidden sm:inline">{svc.addService}</span>
             </button>
           )}
         </div>
@@ -176,10 +175,10 @@ export default function ServicesPage() {
             <Sparkles size={28} className="text-[var(--text-primary)]" />
           </div>
           <p className="text-[var(--text-secondary)] font-semibold" style={{ fontSize: 16, marginBottom: 8 }}>
-            {svc.noServices || "No services yet"}
+            {svc.noServices}
           </p>
           <p className="text-[var(--text-muted)]" style={{ fontSize: 13, maxWidth: 280 }}>
-            {svc.noServicesDesc || "Add your first service to get started"}
+            {svc.noServicesDesc}
           </p>
           {currentUserRole === 'shop_admin' && (
             <button
@@ -187,7 +186,7 @@ export default function ServicesPage() {
               className="mt-6 h-10 px-6 rounded-[var(--radius-buttons)] bg-[var(--accent-mint)] text-white font-semibold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
             >
               <Plus size={15} />
-              {svc.addService || "Add Service"}
+              {svc.addService}
             </button>
           )}
         </div>
@@ -237,21 +236,21 @@ export default function ServicesPage() {
                       onClick={() => toggleActive(service.id, !service.is_active)}
                       className="w-[30px] h-[30px] rounded-[var(--radius-buttons)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
                       title={service.is_active ? svc.inactive : svc.active}
-                      aria-label={service.is_active ? (svc.deactivate || "Deactivate service") : (svc.activate || "Activate service")}
+                      aria-label={service.is_active ? svc.deactivate : svc.activate}
                     >
                       {service.is_active ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
                     </button>
                     <button
                       onClick={() => openEdit(service)}
                       className="w-[30px] h-[30px] rounded-[var(--radius-buttons)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-lavender)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
-                      aria-label={svc.editService || "Edit service"}
+                      aria-label={svc.editService}
                     >
                       <Pencil size={13} />
                     </button>
                     <button
                       onClick={() => handleDelete(service.id)}
                       className="w-[30px] h-[30px] rounded-[var(--radius-buttons)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-rose)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
-                      aria-label={svc.delete || "Delete service"}
+                      aria-label={svc.deleteService}
                     >
                       <Trash2 size={13} />
                     </button>
@@ -262,18 +261,18 @@ export default function ServicesPage() {
               <div className="flex items-center" style={{ gap: 16 }}>
                 <div className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
                   <Clock size={13} />
-                  <span style={{ fontSize: 12 }}>{service.duration} {svc.minutes || "min"}</span>
+                  <span style={{ fontSize: 12 }}>{service.duration} {svc.minutes}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[var(--accent-mint)] font-semibold">
                   <DollarSign size={13} />
-                  <span style={{ fontSize: 12 }}>{service.price.toFixed(1)} JOD</span>
+                  <span style={{ fontSize: 12 }}>{service.price.toFixed(1)} {t.common.jod}</span>
                 </div>
                 {!service.is_active && (
                   <span
                     className="text-[var(--accent-rose)] bg-[var(--accent-rose-muted)] px-2 py-0.5 rounded-full font-medium"
                     style={{ fontSize: 10 }}
                   >
-                    {svc.inactive || "Inactive"}
+                    {svc.inactive}
                   </span>
                 )}
               </div>
@@ -318,7 +317,7 @@ export default function ServicesPage() {
               >
                 <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
                   <h3 className="text-[#091135] font-extrabold" style={{ fontSize: 20, fontFamily: "var(--font-intervar), sans-serif" }}>
-                    {editingService ? (svc.editService || "Edit Service") : (svc.addService || "Add Service")}
+                    {editingService ? svc.editService : svc.addService}
                   </h3>
                   <button
                     onClick={() => setShowForm(false)}
@@ -332,7 +331,7 @@ export default function ServicesPage() {
                   {/* Icon picker */}
                   <div>
                     <label className="text-[var(--text-tertiary)] font-medium block" style={{ fontSize: 12, marginBottom: 8 }}>
-                      {svc.icon || "Icon"}
+                      {svc.icon}
                     </label>
                     <div className="flex flex-wrap" style={{ gap: 8 }}>
                       {ICONS.map((ic) => (
@@ -356,7 +355,7 @@ export default function ServicesPage() {
                   {/* Name */}
                   <div>
                     <label className="text-[var(--text-tertiary)] font-medium block" style={{ fontSize: 12, marginBottom: 8 }}>
-                      {svc.serviceName || "Service Name"} *
+                      {svc.serviceName} *
                     </label>
                     <input
                       type="text"
@@ -371,7 +370,7 @@ export default function ServicesPage() {
                   {/* Arabic Name */}
                   <div>
                     <label className="text-[var(--text-tertiary)] font-medium block" style={{ fontSize: 12, marginBottom: 8 }}>
-                      {svc.serviceNameAr || "Service Name (Arabic)"}
+                      {svc.serviceNameAr}
                     </label>
                     <input
                       type="text"
@@ -387,7 +386,7 @@ export default function ServicesPage() {
                   <div className="grid grid-cols-2" style={{ gap: 12 }}>
                     <div>
                       <label className="text-[var(--text-tertiary)] font-medium block" style={{ fontSize: 12, marginBottom: 8 }}>
-                        {svc.duration || "Duration"} ({svc.minutes || "min"})
+                        {svc.duration} ({svc.minutes})
                       </label>
                       <input
                         type="number"
@@ -400,7 +399,7 @@ export default function ServicesPage() {
                     </div>
                     <div>
                       <label className="text-[var(--text-tertiary)] font-medium block" style={{ fontSize: 12, marginBottom: 8 }}>
-                        {svc.price || "Price"} (JOD) *
+                        {svc.price} ({t.common.jod}) *
                       </label>
                       <input
                         type="number"
@@ -422,7 +421,7 @@ export default function ServicesPage() {
                     style={{ marginTop: 8 }}
                   >
                     {saving ? <Loader2 size={15} className="animate-spin" /> : null}
-                    {editingService ? (svc.editService || "Save Changes") : (svc.addService || "Add Service")}
+                    {editingService ? svc.saveChanges : svc.addService}
                   </button>
                 </form>
               </div>

@@ -157,11 +157,13 @@ export async function getFullAnalytics(supabase: SupabaseClient, shopId: string,
   }
 
   // 5. Peak Hours Heatmap (Simplified mapping)
+  // Labels reflect the actual bucket boundaries used below (hr<12, 12-15, 15-18, hr>=18) —
+  // not single points in time — so the heatmap doesn't imply appointments only land exactly on the hour.
   const peakChart = [
-    { hour: "09 AM", vals: [0, 0, 0, 0, 0, 0, 0] },
-    { hour: "12 PM", vals: [0, 0, 0, 0, 0, 0, 0] },
-    { hour: "03 PM", vals: [0, 0, 0, 0, 0, 0, 0] },
-    { hour: "06 PM", vals: [0, 0, 0, 0, 0, 0, 0] },
+    { hour: "Before 12", vals: [0, 0, 0, 0, 0, 0, 0] },
+    { hour: "12–3", vals: [0, 0, 0, 0, 0, 0, 0] },
+    { hour: "3–6", vals: [0, 0, 0, 0, 0, 0, 0] },
+    { hour: "After 6", vals: [0, 0, 0, 0, 0, 0, 0] },
   ];
   currAppts.forEach(a => {
     if (!a.start_time) return;

@@ -14,6 +14,7 @@ import {
   List,
   Clock,
   CalendarX,
+  AlertTriangle,
 } from "lucide-react";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
@@ -21,6 +22,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getAppointmentsByDateRange } from "@/lib/queries/appointments";
 import { toast } from "@/components/ui/toast";
 import { usePos } from "@/hooks/use-pos";
+import { useTranslation } from "@/hooks/use-translation";
 import { format, parseISO, addDays, subDays } from "date-fns";
 
 const timeSlots = Array.from({ length: 12 }, (_, i) => {
@@ -84,6 +86,7 @@ export function TimelineView() {
 
   const { barbers, currentView, shopId } = useWorkspaceStore();
   const { markPaid, loadingId } = usePos();
+  const { isRTL, locale } = useTranslation();
   const displayBarbers =
     currentView === "master"
       ? barbers
@@ -109,6 +112,7 @@ export function TimelineView() {
   const {
     data: appointments,
     loading,
+    error,
     refetch,
   } = useSupabaseQuery<Appointment[]>(
     () => getAppointmentsByDateRange(supabase, shopId, dateStr, dateStr) as Promise<{ data: Appointment[] | null; error: { message: string } | null }>,
@@ -121,6 +125,23 @@ export function TimelineView() {
     if (currentView === "master") return appointments;
     return appointments.filter((a) => a.barber_id === currentView);
   }, [appointments, currentView]);
+
+  // "Any Barber" bookings (barber_id === null) have no lane of their own —
+  // surface them as an explicit synthetic row instead of letting them vanish.
+  const hasUnassigned = useMemo(
+    () =>
+      currentView === "master" &&
+      filteredAppointments.some((a) => a.barber_id === null),
+    [currentView, filteredAppointments],
+  );
+
+  const timelineBarbers = useMemo(() => {
+    if (!hasUnassigned) return displayBarbers;
+    return [
+      ...displayBarbers,
+      { id: "unassigned", name: isRTL ? "أي حلاق" : "Unassigned / Any Barber" },
+    ];
+  }, [displayBarbers, hasUnassigned, isRTL]);
 
   const handleStatusUpdate = async (appointmentId: string, status: string) => {
     try {
@@ -211,7 +232,13 @@ export function TimelineView() {
 
           <div className="h-8 w-px bg-[var(--border-primary)] hidden md:block" />
 
-          <button className="btn btn-primary" onClick={() => window.location.href = '/book'}>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              if (!shopId) return;
+              window.location.href = `/${locale}/book/${shopId}`;
+            }}
+          >
             <Plus size={16} />
             New Booking
           </button>
@@ -247,8 +274,18 @@ export function TimelineView() {
         </GlassCard>
       )}
 
+      {/* Error State — distinct from a genuine empty day */}
+      {!loading && error && (
+        <EmptyState
+          icon={AlertTriangle}
+          title={isRTL ? "تعذر تحميل المواعيد" : "Couldn't load appointments"}
+          description={error}
+          action={{ label: isRTL ? "إعادة المحاولة" : "Retry", onClick: refetch }}
+        />
+      )}
+
       {/* Empty State */}
-      {!loading && filteredAppointments.length === 0 && (
+      {!loading && !error && filteredAppointments.length === 0 && (
         <EmptyState
           icon={CalendarX}
           title="No appointments for this day"
@@ -257,7 +294,7 @@ export function TimelineView() {
       )}
 
       {/* Timeline View */}
-      {!loading && filteredAppointments.length > 0 && view === "timeline" ? (
+      {!loading && !error && filteredAppointments.length > 0 && view === "timeline" ? (
         <GlassCard hoverable={false} padding="md" className="overflow-x-auto">
           <div className="min-w-[800px]">
             {/* Time header */}
@@ -278,9 +315,11 @@ export function TimelineView() {
             </div>
 
             {/* Barber rows */}
-            {displayBarbers.map((barber, barberIdx) => {
-              const barberAppts = filteredAppointments.filter(
-                (a) => a.barber_id === barber.id,
+            {timelineBarbers.map((barber, barberIdx) => {
+              const barberAppts = filteredAppointments.filter((a) =>
+                barber.id === "unassigned"
+                  ? a.barber_id === null
+                  : a.barber_id === barber.id,
               );
 
               return (
@@ -295,10 +334,12 @@ export function TimelineView() {
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center">
                         <span className="text-[9px] font-medium text-[var(--text-primary)]">
-                          {barber.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
+                          {barber.id === "unassigned"
+                            ? "—"
+                            : barber.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
                         </span>
                       </div>
                       <span className="text-[12px] text-[var(--text-secondary)] font-light truncate">
@@ -470,6 +511,7 @@ export function TimelineView() {
         </GlassCard>
       ) : (
         !loading &&
+        !error &&
         filteredAppointments.length > 0 && (
           /* List View */
           <GlassCard hoverable={false} padding="md">
