@@ -6,22 +6,23 @@ import {
   AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { createClient } from "@/lib/supabase/client";
 import { getFullAnalytics } from "@/lib/queries/analytics-page";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
+
+type AnalyticsData = Awaited<ReturnType<typeof getFullAnalytics>>;
 
 export default function AnalyticsPage() {
-  const { direction } = useThemeStore();
+  const { isRTL } = useTranslation();
   const { shopId } = useWorkspaceStore();
-  const isRTL = direction === "rtl";
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");
-  
+
   // Data state
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AnalyticsData | null>(null);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -116,7 +117,7 @@ export default function AnalyticsPage() {
 
       {/* ── Summary Metric Cards ── */}
       <div className="card-grid-4">
-        {summaryMetrics.map((m: any, i: number) => (
+        {summaryMetrics.map((m, i) => (
           <motion.div
             key={m.id}
             initial={{ opacity: 0, y: 20 }}
@@ -229,7 +230,7 @@ export default function AnalyticsPage() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {barberData.length > 0 ? barberData.map((b: any, i: number) => (
+            {barberData.length > 0 ? barberData.map((b, i) => (
               <div key={b.name}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
                   <span style={{
@@ -282,7 +283,7 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={acquisitionData} cx="50%" cy="50%" innerRadius={56} outerRadius={82} paddingAngle={2} dataKey="value">
-                    {acquisitionData.map((entry: any, i: number) => (
+                    {acquisitionData.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
@@ -290,7 +291,7 @@ export default function AnalyticsPage() {
               </ResponsiveContainer>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
-              {acquisitionData.map((ch: any) => (
+              {acquisitionData.map((ch) => (
                 <div key={ch.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ width: 10, height: 10, borderRadius: "50%", background: ch.color, flexShrink: 0, border: ch.color === "#eceef0" ? "1px solid #c6c6cc" : undefined }} />
                   <span style={{ fontSize: 12, color: "#45464c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.name}</span>
@@ -333,7 +334,7 @@ export default function AnalyticsPage() {
             {days.map((d) => (
               <div key={d} style={{ fontSize: 9, fontWeight: 700, textAlign: "center", color: "#b0b3b8", letterSpacing: "0.05em" }}>{d}</div>
             ))}
-            {peakHoursData.map((row: any) => (
+            {peakHoursData.map((row) => (
               <React.Fragment key={row.hour}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: "#76777d", paddingRight: 8, display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>{row.hour}</div>
                 {row.vals.map((v: number, di: number) => (

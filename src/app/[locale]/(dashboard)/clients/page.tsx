@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, MessageCircle, ChevronLeft, ChevronRight,
   CheckCircle, Minus, UserPlus, Filter,
 } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
-import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
@@ -23,10 +23,9 @@ const avatarColors = [
 ];
 
 export default function ClientsPage() {
-  const { t } = useTranslation();
-  const { direction } = useThemeStore();
+  const { t, isRTL } = useTranslation();
   const { shopId } = useWorkspaceStore();
-  const isRTL = direction === "rtl";
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [selectedClient, setSelectedClient] = useState<Record<string, unknown> | null>(null);
@@ -187,7 +186,11 @@ export default function ClientsPage() {
                   </div>
                   <div style={{ display: "flex", gap: 4, opacity: 0, transition: "opacity 0.2s" }} className="group-actions">
                     <button
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const phone = client.phone as string | undefined;
+                        if (phone) window.location.href = `tel:${phone}`;
+                      }}
                       style={{
                         padding: 8, background: "#f8fafc", border: "1px solid #eceef0",
                         borderRadius: "50%", cursor: "pointer",
@@ -354,11 +357,24 @@ export default function ClientsPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2 mt-8">
-                  <button className="btn btn-primary" style={{ flex: 1, minHeight: 44 }}>
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1, minHeight: 44 }}
+                    onClick={() => {
+                      const digits = ((selectedClient.phone as string) ?? "").replace(/\D/g, "");
+                      if (digits) window.open(`https://wa.me/${digits}`, "_blank", "noopener,noreferrer");
+                    }}
+                  >
                     <MessageCircle size={15} />
                     WhatsApp
                   </button>
-                  <button className="btn btn-secondary" style={{ flex: 1, minHeight: 44 }}>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ flex: 1, minHeight: 44 }}
+                    onClick={() => {
+                      if (shopId) router.push(`/book/${shopId}`);
+                    }}
+                  >
                     {isRTL ? "حجز جديد" : "New Booking"}
                   </button>
                 </div>

@@ -90,9 +90,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized. Please log in to book." }, { status: 401 });
-    }
 
     const ip = req.headers.get("x-forwarded-for") || "anonymous";
     const { success } = rateLimit(`booking:${ip}`, 5);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -103,7 +103,7 @@ export default function CustomerDashboard() {
   const [logoutConfirm, setLogoutConfirm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  const supabase = useRef(createClient()).current;
+  const [supabase] = useState(() => createClient());
   const router = useRouter();
   const { t, dir } = useTranslation();
 
@@ -271,10 +271,18 @@ export default function CustomerDashboard() {
   async function handleSaveProfile() {
     if (!user) return;
     setSaving(true);
-    await supabase.from("profiles").update({ full_name: editName } as Record<string, unknown>).eq("id", user.id);
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ full_name: editName } as Record<string, unknown>)
+      .eq("id", user.id);
+    const { error: authError } = await supabase.auth.updateUser({ data: { phone: editPhone } });
+    setSaving(false);
+    if (profileError || authError) {
+      alert("Failed to save profile: " + (profileError?.message || authError?.message));
+      return;
+    }
     setUser({ ...user, full_name: editName, phone: editPhone });
     setEditProfile(false);
-    setSaving(false);
     showToast("Profile saved!");
   }
 
@@ -311,17 +319,10 @@ export default function CustomerDashboard() {
   }
 
   async function handleCancel(apptId: string) {
-    // Try RPC first, fall back to direct update
-    const { error: rpcError } = await supabase.rpc("cancel_public_booking", { p_appointment_id: apptId });
+    const { error: rpcError } = await supabase.rpc("cancel_customer_booking", { p_appointment_id: apptId });
     if (rpcError) {
-      const { error: updateError } = await supabase
-        .from("appointments")
-        .update({ status: "cancelled" } as Record<string, unknown>)
-        .eq("id", apptId);
-      if (updateError) {
-        alert("Failed to cancel: " + updateError.message);
-        return;
-      }
+      alert("Failed to cancel: " + rpcError.message);
+      return;
     }
     setAppointments(prev => prev.map(a => a.id === apptId ? { ...a, status: "cancelled" } : a));
     setCancelConfirm(null);
@@ -718,7 +719,7 @@ export default function CustomerDashboard() {
                                     textDecoration: "none",
                                   }}
                                 >
-                                  {t.customer.reschedule}
+                                  Book a New Time
                                 </Link>
                                 <button
                                   onClick={() => setCancelConfirm(appt.id)}
@@ -768,6 +769,11 @@ export default function CustomerDashboard() {
                               </>
                             )}
                           </div>
+                          {isUpcoming && (
+                            <p style={{ fontSize: 11, color: "#36394a", marginTop: 8, marginBottom: 0 }}>
+                              Your current booking stays active — cancel it above if you don&apos;t need it anymore.
+                            </p>
+                          )}
                         </div>
                       </motion.div>
                     );

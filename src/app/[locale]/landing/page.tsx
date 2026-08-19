@@ -74,9 +74,21 @@ export default function LandingPage() {
   ];
 
   const footerCols = [
-    { title: isRTL ? "المنصة"  : "Platform", links: [isRTL ? "الميزات" : "Features", isRTL ? "التسعير" : "Pricing", isRTL ? "التطبيقات" : "Applications"] },
-    { title: "Studio",                        links: [isRTL ? "من نحن"  : "About",    isRTL ? "الوظائف" : "Careers",  "Journal"] },
-    { title: isRTL ? "القانوني": "Legal",     links: [isRTL ? "الخصوصية": "Privacy", isRTL ? "الشروط"  : "Terms",   "Support"] },
+    { title: isRTL ? "المنصة"  : "Platform", links: [
+        { label: isRTL ? "الميزات" : "Features", href: "#features" },
+        { label: isRTL ? "التسعير" : "Pricing", href: "#pricing" },
+        { label: isRTL ? "التطبيقات" : "Applications" },
+      ] },
+    { title: "Studio", links: [
+        { label: isRTL ? "من نحن"  : "About" },
+        { label: isRTL ? "الوظائف" : "Careers" },
+        { label: "Journal" },
+      ] },
+    { title: isRTL ? "القانوني": "Legal", links: [
+        { label: isRTL ? "الخصوصية": "Privacy" },
+        { label: isRTL ? "الشروط"  : "Terms" },
+        { label: "Support" },
+      ] },
   ];
 
   return (
@@ -169,7 +181,7 @@ export default function LandingPage() {
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
               </Link>
               <Link
-                href="/book"
+                href="/auth/signup"
                 className="btn btn-secondary"
                 style={{ minHeight: 56, padding: "0 40px", borderRadius: 999, fontSize: 14, fontWeight: 800 }}
               >
@@ -210,7 +222,6 @@ export default function LandingPage() {
               {/* Bookings Card */}
               <div style={{ background: "#171717", padding: 32, borderRadius: 24, color: T.white }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 24, marginBottom: 16, display: "block", opacity: 0.5 }}>calendar_month</span>
-                <div style={{ fontFamily: FF, fontSize: 30, fontWeight: 700, letterSpacing: "-0.03em" }}>1,284</div>
                 <div style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.2em", opacity: 0.4, marginTop: 4 }}>
                   {isRTL ? "حجز" : "Bookings"}
                 </div>
@@ -219,7 +230,6 @@ export default function LandingPage() {
               {/* Rating Card */}
               <div style={{ background: "#fef3c7", padding: 32, borderRadius: 24 }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 24, marginBottom: 16, display: "block", color: "#92400e", fontVariationSettings: "'FILL' 1" }}>star</span>
-                <div style={{ fontFamily: FF, fontSize: 30, fontWeight: 700, letterSpacing: "-0.03em", color: "#1a1a1a" }}>4.9/5</div>
                 <div style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.2em", color: "#92400e", opacity: 0.6, marginTop: 4 }}>
                   {isRTL ? "تقييم" : "Rating"}
                 </div>
@@ -232,7 +242,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ FEATURES ═══ */}
-      <section className="landing-section" style={{ background: T.surfLow }}>
+      <section id="features" className="landing-section" style={{ background: T.surfLow }}>
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
           <Reveal>
             <div style={{ marginBottom: 96 }}>
@@ -309,7 +319,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ PRICING ═══ */}
-      <section className="landing-section" style={{ background: "#1a1a1a", color: T.white }}>
+      <section id="pricing" className="landing-section" style={{ background: "#1a1a1a", color: T.white }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <Reveal>
             <div style={{ textAlign: "center", marginBottom: 96 }}>
@@ -388,10 +398,14 @@ export default function LandingPage() {
               </h5>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 20 }}>
                 {col.links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="nav-link">
-                      {link}
-                    </a>
+                  <li key={link.label}>
+                    {link.href ? (
+                      <a href={link.href} className="nav-link">
+                        {link.label}
+                      </a>
+                    ) : (
+                      <span style={{ color: T.mid, fontWeight: 500 }}>{link.label}</span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -404,7 +418,6 @@ export default function LandingPage() {
           <p style={{ fontWeight: 700, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.2em", color: T.mid, opacity: 0.5 }}>
             © 2026 Halaqy Digital Atelier.
           </p>
-          <span className="material-symbols-outlined" style={{ fontSize: 14, color: T.mid, opacity: 0.3, cursor: "pointer" }}>share</span>
         </div>
       </footer>
     </div>

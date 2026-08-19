@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useTranslation } from "@/hooks/use-translation";
 import { NotificationBell } from "@/components/notifications/notification-bell";
@@ -38,7 +37,7 @@ const navItems = [
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const router = useRouter();
 
   const [currentUserRole, setCurrentUserRole] = React.useState<string | null>(null);
@@ -57,7 +56,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     const supabase = createClient();
     await supabase.auth.signOut();
     if (onClose) onClose();
-    router.push("/auth/login");
+    router.push(`/${locale}/auth/login`);
   }
 
   const labels: Record<string, string> = {
@@ -103,15 +102,23 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         {navItems.map((item) => {
           if (item.id === "settings" && currentUserRole !== 'shop_admin') return null;
 
+          const localePrefix = `/${locale}`;
+          const pathnameWithoutLocale =
+            pathname === localePrefix
+              ? "/"
+              : pathname.startsWith(`${localePrefix}/`)
+                ? pathname.slice(localePrefix.length)
+                : pathname;
           const isActive =
             item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
+              ? pathnameWithoutLocale === "/"
+              : pathnameWithoutLocale.startsWith(item.href);
+          const href = item.href === "/" ? localePrefix : `${localePrefix}${item.href}`;
 
           return (
             <Link
               key={item.id}
-              href={item.href}
+              href={href}
               onClick={onClose}
               style={{
                 display: "flex", alignItems: "center", gap: 12,
@@ -135,7 +142,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         {/* Divider line */}
         <div style={{ height: 1, background: "#f0f2f5", marginBottom: 20 }} />
         <Link
-          href="/calendar"
+          href={`/${locale}/calendar`}
           onClick={onClose}
           className="btn btn-primary"
           style={{ width: "100%", justifyContent: "center", marginBottom: 12 }}
@@ -174,8 +181,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
 export function Sidebar() {
   const { isMobileSidebarOpen, setMobileSidebarOpen } = useWorkspaceStore();
-  const { direction } = useThemeStore();
-  const isRTL = direction === "rtl";
+  const { isRTL } = useTranslation();
 
   return (
     <>

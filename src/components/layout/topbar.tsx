@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
-  Globe, ChevronDown, Bell, Search, Menu, Users, Sun, Moon,
+  Globe, ChevronDown, Bell, Menu, Users, Sun, Moon,
   Settings, LogOut,
 } from "lucide-react";
 import { useThemeStore } from "@/store/theme-store";
@@ -13,6 +13,12 @@ import { useTranslation } from "@/hooks/use-translation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "@/components/ui/toast";
+
+interface NotificationRow {
+  id: string;
+  client_name: string;
+  start_time: string;
+}
 
 /* ── Icon button helper ── */
 function IconBtn({
@@ -61,16 +67,15 @@ function IconBtn({
 }
 
 export function Topbar() {
-  const { theme, toggleTheme, direction } = useThemeStore();
+  const { theme, toggleTheme } = useThemeStore();
   const { shopId, shopName, role, currentView, barbers, setCurrentView, toggleMobileSidebar } = useWorkspaceStore();
-  const { t, locale } = useTranslation();
-  const isRTL = direction === "rtl";
+  const { t, locale, isRTL } = useTranslation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [bellOpen, setBellOpen] = useState(false);
 
@@ -82,7 +87,7 @@ export function Topbar() {
 
     const channel = supabase.channel('public:appointments')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'appointments', filter: `shop_id=eq.${shopId}` }, payload => {
-        setNotifications(prev => [payload.new, ...prev].slice(0, 5));
+        setNotifications(prev => [payload.new as NotificationRow, ...prev].slice(0, 5));
         setUnreadCount(c => c + 1);
       }).subscribe();
 
@@ -98,6 +103,7 @@ export function Topbar() {
 
   const handleToggleLocale = () => {
     const newLocale = locale === "en" ? "ar" : "en";
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
     // If pathname starts with /locale, replace it, else push new locale
     const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
     router.push(newPath || `/${newLocale}`);
@@ -245,56 +251,76 @@ export function Topbar() {
         )}
       </div>
 
-      {/* ── RIGHT: search + icons + user ── */}
+      {/* ── RIGHT: icons + user ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        {/* Search bar */}
-        <div style={{ position: "relative", marginRight: 8 }} className="hidden sm:block">
-          <Search
-            size={14}
-            style={{
-              position: "absolute",
-              left: 12,
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "var(--text-muted)",
-              pointerEvents: "none",
-            }}
-          />
-          <input
-            type="text"
-            placeholder={t.common?.search || "Search…"}
-            style={{
-              height: 36,
-              width: 200,
-              paddingLeft: 34,
-              paddingRight: 14,
-              borderRadius: 10,
-              border: "1px solid var(--border-primary)",
-              background: "var(--bg-secondary)",
-              fontSize: 13,
-              color: "var(--text-primary)",
-              outline: "none",
-              transition: "all 0.18s",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.background = "var(--bg-primary)";
-              e.currentTarget.style.borderColor = "var(--text-primary)";
-              e.currentTarget.style.width = "240px";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.background = "var(--bg-secondary)";
-              e.currentTarget.style.borderColor = "var(--border-primary)";
-              e.currentTarget.style.width = "200px";
-            }}
-          />
-        </div>
-
         {/* Mobile view switcher */}
         {role === "shop_admin" && (
-          <div className="lg:hidden">
-            <IconBtn>
+          <div style={{ position: "relative" }} className="lg:hidden">
+            <IconBtn onClick={() => setDropdownOpen((v) => !v)}>
               <Users size={17} />
             </IconBtn>
+
+            {dropdownOpen && (
+              <>
+                <div
+                  style={{ position: "fixed", inset: 0, zIndex: 40 }}
+                  onClick={() => setDropdownOpen(false)}
+                />
+                <div style={{
+                  position: "absolute",
+                  top: "calc(100% + 8px)",
+                  left: isRTL ? "auto" : 0,
+                  right: isRTL ? 0 : "auto",
+                  minWidth: 180,
+                  background: "var(--bg-primary)",
+                  border: "1px solid var(--border-primary)",
+                  borderRadius: 12,
+                  padding: "6px",
+                  zIndex: 50,
+                }}>
+                  <button
+                    onClick={() => { setCurrentView("master"); setDropdownOpen(false); }}
+                    style={{
+                      width: "100%",
+                      textAlign: isRTL ? "right" : "left",
+                      padding: "9px 12px",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: currentView === "master" ? "var(--text-primary)" : "var(--text-tertiary)",
+                      background: currentView === "master" ? "var(--bg-secondary)" : "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {t.topbar?.masterView || "Master View"}
+                  </button>
+                  {barbers.length > 0 && (
+                    <div style={{ height: 1, background: "var(--border-primary)", margin: "4px 6px" }} />
+                  )}
+                  {barbers.map((barber) => (
+                    <button
+                      key={barber.id}
+                      onClick={() => { setCurrentView(barber.id); setDropdownOpen(false); }}
+                      style={{
+                        width: "100%",
+                        textAlign: isRTL ? "right" : "left",
+                        padding: "9px 12px",
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: currentView === barber.id ? "var(--text-primary)" : "var(--text-tertiary)",
+                        background: currentView === barber.id ? "var(--bg-secondary)" : "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {barber.name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -417,7 +443,7 @@ export function Topbar() {
 
                 {/* Settings */}
                 <a
-                  href="/settings"
+                  href={`/${locale}/settings`}
                   onClick={() => setUserMenuOpen(false)}
                   style={{
                     display: "flex",

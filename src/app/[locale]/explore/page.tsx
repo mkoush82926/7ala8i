@@ -20,8 +20,6 @@ const SHOP_IMAGES = [
   "https://lh3.googleusercontent.com/aida-public/AB6AXuDL395efcii6egq6DbxYxfSxw9lPtASWvr9nyiIX3PDRD5DPM2aqD-bM24z4nlQJNFIo6duutRJce1FKomv5xJynkuGaW0lIyG9K81I9sKdFbDMa4ZlJBaVyqTtLKGyHgdrvugCLceYGsmCazNcaFoKYgZVmVbd0X-4DWwtJ5e_2xrcb-S5B2FuUTH6MxUgF-0fhNjhhQAleMA_50MfPbTo3QOjn5ysqxr19Eq5CPPMcDcTBff8hfbQCevSW-MLwmXp7v4SCUrkGcw7",
 ];
 
-const RATINGS = [4.9, 4.7, 4.8, 4.6, 4.9, 4.7];
-const REVIEW_COUNTS = [127, 89, 204, 56, 341, 78];
 const CATEGORIES = ["All", "Classic Cuts", "Luxury Grooming", "Beard Studio", "Kids Friendly"];
 
 // FF is direction-aware — set per render from useTranslation hook
@@ -429,6 +427,7 @@ export default function ExplorePage() {
         <div style={{ ...containerStyle, paddingTop: 40, paddingBottom: 80 }}>
           {loading ? (
             <div
+              className="explore-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
@@ -473,6 +472,7 @@ export default function ExplorePage() {
             </div>
           ) : (
             <div
+              className="explore-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
@@ -482,10 +482,7 @@ export default function ExplorePage() {
               <AnimatePresence>
                 {filtered.map((shop, idx) => {
                   const img     = SHOP_IMAGES[idx % SHOP_IMAGES.length];
-                  const rating  = RATINGS[idx % RATINGS.length];
-                  const reviews = REVIEW_COUNTS[idx % REVIEW_COUNTS.length];
                   const isFeatured = idx === 0;
-                  const isOpen  = idx % 3 !== 2;
 
                   return (
                     <motion.div
@@ -537,40 +534,6 @@ export default function ExplorePage() {
                               ★ {t.explore.featured}
                             </span>
                           )}
-                          {isOpen && (
-                            <span
-                              style={{
-                                background: "rgba(16,185,129,0.92)",
-                                color: "#fff", padding: "3px 10px",
-                                borderRadius: 9999, fontSize: 11, fontWeight: 700,
-                                display: "flex", alignItems: "center", gap: 5,
-                              }}
-                            >
-                              <span
-                                style={{
-                                  width: 6, height: 6, borderRadius: "50%", background: "#fff",
-                                  animation: "pulseDot 2s ease-in-out infinite",
-                                  flexShrink: 0,
-                                }}
-                              />
-                              {t.explore.openNow}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Bottom-left rating */}
-                        <div
-                          style={{
-                            position: "absolute", bottom: 12, left: 12,
-                            display: "flex", alignItems: "center", gap: 5,
-                            padding: "5px 10px", borderRadius: 9999,
-                            background: "rgba(255,255,255,0.94)",
-                            backdropFilter: "blur(6px)",
-                          }}
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: 13, color: "#f59e0b", fontVariationSettings: "'FILL' 1" }}>star</span>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: "#111827" }}>{rating}</span>
-                          <span style={{ fontSize: 11, color: "#9ca3af" }}>({reviews})</span>
                         </div>
                       </div>
 

@@ -1,7 +1,26 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subWeeks, subMonths, subYears, parseISO } from "date-fns";
 
-export async function getFullAnalytics(supabase: SupabaseClient<any, any, any>, shopId: string, period: "week" | "month" | "year") {
+interface AnalyticsAppointmentRow {
+  id: string;
+  price: number | null;
+  status: string | null;
+  start_time: string;
+  source: string | null;
+  barber_id: string | null;
+  client_id: string | null;
+}
+
+interface AnalyticsClientRow {
+  id: string;
+}
+
+interface AnalyticsProfileRow {
+  id: string;
+  full_name: string | null;
+}
+
+export async function getFullAnalytics(supabase: SupabaseClient, shopId: string, period: "week" | "month" | "year") {
   const today = new Date();
   let start: string, end: string, prevStart: string, prevEnd: string;
 
@@ -53,10 +72,10 @@ export async function getFullAnalytics(supabase: SupabaseClient<any, any, any>, 
     .gte("created_at", prevStart)
     .lte("created_at", prevEnd);
 
-  const currAppts = (currApptsRaw || []) as any[];
-  const prevAppts = (prevApptsRaw || []) as any[];
-  const currClients = (currClientsRaw || []) as any[];
-  const prevClients = (prevClientsRaw || []) as any[];
+  const currAppts = (currApptsRaw || []) as AnalyticsAppointmentRow[];
+  const prevAppts = (prevApptsRaw || []) as AnalyticsAppointmentRow[];
+  const currClients = (currClientsRaw || []) as AnalyticsClientRow[];
+  const prevClients = (prevClientsRaw || []) as AnalyticsClientRow[];
 
   // Helper
   const pct = (curr: number, prev: number) => prev === 0 ? (curr > 0 ? 100 : 0) : +(((curr - prev) / prev) * 100).toFixed(1);
@@ -77,17 +96,20 @@ export async function getFullAnalytics(supabase: SupabaseClient<any, any, any>, 
   const prevNewClients = prevClients.length;
   const clientChange = pct(currNewClients, prevNewClients);
 
-  const currRet = currCompleted.length > 0 ? +((1 - currNewClients / currCompleted.length) * 100).toFixed(1) : 0;
-  const prevRet = prevCompleted.length > 0 ? +((1 - prevNewClients / prevCompleted.length) * 100).toFixed(1) : 0;
-  const safeCurrRet = Math.max(0, Math.min(100, currRet || 68.2));
-  const safePrevRet = Math.max(0, Math.min(100, prevRet || 64.1));
-  const retChange = +(safeCurrRet - safePrevRet).toFixed(1);
+  // Retention rate is only meaningful once there's completed-appointment data
+  // to compute it from — with zero completions there is nothing to divide by,
+  // and the rate is "not enough data yet", not a genuine 0%.
+  const hasCurrRetData = currCompleted.length > 0;
+  const hasPrevRetData = prevCompleted.length > 0;
+  const currRet = hasCurrRetData ? Math.max(0, Math.min(100, +((1 - currNewClients / currCompleted.length) * 100).toFixed(1))) : null;
+  const prevRet = hasPrevRetData ? Math.max(0, Math.min(100, +((1 - prevNewClients / prevCompleted.length) * 100).toFixed(1))) : null;
+  const retChange = hasCurrRetData && hasPrevRetData ? +(currRet! - prevRet!).toFixed(1) : null;
 
   const summary = [
     { id: "revenue", label: "Revenue", value: `${currRevenue.toLocaleString()} JOD`, sub: `vs. ${prevRevenue.toLocaleString()} JOD last period`, change: revChange, dir: revChange >= 0 ? "up" : "down" },
     { id: "bookings", label: "Bookings", value: `${currBookings}`, sub: "Total appointments scheduled", change: bookChange, dir: bookChange >= 0 ? "up" : "down" },
     { id: "clients", label: "New Clients", value: `${currNewClients}`, sub: "First-time visitors this period", change: clientChange, dir: clientChange >= 0 ? "up" : "down" },
-    { id: "retention", label: "Retention Rate", value: `${safeCurrRet}%`, sub: "Returning client frequency", change: retChange, dir: retChange >= 0 ? "up" : "down" },
+    { id: "retention", label: "Retention Rate", value: hasCurrRetData ? `${currRet}%` : "—", sub: hasCurrRetData ? "Returning client frequency" : "Not enough data yet", change: retChange ?? 0, dir: retChange === null ? "flat" : (retChange >= 0 ? "up" : "down") },
   ];
 
   // 2. Revenue Trend (Chart)
@@ -105,7 +127,7 @@ export async function getFullAnalytics(supabase: SupabaseClient<any, any, any>, 
 
   // 3. Barbers Performance
   const { data: profilesRaw } = await supabase.from("profiles").select("id, full_name").eq("shop_id", shopId);
-  const profiles = (profilesRaw || []) as any[];
+  const profiles = (profilesRaw || []) as AnalyticsProfileRow[];
   const nameMap = new Map(profiles.map(p => [p.id, p.full_name]));
   
   const bMap: Record<string, number> = {};

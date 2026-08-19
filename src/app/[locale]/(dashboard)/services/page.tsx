@@ -8,16 +8,13 @@ import {
   Pencil, Trash2, X, Loader2, Sparkles, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
-import { useThemeStore } from "@/store/theme-store";
 import { useServices, type ServiceItem } from "@/hooks/use-services";
 import { createClient } from "@/lib/supabase/client";
 
 const ICONS = ["✂️", "💈", "🧔", "💇", "🪒", "🧴", "💆", "🎨", "✨", "👑", "🧖", "💅"];
 
 export default function ServicesPage() {
-  const { t } = useTranslation();
-  const { direction } = useThemeStore();
-  const isRTL = direction === "rtl";
+  const { t, isRTL } = useTranslation();
   const { services, loading, addService, updateService, deleteService, toggleActive, reorderServices } = useServices();
 
   const [searchTerm, setSearchTerm] = useState("");

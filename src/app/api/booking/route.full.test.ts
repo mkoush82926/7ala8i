@@ -98,11 +98,19 @@ describe("POST /api/booking", () => {
     delete process.env.SUPABASE_SERVICE_ROLE_KEY;
   });
 
-  it("returns 401 when there is no authenticated user", async () => {
+  it("creates a booking for a guest with no authenticated session", async () => {
     getUserMock.mockResolvedValue({ data: { user: null } });
+    rpcMock.mockResolvedValue({ data: "appt-guest", error: null });
+
     const res = await POST(postRequest(validPayload));
-    expect(res.status).toBe(401);
-    expect(rpcMock).not.toHaveBeenCalled();
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ success: true, appointment_id: "appt-guest" });
+    expect(rpcMock).toHaveBeenCalledWith(
+      "create_public_booking",
+      expect.objectContaining({ p_shop_id: validPayload.shopId, p_client_name: validPayload.clientName }),
+    );
   });
 
   it("returns 429 when the rate limit is exceeded", async () => {

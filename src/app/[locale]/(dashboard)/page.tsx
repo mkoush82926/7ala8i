@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { MetricCards } from "@/components/dashboard/metric-cards";
 import { SalesChart } from "@/components/dashboard/sales-chart";
 import { DailyReceipt } from "@/components/dashboard/daily-receipt";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/use-translation";
-import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
@@ -58,14 +57,12 @@ function statusBadge(status: string, paymentStatus: string) {
 }
 
 function UpcomingAppointments() {
-  const { t } = useTranslation();
-  const { direction } = useThemeStore();
-  const isRTL = direction === "rtl";
+  const { t, isRTL, locale } = useTranslation();
   const shopId = useWorkspaceStore((s) => s.shopId);
   const barbers = useWorkspaceStore((s) => s.barbers);
   const role = useWorkspaceStore((s) => s.role);
   const { markPaid, markNoShow, cancelAppointment, loadingId } = usePos();
-  const supabase = useRef(createClient()).current;
+  const [supabase] = useState(() => createClient());
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -114,7 +111,7 @@ function UpcomingAppointments() {
           {isRTL ? "المواعيد القادمة" : "Upcoming Appointments"}
         </h3>
         <a
-          href="/calendar"
+          href={`/${locale}/calendar`}
           className="nav-link"
           style={{
             fontSize: 11, fontWeight: 700, textTransform: "uppercase",
@@ -146,7 +143,7 @@ function UpcomingAppointments() {
               </p>
               <p style={{ fontSize: 12, color: "#b0b3b8", margin: 0 }}>Your schedule is clear for now</p>
             </div>
-            <a href="/calendar" className="btn btn-primary" style={{ marginTop: 4, padding: "0 24px" }}>
+            <a href={`/${locale}/calendar`} className="btn btn-primary" style={{ marginTop: 4, padding: "0 24px" }}>
               {isRTL ? "احجز الآن" : "+ Book Appointment"}
             </a>
           </div>
@@ -255,9 +252,7 @@ function UpcomingAppointments() {
 export default function DashboardPage() {
   const [ready, setReady] = useState(false);
   const hydrated = useWorkspaceStore((s) => s.hydrated);
-  const { direction } = useThemeStore();
-  const isRTL = direction === "rtl";
-  const { t } = useTranslation();
+  const { t, isRTL, locale } = useTranslation();
 
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), 600);
@@ -283,11 +278,11 @@ export default function DashboardPage() {
 
           {/* Header action buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <a href="/calendar" className="btn btn-secondary">
+            <a href={`/${locale}/calendar`} className="btn btn-secondary">
               <CalendarCheck size={16} />
               <span>{isRTL ? "حجز جديد" : "New Booking"}</span>
             </a>
-            <a href="/leads" className="btn btn-secondary">
+            <a href={`/${locale}/leads`} className="btn btn-secondary">
               <span>{isRTL ? "إضافة عميل" : "New Lead"}</span>
             </a>
           </div>

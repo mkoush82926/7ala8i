@@ -56,6 +56,8 @@ function formatTime(t: string) {
 
 interface ServiceRow { id: string; name: string; name_ar: string | null; duration: number; price: number; }
 interface BarberRow  { id: string; full_name: string; barber_services?: { service_id: string }[]; }
+interface WorkingHourRow { barber_id: string; day_of_week: number; is_working: boolean; start_time: string; end_time: string; }
+interface OccupiedSlotRow { start_time: string; end_time: string; }
 
 // ─── Reusable inline-styled sub-components ───────────────────────
 
@@ -183,7 +185,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
     async () => {
       const ids = barberList.map(b => b.id);
       if (!ids.length) return { data: [], error: null };
-      return await supabase.from("working_hours").select("*").in("barber_id", ids) as any;
+      return await supabase.from("working_hours").select("*").in("barber_id", ids) as { data: WorkingHourRow[] | null; error: { message: string } | null };
     },
     [barberList], { enabled: barberList.length > 0 && step === "datetime" }
   );
@@ -194,7 +196,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
     const dayNum = new Date(selectedDate).getDay();
     const set = new Set<string>();
     for (const b of barberList) {
-      const h = (workingHoursRaw as any[]).find(x => x.barber_id === b.id && x.day_of_week === dayNum);
+      const h = (workingHoursRaw as WorkingHourRow[]).find(x => x.barber_id === b.id && x.day_of_week === dayNum);
       if (!h) { fallback.forEach(t => set.add(t)); continue; }
       if (!h.is_working) continue;
       const [sh, sm] = h.start_time.split(":").map(Number);
@@ -215,7 +217,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
   const occupiedTimeSet = useMemo(() => {
     const set = new Set<string>();
     if (!occupiedSlots) return set;
-    (occupiedSlots as any[]).forEach(slot => {
+    (occupiedSlots as OccupiedSlotRow[]).forEach(slot => {
       const start = parseISO(slot.start_time);
       const end   = parseISO(slot.end_time);
       for (const time of availableTimes) {
@@ -291,15 +293,10 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
               <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.035em", fontFamily: "'Manrope',system-ui,sans-serif", margin: "0 0 8px" }}>
                 {t.booking.bookAppointment}
               </h2>
-              <p style={{ fontSize: 14, color: C.subtle, marginBottom: 6, display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
+              <p style={{ fontSize: 14, color: C.subtle, marginBottom: 36, display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 14 }}>location_on</span>
                 {shop?.name || "Halaqy Studio"}{shop?.address ? `, ${shop.address}` : ""}
               </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fffbeb", padding: "6px 14px", borderRadius: 9999, marginBottom: 36 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 14, color: C.yellow, fontVariationSettings: "'FILL' 1" }}>star</span>
-                <span style={{ fontWeight: 700, fontSize: 14 }}>4.8</span>
-                <span style={{ fontSize: 12, color: C.muted }}>(127 reviews)</span>
-              </div>
 
               {/* Features */}
               <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 12, marginBottom: 36 }}>
@@ -368,7 +365,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 <span className="material-symbols-outlined" style={{ fontSize: 32, color: C.muted, animation: "spin 1s linear infinite" }}>refresh</span>
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 24 }}>
+              <div className="booking-service-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 24 }}>
                 {serviceList.map(service => {
                   const isSelected = selectedServices.includes(service.id);
                   return (
@@ -677,7 +674,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
             </div>
 
             {/* Two-column layout on larger screens, single column on small */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 24 }}>
+            <div className="booking-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 24 }}>
 
               {/* Left: forms */}
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>

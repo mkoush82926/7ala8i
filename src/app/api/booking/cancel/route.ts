@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     // ─── Cancel appointment via secure RPC ───
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: cancelled, error: rpcErr } = await (supabase.rpc as any)("cancel_public_booking", {
+    const { data: cancelled, error: rpcErr } = await (supabase.rpc as any)("cancel_customer_booking", {
       p_appointment_id: appointment_id,
     });
 

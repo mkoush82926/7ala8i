@@ -66,7 +66,7 @@ export default function BookingDetailPage() {
         shop_address: shopRes.data?.address || null,
         shop_phone: shopRes.data?.phone || null,
         client_name: apptRow.client_name,
-        barber_name: (barberRes as any).data?.full_name || null,
+        barber_name: (barberRes.data as { full_name: string | null } | null)?.full_name || null,
         service_name: apptRow.service_name || null,
         start_time: apptRow.start_time,
         end_time: apptRow.end_time,
@@ -83,7 +83,7 @@ export default function BookingDetailPage() {
     if (!appt) return;
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
     setCancelling(true);
-    const { error } = await supabase.rpc("cancel_public_booking", { p_appointment_id: appt.id });
+    const { error } = await supabase.rpc("cancel_customer_booking", { p_appointment_id: appt.id });
     if (error) {
       alert("Failed to cancel: " + error.message);
       setCancelling(false);
@@ -223,7 +223,7 @@ export default function BookingDetailPage() {
                 href={`/book/${appt.shop_id}`}
                 className="flex-1 text-center py-4 bg-primary text-on-primary rounded-lg font-bold text-sm hover:opacity-90 active:scale-95 transition-all"
               >
-                Reschedule
+                Book a New Time
               </Link>
               <button
                 onClick={handleCancel}
@@ -243,6 +243,11 @@ export default function BookingDetailPage() {
             </Link>
           )}
         </div>
+        {isUpcoming && (
+          <p className="text-xs text-on-surface-variant mt-3 text-center sm:text-left">
+            Your current booking stays active — cancel it above if you don&apos;t need it anymore.
+          </p>
+        )}
 
         {/* Shop Link */}
         <div className="mt-6 text-center">

@@ -9,7 +9,6 @@ import { toast } from "@/components/ui/toast";
 import {
   X,
   Phone,
-  Mail,
   DollarSign,
   StickyNote,
   Trash2,
@@ -18,13 +17,11 @@ import {
   User,
 } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
-import { useThemeStore } from "@/store/theme-store";
 
 export function LeadDrawer() {
   const { selectedLead, drawerOpen, setDrawerOpen, updateLead, deleteLead } =
     useLeadsStore();
-  const { t } = useTranslation();
-  const isRTL = useThemeStore((s) => s.direction) === "rtl";
+  const { t, isRTL } = useTranslation();
 
   const stageOptions: { value: LeadStage; label: string; color: string }[] = [
     { value: "new", label: t.leads.newLead, color: "var(--accent-blue)" },
@@ -49,7 +46,6 @@ export function LeadDrawer() {
   const [form, setForm] = useState({
     name: "",
     phone: "",
-    email: "",
     value: "",
     stage: "new" as LeadStage,
     notes: "",
@@ -61,7 +57,6 @@ export function LeadDrawer() {
       setForm({
         name: selectedLead.name || "",
         phone: selectedLead.phone || "",
-        email: selectedLead.email || "",
         value: selectedLead.value?.toString() || "",
         stage: selectedLead.stage,
         notes: selectedLead.notes || "",
@@ -74,7 +69,6 @@ export function LeadDrawer() {
     updateLead(selectedLead.id, {
       name: form.name,
       phone: form.phone,
-      email: form.email || undefined,
       value: form.value ? parseFloat(form.value) : undefined,
       stage: form.stage,
       notes: form.notes || undefined,
@@ -203,23 +197,6 @@ export function LeadDrawer() {
                     }
                     className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--accent-mint)] focus:outline-none transition-colors"
                     placeholder="+962..."
-                  />
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="flex items-center gap-2 text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider mb-1.5">
-                    <Mail size={12} />
-                    {t.leads.email}
-                  </label>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, email: e.target.value }))
-                    }
-                    className="w-full h-9 px-3 rounded-[var(--radius-sm)] bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[13px] text-[var(--text-primary)] font-light focus:border-[var(--accent-mint)] focus:outline-none transition-colors"
-                    placeholder="email@example.com"
                   />
                 </div>
 

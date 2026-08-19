@@ -6,13 +6,15 @@ import { Topbar } from "@/components/layout/topbar";
 import { ToastContainer } from "@/components/ui/toast";
 import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
+import { useTranslation } from "@/hooks/use-translation";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { theme, direction } = useThemeStore();
+  const { theme } = useThemeStore();
+  const { dir, locale } = useTranslation();
   const { initializeWorkspace } = useWorkspaceStore();
 
   // Initialize workspace data from Supabase
@@ -23,12 +25,9 @@ export default function DashboardLayout({
   // Apply theme and direction to html element
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    document.documentElement.setAttribute("dir", direction);
-    document.documentElement.setAttribute(
-      "lang",
-      direction === "rtl" ? "ar" : "en",
-    );
-  }, [theme, direction]);
+    document.documentElement.setAttribute("dir", dir);
+    document.documentElement.setAttribute("lang", locale);
+  }, [theme, dir, locale]);
 
   return (
     /* Stitch body: bg-background text-on-surface antialiased */

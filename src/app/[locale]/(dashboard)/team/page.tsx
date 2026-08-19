@@ -8,7 +8,6 @@ import {
   X, Check
 } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
-import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
@@ -35,10 +34,8 @@ const avatarColors = [
 ];
 
 export default function TeamPage() {
-  const { t } = useTranslation();
-  const { direction } = useThemeStore();
+  const { t, isRTL } = useTranslation();
   const { shopId } = useWorkspaceStore();
-  const isRTL = direction === "rtl";
   const [searchTerm, setSearchTerm] = useState("");
 
   const supabase = createClient();
@@ -91,7 +88,7 @@ export default function TeamPage() {
   );
 
   const handleInvite = () => {
-    toast("success", isRTL ? "تم إرسال دعوة جديدة للفريق!" : "New team invite sent!");
+    toast("info", isRTL ? "دعوات الفريق قيد التطوير قريبًا." : "Team invites are coming soon.");
   };
 
   if (loading) return <DashboardSkeleton />;
@@ -127,9 +124,15 @@ export default function TeamPage() {
               />
             </div>
             {currentUserRole === 'shop_admin' && (
-              <button className="btn btn-primary" onClick={handleInvite} style={{ minHeight: "40px", padding: "0 20px" }}>
+              <button
+                className="btn btn-primary"
+                onClick={handleInvite}
+                disabled
+                title={isRTL ? "دعوات الفريق قيد التطوير قريبًا" : "Team invites are coming soon"}
+                style={{ minHeight: "40px", padding: "0 20px", opacity: 0.5, cursor: "not-allowed" }}
+              >
                 <UserPlus size={16} />
-                <span className="hidden sm:inline">{isRTL ? "دعوة عضو" : "Invite Staff"}</span>
+                <span className="hidden sm:inline">{isRTL ? "دعوة عضو (قريبًا)" : "Invite Staff (Soon)"}</span>
               </button>
             )}
           </div>
@@ -217,7 +220,21 @@ export default function TeamPage() {
   );
 }
 
-function BarberSettingsModal({ editingBarber, shopServices, setEditingBarber, refetchTeam, isRTL }: any) {
+interface ServiceOption {
+  id: string;
+  name: string;
+  name_ar: string | null;
+}
+
+interface BarberSettingsModalProps {
+  editingBarber: TeamMember;
+  shopServices: ServiceOption[];
+  setEditingBarber: (barber: TeamMember | null) => void;
+  refetchTeam: () => void;
+  isRTL: boolean;
+}
+
+function BarberSettingsModal({ editingBarber, shopServices, setEditingBarber, refetchTeam, isRTL }: BarberSettingsModalProps) {
   const [activeTab, setActiveTab] = useState<"services" | "hours">("services");
   
   return (
@@ -313,7 +330,7 @@ function BarberWorkingHoursManager({ barber, onClose, isRTL }: { barber: TeamMem
       });
   }, [barber.id, supabase]);
 
-  const updateDay = (dayIndex: number, field: string, value: any) => {
+  const updateDay = (dayIndex: number, field: "start_time" | "end_time" | "is_working", value: string | boolean) => {
     setSchedule(prev => prev.map(d => d.day_of_week === dayIndex ? { ...d, [field]: value } : d));
   };
 
@@ -331,8 +348,8 @@ function BarberWorkingHoursManager({ barber, onClose, isRTL }: { barber: TeamMem
       if (error) throw error;
       toast("success", isRTL ? "تم حفظ أوقات العمل" : "Working hours saved successfully");
       onClose();
-    } catch (e: any) {
-      toast("error", e.message || "Failed to save");
+    } catch (e) {
+      toast("error", e instanceof Error ? e.message : "Failed to save");
     } finally {
       setSaving(false);
     }
@@ -414,8 +431,8 @@ function BarberServicesChecklist({ barber, services, onClose, onSaveSuccess, isR
       
       toast("success", isRTL ? "تم تحديث قدرات الحلاق بنجاح" : "Capabilities updated successfully");
       onSaveSuccess();
-    } catch (e: any) {
-      toast("error", e.message || "Failed to update capabilities");
+    } catch (e) {
+      toast("error", e instanceof Error ? e.message : "Failed to update capabilities");
     } finally {
       setSaving(false);
     }

@@ -47,7 +47,12 @@ export async function middleware(request: NextRequest) {
   if (!pathnameHasLocale) {
     const localeToUse = request.cookies.get('NEXT_LOCALE')?.value || DEFAULT_LOCALE;
     request.nextUrl.pathname = `/${localeToUse}${pathname}`;
-    return NextResponse.redirect(request.nextUrl);
+    const redirectResponse = NextResponse.redirect(request.nextUrl);
+    redirectResponse.cookies.set('NEXT_LOCALE', localeToUse, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    return redirectResponse;
   }
 
   // 3. Remove locale prefix from pathname for routing logic
@@ -55,7 +60,12 @@ export async function middleware(request: NextRequest) {
 
   // Always allow static/public routes
   if (PUBLIC_ROUTES.some((r) => pathnameWithoutLocale.startsWith(r))) {
-    return NextResponse.next();
+    const publicResponse = NextResponse.next();
+    publicResponse.cookies.set('NEXT_LOCALE', currentLocale!, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    return publicResponse;
   }
 
   let response = NextResponse.next({ request });
@@ -116,6 +126,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  response.cookies.set('NEXT_LOCALE', currentLocale!, {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+  });
   return response;
 }
 

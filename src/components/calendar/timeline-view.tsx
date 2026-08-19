@@ -20,6 +20,7 @@ import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
 import { getAppointmentsByDateRange } from "@/lib/queries/appointments";
 import { toast } from "@/components/ui/toast";
+import { usePos } from "@/hooks/use-pos";
 import { format, parseISO, addDays, subDays } from "date-fns";
 
 const timeSlots = Array.from({ length: 12 }, (_, i) => {
@@ -82,6 +83,7 @@ export function TimelineView() {
   }
 
   const { barbers, currentView, shopId } = useWorkspaceStore();
+  const { markPaid, loadingId } = usePos();
   const displayBarbers =
     currentView === "master"
       ? barbers
@@ -101,6 +103,7 @@ export function TimelineView() {
     end_time: string;
     status: string | null;
     price: number;
+    service_name?: string | null;
   };
 
   const {
@@ -138,6 +141,20 @@ export function TimelineView() {
     } catch {
       toast("error", "Failed to update appointment");
     }
+  };
+
+  const handleMarkPaid = async (appt: Appointment, barberName: string) => {
+    await markPaid({
+      appointmentId: appt.id,
+      clientName: appt.client_name,
+      barberName,
+      serviceLabel: appt.service_name || "Appointment",
+      scheduledTime: format(parseISO(appt.start_time), "h:mm a"),
+      amount: appt.price,
+      method: "cash",
+    });
+    toast("success", "Appointment marked as completed");
+    refetch();
   };
 
   return (
@@ -405,8 +422,9 @@ export function TimelineView() {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleStatusUpdate(appt.id, "completed");
+                                    handleMarkPaid(appt, barber.name);
                                   }}
+                                  disabled={loadingId === appt.id}
                                   className="flex-1 min-h-[36px] rounded text-[10px] uppercase font-bold bg-[var(--accent-mint-muted)] text-[var(--accent-mint)] hover:opacity-80 cursor-pointer transition-opacity"
                                 >
                                   Paid
@@ -527,8 +545,14 @@ export function TimelineView() {
                             <div className="flex gap-1">
                               <button
                                 onClick={() =>
-                                  handleStatusUpdate(appt.id, "completed")
+                                  handleMarkPaid(
+                                    appt,
+                                    barbers.find(
+                                      (b) => b.id === appt.barber_id,
+                                    )?.name || "Barber",
+                                  )
                                 }
+                                disabled={loadingId === appt.id}
                                 className="min-h-[36px] px-3 rounded text-[11px] font-bold uppercase bg-[var(--accent-mint-muted)] text-[var(--accent-mint)] cursor-pointer hover:opacity-80 transition-opacity"
                               >
                                 Paid

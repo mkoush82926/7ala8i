@@ -49,6 +49,36 @@ export function DailyReceipt() {
   const cashTotal  = cashSales.reduce((sum, s) => sum + s.amount, 0);
   const cardTotal  = cardSales.reduce((sum, s) => sum + s.amount, 0);
 
+  const escapeCsvValue = (value: string) => {
+    if (/[",\n]/.test(value)) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  };
+
+  const handleExportCSV = () => {
+    const header = ["Client", "Service", "Amount", "Time", "Payment Method"];
+    const rows = sales.map((s) =>
+      [s.clientName, s.service, s.amount.toFixed(2), s.time, s.paymentMethod]
+        .map((v) => escapeCsvValue(String(v)))
+        .join(","),
+    );
+    const csvContent = [header.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `daily-receipt-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (loading) {
     return (
       <div style={{
@@ -258,7 +288,7 @@ export function DailyReceipt() {
 
         {/* Export buttons */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <button className="btn" style={{
+          <button onClick={handlePrint} className="btn" style={{
             background: "rgba(255,255,255,0.1)",
             border: "1px solid rgba(255,255,255,0.1)",
             color: "rgba(255,255,255,0.8)",
@@ -267,7 +297,7 @@ export function DailyReceipt() {
             <Download size={14} />
             PDF
           </button>
-          <button className="btn" style={{
+          <button onClick={handleExportCSV} className="btn" style={{
             background: "rgba(255,255,255,0.1)",
             border: "1px solid rgba(255,255,255,0.1)",
             color: "rgba(255,255,255,0.8)",

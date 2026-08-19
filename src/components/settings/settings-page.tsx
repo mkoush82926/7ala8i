@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { toast } from "@/components/ui/toast";
 import { useTranslation } from "@/hooks/use-translation";
-import { useThemeStore } from "@/store/theme-store";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 
 type SettingsTab = "general" | "team" | "billing" | "booking";
 
@@ -28,19 +28,48 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const { shopName, barbers, shopId } = useWorkspaceStore();
   const [copied, setCopied] = useState(false);
-  const bookingLink = `halaqy.booking/${shopName.toLowerCase().replace(/\s+/g, "-")}`;
-  const { t } = useTranslation();
-  const { direction } = useThemeStore();
-  const isRTL = direction === "rtl";
+  const { t, locale, isRTL } = useTranslation();
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const bookingLink =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/${locale}/shop/${shopId}`
+      : `/${locale}/shop/${shopId}`;
 
   // General tab form state
   const [formShopName, setFormShopName] = useState(shopName);
-  const [formEmail, setFormEmail] = useState("hello@halaqy.com");
-  const [formWhatsapp, setFormWhatsapp] = useState("+962 7 9000 0000");
-  const [formDescription, setFormDescription] = useState(
-    isRTL ? "حلاقة فاخرة وتصفيف حديث في قلب المدينة." : "Luxury barbering and modern grooming located in the heart of the city."
-  );
+  const [formEmail, setFormEmail] = useState("");
+  const [formWhatsapp, setFormWhatsapp] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formDailyGoal, setFormDailyGoal] = useState("120");
+  const [loadingShop, setLoadingShop] = useState(() => !!shopId);
   const [saving, setSaving] = useState(false);
+
+  const fetchShopSettings = useCallback(async () => {
+    if (!shopId) {
+      setLoadingShop(false);
+      return;
+    }
+    setLoadingShop(true);
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("shops")
+      .select("name, description, contact_email, whatsapp, daily_goal")
+      .eq("id", shopId)
+      .single();
+    if (data) {
+      setFormShopName(data.name ?? shopName);
+      setFormDescription(data.description ?? "");
+      setFormEmail(data.contact_email ?? "");
+      setFormWhatsapp(data.whatsapp ?? "");
+      setFormDailyGoal(String(data.daily_goal ?? 120));
+    }
+    setLoadingShop(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shopId]);
+
+  useEffect(() => {
+    fetchShopSettings();
+  }, [fetchShopSettings]);
 
   async function handleSave() {
     if (!shopId) {
@@ -56,6 +85,7 @@ export function SettingsPage() {
         description: formDescription,
         contact_email: formEmail,
         whatsapp: formWhatsapp,
+        daily_goal: Number(formDailyGoal) || 0,
       } as Record<string, unknown>)
       .eq("id", shopId);
 
@@ -67,6 +97,18 @@ export function SettingsPage() {
     }
   }
 
+  function handleDownloadQr() {
+    const canvas = qrCanvasRef.current;
+    if (!canvas) return;
+    const url = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "booking-qr-code.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: "general", label: t.settings.general },
     { id: "team", label: t.settings.team },
@@ -75,7 +117,7 @@ export function SettingsPage() {
   ];
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(`https://${bookingLink}`);
+    navigator.clipboard.writeText(bookingLink);
     setCopied(true);
     toast("success", "Booking link copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
@@ -165,58 +207,62 @@ export function SettingsPage() {
             </p>
           </div>
           <div style={{ background: C.white, padding: 32, borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px 48px" }}>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={labelStyle}>{t.settings.shopName}</label>
-                <input
-                  style={inputStyle}
-                  type="text"
-                  value={formShopName}
-                  onChange={(e) => setFormShopName(e.target.value)}
-                />
+            {loadingShop ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.mid, fontSize: 14 }}>
+                <Loader2 size={16} className="animate-spin" />
+                {isRTL ? "جاري تحميل بيانات المتجر..." : "Loading shop details..."}
               </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={labelStyle}>{t.settings.shopDescription}</label>
-                <textarea
-                  style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
-                  rows={3}
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                />
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px 48px" }}>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={labelStyle}>{t.settings.shopName}</label>
+                  <input
+                    style={inputStyle}
+                    type="text"
+                    value={formShopName}
+                    onChange={(e) => setFormShopName(e.target.value)}
+                  />
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={labelStyle}>{t.settings.shopDescription}</label>
+                  <textarea
+                    style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
+                    rows={3}
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>{t.settings.contactEmail}</label>
+                  <input
+                    style={inputStyle}
+                    type="email"
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>WhatsApp Number</label>
+                  <input
+                    style={inputStyle}
+                    type="tel"
+                    value={formWhatsapp}
+                    onChange={(e) => setFormWhatsapp(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>{isRTL ? "الهدف اليومي للمبيعات (دينار)" : "Daily Sales Goal (JOD)"}</label>
+                  <input
+                    style={inputStyle}
+                    type="number"
+                    min={0}
+                    step="1"
+                    value={formDailyGoal}
+                    onChange={(e) => setFormDailyGoal(e.target.value)}
+                  />
+                </div>
               </div>
-              <div>
-                <label style={labelStyle}>{t.settings.contactEmail}</label>
-                <input
-                  style={inputStyle}
-                  type="email"
-                  value={formEmail}
-                  onChange={(e) => setFormEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>WhatsApp Number</label>
-                <input
-                  style={inputStyle}
-                  type="tel"
-                  value={formWhatsapp}
-                  onChange={(e) => setFormWhatsapp(e.target.value)}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>{t.settings.currency}</label>
-                <select style={inputStyle}>
-                  <option>JOD (Jordanian Dinar)</option>
-                  <option>USD ($)</option>
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>{t.settings.timezone}</label>
-                <select style={inputStyle}>
-                  <option>(GMT+03:00) Amman</option>
-                  <option>(GMT+00:00) London</option>
-                </select>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -233,39 +279,41 @@ export function SettingsPage() {
             </p>
           </div>
           <div style={{ background: C.white, borderRadius: 12, overflow: "hidden", border: `1px solid ${C.surface}`, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-            {(barbers.length > 0 ? barbers : [
-              { id: "1", name: "Omar Al-Fayez" },
-              { id: "2", name: "Sara Jenkins" },
-            ]).map((member, i) => (
-              <div key={member.id || i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", borderBottom: i < 1 ? `1px solid ${C.surface}` : undefined }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: "50%", background: C.surfaceLow, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 16, color: C.mid }}>
-                    {(member.name || "?").slice(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <p style={{ fontWeight: 700, fontSize: 14, color: C.dark, margin: 0 }}>{member.name || "Team Member"}</p>
-                    <p style={{ fontSize: 12, color: C.mid, margin: 0 }}>Barber · Active</p>
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ padding: "4px 10px", background: `${C.surface}`, color: C.dark, fontSize: 10, fontWeight: 700, textTransform: "uppercase", borderRadius: 99, letterSpacing: "0.05em" }}>
-                    {i === 0 ? "Admin" : "Staff"}
-                  </span>
-                </div>
+            {barbers.length === 0 ? (
+              <div style={{ padding: "40px 24px", textAlign: "center", color: C.mid, fontSize: 14 }}>
+                {isRTL ? "لا يوجد أعضاء فريق بعد — ادعُ أول حلاق لك." : "No team members yet — invite your first barber."}
               </div>
-            ))}
-            {/* Invite form */}
-            <div style={{ background: C.surfaceLow, padding: 24, borderTop: `1px solid ${C.surface}` }}>
+            ) : (
+              barbers.map((member, i) => (
+                <div key={member.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", borderBottom: i < barbers.length - 1 ? `1px solid ${C.surface}` : undefined }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: C.surfaceLow, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 16, color: C.mid }}>
+                      {(member.name || "?").slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <p style={{ fontWeight: 700, fontSize: 14, color: C.dark, margin: 0 }}>{member.name || "Team Member"}</p>
+                      <p style={{ fontSize: 12, color: C.mid, margin: 0 }}>Barber · Active</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+            {/* Invite — pipeline not built yet */}
+            <div style={{ background: "#f5f3ff", padding: 24, borderTop: `1px solid ${C.surface}` }}>
               <div style={{ display: "flex", gap: 12 }}>
                 <input
-                  style={{ ...inputStyle, flex: 1, background: C.white }}
-                  placeholder="New staff email address"
+                  style={{ ...inputStyle, flex: 1, background: C.surfaceLow, cursor: "not-allowed" }}
+                  placeholder={isRTL ? "دعوات الفريق قريبًا" : "Team invites — coming soon"}
                   type="email"
+                  disabled
                 />
-                <button className="btn btn-primary">
+                <button className="btn btn-primary" disabled style={{ opacity: 0.5, cursor: "not-allowed" }}>
                   {t.settings.inviteBarber}
                 </button>
               </div>
+              <p style={{ fontSize: 12, color: C.mid, marginTop: 8, marginBottom: 0 }}>
+                {isRTL ? "دعوات الفريق عبر البريد الإلكتروني قيد التطوير." : "Email invites for new staff are still in development."}
+              </p>
             </div>
           </div>
         </div>
@@ -303,7 +351,7 @@ export function SettingsPage() {
                   {copied ? "✓ Copied!" : (isRTL ? "نسخ الرابط" : "Copy Public URL")}
                 </button>
                 <a
-                  href={`https://${bookingLink}`}
+                  href={bookingLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="nav-link"
@@ -316,14 +364,11 @@ export function SettingsPage() {
             {/* QR Card */}
             <div style={{ background: C.white, border: `1px solid ${C.surface}`, padding: 32, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
               <div style={{ marginBottom: 24, padding: 16, background: C.surfaceLow, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: 128, height: 128, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: `2px dashed ${C.surface}`, borderRadius: 8 }}>
-                  <span style={{ fontSize: 48, color: C.outline }}>▦</span>
-                  <span style={{ fontSize: 10, color: C.mid, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>STUDIO QR</span>
-                </div>
+                <QRCodeCanvas ref={qrCanvasRef} value={bookingLink} size={128} />
               </div>
               <p style={{ fontWeight: 700, fontSize: 14, color: C.dark, margin: "0 0 4px" }}>{isRTL ? "رمز QR للحجز" : "Booking QR Code"}</p>
               <p style={{ fontSize: 11, color: C.mid, margin: "0 0 16px" }}>{isRTL ? "ضعه على مكتب الاستقبال" : "Place this at your reception desk"}</p>
-              <button className="btn btn-secondary" style={{ width: "100%" }}>
+              <button className="btn btn-secondary" style={{ width: "100%" }} onClick={handleDownloadQr}>
                 {isRTL ? "تنزيل بدقة عالية" : "Download High-Res"}
               </button>
             </div>
@@ -342,84 +387,15 @@ export function SettingsPage() {
               {isRTL ? "إدارة اشتراكك وعرض التاريخ." : "Manage your atelier subscription and view history."}
             </p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-            {/* Active Plan */}
-            <div style={{ background: C.white, padding: 32, borderRadius: 16, border: `1px solid ${C.surface}`, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 220 }}>
-              <div>
-                <span style={{ display: "inline-block", padding: "3px 10px", background: C.amber, color: "#92400e", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", borderRadius: 6, marginBottom: 16 }}>
-                  {isRTL ? "الخطة النشطة" : "Active Plan"}
-                </span>
-                <h3 style={{ fontFamily: "Manrope, sans-serif", fontSize: 24, fontWeight: 900, color: C.dark, margin: "0 0 8px" }}>Pro Atelier</h3>
-                <p style={{ fontSize: 14, color: C.mid, display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                  <span style={{ color: "#059669", fontSize: 12 }}>✓</span>
-                  {isRTL ? "حتى 5 حلاقين وحجوزات غير محدودة" : "Up to 5 barbers & unlimited bookings"}
-                </p>
-              </div>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: 32 }}>
-                <div>
-                  <span style={{ fontFamily: "Manrope, sans-serif", fontSize: 32, fontWeight: 900, color: C.dark }}>25.00 JOD</span>
-                  <span style={{ fontSize: 12, color: C.mid }}>/month</span>
-                </div>
-                <button className="btn btn-secondary" style={{ minHeight: "36px", padding: "0 16px" }}>
-                  {isRTL ? "تغيير الخطة" : "Change Plan"}
-                </button>
-              </div>
-            </div>
-            {/* Payment */}
-            <div style={{ background: C.surfaceLow, padding: 32, borderRadius: 16, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 220 }}>
-              <div>
-                <span style={{ fontSize: 10, fontWeight: 700, color: C.mid, textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 16 }}>
-                  {isRTL ? "الدفعة القادمة" : "Next Payment"}
-                </span>
-                <p style={{ fontWeight: 700, fontSize: 14, color: C.dark, margin: "0 0 4px" }}>Dec 01, 2025</p>
-                <p style={{ fontSize: 12, color: C.mid, margin: 0 }}>{isRTL ? "التجديد التلقائي مُفعّل" : "Automatic renewal enabled"}</p>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 16, background: "rgba(255,255,255,0.6)", borderRadius: 12, border: `1px solid ${C.surface}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 32, height: 20, background: C.black, borderRadius: 4 }} />
-                  <span style={{ fontSize: 14, fontWeight: 500, color: C.dark }}>Mastercard •••• 8829</span>
-                </div>
-                <button className="btn btn-secondary" style={{ minHeight: "28px", padding: "0 12px", fontSize: 10, textTransform: "uppercase" }}>
-                  {isRTL ? "تحديث" : "Update"}
-                </button>
-              </div>
-            </div>
-          </div>
-          {/* Invoice Table */}
-          <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.surface}`, overflow: "hidden" }}>
-            <div style={{ padding: "16px 24px", borderBottom: `1px solid ${C.surface}` }}>
-              <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.mid, margin: 0 }}>
-                {isRTL ? "الفواتير الأخيرة" : "Recent Invoices"}
-              </h3>
-            </div>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-              <thead>
-                <tr style={{ color: C.mid, borderBottom: `1px solid ${C.surface}`, background: `${C.surfaceLow}80` }}>
-                  <th style={{ padding: "12px 24px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" }}>{isRTL ? "التاريخ" : "Date"}</th>
-                  <th style={{ padding: "12px 24px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" }}>{isRTL ? "المبلغ" : "Amount"}</th>
-                  <th style={{ padding: "12px 24px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "left" }}>{isRTL ? "الحالة" : "Status"}</th>
-                  <th style={{ padding: "12px 24px", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "right" }}>{isRTL ? "الإيصال" : "Receipt"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[{ date: "Nov 01, 2025", amount: "25.00 JOD" }, { date: "Oct 01, 2025", amount: "25.00 JOD" }].map((inv, i) => (
-                  <tr key={i} style={{ borderBottom: i < 1 ? `1px solid ${C.surface}` : undefined, color: C.dark }}>
-                    <td style={{ padding: "16px 24px", fontWeight: 500 }}>{inv.date}</td>
-                    <td style={{ padding: "16px 24px" }}>{inv.amount}</td>
-                    <td style={{ padding: "16px 24px" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 99, background: "#d1fae5", color: "#065f46", fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>
-                        {isRTL ? "مدفوع" : "Paid"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "16px 24px", textAlign: "right" }}>
-                      <button style={{ color: C.mid, background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>
-                        ↓
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ background: C.white, padding: 48, borderRadius: 12, border: `1px solid ${C.surface}`, textAlign: "center" }}>
+            <h3 style={{ fontFamily: "Manrope, sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: "0 0 8px" }}>
+              {isRTL ? "الفوترة — قريبًا" : "Billing — Coming Soon"}
+            </h3>
+            <p style={{ fontSize: 14, color: C.mid, margin: 0, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
+              {isRTL
+                ? "إدارة الاشتراكات والفواتير قيد التطوير حاليًا وستتوفر قريبًا."
+                : "Subscription plans, payment methods, and invoices are still being built and will be available soon."}
+            </p>
           </div>
         </div>
       )}
