@@ -47,7 +47,7 @@ export function DashboardSkeleton() {
             key={i}
             style={{
               background: "#ffffff",
-              border: "1px solid #e1e9f0",
+              border: "1px solid #ede3cd",
               borderRadius: 12,
               padding: 28,
               minHeight: 152,
@@ -72,7 +72,7 @@ export function DashboardSkeleton() {
         {/* Chart card skeleton */}
         <div
           style={{
-            background: "#ffffff", border: "1px solid #e1e9f0",
+            background: "#ffffff", border: "1px solid #ede3cd",
             borderRadius: 12, padding: 28, minHeight: 320,
             display: "flex", flexDirection: "column", gap: 20,
           }}
@@ -91,7 +91,7 @@ export function DashboardSkeleton() {
         {/* Receipt card skeleton */}
         <div
           style={{
-            background: "#ffffff", border: "1px solid #e1e9f0",
+            background: "#ffffff", border: "1px solid #ede3cd",
             borderRadius: 12, padding: 28, minHeight: 320,
             display: "flex", flexDirection: "column", gap: 20,
           }}
@@ -110,7 +110,7 @@ export function DashboardSkeleton() {
             </div>
           ))}
           {/* Total row */}
-          <div style={{ marginTop: "auto", borderTop: "1px solid #e1e9f0", paddingTop: 20 }}>
+          <div style={{ marginTop: "auto", borderTop: "1px solid #ede3cd", paddingTop: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <Skeleton className="h-3 w-16" variant="text" />
               <Skeleton className="h-6 w-20" variant="text" />

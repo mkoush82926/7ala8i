@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Check, AlertCircle, Clock, Loader2 } from "lucide-react";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, FONT_EN_DISPLAY } from "@/hooks/use-translation";
 import { createClient } from "@/lib/supabase/client";
 
 type JoinStatus = "loading" | "auth_required" | "success" | "already_member" | "error";
@@ -130,7 +130,8 @@ function JoinContent() {
         <div className="text-center mb-8">
           <Link
             href="/landing"
-            style={{ fontFamily: "var(--font-intervar), sans-serif" }}
+            dir="ltr"
+            style={{ fontFamily: FONT_EN_DISPLAY }}
             className="text-3xl font-black tracking-wide text-[var(--text-primary)] no-underline"
           >
             Halaqy.

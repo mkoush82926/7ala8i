@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPublicServices } from "@/lib/queries/services";
 import { motion } from "framer-motion";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { format } from "date-fns";
 import { arSA } from "date-fns/locale";
 
@@ -57,7 +57,7 @@ function Stars({ rating, size = 16 }: { rating: number; size?: number }) {
         <span
           key={s}
           className="material-symbols-outlined"
-          style={{ fontSize: size, color: s <= Math.round(rating) ? "#0f77ff" : "#e1e9f0", fontVariationSettings: s <= Math.round(rating) ? "'FILL' 1" : "'FILL' 0" }}
+          style={{ fontSize: size, color: s <= Math.round(rating) ? "#a67c3d" : "#ede3cd", fontVariationSettings: s <= Math.round(rating) ? "'FILL' 1" : "'FILL' 0" }}
         >star</span>
       ))}
     </div>
@@ -68,12 +68,12 @@ function RatingBar({ star, count, total }: { star: number; count: number; total:
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
     <div className="flex items-center gap-2 text-sm">
-      <span className="text-xs font-semibold text-[#36394a] w-4">{star}</span>
-      <span className="material-symbols-outlined text-[#0f77ff] text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-      <div className="flex-1 h-1.5 bg-[#e1e9f0] rounded-full overflow-hidden">
-        <div className="h-full bg-[#0f77ff] rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+      <span className="text-xs font-semibold text-[#5a5147] w-4">{star}</span>
+      <span className="material-symbols-outlined text-[#a67c3d] text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+      <div className="flex-1 h-1.5 bg-[#ede3cd] rounded-full overflow-hidden">
+        <div className="h-full bg-[#a67c3d] rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs text-[#36394a] w-6 text-right">{count}</span>
+      <span className="text-xs text-[#5a5147] w-6 text-right">{count}</span>
     </div>
   );
 }
@@ -126,8 +126,8 @@ export default function ShopProfilePage() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-2 border-[#091135] border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-[#36394a] font-medium">{isRTL ? "جاري تحميل المحل…" : "Loading shop…"}</p>
+          <div className="w-10 h-10 border-2 border-[#1c1611] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-[#5a5147] font-medium">{isRTL ? "جاري تحميل المحل…" : "Loading shop…"}</p>
         </div>
       </div>
     );
@@ -136,11 +136,11 @@ export default function ShopProfilePage() {
   if (!shop) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-[#f5f3ff] flex items-center justify-center mb-6">
-          <span className="material-symbols-outlined text-[#36394a] text-4xl">storefront</span>
+        <div className="w-20 h-20 rounded-full bg-[#f7f1e4] flex items-center justify-center mb-6">
+          <span className="material-symbols-outlined text-[#5a5147] text-4xl">storefront</span>
         </div>
         <h2 className="text-2xl font-bold mb-2">{isRTL ? "المحل غير موجود" : "Shop Not Found"}</h2>
-        <p className="text-[#36394a] mb-8 max-w-sm">{isRTL ? "المحل الذي تبحث عنه غير موجود أو تمت إزالته." : "The shop you're looking for doesn't exist or has been removed."}</p>
+        <p className="text-[#5a5147] mb-8 max-w-sm">{isRTL ? "المحل الذي تبحث عنه غير موجود أو تمت إزالته." : "The shop you're looking for doesn't exist or has been removed."}</p>
         <Link href="/explore" className="btn-premium btn-premium-dark">{isRTL ? "→ العودة للاستكشاف" : "← Back to Explore"}</Link>
       </div>
     );
@@ -164,13 +164,13 @@ export default function ShopProfilePage() {
       <div className={`sticky-booking-bar ${stickyVisible ? "visible" : ""}`}>
         <div className="max-w-5xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <div>
-            <p className="font-black text-[#091135] text-base" style={{ fontFamily: "var(--font-intervar),sans-serif" }}>
+            <p className="font-black text-[#1c1611] text-base" style={{ fontFamily: "var(--font-intervar),sans-serif" }}>
               {shop.name}
             </p>
             {numReviews > 0 && (
               <div className="flex items-center gap-1">
                 <Stars rating={avgRating} size={12} />
-                <span className="text-xs text-[#36394a] font-semibold">{avgRating.toFixed(1)} ({numReviews})</span>
+                <span className="text-xs text-[#5a5147] font-semibold">{avgRating.toFixed(1)} ({numReviews})</span>
               </div>
             )}
           </div>
@@ -189,7 +189,7 @@ export default function ShopProfilePage() {
         <div className="max-w-5xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-1.5 bg-white text-[#36394a] hover:text-[#091135] transition-colors h-9 px-3.5 rounded-[8px] border border-[#e1e9f0] text-sm font-semibold"
+            className="flex items-center gap-1.5 bg-white text-[#5a5147] hover:text-[#1c1611] transition-colors h-9 px-3.5 rounded-[8px] border border-[#ede3cd] text-sm font-semibold"
             style={{ cursor: "pointer" }}
           >
             <span className="material-symbols-outlined text-[18px]">{isRTL ? "arrow_forward" : "arrow_back"}</span>
@@ -197,7 +197,7 @@ export default function ShopProfilePage() {
           </button>
           <Link
             href={`/book/${shop.id}`}
-            className="bg-white text-[#091135] h-9 px-4 rounded-[8px] border border-[#e1e9f0] text-sm font-bold hover:border-[#0f77ff] transition-all"
+            className="bg-white text-[#1c1611] h-9 px-4 rounded-[8px] border border-[#ede3cd] text-sm font-bold hover:border-[#a67c3d] transition-all"
           >
             {t.explore.bookNow}
           </Link>
@@ -205,13 +205,13 @@ export default function ShopProfilePage() {
       </header>
 
       {/* ── Hero ── */}
-      <div ref={heroRef} className="relative h-72 sm:h-96 overflow-hidden bg-[#091135]">
+      <div ref={heroRef} className="relative h-72 sm:h-96 overflow-hidden bg-[#1c1611]">
         <img
           src={FALLBACK_SHOP_IMAGES[0]}
           alt={shop.name}
           className="w-full h-full object-cover opacity-60"
         />
-        <div className="absolute inset-0 bg-[#091135]/60" />
+        <div className="absolute inset-0 bg-[#1c1611]/60" />
         <div className="absolute bottom-0 left-0 right-0 px-5 sm:px-8 pb-8 max-w-5xl mx-auto">
           {numReviews > 0 && (
             <div className="flex items-center gap-2 mb-3">
@@ -270,14 +270,14 @@ export default function ShopProfilePage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: i * 0.06 }}
-                className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-[#e1e9f0] hover:border-[#0f77ff] hover:-translate-y-0.5 group transition-all"
+                className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-[#ede3cd] hover:border-[#a67c3d] hover:-translate-y-0.5 group transition-all"
               >
-                <div className="w-11 h-11 rounded-full bg-[#f5f3ff] flex items-center justify-center group-hover:bg-[#091135] group-hover:text-white transition-colors shrink-0">
-                  <span className="material-symbols-outlined text-lg text-[#36394a] group-hover:text-white transition-colors">{info.icon}</span>
+                <div className="w-11 h-11 rounded-full bg-[#f7f1e4] flex items-center justify-center group-hover:bg-[#1c1611] group-hover:text-white transition-colors shrink-0">
+                  <span className="material-symbols-outlined text-lg text-[#5a5147] group-hover:text-white transition-colors">{info.icon}</span>
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#36394a]">{info.label}</p>
-                  <p className="font-bold text-sm text-[#091135]">{info.value}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#5a5147]">{info.label}</p>
+                  <p className="font-bold text-sm text-[#1c1611]">{info.value}</p>
                 </div>
               </motion.a>
             ))}
@@ -287,11 +287,11 @@ export default function ShopProfilePage() {
           {services.length > 0 && (
             <section className="mb-14">
               <div className="flex items-center gap-4 mb-7">
-                <h2 className="text-xl font-black text-[#091135] shrink-0" style={{ fontFamily: "var(--font-intervar),sans-serif" }}>
+                <h2 className="text-xl font-black text-[#1c1611] shrink-0" style={{ fontFamily: FF }}>
                   {t.booking.services}
                 </h2>
-                <div className="flex-1 h-px bg-[#e1e9f0]" />
-                <span className="text-xs font-bold text-[#36394a] uppercase tracking-wider shrink-0">{isRTL ? `${services.length} متاح` : `${services.length} Available`}</span>
+                <div className="flex-1 h-px bg-[#ede3cd]" />
+                <span className="text-xs font-bold text-[#5a5147] uppercase tracking-wider shrink-0">{isRTL ? `${services.length} متاح` : `${services.length} Available`}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {services.map((service, idx) => (
@@ -300,7 +300,7 @@ export default function ShopProfilePage() {
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: idx * 0.05 }}
-                    className="flex items-center justify-between p-4 bg-white rounded-2xl border border-[#e1e9f0] hover:border-[#0f77ff] hover:-translate-y-0.5 transition-all group"
+                    className="flex items-center justify-between p-4 bg-white rounded-2xl border border-[#ede3cd] hover:border-[#a67c3d] hover:-translate-y-0.5 transition-all group"
                   >
                     <div className="flex items-center gap-3.5">
                       <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
@@ -311,18 +311,18 @@ export default function ShopProfilePage() {
                         />
                       </div>
                       <div>
-                        <h3 className="font-bold text-[#091135] text-sm">{isRTL && service.name_ar ? service.name_ar : service.name}</h3>
-                        <div className="flex items-center gap-1 mt-0.5 text-xs text-[#36394a] font-medium">
+                        <h3 className="font-bold text-[#1c1611] text-sm">{isRTL && service.name_ar ? service.name_ar : service.name}</h3>
+                        <div className="flex items-center gap-1 mt-0.5 text-xs text-[#5a5147] font-medium">
                           <span className="material-symbols-outlined text-[13px]">schedule</span>
                           {service.duration} {isRTL ? "دقيقة" : "min"}
                         </div>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <span className="font-black text-[#091135] text-base">{service.price} {t.common.jod}</span>
+                      <span className="font-black text-[#1c1611] text-base">{service.price} {t.common.jod}</span>
                       <Link
                         href={`/book/${shop.id}`}
-                        className="text-xs font-bold text-[#091135] underline underline-offset-2 hover:no-underline transition-all"
+                        className="text-xs font-bold text-[#1c1611] underline underline-offset-2 hover:no-underline transition-all"
                       >
                         {isRTL ? "احجز ←" : "Book →"}
                       </Link>
@@ -337,11 +337,11 @@ export default function ShopProfilePage() {
           {barbers.length > 0 && (
             <section className="mb-14">
               <div className="flex items-center gap-4 mb-7">
-                <h2 className="text-xl font-black text-[#091135] shrink-0" style={{ fontFamily: "var(--font-intervar),sans-serif" }}>
+                <h2 className="text-xl font-black text-[#1c1611] shrink-0" style={{ fontFamily: FF }}>
                   {isRTL ? "فريقنا" : "Our Team"}
                 </h2>
-                <div className="flex-1 h-px bg-[#e1e9f0]" />
-                <span className="text-xs font-bold text-[#36394a] uppercase tracking-wider shrink-0">{isRTL ? `${barbers.length} حلاقين` : `${barbers.length} Barbers`}</span>
+                <div className="flex-1 h-px bg-[#ede3cd]" />
+                <span className="text-xs font-bold text-[#5a5147] uppercase tracking-wider shrink-0">{isRTL ? `${barbers.length} حلاقين` : `${barbers.length} Barbers`}</span>
               </div>
               {/* Horizontal scroll row */}
               <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1">
@@ -354,18 +354,18 @@ export default function ShopProfilePage() {
                     className="flex flex-col items-center gap-2 shrink-0 cursor-pointer group"
                     style={{ width: 88 }}
                   >
-                    <div className="w-16 h-16 rounded-full bg-[#f5f3ff] overflow-hidden border-2 border-transparent group-hover:border-[#091135] transition-all">
+                    <div className="w-16 h-16 rounded-full bg-[#f7f1e4] overflow-hidden border-2 border-transparent group-hover:border-[#1c1611] transition-all">
                       {barber.avatar_url ? (
                         <img src={barber.avatar_url} alt={barber.full_name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xl font-black text-[#36394a] group-hover:text-[#091135] transition-colors">
+                        <div className="w-full h-full flex items-center justify-center text-xl font-black text-[#5a5147] group-hover:text-[#1c1611] transition-colors">
                           {barber.full_name.charAt(0).toUpperCase()}
                         </div>
                       )}
                     </div>
                     <div className="text-center">
-                      <p className="text-xs font-bold text-[#091135] line-clamp-1">{barber.full_name.split(" ")[0]}</p>
-                      <p className="text-[10px] text-[#36394a]">{t.calendar.barber}</p>
+                      <p className="text-xs font-bold text-[#1c1611] line-clamp-1">{barber.full_name.split(" ")[0]}</p>
+                      <p className="text-[10px] text-[#5a5147]">{t.calendar.barber}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -377,25 +377,25 @@ export default function ShopProfilePage() {
           {reviews.length > 0 && (
             <section className="mb-14">
               <div className="flex items-center gap-4 mb-7">
-                <h2 className="text-xl font-black text-[#091135] shrink-0" style={{ fontFamily: "var(--font-intervar),sans-serif" }}>
+                <h2 className="text-xl font-black text-[#1c1611] shrink-0" style={{ fontFamily: FF }}>
                   {isRTL ? "التقييمات" : "Reviews"}
                 </h2>
-                <div className="flex-1 h-px bg-[#e1e9f0]" />
+                <div className="flex-1 h-px bg-[#ede3cd]" />
               </div>
 
               {/* Rating summary */}
-              <div className="bg-white rounded-2xl border border-[#e1e9f0] p-6 mb-6">
+              <div className="bg-white rounded-2xl border border-[#ede3cd] p-6 mb-6">
                 <div className="flex gap-8 items-start">
                   {/* Big number */}
                   <div className="text-center shrink-0">
                     <div
-                      className="text-5xl font-black text-[#091135] leading-none"
+                      className="text-5xl font-black text-[#1c1611] leading-none"
                       style={{ fontFamily: "var(--font-intervar),sans-serif", letterSpacing: "0.018em" }}
                     >
                       {avgRating.toFixed(1)}
                     </div>
                     <Stars rating={avgRating} size={16} />
-                    <p className="text-xs text-[#36394a] font-semibold mt-1">{numReviews} {t.booking.reviews}</p>
+                    <p className="text-xs text-[#5a5147] font-semibold mt-1">{numReviews} {t.booking.reviews}</p>
                   </div>
                   {/* Bar chart */}
                   <div className="flex-1 space-y-2">
@@ -414,19 +414,19 @@ export default function ShopProfilePage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: i * 0.05 }}
-                    className="bg-white rounded-2xl border border-[#e1e9f0] p-5"
+                    className="bg-white rounded-2xl border border-[#ede3cd] p-5"
                   >
                     <div className="flex items-start gap-3 mb-3">
                       <div
-                        className="w-9 h-9 rounded-full bg-[#091135] text-white flex items-center justify-center text-sm font-bold shrink-0"
+                        className="w-9 h-9 rounded-full bg-[#1c1611] text-white flex items-center justify-center text-sm font-bold shrink-0"
                       >
                         {review.clients?.name?.charAt(0)?.toUpperCase() || "C"}
                       </div>
                       <div className="flex-1">
-                        <p className="font-bold text-sm text-[#091135]">{review.clients?.name || (isRTL ? "عميل" : "Customer")}</p>
+                        <p className="font-bold text-sm text-[#1c1611]">{review.clients?.name || (isRTL ? "عميل" : "Customer")}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <Stars rating={review.rating} size={12} />
-                          <span className="text-xs text-[#36394a]">
+                          <span className="text-xs text-[#5a5147]">
                             {isRTL
                               ? format(new Date(review.created_at), "d MMMM yyyy", { locale: arSA })
                               : format(new Date(review.created_at), "MMM d, yyyy")}
@@ -435,7 +435,7 @@ export default function ShopProfilePage() {
                       </div>
                     </div>
                     {review.comment && (
-                      <p className="text-sm text-[#36394a] leading-relaxed pl-12 italic">
+                      <p className="text-sm text-[#5a5147] leading-relaxed pl-12 italic">
                         &ldquo;{review.comment}&rdquo;
                       </p>
                     )}
@@ -448,13 +448,13 @@ export default function ShopProfilePage() {
           {/* ── Book CTA Banner ── */}
           <section
             className="rounded-2xl p-8 md:p-12 text-center relative overflow-hidden mb-8"
-            style={{ background: "#091135" }}
+            style={{ background: "#1c1611" }}
           >
             <div className="absolute inset-0 opacity-[0.06]" />
             <div className="relative z-10">
               <h2
                 className="text-2xl sm:text-3xl font-black text-white mb-3"
-                style={{ fontFamily: "var(--font-intervar),sans-serif", letterSpacing: "0.016em" }}
+                style={{ fontFamily: FF, letterSpacing: headingTracking(isRTL, "0.016em") }}
               >
                 {isRTL ? "جاهز لقصة شعر جديدة؟" : "Ready for your next cut?"}
               </h2>
@@ -475,10 +475,10 @@ export default function ShopProfilePage() {
 
       {/* ── Mobile Bottom Nav ── */}
       <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-5 pt-3 md:hidden bg-white"
-        style={{ borderTop: "1px solid #e1e9f0", paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}>
+        style={{ borderTop: "1px solid #ede3cd", paddingBottom: "max(20px, env(safe-area-inset-bottom))" }}>
         <button
           onClick={() => router.back()}
-          className="flex flex-col items-center text-[#36394a]"
+          className="flex flex-col items-center text-[#5a5147]"
           style={{ background: "none", border: "none", cursor: "pointer" }}
         >
           <span className="material-symbols-outlined text-[22px]">{isRTL ? "arrow_forward" : "arrow_back"}</span>
@@ -486,12 +486,12 @@ export default function ShopProfilePage() {
         </button>
         <Link
           href={`/book/${shop.id}`}
-          className="flex items-center gap-2 bg-[#127ee3] text-white px-8 py-3 rounded-[8px] text-sm font-bold hover:opacity-90 active:scale-95 transition-all"
+          className="flex items-center gap-2 bg-[#7c4a1e] text-white px-8 py-3 rounded-[8px] text-sm font-bold hover:opacity-90 active:scale-95 transition-all"
         >
           <span className="material-symbols-outlined text-[16px]">event_available</span>
           {t.explore.bookNow}
         </Link>
-        <Link className="flex flex-col items-center text-[#36394a]" href="/customer">
+        <Link className="flex flex-col items-center text-[#5a5147]" href="/customer">
           <span className="material-symbols-outlined text-[22px]">person</span>
           <span className="text-[10px] font-bold mt-0.5">{t.explore.navAccount}</span>
         </Link>

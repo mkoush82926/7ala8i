@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans_Arabic } from "next/font/google";
+import { Inter, Fraunces, Noto_Sans_Arabic, Noto_Naskh_Arabic } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "../globals.css";
 
-// ── Arabic font: Noto Sans Arabic ──────────────────────────────────────────
-// Modern, humanist sans with no serif clash against InterVar — keeps the
-// "data observatory" system feeling like one typographic voice across
-// both languages instead of pairing in a second personality.
+// ── Arabic body font: Noto Sans Arabic ─────────────────────────────────────
+// Clean, humanist sans for body copy, labels and UI chrome — optimized for
+// legibility at small sizes, not for display presence.
 const notoSansArabic = Noto_Sans_Arabic({
   variable: "--font-noto-arabic",
   subsets: ["arabic"],
@@ -14,13 +13,36 @@ const notoSansArabic = Noto_Sans_Arabic({
   display: "swap",
 });
 
-// ── English font: Inter (variable) — "InterVar" ────────────────────────────
-// Sole typeface across nav, body, buttons, and headings. Google's Inter
-// export already loads as a variable font across the full weight range.
+// ── Arabic display font: Noto Naskh Arabic ─────────────────────────────────
+// A real Naskh with genuine calligraphic character (varying stroke weight,
+// proper cursive joins) for headlines — the Arabic-script counterpart to
+// Fraunces below, so both scripts carry the same "crafted, not generic SaaS"
+// presence instead of Arabic getting the plain-sans leftovers.
+const notoNaskhArabic = Noto_Naskh_Arabic({
+  variable: "--font-naskh-arabic",
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+// ── English body font: Inter (variable) — "InterVar" ───────────────────────
+// UI chrome, body copy, buttons, labels.
 const interVar = Inter({
   variable: "--font-intervar",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+// ── English display font: Fraunces ─────────────────────────────────────────
+// A characterful serif with ink-trap detailing for headlines — the "Ink &
+// Brass" identity's answer to the old all-Inter, deliberately-personality-
+// free system. Used for H1/H2 display type only, never body/UI text.
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -49,7 +71,7 @@ export default async function RootLayout(props: {
         />
       </head>
       <body
-        className={`${notoSansArabic.variable} ${interVar.variable} antialiased`}
+        className={`${notoSansArabic.variable} ${notoNaskhArabic.variable} ${interVar.variable} ${fraunces.variable} antialiased`}
         suppressHydrationWarning
       >
         <ThemeProvider>

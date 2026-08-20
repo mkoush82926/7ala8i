@@ -9,7 +9,7 @@ import { getAvailableSlots } from "@/lib/queries/appointments";
 import { format, addDays, parseISO } from "date-fns";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useTranslation, interpolate } from "@/hooks/use-translation";
+import { useTranslation, interpolate, headingTracking } from "@/hooks/use-translation";
 
 type BookingStep = "landing" | "services" | "barber" | "datetime" | "confirm";
 
@@ -21,16 +21,16 @@ const PHONE_REGEX = /^\+?[0-9\s\-()]{7,20}$/;
 // ─── Colour tokens (inline so Tailwind purging can't break them) ───
 // Data Observatory on Cloud Paper palette — see design-system/clearbit-reference.md
 const C = {
-  black:   "#091135", // Midnight Ink — structural dark ink / primary text
+  black:   "#1c1611", // Midnight Ink — structural dark ink / primary text
   white:   "#ffffff", // Paper — card & canvas surfaces
-  surface: "#f5f3ff", // Lavender Wash — section tint zones + repeated/structural selection state
-  border:  "#e1e9f0", // Frost Border — hairline borders
-  muted:   "#36394a", // Slate — secondary/muted text
-  subtle:  "#36394a", // Slate — secondary/muted text
-  mist:    "#b1bbcd", // Mist — soft secondary neutral, disabled states
-  blue:    "#0f77ff", // Electric Blue — focus outline, checkmarks, star icon (never CTA fill)
-  green:   "#127ee3", // Cobalt Surface — the single primary-CTA fill color
-  yellow:  "#0f77ff", // Electric Blue — reused for star ratings
+  surface: "#f7f1e4", // Lavender Wash — section tint zones + repeated/structural selection state
+  border:  "#ede3cd", // Frost Border — hairline borders
+  muted:   "#5a5147", // Slate — secondary/muted text
+  subtle:  "#5a5147", // Slate — secondary/muted text
+  mist:    "#a89e8c", // Mist — soft secondary neutral, disabled states
+  blue:    "#a67c3d", // Electric Blue — focus outline, checkmarks, star icon (never CTA fill)
+  green:   "#7c4a1e", // Cobalt Surface — the single primary-CTA fill color
+  yellow:  "#a67c3d", // Electric Blue — reused for star ratings
   red:     "#ba1a1a", // destructive/error — separate semantic channel
 };
 
@@ -82,17 +82,17 @@ function toWhatsAppNumber(raw: string): string | null {
 
 // ─── Reusable inline-styled sub-components ───────────────────────
 
-function StepLabel({ text }: { text: string }) {
+function StepLabel({ text, isRTL }: { text: string; isRTL: boolean }) {
   return (
-    <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: C.muted, marginBottom: 8 }}>
+    <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.12em"), color: C.muted, marginBottom: 8 }}>
       {text}
     </p>
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({ children, isRTL, FF }: { children: React.ReactNode; isRTL: boolean; FF: string }) {
   return (
-    <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "0.014em", color: C.black, fontFamily: "var(--font-intervar),sans-serif", margin: "0 0 8px" }}>
+    <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: headingTracking(isRTL, "0.014em"), color: C.black, fontFamily: FF, margin: "0 0 8px" }}>
       {children}
     </h1>
   );
@@ -132,7 +132,7 @@ function NavBtn({ onClick, icon }: { onClick: () => void; icon: string }) {
   );
 }
 
-function ErrorState({ message, onRetry, retryLabel }: { message: string; onRetry: () => void; retryLabel: string }) {
+function ErrorState({ message, onRetry, retryLabel, FF }: { message: string; onRetry: () => void; retryLabel: string; FF: string }) {
   return (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
@@ -431,7 +431,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                 <span className="material-symbols-outlined" style={{ fontSize: 36, color: C.white, fontVariationSettings: "'FILL' 1" }}>content_cut</span>
               </div>
 
-              <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "0.014em", fontFamily: "var(--font-intervar),sans-serif", margin: "0 0 8px" }}>
+              <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: headingTracking(isRTL, "0.014em"), fontFamily: FF, margin: "0 0 8px" }}>
                 {t.booking.bookAppointment}
               </h2>
               <p style={{ fontSize: 14, color: C.subtle, marginBottom: numReviews > 0 ? 10 : 36, display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
@@ -512,8 +512,8 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 32 }}>
-              <StepLabel text={`${t.booking.step} 1 ${t.booking.of} 4 · ${t.booking.services}`} />
-              <SectionTitle>{t.booking.selectServices}</SectionTitle>
+              <StepLabel text={`${t.booking.step} 1 ${t.booking.of} 4 · ${t.booking.services}`} isRTL={isRTL} />
+              <SectionTitle isRTL={isRTL} FF={FF}>{t.booking.selectServices}</SectionTitle>
               <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
 
@@ -522,7 +522,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                 <span className="material-symbols-outlined" style={{ fontSize: 32, color: C.muted, animation: "spin 1s linear infinite" }}>refresh</span>
               </div>
             ) : servicesError ? (
-              <ErrorState message={t.error.message} onRetry={refetchServices} retryLabel={t.error.tryAgain} />
+              <ErrorState message={t.error.message} onRetry={refetchServices} retryLabel={t.error.tryAgain} FF={FF} />
             ) : serviceList.length === 0 ? (
               <div style={{ textAlign: "center", padding: "48px 0", color: C.muted, fontSize: 14 }}>{t.common.noData}</div>
             ) : (
@@ -563,7 +563,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                       </div>
 
                       <div>
-                        <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 3px", letterSpacing: "0.008em" }}>
+                        <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 3px", letterSpacing: headingTracking(isRTL, "0.008em") }}>
                           {isRTL && service.name_ar ? service.name_ar : service.name}
                         </p>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
@@ -607,8 +607,8 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 28 }}>
-              <StepLabel text={`${t.booking.step} 2 ${t.booking.of} 4 · ${t.booking.chooseBarber}`} />
-              <SectionTitle>{t.booking.chooseBarber}</SectionTitle>
+              <StepLabel text={`${t.booking.step} 2 ${t.booking.of} 4 · ${t.booking.chooseBarber}`} isRTL={isRTL} />
+              <SectionTitle isRTL={isRTL} FF={FF}>{t.booking.chooseBarber}</SectionTitle>
               <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
 
@@ -639,7 +639,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                 </div>
               ) : barbersError ? (
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <ErrorState message={t.error.message} onRetry={refetchBarbers} retryLabel={t.error.tryAgain} />
+                  <ErrorState message={t.error.message} onRetry={refetchBarbers} retryLabel={t.error.tryAgain} FF={FF} />
                 </div>
               ) : barberList.length === 0 ? (
                 <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "24px 0", color: C.muted, fontSize: 13 }}>{t.common.noData}</div>
@@ -702,8 +702,8 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 28 }}>
-              <StepLabel text={`${t.booking.step} 3 ${t.booking.of} 4 · ${t.booking.pickDateTime}`} />
-              <SectionTitle>{t.booking.pickDateTime}</SectionTitle>
+              <StepLabel text={`${t.booking.step} 3 ${t.booking.of} 4 · ${t.booking.pickDateTime}`} isRTL={isRTL} />
+              <SectionTitle isRTL={isRTL} FF={FF}>{t.booking.pickDateTime}</SectionTitle>
               <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
 
@@ -755,6 +755,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                   message={t.error.message}
                   onRetry={() => { refetchWorkingHours(); refetchSlots(); }}
                   retryLabel={t.error.tryAgain}
+                  FF={FF}
                 />
               ) : slotsLoading ? (
                 <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
@@ -850,8 +851,8 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
             <div style={{ marginBottom: 28 }}>
-              <StepLabel text={`${t.booking.step} 4 ${t.booking.of} 4 · ${t.booking.confirmBooking}`} />
-              <SectionTitle>{t.booking.confirmBooking}</SectionTitle>
+              <StepLabel text={`${t.booking.step} 4 ${t.booking.of} 4 · ${t.booking.confirmBooking}`} isRTL={isRTL} />
+              <SectionTitle isRTL={isRTL} FF={FF}>{t.booking.confirmBooking}</SectionTitle>
               <p style={{ fontSize: 14, color: C.subtle, margin: 0 }}></p>
             </div>
 
@@ -874,7 +875,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                       const phoneShowsError = isPhone && phoneTouched && field.value.trim().length > 0 && !PHONE_REGEX.test(field.value.trim());
                       return (
                       <div key={field.label}>
-                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: C.muted, marginBottom: 6 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.08em"), color: C.muted, marginBottom: 6 }}>
                           {field.label}
                         </label>
                         <input
@@ -960,7 +961,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                 </div>
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.muted }}>{t.booking.total}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.1em"), color: C.muted }}>{t.booking.total}</span>
                   <span style={{ fontSize: 32, fontWeight: 900, letterSpacing: "0.016em", color: C.black }}>{totalPrice.toFixed(2)} JOD</span>
                 </div>
 
@@ -1017,7 +1018,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
               }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 44, color: C.white, fontVariationSettings: "'FILL' 1" }}>check_circle</span>
               </div>
-              <h2 style={{ fontSize: 40, fontWeight: 900, letterSpacing: "0.018em", fontFamily: "var(--font-intervar),sans-serif", margin: "0 0 12px" }}>
+              <h2 style={{ fontSize: 40, fontWeight: 900, letterSpacing: headingTracking(isRTL, "0.018em"), fontFamily: FF, margin: "0 0 12px" }}>
                 {t.booking.allSet}
               </h2>
               <p style={{ fontSize: 16, color: C.subtle, marginBottom: 36, maxWidth: 400, margin: "0 auto 36px" }}>
@@ -1047,7 +1048,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                   { label: t.booking.total, value: `${totalPrice.toFixed(2)} JOD` },
                 ].map(r => (
                   <div key={r.label}>
-                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.muted, margin: "0 0 4px" }}>{r.label}</p>
+                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.1em"), color: C.muted, margin: "0 0 4px" }}>{r.label}</p>
                     <p style={{ fontSize: 14, fontWeight: 700, color: C.black, margin: 0 }}>{r.value}</p>
                   </div>
                 ))}

@@ -11,12 +11,12 @@ import { createClient } from "@/lib/supabase/client";
 import { getFullAnalytics } from "@/lib/queries/analytics-page";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 
 type AnalyticsData = Awaited<ReturnType<typeof getFullAnalytics>>;
 
 export default function AnalyticsPage() {
-  const { isRTL } = useTranslation();
+  const { isRTL, FF } = useTranslation();
   const { shopId } = useWorkspaceStore();
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");
 
@@ -82,7 +82,7 @@ export default function AnalyticsPage() {
         <div>
           <h2
             className="font-extrabold text-on-surface"
-            style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, letterSpacing: "0.014em" }}
+            style={{ fontFamily: FF, fontSize: 28, letterSpacing: headingTracking(isRTL, "0.014em") }}
           >
             {isRTL ? "التحليلات" : "Analytics"}
           </h2>
@@ -92,15 +92,15 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Period Toggle */}
-        <div className="flex items-center gap-1 p-1 rounded-[8px] bg-[#f5f3ff]">
+        <div className="flex items-center gap-1 p-1 rounded-[8px] bg-[#f7f1e4]">
           {(["week", "month", "year"] as const).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               className={`flex items-center justify-center px-5 min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 period === p
-                  ? "bg-white text-[#091135]"
-                  : "text-[#36394a] hover:text-[#091135]"
+                  ? "bg-white text-[#1c1611]"
+                  : "text-[#5a5147] hover:text-[#1c1611]"
               }`}
             >
               {p === "week" ? (isRTL ? "أسبوعي" : "Weekly") : p === "month" ? (isRTL ? "شهري" : "Monthly") : (isRTL ? "سنوي" : "Yearly")}
@@ -110,7 +110,7 @@ export default function AnalyticsPage() {
       </div>
 
       {loading && data ? (
-        <div style={{ position: "fixed", top: 16, right: 16, background: "#091135", color: "white", padding: "8px 16px", borderRadius: 8, fontSize: 13, zIndex: 50, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ position: "fixed", top: 16, right: 16, background: "#1c1611", color: "white", padding: "8px 16px", borderRadius: 8, fontSize: 13, zIndex: 50, display: "flex", alignItems: "center", gap: 8 }}>
           <Loader2 size={14} className="animate-spin" /> Updating...
         </div>
       ) : null}
@@ -125,7 +125,7 @@ export default function AnalyticsPage() {
             transition={{ delay: i * 0.08 }}
             style={{
               background: "#ffffff",
-              border: "1px solid #e1e9f0",
+              border: "1px solid #ede3cd",
               borderRadius: 12,
               padding: 28,
               minHeight: 152,
@@ -141,13 +141,13 @@ export default function AnalyticsPage() {
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#36394a", textTransform: "uppercase", letterSpacing: "0.12em" }}>{m.label}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#5a5147", textTransform: "uppercase", letterSpacing: "0.12em" }}>{m.label}</span>
               <div
                 style={{
                   display: "flex", alignItems: "center", padding: "3px 8px",
                   borderRadius: 9999, fontSize: 11, fontWeight: 700,
-                  background: m.dir === "up" ? "rgba(15,119,255,0.08)" : m.dir === "down" ? "rgba(186,26,26,0.08)" : "#f5f3ff",
-                  color: m.dir === "up" ? "#0f77ff" : m.dir === "down" ? "#ba1a1a" : "#091135",
+                  background: m.dir === "up" ? "rgba(166,124,61,0.08)" : m.dir === "down" ? "rgba(186,26,26,0.08)" : "#f7f1e4",
+                  color: m.dir === "up" ? "#a67c3d" : m.dir === "down" ? "#ba1a1a" : "#1c1611",
                 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 2 }}>
@@ -156,10 +156,10 @@ export default function AnalyticsPage() {
                 {m.change > 0 ? "+" : ""}{m.change}%
               </div>
             </div>
-            <div style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 32, fontWeight: 800, color: "#091135", letterSpacing: "0.016em", lineHeight: 1 }}>
+            <div style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 32, fontWeight: 800, color: "#1c1611", letterSpacing: "0.016em", lineHeight: 1 }}>
               {m.value}
             </div>
-            <div style={{ fontSize: 12, color: "#b1bbcd", marginTop: 8 }}>{m.sub}</div>
+            <div style={{ fontSize: 12, color: "#a89e8c", marginTop: 8 }}>{m.sub}</div>
           </motion.div>
         ))}
       </div>
@@ -173,11 +173,11 @@ export default function AnalyticsPage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
           style={{
-            background: "#ffffff", border: "1px solid #e1e9f0",
+            background: "#ffffff", border: "1px solid #ede3cd",
             borderRadius: 12, padding: 28,
           }}
         >
-          <h3 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 16, fontWeight: 700, color: "#091135", margin: "0 0 24px" }}>
+          <h3 style={{ fontFamily: FF, fontSize: 16, fontWeight: 700, color: "#1c1611", margin: "0 0 24px" }}>
             {isRTL ? "اتجاه الإيرادات" : "Revenue Trend"}
           </h3>
           <div style={{ height: 220 }}>
@@ -186,19 +186,19 @@ export default function AnalyticsPage() {
                 <AreaChart data={revenueData}>
                   <defs>
                     <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#091135" stopOpacity={0.1} />
-                      <stop offset="100%" stopColor="#091135" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#1c1611" stopOpacity={0.1} />
+                      <stop offset="100%" stopColor="#1c1611" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e1e9f0" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: "#b1bbcd", fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "#b1bbcd", fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "#091135", border: "none", borderRadius: 8, fontSize: 12, color: "#fff" }} labelStyle={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }} />
-                  <Area type="monotone" dataKey="revenue" stroke="#091135" strokeWidth={2} fill="url(#revGrad)" dot={false} activeDot={{ r: 4, fill: "#091135", stroke: "#fff", strokeWidth: 2 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ede3cd" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: "#a89e8c", fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "#a89e8c", fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ background: "#1c1611", border: "none", borderRadius: 8, fontSize: 12, color: "#fff" }} labelStyle={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }} />
+                  <Area type="monotone" dataKey="revenue" stroke="#1c1611" strokeWidth={2} fill="url(#revGrad)" dot={false} activeDot={{ r: 4, fill: "#1c1611", stroke: "#fff", strokeWidth: 2 }} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#b1bbcd", fontSize: 13 }}>No revenue data</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#a89e8c", fontSize: 13 }}>No revenue data</div>
             )}
           </div>
         </motion.div>
@@ -209,15 +209,15 @@ export default function AnalyticsPage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
           style={{
-            background: "#ffffff", border: "1px solid #e1e9f0",
+            background: "#ffffff", border: "1px solid #ede3cd",
             borderRadius: 12, padding: 28,
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-            <h3 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 16, fontWeight: 700, color: "#091135", margin: 0 }}>
+            <h3 style={{ fontFamily: FF, fontSize: 16, fontWeight: 700, color: "#1c1611", margin: 0 }}>
               {isRTL ? "أفضل الحلاقين" : "Top Barbers"}
             </h3>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#b1bbcd", textTransform: "uppercase", letterSpacing: "0.1em" }}>This {period}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#a89e8c", textTransform: "uppercase", letterSpacing: "0.1em" }}>This {period}</span>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -226,29 +226,29 @@ export default function AnalyticsPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
                   <span style={{
                     minWidth: 22, height: 22, borderRadius: "50%",
-                    background: i === 0 ? "#091135" : "#f5f3ff",
-                    color: i === 0 ? "#fff" : "#36394a",
+                    background: i === 0 ? "#1c1611" : "#f7f1e4",
+                    color: i === 0 ? "#fff" : "#5a5147",
                     fontSize: 10, fontWeight: 800,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0,
                   }}>#{i + 1}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#091135", flex: 1 }}>{b.name}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#b1bbcd" }}>{b.pct}%</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#091135", fontVariantNumeric: "tabular-nums", minWidth: 70, textAlign: "right" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#1c1611", flex: 1 }}>{b.name}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#a89e8c" }}>{b.pct}%</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#1c1611", fontVariantNumeric: "tabular-nums", minWidth: 70, textAlign: "right" }}>
                     {b.revenue.toLocaleString()} JOD
                   </span>
                 </div>
-                <div style={{ height: 6, background: "#e1e9f0", borderRadius: 999, width: "100%" }}>
+                <div style={{ height: 6, background: "#ede3cd", borderRadius: 999, width: "100%" }}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${b.pct}%` }}
                     transition={{ duration: 0.8, delay: 0.1 * i, ease: [0.25, 1, 0.5, 1] }}
-                    style={{ height: "100%", background: i === 0 ? "#091135" : "#e1e9f0", borderRadius: 999 }}
+                    style={{ height: "100%", background: i === 0 ? "#1c1611" : "#ede3cd", borderRadius: 999 }}
                   />
                 </div>
               </div>
             )) : (
-              <div style={{ color: "#b1bbcd", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No barber data</div>
+              <div style={{ color: "#a89e8c", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No barber data</div>
             )}
           </div>
         </motion.div>
@@ -259,11 +259,11 @@ export default function AnalyticsPage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
           style={{
-            background: "#ffffff", border: "1px solid #e1e9f0",
+            background: "#ffffff", border: "1px solid #ede3cd",
             borderRadius: 12, padding: 28,
           }}
         >
-          <h3 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 16, fontWeight: 700, color: "#091135", margin: "0 0 24px" }}>
+          <h3 style={{ fontFamily: FF, fontSize: 16, fontWeight: 700, color: "#1c1611", margin: "0 0 24px" }}>
             {isRTL ? "مصادر العملاء" : "Acquisition Channels"}
           </h3>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 32, height: 200 }}>
@@ -281,8 +281,8 @@ export default function AnalyticsPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
               {acquisitionData.map((ch) => (
                 <div key={ch.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: ch.color, flexShrink: 0, border: ch.color === "#eceef0" ? "1px solid #e1e9f0" : undefined }} />
-                  <span style={{ fontSize: 12, color: "#36394a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.name}</span>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: ch.color, flexShrink: 0, border: ch.color === "#eceef0" ? "1px solid #ede3cd" : undefined }} />
+                  <span style={{ fontSize: 12, color: "#5a5147", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.name}</span>
                 </div>
               ))}
             </div>
@@ -295,39 +295,39 @@ export default function AnalyticsPage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
           style={{
-            background: "#ffffff", border: "1px solid #e1e9f0",
+            background: "#ffffff", border: "1px solid #ede3cd",
             borderRadius: 12, padding: 28,
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-            <h3 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 16, fontWeight: 700, color: "#091135", margin: 0 }}>
+            <h3 style={{ fontFamily: FF, fontSize: 16, fontWeight: 700, color: "#1c1611", margin: 0 }}>
               {isRTL ? "ساعات الذروة" : "Peak Hours Heatmap"}
             </h3>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 10, color: "#b1bbcd" }}>Low</span>
+              <span style={{ fontSize: 10, color: "#a89e8c" }}>Low</span>
               <div style={{ display: "flex", gap: 3 }}>
                 {[0.1, 0.25, 0.5, 0.75, 1].map((o, i) => (
-                  <div key={i} style={{ width: 12, height: 12, borderRadius: 3, background: `rgba(9,17,53,${o})` }} />
+                  <div key={i} style={{ width: 12, height: 12, borderRadius: 3, background: `rgba(28,22,17,${o})` }} />
                 ))}
               </div>
-              <span style={{ fontSize: 10, color: "#b1bbcd" }}>High</span>
+              <span style={{ fontSize: 10, color: "#a89e8c" }}>High</span>
             </div>
           </div>
 
           <div style={{ display: "grid", gap: 6, gridTemplateColumns: "auto repeat(7, 1fr)" }}>
             <div />
             {days.map((d) => (
-              <div key={d} style={{ fontSize: 9, fontWeight: 700, textAlign: "center", color: "#b1bbcd", letterSpacing: "0.05em" }}>{d}</div>
+              <div key={d} style={{ fontSize: 9, fontWeight: 700, textAlign: "center", color: "#a89e8c", letterSpacing: "0.05em" }}>{d}</div>
             ))}
             {peakHoursData.map((row) => (
               <React.Fragment key={row.hour}>
-                <div style={{ fontSize: 10, fontWeight: 600, color: "#36394a", paddingRight: 8, display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>{row.hour}</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "#5a5147", paddingRight: 8, display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>{row.hour}</div>
                 {row.vals.map((v: number, di: number) => (
                   <div
                     key={di}
                     style={{
                       height: 28, borderRadius: 4,
-                      background: `rgba(9,17,53,${v})`,
+                      background: `rgba(28,22,17,${v})`,
                       transition: "transform 0.15s", cursor: "default",
                     }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1.1)"; }}

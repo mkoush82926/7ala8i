@@ -12,7 +12,7 @@ import {
   ArrowDownRight,
   AlertTriangle,
 } from "lucide-react";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
@@ -48,7 +48,7 @@ function AnimatedNumber({ value }: { value: string }) {
 }
 
 export function MetricCards() {
-  const { t } = useTranslation();
+  const { t, isRTL, FF } = useTranslation();
   const { shopId } = useWorkspaceStore();
   const supabase = createClient();
 
@@ -124,20 +124,20 @@ export function MetricCards() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} style={{
             padding: 28, borderRadius: 12,
-            border: "1px solid #e1e9f0",
+            border: "1px solid #ede3cd",
             background: "#fff",
             minHeight: 152,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
           }}>
             {/* Label + icon row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ height: 10, width: 80, borderRadius: 9999, background: "#e1e9f0" }} />
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: "#e1e9f0" }} />
+              <div style={{ height: 10, width: 80, borderRadius: 9999, background: "#ede3cd" }} />
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: "#ede3cd" }} />
             </div>
             {/* Value placeholder */}
-            <div style={{ height: 36, width: 110, borderRadius: 8, background: "#e1e9f0" }} />
+            <div style={{ height: 36, width: 110, borderRadius: 8, background: "#ede3cd" }} />
             {/* Change badge placeholder */}
-            <div style={{ height: 14, width: 90, borderRadius: 9999, background: "#e1e9f0" }} />
+            <div style={{ height: 14, width: 90, borderRadius: 9999, background: "#ede3cd" }} />
           </div>
         ))}
       </div>
@@ -148,7 +148,7 @@ export function MetricCards() {
     return (
       <div style={{
         padding: 28, borderRadius: 12,
-        border: "1px solid #e1e9f0",
+        border: "1px solid #ede3cd",
         background: "#fff",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         gap: 16, flexWrap: "wrap",
@@ -162,10 +162,10 @@ export function MetricCards() {
             <AlertTriangle size={20} style={{ color: "#ba1a1a" }} />
           </div>
           <div>
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#091135", margin: "0 0 2px" }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#1c1611", margin: "0 0 2px" }}>
               Couldn&apos;t load metrics
             </p>
-            <p style={{ fontSize: 12, color: "#36394a", margin: 0 }}>{error}</p>
+            <p style={{ fontSize: 12, color: "#5a5147", margin: 0 }}>{error}</p>
           </div>
         </div>
         <button onClick={refetch} className="btn btn-secondary">Retry</button>
@@ -189,9 +189,9 @@ export function MetricCards() {
             padding: 28,
             // Practice #5 — fixed min-height for visual consistency
             minHeight: 152,
-            background: metric.isDark ? "#091135" : "#ffffff",
+            background: metric.isDark ? "#1c1611" : "#ffffff",
             // Practice #1 — every card gets a 1px Frost Border hairline, never a shadow
-            border: "1px solid #e1e9f0",
+            border: "1px solid #ede3cd",
             // Practice #8 — transitions for interactive states
             transition: "transform 0.2s ease",
             cursor: "default",
@@ -212,8 +212,8 @@ export function MetricCards() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <span style={{
               fontSize: 9, fontWeight: 800, textTransform: "uppercase",
-              letterSpacing: "0.2em", lineHeight: 1.5,
-              color: metric.isDark ? "rgba(255,255,255,0.6)" : "#36394a"
+              letterSpacing: headingTracking(isRTL, "0.2em"), lineHeight: 1.5,
+              color: metric.isDark ? "rgba(255,255,255,0.6)" : "#5a5147"
             }}>
               {metric.label}
             </span>
@@ -224,9 +224,9 @@ export function MetricCards() {
             ) : (
               <div style={{
                 width: 40, height: 40, borderRadius: 12,
-                background: "#ffffff", border: "1px solid #e1e9f0",
+                background: "#ffffff", border: "1px solid #ede3cd",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#091135",
+                color: "#1c1611",
               }}>
                 {metric.icon}
               </div>
@@ -238,14 +238,14 @@ export function MetricCards() {
             {!metric.isDark && (
               <>
                 <div
-                  style={{ fontSize: 36, fontWeight: 800, letterSpacing: "0.016em", color: "#091135", lineHeight: 1, fontFamily: "var(--font-intervar), sans-serif" }}
+                  style={{ fontSize: 36, fontWeight: 800, letterSpacing: headingTracking(isRTL, "0.016em"), color: "#1c1611", lineHeight: 1, fontFamily: FF }}
                 >
                   <AnimatedNumber value={metric.value} />
                 </div>
 
                 {/* Change badge */}
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, color: metric.change >= 0 ? "#0f77ff" : "#ba1a1a" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, color: metric.change >= 0 ? "#a67c3d" : "#ba1a1a" }}>
                     {metric.change >= 0 ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
                     {metric.change >= 0 ? "+" : ""}{metric.change}% vs yesterday
                   </span>

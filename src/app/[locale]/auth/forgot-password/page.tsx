@@ -5,19 +5,19 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { Loader2, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 
 const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 
 const T = {
-  dark:    "#091135",
-  mid:     "#36394a",
-  muted:   "#36394a",
-  outline: "#e1e9f0",
+  dark:    "#1c1611",
+  mid:     "#5a5147",
+  muted:   "#5a5147",
+  outline: "#ede3cd",
   surfLow: "#ffffff",
   white:   "#ffffff",
-  black:   "#091135",
-  accent:  "#127ee3",
+  black:   "#1c1611",
+  accent:  "#7c4a1e",
   error:   "#ba1a1a",
   errBg:   "#ffdad6",
 };
@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const supabase = createClient();
-  const { t, dir, isRTL } = useTranslation();
+  const { t, dir, isRTL, FFD } = useTranslation();
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -90,13 +90,13 @@ export default function ForgotPasswordPage() {
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 16 }}>
                 <div style={{
                   width: 64, height: 64, borderRadius: 12,
-                  background: "rgba(15,119,255,0.1)",
+                  background: "rgba(166,124,61,0.1)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   marginBottom: 8,
                 }}>
-                  <CheckCircle size={28} style={{ color: "#0f77ff" }} />
+                  <CheckCircle size={28} style={{ color: "#a67c3d" }} />
                 </div>
-                <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 24, fontWeight: 700, color: T.dark, margin: 0 }}>
+                <h1 style={{ fontFamily: FFD, fontSize: 24, fontWeight: 700, color: T.dark, margin: 0 }}>
                   {isRTL ? "تحقق من بريدك الإلكتروني" : "Check your email"}
                 </h1>
                 <p style={{ fontSize: 14, color: T.muted, maxWidth: 340, lineHeight: 1.6, margin: 0 }}>
@@ -140,10 +140,10 @@ export default function ForgotPasswordPage() {
                       lock_reset
                     </span>
                   </div>
-                  <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 300, letterSpacing: "0.016em", color: T.dark, marginBottom: 10 }}>
+                  <h1 style={{ fontFamily: FFD, fontSize: 28, fontWeight: 300, letterSpacing: headingTracking(isRTL, "0.016em"), color: T.dark, marginBottom: 10 }}>
                     {isRTL ? "إعادة تعيين كلمة المرور" : "Reset password"}
                   </h1>
-                  <p style={{ fontSize: 14, color: T.muted, fontWeight: 300, letterSpacing: "0.01em", textAlign: "center" }}>
+                  <p style={{ fontSize: 14, color: T.muted, fontWeight: 300, letterSpacing: headingTracking(isRTL, "0.01em"), textAlign: "center" }}>
                     {isRTL ? "أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين." : "Enter your email address and we'll send you a reset link."}
                   </p>
                 </div>
@@ -162,7 +162,7 @@ export default function ForgotPasswordPage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     <label
                       htmlFor="email"
-                      style={{ fontFamily: FF, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: T.muted }}
+                      style={{ fontFamily: FF, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.muted }}
                     >
                       {t.auth.emailAddress}
                     </label>
@@ -182,7 +182,7 @@ export default function ForgotPasswordPage() {
                       }}
                       onFocus={(e) => {
                         e.currentTarget.style.background = T.white;
-                        e.currentTarget.style.border = "1px solid #0f77ff";
+                        e.currentTarget.style.border = "1px solid #a67c3d";
                         e.currentTarget.style.boxShadow = "var(--shadow-focus)";
                       }}
                       onBlur={(e) => {

@@ -2,24 +2,24 @@
 
 import React from "react";
 import Link from "next/link";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking, FONT_EN_DISPLAY } from "@/hooks/use-translation";
 
 const T = {
-  dark:    "#091135",
-  mid:     "#36394a",
-  outline: "#e1e9f0",
+  dark:    "#1c1611",
+  mid:     "#5a5147",
+  outline: "#ede3cd",
   white:   "#ffffff",
-  surfLow: "#f5f3ff",
+  surfLow: "#f7f1e4",
 };
 
 export default function PolicyPage() {
-  const { FF, dir, isRTL } = useTranslation();
+  const { FF, FFD, dir, isRTL } = useTranslation();
 
   return (
     <div style={{ background: T.white, minHeight: "100dvh", fontFamily: FF, direction: dir, display: "flex", flexDirection: "column" }}>
       <nav className="auth-nav" style={{ background: T.white, borderBottom: `1px solid ${T.outline}` }}>
         <Link href="/landing" style={{ textDecoration: "none" }}>
-          <span style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 20, fontWeight: 800, letterSpacing: "0.012em", color: T.dark }}>
+          <span dir="ltr" style={{ fontFamily: FONT_EN_DISPLAY, fontSize: 20, fontWeight: 800, letterSpacing: "0.012em", color: T.dark }}>
             Halaqy
           </span>
         </Link>
@@ -41,14 +41,14 @@ export default function PolicyPage() {
             marginBottom: 24,
           }}>
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>info</span>
-            <span style={{ fontWeight: 900, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em" }}>
+            <span style={{ fontWeight: 900, fontSize: 10, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.15em") }}>
               {isRTL ? "يحدّدها كل صالون بشكل مستقل" : "Set independently by each shop"}
             </span>
           </div>
 
           <h1 style={{
-            fontFamily: "var(--font-intervar), sans-serif", fontWeight: 800,
-            fontSize: "clamp(2rem, 4vw, 2.6rem)", letterSpacing: "0.014em",
+            fontFamily: FFD, fontWeight: 800,
+            fontSize: "clamp(2rem, 4vw, 2.6rem)", letterSpacing: headingTracking(isRTL, "0.014em"),
             color: T.dark, marginBottom: 32,
           }}>
             {isRTL ? "سياسة الإلغاء والتغيب" : "Cancellation & No-Show Policy"}
@@ -85,7 +85,7 @@ export default function PolicyPage() {
       </main>
 
       <footer className="auth-footer" style={{ borderTop: `1px solid ${T.outline}` }}>
-        <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: "#b1bbcd" }}>
+        <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: "#a89e8c" }}>
           © 2026 Halaqy Digital.
         </p>
       </footer>

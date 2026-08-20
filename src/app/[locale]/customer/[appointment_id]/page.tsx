@@ -106,7 +106,7 @@ export default function BookingDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#091135] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#1c1611] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -138,7 +138,7 @@ export default function BookingDetailPage() {
   const statusStyle = STATUS_STYLES[appt.status] || "bg-surface-container text-on-surface";
 
   return (
-    <div style={{ background: "#ffffff" }} className="font-body text-[#091135] min-h-screen" dir={dir}>
+    <div style={{ background: "#ffffff" }} className="font-body text-[#1c1611] min-h-screen" dir={dir}>
       {/* ── Toast notification ── */}
       <AnimatePresence>
         {toast && (

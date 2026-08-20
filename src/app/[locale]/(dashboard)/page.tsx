@@ -5,7 +5,7 @@ import { MetricCards } from "@/components/dashboard/metric-cards";
 import { SalesChart } from "@/components/dashboard/sales-chart";
 import { DailyReceipt } from "@/components/dashboard/daily-receipt";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
@@ -37,7 +37,7 @@ interface Appt {
 function statusBadge(status: string, paymentStatus: string) {
   if (paymentStatus === "paid") {
     return (
-      <span className="px-3 py-1.5 rounded-full bg-[#f5f3ff] text-[#0f77ff] text-[10px] font-black uppercase tracking-wider">
+      <span className="px-3 py-1.5 rounded-full bg-[#f7f1e4] text-[#a67c3d] text-[10px] font-black uppercase tracking-wider">
         Paid
       </span>
     );
@@ -57,7 +57,7 @@ function statusBadge(status: string, paymentStatus: string) {
 }
 
 function UpcomingAppointments() {
-  const { t, isRTL, locale } = useTranslation();
+  const { t, isRTL, locale, FF } = useTranslation();
   const shopId = useWorkspaceStore((s) => s.shopId);
   const barbers = useWorkspaceStore((s) => s.barbers);
   const role = useWorkspaceStore((s) => s.role);
@@ -107,7 +107,7 @@ function UpcomingAppointments() {
     <section style={{ marginTop: 8 }}>
       {/* Section Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h3 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: "0.012em", color: "#091135", margin: 0 }}>
+        <h3 style={{ fontFamily: FF, fontSize: 22, fontWeight: 800, letterSpacing: headingTracking(isRTL, "0.012em"), color: "#1c1611", margin: 0 }}>
           {isRTL ? "المواعيد القادمة" : "Upcoming Appointments"}
         </h3>
         <a
@@ -115,7 +115,7 @@ function UpcomingAppointments() {
           className="nav-link"
           style={{
             fontSize: 11, fontWeight: 700, textTransform: "uppercase",
-            letterSpacing: "0.15em", color: "#091135",
+            letterSpacing: headingTracking(isRTL, "0.15em"), color: "#1c1611",
           }}
         >
           {isRTL ? "عرض الجدول" : "View All Schedule"} →
@@ -123,7 +123,7 @@ function UpcomingAppointments() {
       </div>
 
       {/* Table — consistent card styling matching rest of dashboard */}
-      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e1e9f0", overflow: "hidden" }}>
+      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #ede3cd", overflow: "hidden" }}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="animate-spin text-on-surface-variant" size={24} />
@@ -132,16 +132,16 @@ function UpcomingAppointments() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px", gap: 16 }}>
             <div style={{
               width: 56, height: 56, borderRadius: 12,
-              background: "#f5f3ff",
+              background: "#f7f1e4",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <CalendarCheck size={26} style={{ color: "#e1e9f0" }} />
+              <CalendarCheck size={26} style={{ color: "#ede3cd" }} />
             </div>
             <div style={{ textAlign: "center" }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: "#36394a", margin: "0 0 6px" }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: "#5a5147", margin: "0 0 6px" }}>
                 {isRTL ? "لا مواعيد قادمة" : "No upcoming appointments"}
               </p>
-              <p style={{ fontSize: 12, color: "#36394a", margin: 0 }}>Your schedule is clear for now</p>
+              <p style={{ fontSize: 12, color: "#5a5147", margin: 0 }}>Your schedule is clear for now</p>
             </div>
             <a href={`/${locale}/calendar`} className="btn btn-primary" style={{ marginTop: 4, padding: "0 24px" }}>
               {isRTL ? "احجز الآن" : "+ Book Appointment"}
@@ -210,7 +210,7 @@ function UpcomingAppointments() {
                               })
                             }
                             title="Mark Paid"
-                            className="w-8 h-8 flex items-center justify-center text-[#0f77ff] hover:bg-[#f5f3ff] rounded-lg transition-colors cursor-pointer"
+                            className="w-8 h-8 flex items-center justify-center text-[#a67c3d] hover:bg-[#f7f1e4] rounded-lg transition-colors cursor-pointer"
                           >
                             <CheckCircle size={20} />
                           </button>
@@ -252,7 +252,7 @@ function UpcomingAppointments() {
 export default function DashboardPage() {
   const [ready, setReady] = useState(false);
   const hydrated = useWorkspaceStore((s) => s.hydrated);
-  const { t, isRTL, locale } = useTranslation();
+  const { t, isRTL, locale, FF } = useTranslation();
 
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), 600);
@@ -268,10 +268,10 @@ export default function DashboardPage() {
       <header style={{ display: "flex", flexDirection: "column", marginBottom: 32, gap: 16 }}>
         <div className="dashboard-header-flex">
           <div>
-            <h2 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 38, fontWeight: 800, letterSpacing: "0.016em", color: "#091135", lineHeight: 1.1, margin: 0 }}>
+            <h2 style={{ fontFamily: FF, fontSize: 38, fontWeight: 800, letterSpacing: headingTracking(isRTL, "0.016em"), color: "#1c1611", lineHeight: 1.1, margin: 0 }}>
               {isRTL ? "نظرة عامة على الأتيليه" : "Atelier Overview"}
             </h2>
-            <p style={{ color: "#36394a", fontWeight: 400, marginTop: 10, fontSize: 14, letterSpacing: "0.01em" }}>
+            <p style={{ color: "#5a5147", fontWeight: 400, marginTop: 10, fontSize: 14, letterSpacing: "0.01em" }}>
               {format(new Date(), "EEEE, d MMMM yyyy")}
             </p>
           </div>

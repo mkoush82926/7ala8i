@@ -5,10 +5,10 @@ import { useSearchParams } from 'next/navigation'
 import { login } from '@/app/[locale]/auth/actions'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { useTranslation } from '@/hooks/use-translation'
+import { useTranslation, headingTracking } from '@/hooks/use-translation'
 
 function LoginForm() {
-  const { t, FF, dir, isRTL } = useTranslation()
+  const { t, FF, FFD, dir, isRTL } = useTranslation()
   const searchParams = useSearchParams()
   const callbackError = searchParams.get('error') === 'auth_callback_error'
     ? (isRTL
@@ -34,7 +34,7 @@ function LoginForm() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#f5f3ff',
+        background: '#f7f1e4',
         fontFamily: FF,
         direction: dir,
         display: 'flex',
@@ -57,7 +57,7 @@ function LoginForm() {
             style={{
               fontSize: 28,
               fontWeight: 900,
-              color: '#091135',
+              color: '#1c1611',
               textDecoration: 'none',
               letterSpacing: '0.016em',
               fontFamily: "var(--font-intervar),sans-serif",
@@ -76,7 +76,7 @@ function LoginForm() {
             background: '#fff',
             borderRadius: 12,
             padding: '40px 36px',
-            border: '1px solid #e1e9f0',
+            border: '1px solid #ede3cd',
           }}
         >
           {/* Heading */}
@@ -85,15 +85,15 @@ function LoginForm() {
               style={{
                 fontSize: 28,
                 fontWeight: 900,
-                color: '#091135',
-                letterSpacing: '0.014em',
+                color: '#1c1611',
+                letterSpacing: headingTracking(isRTL, '0.014em'),
                 marginBottom: 6,
-                fontFamily: "var(--font-intervar),sans-serif",
+                fontFamily: FFD,
               }}
             >
               {t.auth.welcomeBack}
             </h1>
-            <p style={{ color: '#36394a', fontSize: 14, fontWeight: 500 }}>
+            <p style={{ color: '#5a5147', fontSize: 14, fontWeight: 500 }}>
               {t.auth.signInToManage}
             </p>
           </div>
@@ -109,8 +109,8 @@ function LoginForm() {
                   fontSize: 11,
                   fontWeight: 700,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  color: '#36394a',
+                  letterSpacing: headingTracking(isRTL, '0.08em'),
+                  color: '#5a5147',
                 }}
               >
                 {t.auth.emailAddress}
@@ -124,7 +124,7 @@ function LoginForm() {
                     top: '50%',
                     transform: 'translateY(-50%)',
                     fontSize: 18,
-                    color: '#36394a',
+                    color: '#5a5147',
                     pointerEvents: 'none',
                   }}
                 >
@@ -142,22 +142,22 @@ function LoginForm() {
                     paddingLeft: 44,
                     paddingRight: 16,
                     background: '#ffffff',
-                    border: '1.5px solid #e1e9f0',
+                    border: '1.5px solid #ede3cd',
                     borderRadius: 8,
                     fontSize: 14,
                     fontWeight: 500,
-                    color: '#091135',
+                    color: '#1c1611',
                     outline: 'none',
                     transition: 'all 150ms ease',
                     fontFamily: FF,
                     boxSizing: 'border-box',
                   }}
                   onFocus={e => {
-                    e.target.style.borderColor = '#0f77ff'
+                    e.target.style.borderColor = '#a67c3d'
                     e.target.style.boxShadow = 'var(--shadow-focus)'
                   }}
                   onBlur={e => {
-                    e.target.style.borderColor = '#e1e9f0'
+                    e.target.style.borderColor = '#ede3cd'
                     e.target.style.boxShadow = 'none'
                   }}
                 />
@@ -173,8 +173,8 @@ function LoginForm() {
                     fontSize: 11,
                     fontWeight: 700,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    color: '#36394a',
+                    letterSpacing: headingTracking(isRTL, '0.08em'),
+                    color: '#5a5147',
                   }}
                 >
                   {t.auth.password}
@@ -184,7 +184,7 @@ function LoginForm() {
                   style={{
                     fontSize: 12,
                     fontWeight: 600,
-                    color: '#36394a',
+                    color: '#5a5147',
                     textDecoration: 'none',
                   }}
                 >
@@ -200,7 +200,7 @@ function LoginForm() {
                     top: '50%',
                     transform: 'translateY(-50%)',
                     fontSize: 18,
-                    color: '#36394a',
+                    color: '#5a5147',
                     pointerEvents: 'none',
                   }}
                 >
@@ -219,22 +219,22 @@ function LoginForm() {
                     paddingLeft: 44,
                     paddingRight: 46,
                     background: '#ffffff',
-                    border: '1.5px solid #e1e9f0',
+                    border: '1.5px solid #ede3cd',
                     borderRadius: 8,
                     fontSize: 14,
                     fontWeight: 500,
-                    color: '#091135',
+                    color: '#1c1611',
                     outline: 'none',
                     transition: 'all 150ms ease',
                     fontFamily: FF,
                     boxSizing: 'border-box',
                   }}
                   onFocus={e => {
-                    e.target.style.borderColor = '#0f77ff'
+                    e.target.style.borderColor = '#a67c3d'
                     e.target.style.boxShadow = 'var(--shadow-focus)'
                   }}
                   onBlur={e => {
-                    e.target.style.borderColor = '#e1e9f0'
+                    e.target.style.borderColor = '#ede3cd'
                     e.target.style.boxShadow = 'none'
                   }}
                 />
@@ -249,7 +249,7 @@ function LoginForm() {
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    color: '#b1bbcd',
+                    color: '#a89e8c',
                     display: 'flex',
                     alignItems: 'center',
                     padding: 0,
@@ -293,12 +293,12 @@ function LoginForm() {
                 marginTop: 4,
                 width: '100%',
                 height: 52,
-                background: '#127ee3',
+                background: '#7c4a1e',
                 opacity: loading ? 0.7 : 1,
                 color: '#fff',
                 borderRadius: 8,
                 border: 'none',
-                fontFamily: "var(--font-intervar),sans-serif",
+                fontFamily: FF,
                 fontWeight: 700,
                 fontSize: 14,
                 cursor: loading ? 'not-allowed' : 'pointer',
@@ -348,23 +348,23 @@ function LoginForm() {
 
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '24px 0' }}>
-            <div style={{ flex: 1, height: 1, background: '#e1e9f0' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#b1bbcd', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <div style={{ flex: 1, height: 1, background: '#ede3cd' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#a89e8c', letterSpacing: headingTracking(isRTL, '0.08em'), textTransform: 'uppercase' }}>
               {t.auth.or}
             </span>
-            <div style={{ flex: 1, height: 1, background: '#e1e9f0' }} />
+            <div style={{ flex: 1, height: 1, background: '#ede3cd' }} />
           </div>
 
           {/* Create account */}
-          <p style={{ textAlign: 'center', fontSize: 14, color: '#36394a', fontWeight: 400 }}>
+          <p style={{ textAlign: 'center', fontSize: 14, color: '#5a5147', fontWeight: 400 }}>
             {t.auth.noAccount}{' '}
             <Link
               href="/auth/signup"
               style={{
-                color: '#091135',
+                color: '#1c1611',
                 fontWeight: 700,
                 textDecoration: 'none',
-                borderBottom: '2px solid #e1e9f0',
+                borderBottom: '2px solid #ede3cd',
               }}
             >
               {t.auth.createAccount}
@@ -381,14 +381,14 @@ function LoginForm() {
             textAlign: 'center',
             marginTop: 24,
             fontSize: 11,
-            color: '#b1bbcd',
+            color: '#a89e8c',
             fontWeight: 500,
           }}
         >
           {t.auth.termsNotice.split('{')[0]}
-          <Link href="/terms" style={{ color: '#36394a' }}>{t.auth.terms}</Link>
+          <Link href="/terms" style={{ color: '#5a5147' }}>{t.auth.terms}</Link>
           {' '}
-          <Link href="/privacy" style={{ color: '#36394a' }}>{t.auth.privacyText}</Link>
+          <Link href="/privacy" style={{ color: '#5a5147' }}>{t.auth.privacyText}</Link>
         </motion.p>
       </div>
 

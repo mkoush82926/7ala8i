@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { toast } from "@/components/ui/toast";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
@@ -13,22 +13,22 @@ type SettingsTab = "general" | "team" | "billing" | "booking";
 
 // ── Explicit colors — bypassing Tailwind token resolution ──
 const C = {
-  dark: "#091135",
-  mid: "#36394a",
-  muted: "#36394a",
-  outline: "#e1e9f0",
-  surfaceLow: "#e1e9f0",
-  surface: "#e1e9f0",
+  dark: "#1c1611",
+  mid: "#5a5147",
+  muted: "#5a5147",
+  outline: "#ede3cd",
+  surfaceLow: "#ede3cd",
+  surface: "#ede3cd",
   white: "#ffffff",
-  black: "#091135",
-  amber: "#f5f3ff",
+  black: "#1c1611",
+  amber: "#f7f1e4",
 };
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const { shopName, barbers, shopId } = useWorkspaceStore();
   const [copied, setCopied] = useState(false);
-  const { t, locale, isRTL } = useTranslation();
+  const { t, locale, isRTL, FF, FFD } = useTranslation();
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
   const posterQrCanvasRef = useRef<HTMLCanvasElement>(null);
   const bookingLink =
@@ -212,7 +212,7 @@ export function SettingsPage() {
 
     // Booking link
     const linkFontSize = fitFontSize(ctx, bookingLink, 600, 500, 16, 11);
-    ctx.fillStyle = "#0f77ff";
+    ctx.fillStyle = "#a67c3d";
     ctx.font = `600 ${linkFontSize}px sans-serif`;
     ctx.fillText(bookingLink, W / 2, 710);
 
@@ -229,7 +229,7 @@ export function SettingsPage() {
     ctx.fillText(instruction, W / 2, 792);
 
     // Footer
-    ctx.fillStyle = "#b1bbcd";
+    ctx.fillStyle = "#a89e8c";
     ctx.font = "700 11px sans-serif";
     ctx.fillText("© 2026 HALAQY DIGITAL", W / 2, 856);
 
@@ -263,21 +263,21 @@ export function SettingsPage() {
   const inputStyle: React.CSSProperties = {
     width: "100%",
     background: "#ffffff",
-    border: "1px solid #e1e9f0",
+    border: "1px solid #ede3cd",
     borderRadius: 8,
     padding: "12px 16px",
     fontSize: 14,
     color: C.dark,
     outline: "none",
     transition: "border-color 0.2s, box-shadow 0.2s",
-    fontFamily: "var(--font-intervar), sans-serif",
+    fontFamily: FF,
   };
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
     fontWeight: 700,
     textTransform: "uppercase",
-    letterSpacing: "0.1em",
+    letterSpacing: headingTracking(isRTL, "0.1em"),
     color: C.mid,
     display: "block",
     marginBottom: 6,
@@ -293,7 +293,7 @@ export function SettingsPage() {
       {/* ── Page Header ── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h2 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "0.014em", color: C.dark, margin: 0 }}>
+          <h2 style={{ fontFamily: FFD, fontSize: 28, fontWeight: 800, letterSpacing: headingTracking(isRTL, "0.014em"), color: C.dark, margin: 0 }}>
             {t.settings.title}
           </h2>
           <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
@@ -336,14 +336,14 @@ export function SettingsPage() {
       {activeTab === "general" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
           <div>
-            <h2 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
+            <h2 style={{ fontFamily: FFD, fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
               {isRTL ? "معلومات المتجر" : "Shop Information"}
             </h2>
             <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
               {isRTL ? "تحديث ملفك الشخصي العام والتفضيلات العامة." : "Update your public profile and global preferences."}
             </p>
           </div>
-          <div style={{ background: C.white, padding: 32, borderRadius: 12, border: "1px solid #e1e9f0" }}>
+          <div style={{ background: C.white, padding: 32, borderRadius: 12, border: "1px solid #ede3cd" }}>
             {loadingShop ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.mid, fontSize: 14 }}>
                 <Loader2 size={16} className="animate-spin" />
@@ -408,7 +408,7 @@ export function SettingsPage() {
       {activeTab === "team" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <div>
-            <h2 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
+            <h2 style={{ fontFamily: FFD, fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
               {t.settings.teamMembers}
             </h2>
             <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
@@ -436,7 +436,7 @@ export function SettingsPage() {
               ))
             )}
             {/* Invite — pipeline not built yet */}
-            <div style={{ background: "#f5f3ff", padding: 24, borderTop: `1px solid ${C.surface}` }}>
+            <div style={{ background: "#f7f1e4", padding: 24, borderTop: `1px solid ${C.surface}` }}>
               <div style={{ display: "flex", gap: 12 }}>
                 <input
                   style={{ ...inputStyle, flex: 1, background: C.surfaceLow, cursor: "not-allowed" }}
@@ -460,7 +460,7 @@ export function SettingsPage() {
       {activeTab === "booking" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <div>
-            <h2 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
+            <h2 style={{ fontFamily: FFD, fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
               {t.settings.bookingLink}
             </h2>
             <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
@@ -471,8 +471,8 @@ export function SettingsPage() {
             {/* Live Link Card */}
             <div style={{ background: C.black, color: C.white, padding: 40, borderRadius: 12, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 280, position: "relative", overflow: "hidden" }}>
               <div style={{ position: "relative", zIndex: 1 }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 9999, background: "rgba(255,255,255,0.1)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 24 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#0f77ff", animation: "pulse 2s infinite" }} />
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 9999, background: "rgba(255,255,255,0.1)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.1em"), marginBottom: 24 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#a67c3d", animation: "pulse 2s infinite" }} />
                   {t.settings.onlineBookingLink}
                 </span>
                 <h3 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 900, letterSpacing: "0.016em", color: C.white, margin: 0 }}>
@@ -526,7 +526,7 @@ export function SettingsPage() {
       {activeTab === "billing" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <div>
-            <h2 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
+            <h2 style={{ fontFamily: FFD, fontSize: 20, fontWeight: 800, color: C.dark, margin: 0 }}>
               {isRTL ? "الفوترة والخطة" : "Billing & Plan"}
             </h2>
             <p style={{ fontSize: 14, color: C.mid, marginTop: 4 }}>
@@ -534,7 +534,7 @@ export function SettingsPage() {
             </p>
           </div>
           <div style={{ background: C.white, padding: 48, borderRadius: 12, border: `1px solid ${C.surface}`, textAlign: "center" }}>
-            <h3 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 20, fontWeight: 800, color: C.dark, margin: "0 0 8px" }}>
+            <h3 style={{ fontFamily: FFD, fontSize: 20, fontWeight: 800, color: C.dark, margin: "0 0 8px" }}>
               {isRTL ? "الفوترة — قريبًا" : "Billing — Coming Soon"}
             </h3>
             <p style={{ fontSize: 14, color: C.mid, margin: 0, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>

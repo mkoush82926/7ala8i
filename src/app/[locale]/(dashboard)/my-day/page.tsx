@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { format, startOfDay, endOfDay } from "date-fns";
 import { CheckCircle, UserX, XCircle, Loader2, Sun, Users } from "lucide-react";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { createClient } from "@/lib/supabase/client";
 import { usePos } from "@/hooks/use-pos";
@@ -66,7 +66,7 @@ async function loadTodayAppointments(
 }
 
 export default function MyDayPage() {
-  const { isRTL } = useTranslation();
+  const { isRTL, FF } = useTranslation();
   const shopId = useWorkspaceStore((s) => s.shopId);
   const role = useWorkspaceStore((s) => s.role);
   const barbers = useWorkspaceStore((s) => s.barbers);
@@ -160,17 +160,17 @@ export default function MyDayPage() {
       <div>
         <h2
           style={{
-            fontFamily: "var(--font-intervar), sans-serif",
+            fontFamily: FF,
             fontSize: 28,
             fontWeight: 800,
-            letterSpacing: "0.014em",
-            color: "#091135",
+            letterSpacing: headingTracking(isRTL, "0.014em"),
+            color: "#1c1611",
             margin: 0,
           }}
         >
           {isRTL ? "يومي" : "My Day"}
         </h2>
-        <p style={{ fontSize: 14, color: "#36394a", marginTop: 6, fontWeight: 400 }}>
+        <p style={{ fontSize: 14, color: "#5a5147", marginTop: 6, fontWeight: 400 }}>
           {format(new Date(), "EEEE, d MMMM yyyy")}
         </p>
       </div>
@@ -189,9 +189,9 @@ export default function MyDayPage() {
                   padding: "10px 18px",
                   borderRadius: 999,
                   whiteSpace: "nowrap",
-                  border: active ? "1px solid #091135" : "1px solid #e1e9f0",
-                  background: active ? "#091135" : "#ffffff",
-                  color: active ? "#ffffff" : "#36394a",
+                  border: active ? "1px solid #1c1611" : "1px solid #ede3cd",
+                  background: active ? "#1c1611" : "#ffffff",
+                  color: active ? "#ffffff" : "#5a5147",
                   fontSize: 13,
                   fontWeight: 700,
                   cursor: "pointer",
@@ -207,7 +207,7 @@ export default function MyDayPage() {
       {/* Body */}
       {showBarberPicker && barbers.length === 0 ? (
         <EmptyState
-          icon={<Users size={26} style={{ color: "#b1bbcd" }} />}
+          icon={<Users size={26} style={{ color: "#a89e8c" }} />}
           title={isRTL ? "لا يوجد حلاقون بعد" : "No barbers on your team yet"}
           subtitle={
             isRTL
@@ -221,7 +221,7 @@ export default function MyDayPage() {
         <LoadingState />
       ) : appointments.length === 0 ? (
         <EmptyState
-          icon={<Sun size={26} style={{ color: "#b1bbcd" }} />}
+          icon={<Sun size={26} style={{ color: "#a89e8c" }} />}
           title={isRTL ? "لا مواعيد اليوم" : "No appointments today"}
           subtitle={isRTL ? "استمتع بيوم هادئ" : "Enjoy the quiet day"}
         />
@@ -235,7 +235,7 @@ export default function MyDayPage() {
                 key={appt.id}
                 style={{
                   background: "#ffffff",
-                  border: "1px solid #e1e9f0",
+                  border: "1px solid #ede3cd",
                   borderRadius: 16,
                   padding: 20,
                   display: "flex",
@@ -246,18 +246,18 @@ export default function MyDayPage() {
                 {/* Client + time/price */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                   <div>
-                    <p style={{ fontSize: 18, fontWeight: 800, color: "#091135", margin: 0, fontFamily: "var(--font-intervar), sans-serif" }}>
+                    <p style={{ fontSize: 18, fontWeight: 800, color: "#1c1611", margin: 0, fontFamily: "var(--font-intervar), sans-serif" }}>
                       {appt.client_name}
                     </p>
-                    <p style={{ fontSize: 14, color: "#36394a", margin: "4px 0 0" }}>
+                    <p style={{ fontSize: 14, color: "#5a5147", margin: "4px 0 0" }}>
                       {appt.service_name || (isRTL ? "موعد" : "Appointment")}
                     </p>
                   </div>
                   <div style={{ textAlign: "end", flexShrink: 0 }}>
-                    <p style={{ fontSize: 20, fontWeight: 800, color: "#091135", margin: 0, fontVariantNumeric: "tabular-nums" }}>
+                    <p style={{ fontSize: 20, fontWeight: 800, color: "#1c1611", margin: 0, fontVariantNumeric: "tabular-nums" }}>
                       {format(new Date(appt.start_time), "HH:mm")}
                     </p>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: "#36394a", margin: "4px 0 0" }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: "#5a5147", margin: "4px 0 0" }}>
                       {formatCurrency(appt.price)}
                     </p>
                   </div>
@@ -270,12 +270,12 @@ export default function MyDayPage() {
                       alignSelf: "flex-start",
                       padding: "6px 14px",
                       borderRadius: 999,
-                      background: "#f5f3ff",
-                      color: "#0f77ff",
+                      background: "#f7f1e4",
+                      color: "#a67c3d",
                       fontSize: 11,
                       fontWeight: 800,
                       textTransform: "uppercase",
-                      letterSpacing: "0.1em",
+                      letterSpacing: headingTracking(isRTL, "0.1em"),
                     }}
                   >
                     {resolvedLabel(appt, isRTL)}
@@ -294,7 +294,7 @@ export default function MyDayPage() {
                         gap: 8,
                         border: "none",
                         borderRadius: 12,
-                        background: "#0f77ff",
+                        background: "#a67c3d",
                         color: "#ffffff",
                         fontSize: 14,
                         fontWeight: 700,
@@ -315,10 +315,10 @@ export default function MyDayPage() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        border: "1px solid #e1e9f0",
+                        border: "1px solid #ede3cd",
                         borderRadius: 12,
                         background: "#ffffff",
-                        color: "#36394a",
+                        color: "#5a5147",
                         cursor: busy ? "default" : "pointer",
                         opacity: busy ? 0.6 : 1,
                       }}
@@ -359,7 +359,7 @@ export default function MyDayPage() {
 function LoadingState() {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "64px 0" }}>
-      <Loader2 className="animate-spin" size={26} style={{ color: "#36394a" }} />
+      <Loader2 className="animate-spin" size={26} style={{ color: "#5a5147" }} />
     </div>
   );
 }
@@ -383,7 +383,7 @@ function EmptyState({
         gap: 16,
         padding: "56px 24px",
         background: "#ffffff",
-        border: "1px solid #e1e9f0",
+        border: "1px solid #ede3cd",
         borderRadius: 16,
         textAlign: "center",
       }}
@@ -393,7 +393,7 @@ function EmptyState({
           width: 56,
           height: 56,
           borderRadius: 12,
-          background: "#f5f3ff",
+          background: "#f7f1e4",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -402,8 +402,8 @@ function EmptyState({
         {icon}
       </div>
       <div>
-        <p style={{ fontSize: 14, fontWeight: 700, color: "#36394a", margin: "0 0 6px" }}>{title}</p>
-        <p style={{ fontSize: 12, color: "#36394a", margin: 0 }}>{subtitle}</p>
+        <p style={{ fontSize: 14, fontWeight: 700, color: "#5a5147", margin: "0 0 6px" }}>{title}</p>
+        <p style={{ fontSize: 12, color: "#5a5147", margin: 0 }}>{subtitle}</p>
       </div>
     </div>
   );

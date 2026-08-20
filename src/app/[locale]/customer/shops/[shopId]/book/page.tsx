@@ -14,7 +14,7 @@ export default function CustomerBookRedirect() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#ffffff]">
-      <div className="w-8 h-8 border-2 border-[#091135] border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-2 border-[#1c1611] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }

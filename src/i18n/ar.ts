@@ -309,7 +309,7 @@ const ar: TranslationKeys = {
     
     // Signup
     createYourAccount: "أنشئ حسابك",
-    joinHalaqy: "انضم إلى حلقي وارتقِ بمشغلك.",
+    joinHalaqy: "انضم إلى حلقي وارتق بمشغلك.",
     fullName: "الاسم الكامل",
     shopName: "اسم المحل",
     passwordRules: "يجب أن تكون 8 أحرف على الأقل",

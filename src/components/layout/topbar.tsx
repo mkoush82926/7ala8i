@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { getInitials } from "@/lib/utils";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "@/components/ui/toast";
@@ -80,12 +80,13 @@ function ResultGroup({
   items: { id: string; primary: string; secondary?: string }[];
   onSelect: () => void;
 }) {
+  const { isRTL } = useTranslation();
   if (items.length === 0) return null;
   return (
     <div style={{ padding: "4px 0" }}>
       <p style={{
         fontSize: 10, fontWeight: 800, textTransform: "uppercase",
-        letterSpacing: "0.12em", color: "var(--text-tertiary)",
+        letterSpacing: headingTracking(isRTL, "0.12em"), color: "var(--text-tertiary)",
         margin: "6px 12px 2px",
       }}>
         {title}
@@ -359,14 +360,14 @@ export function Topbar() {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{
             fontSize: 11, fontWeight: 700, color: "var(--text-tertiary)",
-            textTransform: "uppercase", letterSpacing: "0.12em",
+            textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.12em"),
           }}>
             {isRTL ? "الأتيليه" : "Atelier Overview"}
           </span>
           <span style={{ fontSize: 14, color: "var(--border-hover)", lineHeight: 1 }}>/</span>
           <span style={{
             fontSize: 12, fontWeight: 700, color: "var(--text-primary)",
-            letterSpacing: "0.01em",
+            letterSpacing: headingTracking(isRTL, "0.01em"),
           }}>
             {getPageTitle()}
           </span>
@@ -389,7 +390,7 @@ export function Topbar() {
                 fontSize: 11,
                 fontWeight: 700,
                 textTransform: "uppercase",
-                letterSpacing: "0.1em",
+                letterSpacing: headingTracking(isRTL, "0.1em"),
                 color: "var(--text-secondary)",
                 cursor: "pointer",
                 transition: "all 0.15s",

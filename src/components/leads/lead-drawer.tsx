@@ -91,7 +91,7 @@ export function LeadDrawer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-[#091135]/40 z-50"
+            className="fixed inset-0 bg-[#1c1611]/40 z-50"
             onClick={() => setDrawerOpen(false)}
           />
 
@@ -121,8 +121,8 @@ export function LeadDrawer() {
 
             {/* Avatar + Name */}
             <div className="px-6 py-6 flex items-center gap-4 border-b border-[var(--border-primary)]">
-              <div className="w-12 h-12 rounded-full bg-[#f5f3ff] flex items-center justify-center flex-shrink-0">
-                <span className="text-[14px] font-medium text-[#091135]">
+              <div className="w-12 h-12 rounded-full bg-[#f7f1e4] flex items-center justify-center flex-shrink-0">
+                <span className="text-[14px] font-medium text-[#1c1611]">
                   {form.name
                     .split(" ")
                     .map((n) => n[0])

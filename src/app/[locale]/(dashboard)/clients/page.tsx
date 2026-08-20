@@ -7,7 +7,7 @@ import {
   X, MessageCircle, ChevronLeft, ChevronRight,
   CheckCircle, Minus, UserPlus, Filter,
 } from "lucide-react";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
@@ -18,15 +18,15 @@ import { DashboardSkeleton } from "@/components/ui/skeleton";
 const SEARCH_DEBOUNCE_MS = 300;
 
 const avatarColors = [
-  { bg: "#f5f3ff", text: "#091135" },
-  { bg: "#e1e9f0", text: "#091135" },
-  { bg: "#f5f3ff", text: "#091135" },
-  { bg: "#e1e9f0", text: "#091135" },
-  { bg: "#091135", text: "#ffffff" },
+  { bg: "#f7f1e4", text: "#1c1611" },
+  { bg: "#ede3cd", text: "#1c1611" },
+  { bg: "#f7f1e4", text: "#1c1611" },
+  { bg: "#ede3cd", text: "#1c1611" },
+  { bg: "#1c1611", text: "#ffffff" },
 ];
 
 export default function ClientsPage() {
-  const { t, isRTL } = useTranslation();
+  const { t, isRTL, FF } = useTranslation();
   const { shopId } = useWorkspaceStore();
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
@@ -73,37 +73,37 @@ export default function ClientsPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
-            <h2 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "0.014em", color: "#091135", margin: 0 }}>
+            <h2 style={{ fontFamily: FF, fontSize: 28, fontWeight: 800, letterSpacing: headingTracking(isRTL, "0.014em"), color: "#1c1611", margin: 0 }}>
               {t.sidebar.clients}
             </h2>
-            <p style={{ fontSize: 14, color: "#36394a", marginTop: 6, fontWeight: 400 }}>
+            <p style={{ fontSize: 14, color: "#5a5147", marginTop: 6, fontWeight: 400 }}>
               {isRTL ? "إدارة قاعدة بيانات" : "Manage your database of"}{" "}
-              <strong style={{ color: "#091135" }}>{totalCount}</strong>{" "}
+              <strong style={{ color: "#1c1611" }}>{totalCount}</strong>{" "}
               {isRTL ? "عميل نشط" : "active clients"}
             </p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             {/* Search */}
             <div style={{ position: "relative" }}>
-              <span className="material-symbols-outlined" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#36394a", fontSize: 18 }}>search</span>
+              <span className="material-symbols-outlined" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#5a5147", fontSize: 18 }}>search</span>
               <input
                 type="text"
                 placeholder={isRTL ? "البحث بالاسم أو الهاتف..." : "Search by name, phone, or email..."}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 style={{
-                  width: 280, background: "#ffffff", border: "1px solid #e1e9f0",
+                  width: 280, background: "#ffffff", border: "1px solid #ede3cd",
                   borderRadius: 8, padding: "10px 16px 10px 40px",
-                  fontSize: 13, outline: "none", color: "#091135",
+                  fontSize: 13, outline: "none", color: "#1c1611",
                   transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#0f77ff";
+                  e.currentTarget.style.borderColor = "#a67c3d";
                   e.currentTarget.style.boxShadow = "var(--shadow-focus)";
                   e.currentTarget.style.background = "#ffffff";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#e1e9f0";
+                  e.currentTarget.style.borderColor = "#ede3cd";
                   e.currentTarget.style.boxShadow = "none";
                   e.currentTarget.style.background = "#ffffff";
                 }}
@@ -127,11 +127,11 @@ export default function ClientsPage() {
           textAlign: "center", padding: "80px 0",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
         }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 56, color: "#e1e9f0" }}>group</span>
-          <p style={{ fontWeight: 700, color: "#36394a", fontSize: 16 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 56, color: "#ede3cd" }}>group</span>
+          <p style={{ fontWeight: 700, color: "#5a5147", fontSize: 16 }}>
             {isRTL ? "لا يوجد عملاء بعد" : "No clients yet"}
           </p>
-          <p style={{ fontSize: 13, color: "#b1bbcd", maxWidth: 320 }}>
+          <p style={{ fontSize: 13, color: "#a89e8c", maxWidth: 320 }}>
             {isRTL ? "سيظهر العملاء هنا عند حجز مواعيدهم" : "Clients will appear here when they book appointments"}
           </p>
         </div>
@@ -155,7 +155,7 @@ export default function ClientsPage() {
                 style={{
                   // Practice #1 — white card on #f7f9fb bg with border + shadow
                   background: "#ffffff",
-                  border: "1px solid #e1e9f0",
+                  border: "1px solid #ede3cd",
                   borderRadius: 12,
                   // Practice #3 — 24px = 6×4 base unit padding
                   padding: 24,
@@ -168,11 +168,11 @@ export default function ClientsPage() {
                 }}
                 // Practice #8 — hover, active states
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = "#b1bbcd";
+                  (e.currentTarget as HTMLDivElement).style.borderColor = "#a89e8c";
                   (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = "#e1e9f0";
+                  (e.currentTarget as HTMLDivElement).style.borderColor = "#ede3cd";
                   (e.currentTarget as HTMLDivElement).style.transform = "";
                 }}
                 onMouseDown={(e) => {
@@ -204,7 +204,7 @@ export default function ClientsPage() {
                         if (phone) window.location.href = `tel:${phone}`;
                       }}
                       style={{
-                        padding: 8, background: "#ffffff", border: "1px solid #e1e9f0",
+                        padding: 8, background: "#ffffff", border: "1px solid #ede3cd",
                         borderRadius: "50%", cursor: "pointer",
                       }}
                     >
@@ -217,13 +217,13 @@ export default function ClientsPage() {
                 <div style={{ flex: 1 }}>
                   <h3 style={{
                     fontFamily: "var(--font-intervar), sans-serif",
-                    fontSize: 16, fontWeight: 700, color: "#091135",
+                    fontSize: 16, fontWeight: 700, color: "#1c1611",
                     margin: 0, lineHeight: 1.3,
                     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                   }}>
                     {name}
                   </h3>
-                  <p style={{ fontSize: 13, color: "#36394a", marginTop: 4, fontWeight: 400 }}>
+                  <p style={{ fontSize: 13, color: "#5a5147", marginTop: 4, fontWeight: 400 }}>
                     {(client.phone as string) ?? "—"}
                   </p>
                 </div>
@@ -231,26 +231,26 @@ export default function ClientsPage() {
                 {/* Stats footer — isolated from card body by border */}
                 <div style={{
                   display: "flex", justifyContent: "space-between", alignItems: "center",
-                  paddingTop: 14, borderTop: "1px solid #e1e9f0",
+                  paddingTop: 14, borderTop: "1px solid #ede3cd",
                   marginTop: "auto",
                 }}>
                   <div>
                     {/* Practice #2 — labels 9px UPPERCASE, values 13px bold */}
-                    <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.15em", color: "#b1bbcd", fontWeight: 700, display: "block" }}>
+                    <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.15em"), color: "#a89e8c", fontWeight: 700, display: "block" }}>
                       {isRTL ? "إجمالي الإنفاق" : "Total Spent"}
                     </span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: "#091135", fontFamily: "var(--font-intervar), sans-serif" }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#1c1611", fontFamily: "var(--font-intervar), sans-serif" }}>
                       {totalSpent.toFixed(0)} JOD
                     </span>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.15em", color: "#b1bbcd", fontWeight: 700, display: "block" }}>
+                    <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.15em"), color: "#a89e8c", fontWeight: 700, display: "block" }}>
                       {isRTL ? "البريد" : "Email"}
                     </span>
                     {hasEmail ? (
-                      <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#0f77ff", fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#a67c3d", fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                     ) : (
-                      <Minus size={16} style={{ color: "#e1e9f0", marginTop: 2 }} />
+                      <Minus size={16} style={{ color: "#ede3cd", marginTop: 2 }} />
                     )}
                   </div>
                 </div>
@@ -299,7 +299,7 @@ export default function ClientsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-[rgba(9,17,53,0.3)] z-50"
+              className="fixed inset-0 bg-[rgba(28,22,17,0.3)] z-50"
               onClick={() => setSelectedClient(null)}
             />
             <motion.div
@@ -312,7 +312,7 @@ export default function ClientsPage() {
               <div className="p-6">
                 {/* Close */}
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-on-surface" style={{ fontFamily: "var(--font-intervar), sans-serif" }}>
+                  <h3 className="text-lg font-bold text-on-surface" style={{ fontFamily: FF }}>
                     {isRTL ? "ملف العميل" : "Client Profile"}
                   </h3>
                   <button
@@ -327,7 +327,7 @@ export default function ClientsPage() {
                 <div className="text-center mb-6">
                   <div
                     className="w-16 h-16 rounded-full flex items-center justify-center text-[20px] font-bold mx-auto mb-3"
-                    style={{ background: "#091135", color: "#ffffff", fontFamily: "var(--font-intervar), sans-serif" }}
+                    style={{ background: "#1c1611", color: "#ffffff", fontFamily: "var(--font-intervar), sans-serif" }}
                   >
                     {(selectedClient.name as string)?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
                   </div>

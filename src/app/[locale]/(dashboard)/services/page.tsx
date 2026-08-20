@@ -7,14 +7,14 @@ import {
   Plus, Search, Clock, DollarSign, GripVertical,
   Pencil, Trash2, X, Loader2, Sparkles, ToggleLeft, ToggleRight,
 } from "lucide-react";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { useServices, type ServiceItem } from "@/hooks/use-services";
 import { createClient } from "@/lib/supabase/client";
 
 const ICONS = ["✂️", "💈", "🧔", "💇", "🪒", "🧴", "💆", "🎨", "✨", "👑", "🧖", "💅"];
 
 export default function ServicesPage() {
-  const { t, isRTL } = useTranslation();
+  const { t, isRTL, FF } = useTranslation();
   const { services, loading, addService, updateService, deleteService, toggleActive, reorderServices } = useServices();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -129,30 +129,30 @@ export default function ServicesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between" style={{ gap: 20 }}>
         <div>
           <h2
-            className="text-4xl font-extrabold text-[#091135]"
-            style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 32, letterSpacing: "0.016em" }}
+            className="text-4xl font-extrabold text-[#1c1611]"
+            style={{ fontFamily: FF, fontSize: 32, letterSpacing: headingTracking(isRTL, "0.016em") }}
           >
             {svc.title}
           </h2>
-          <p className="text-[#36394a] font-medium" style={{ fontSize: 14, marginTop: 8 }}>
+          <p className="text-[#5a5147] font-medium" style={{ fontSize: 14, marginTop: 8 }}>
             {svc.subtitle}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative w-full sm:w-64">
-            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#36394a]" />
+            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#5a5147]" />
             <input
               type="text"
               placeholder={svc.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-10 ps-10 pe-4 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-sm font-medium text-[#091135] placeholder-[#36394a] focus:outline-none focus:shadow-[var(--shadow-focus)] transition-all"
+              className="w-full h-10 ps-10 pe-4 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-sm font-medium text-[#1c1611] placeholder-[#5a5147] focus:outline-none focus:shadow-[var(--shadow-focus)] transition-all"
             />
           </div>
           {currentUserRole === 'shop_admin' && (
             <button
               onClick={openAdd}
-              className="h-10 px-5 rounded-[var(--radius-buttons)] bg-[#127ee3] text-white font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
+              className="h-10 px-5 rounded-[var(--radius-buttons)] bg-[#7c4a1e] text-white font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
             >
               <Plus size={15} />
               <span className="hidden sm:inline">{svc.addService}</span>
@@ -204,9 +204,9 @@ export default function ServicesPage() {
                 "group relative rounded-xl border bg-white p-6 transition-all duration-200 hover:-translate-y-1",
                 "cursor-grab active:cursor-grabbing",
                 draggedId === service.id && "opacity-40",
-                dragOverId === service.id && "border-[#091135]/20 scale-[1.02]",
+                dragOverId === service.id && "border-[#1c1611]/20 scale-[1.02]",
                 !service.is_active && "opacity-60",
-                "border-[#e1e9f0] hover:border-[var(--border-hover)]",
+                "border-[#ede3cd] hover:border-[var(--border-hover)]",
               )}
             >
               <div className="flex items-start justify-between" style={{ marginBottom: 18 }}>
@@ -218,7 +218,7 @@ export default function ServicesPage() {
                     {service.icon || "✂️"}
                   </div>
                   <div>
-                    <p className="text-[#091135] font-bold" style={{ fontSize: 14, marginBottom: 2, fontFamily: "var(--font-intervar), sans-serif" }}>
+                    <p className="text-[#1c1611] font-bold" style={{ fontSize: 14, marginBottom: 2, fontFamily: FF }}>
                       {isRTL && service.name_ar ? service.name_ar : service.name}
                     </p>
                     {service.name_ar && !isRTL && (
@@ -312,16 +312,16 @@ export default function ServicesPage() {
               onClick={(e) => e.target === e.currentTarget && setShowForm(false)}
             >
               <div
-                className="w-full max-w-md rounded-2xl bg-white border border-[#e1e9f0]"
+                className="w-full max-w-md rounded-2xl bg-white border border-[#ede3cd]"
                 style={{ padding: "28px 28px 24px" }}
               >
                 <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
-                  <h3 className="text-[#091135] font-extrabold" style={{ fontSize: 20, fontFamily: "var(--font-intervar), sans-serif" }}>
+                  <h3 className="text-[#1c1611] font-extrabold" style={{ fontSize: 20, fontFamily: FF }}>
                     {editingService ? svc.editService : svc.addService}
                   </h3>
                   <button
                     onClick={() => setShowForm(false)}
-                    className="w-8 h-8 rounded-[var(--radius-buttons)] flex items-center justify-center text-[#36394a] hover:text-[#091135] hover:bg-[var(--bg-secondary)] transition-all cursor-pointer"
+                    className="w-8 h-8 rounded-[var(--radius-buttons)] flex items-center justify-center text-[#5a5147] hover:text-[#1c1611] hover:bg-[var(--bg-secondary)] transition-all cursor-pointer"
                   >
                     <X size={16} />
                   </button>
@@ -342,7 +342,7 @@ export default function ServicesPage() {
                           className={cn(
                             "w-10 h-10 rounded-[var(--radius-buttons)] flex items-center justify-center text-lg transition-all cursor-pointer border",
                             icon === ic
-                              ? "bg-[var(--bg-secondary)] border-[#091135]/20 scale-110"
+                              ? "bg-[var(--bg-secondary)] border-[#1c1611]/20 scale-110"
                               : "bg-[var(--bg-surface)] border-transparent hover:border-[var(--border-hover)]",
                           )}
                         >
@@ -417,7 +417,7 @@ export default function ServicesPage() {
                   <button
                     type="submit"
                     disabled={saving || !name.trim() || !price.trim()}
-                    className="h-11 rounded-[var(--radius-buttons)] bg-[#127ee3] text-white font-bold text-[13px] flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
+                    className="h-11 rounded-[var(--radius-buttons)] bg-[#7c4a1e] text-white font-bold text-[13px] flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
                     style={{ marginTop: 8 }}
                   >
                     {saving ? <Loader2 size={15} className="animate-spin" /> : null}

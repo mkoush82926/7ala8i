@@ -6,7 +6,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
@@ -27,7 +27,7 @@ function CustomTooltip({
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: "#091135",
+      background: "#1c1611",
       border: "none",
       borderRadius: 12,
       padding: "10px 16px",
@@ -42,7 +42,7 @@ function CustomTooltip({
 
 export function SalesChart() {
   const [period, setPeriod] = useState<Period>("week");
-  const { t } = useTranslation();
+  const { t, isRTL, FF } = useTranslation();
   const { shopId } = useWorkspaceStore();
   const supabase = createClient();
 
@@ -66,7 +66,7 @@ export function SalesChart() {
   return (
     <div style={{
       background: "#ffffff",
-      border: "1px solid #e1e9f0",
+      border: "1px solid #ede3cd",
       borderRadius: 12,
       padding: "32px 36px",
       height: "100%",
@@ -78,22 +78,22 @@ export function SalesChart() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
         <div>
           <h3 style={{
-            fontFamily: "var(--font-intervar), sans-serif",
+            fontFamily: FF,
             fontSize: 18,
             fontWeight: 800,
-            color: "#091135",
-            letterSpacing: "0.01em",
+            color: "#1c1611",
+            letterSpacing: headingTracking(isRTL, "0.01em"),
             margin: "0 0 4px",
           }}>
             {t.dashboard.revenueOverview || "Revenue Overview"}
           </h3>
-          <p style={{ fontSize: 12, color: "#b1bbcd", margin: 0 }}>Track your earnings over time</p>
+          <p style={{ fontSize: 12, color: "#a89e8c", margin: 0 }}>Track your earnings over time</p>
         </div>
 
         {/* Period toggle — pill style */}
         <div style={{
           display: "flex",
-          background: "#e1e9f0",
+          background: "#ede3cd",
           borderRadius: 8,
           padding: 4,
           gap: 2,
@@ -107,13 +107,13 @@ export function SalesChart() {
                 fontSize: 11,
                 fontWeight: 700,
                 textTransform: "uppercase" as const,
-                letterSpacing: "0.08em",
+                letterSpacing: headingTracking(isRTL, "0.08em"),
                 borderRadius: 8,
                 border: "none",
                 cursor: "pointer",
                 transition: "all 0.18s ease",
-                background: period === p ? "#f5f3ff" : "transparent",
-                color: period === p ? "#091135" : "#36394a",
+                background: period === p ? "#f7f1e4" : "transparent",
+                color: period === p ? "#1c1611" : "#5a5147",
               }}
             >
               {periodLabels[p]}
@@ -132,7 +132,7 @@ export function SalesChart() {
       >
         {loading ? (
           <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Loader2 size={24} style={{ color: "#b1bbcd", animation: "spin 1s linear infinite" }} />
+            <Loader2 size={24} style={{ color: "#a89e8c", animation: "spin 1s linear infinite" }} />
           </div>
         ) : error ? (
           <div style={{
@@ -150,8 +150,8 @@ export function SalesChart() {
             }}>
               <AlertTriangle size={22} style={{ color: "#ba1a1a" }} />
             </div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#091135", margin: 0 }}>Couldn&apos;t load revenue data</p>
-            <p style={{ fontSize: 11, color: "#b1bbcd", margin: 0 }}>{error}</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#1c1611", margin: 0 }}>Couldn&apos;t load revenue data</p>
+            <p style={{ fontSize: 11, color: "#a89e8c", margin: 0 }}>{error}</p>
             <button onClick={refetch} className="btn btn-secondary" style={{ marginTop: 4 }}>Retry</button>
           </div>
         ) : data.length === 0 ? (
@@ -165,40 +165,40 @@ export function SalesChart() {
           }}>
             <div style={{
               width: 48, height: 48, borderRadius: 12,
-              background: "#e1e9f0",
+              background: "#ede3cd",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <TrendingUp size={22} style={{ color: "#b1bbcd" }} />
+              <TrendingUp size={22} style={{ color: "#a89e8c" }} />
             </div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#b1bbcd", margin: 0 }}>No revenue data for this period</p>
-            <p style={{ fontSize: 11, color: "#b1bbcd", margin: 0 }}>Bookings will appear here once completed</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#a89e8c", margin: 0 }}>No revenue data for this period</p>
+            <p style={{ fontSize: 11, color: "#a89e8c", margin: 0 }}>Bookings will appear here once completed</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 8, right: 4, left: -16, bottom: 0 }}>
               <defs>
                 <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#091135" stopOpacity={0.12} />
-                  <stop offset="100%" stopColor="#091135" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#1c1611" stopOpacity={0.12} />
+                  <stop offset="100%" stopColor="#1c1611" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e1e9f0" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#ede3cd" vertical={false} />
               <XAxis
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 10, fill: "#b1bbcd", fontWeight: 700 }}
+                tick={{ fontSize: 10, fill: "#a89e8c", fontWeight: 700 }}
               />
-              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#b1bbcd" }} />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#e1e9f0", strokeWidth: 1 }} />
+              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#a89e8c" }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#ede3cd", strokeWidth: 1 }} />
               <Area
                 type="monotone"
                 dataKey="revenue"
-                stroke="#091135"
+                stroke="#1c1611"
                 strokeWidth={2.5}
                 fill="url(#revenueGrad)"
                 dot={false}
-                activeDot={{ r: 5, fill: "#091135", stroke: "#ffffff", strokeWidth: 2.5 }}
+                activeDot={{ r: 5, fill: "#1c1611", stroke: "#ffffff", strokeWidth: 2.5 }}
               />
             </AreaChart>
           </ResponsiveContainer>

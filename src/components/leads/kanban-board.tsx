@@ -27,7 +27,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "@/components/ui/toast";
 import { Plus, List, Kanban, Upload } from "lucide-react";
 import type { Lead } from "@/lib/types";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 
 // ─── CSV parsing for "Import CSV" ───
 // Minimal RFC-4180-ish parser: handles quoted cells and escaped quotes ("").
@@ -123,7 +123,7 @@ export function KanbanBoard() {
   const { leads, moveLead, selectLead, drawerOpen, setDrawerOpen, addLead, importLeads } =
     useLeadsStore();
 
-  const { t, isRTL } = useTranslation();
+  const { t, isRTL, FFD } = useTranslation();
   const stages = useStages();
 
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -243,12 +243,12 @@ export function KanbanBoard() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h2
-            className="text-4xl font-extrabold text-[#091135]"
-            style={{ fontFamily: "var(--font-intervar), sans-serif", letterSpacing: "0.016em" }}
+            className="text-4xl font-extrabold text-[#1c1611]"
+            style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.016em") }}
           >
             {t.leads.crmPipeline}
           </h2>
-          <p className="text-[#36394a] mt-2 font-medium text-sm">
+          <p className="text-[#5a5147] mt-2 font-medium text-sm">
             {leads.length} {t.leads.leadsAcross} {stages.length}{" "}
             {t.leads.stages}
           </p>
@@ -379,7 +379,7 @@ function LeadListView({
   };
 
   return (
-    <div className="rounded-xl border border-[#e1e9f0] bg-white overflow-hidden">
+    <div className="rounded-xl border border-[#ede3cd] bg-white overflow-hidden">
       {/* Bulk actions bar */}
       <AnimatePresence>
         {selectedIds.length > 0 && (
@@ -406,7 +406,7 @@ function LeadListView({
       </AnimatePresence>
 
       {/* Table header */}
-      <div className="flex items-center border-b border-[#e1e9f0] px-6 py-3 bg-[#f5f3ff]">
+      <div className="flex items-center border-b border-[#ede3cd] px-6 py-3 bg-[#f7f1e4]">
         <div className="w-8 flex-shrink-0">
           <input
             type="checkbox"
@@ -415,16 +415,16 @@ function LeadListView({
             className="w-3.5 h-3.5 rounded-[8px] cursor-pointer"
           />
         </div>
-        <div className="flex-1 text-[11px] text-[#36394a] font-bold uppercase tracking-wider">
+        <div className="flex-1 text-[11px] text-[#5a5147] font-bold uppercase tracking-wider">
           {t.leads.name}
         </div>
-        <div className="w-36 text-[11px] text-[#36394a] font-bold uppercase tracking-wider">
+        <div className="w-36 text-[11px] text-[#5a5147] font-bold uppercase tracking-wider">
           {t.leads.phone}
         </div>
-        <div className="w-28 text-[11px] text-[#36394a] font-bold uppercase tracking-wider">
+        <div className="w-28 text-[11px] text-[#5a5147] font-bold uppercase tracking-wider">
           {t.leads.stage}
         </div>
-        <div className="w-24 text-[11px] text-[#36394a] font-bold uppercase tracking-wider text-end">
+        <div className="w-24 text-[11px] text-[#5a5147] font-bold uppercase tracking-wider text-end">
           {t.leads.value}
         </div>
       </div>
@@ -439,9 +439,9 @@ function LeadListView({
             exit={{ opacity: 0, height: 0 }}
             transition={{ delay: i * 0.02 }}
             className={cn(
-              "flex items-center px-6 py-4 border-b border-[#e1e9f0] last:border-b-0",
-              "hover:bg-[#f5f3ff] transition-colors cursor-pointer",
-              selectedIds.includes(lead.id) && "bg-[#f5f3ff]",
+              "flex items-center px-6 py-4 border-b border-[#ede3cd] last:border-b-0",
+              "hover:bg-[#f7f1e4] transition-colors cursor-pointer",
+              selectedIds.includes(lead.id) && "bg-[#f7f1e4]",
             )}
             onClick={() => onLeadClick(lead)}
           >
@@ -462,22 +462,22 @@ function LeadListView({
             <div className="flex-1 flex items-center gap-3 min-w-0">
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
-                style={{ background: "#f5f3ff", color: "#091135", fontFamily: "var(--font-intervar), sans-serif" }}
+                style={{ background: "#f7f1e4", color: "#1c1611", fontFamily: "var(--font-intervar), sans-serif" }}
               >
                 {lead.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-[#091135] truncate">
+                <p className="text-sm font-bold text-[#1c1611] truncate">
                   {lead.name}
                 </p>
                 {lead.notes && (
-                  <p className="text-xs text-[#36394a] truncate">
+                  <p className="text-xs text-[#5a5147] truncate">
                     {lead.notes}
                   </p>
                 )}
               </div>
             </div>
-            <div className="w-36 text-sm text-[#36394a] font-medium tabular-nums">
+            <div className="w-36 text-sm text-[#5a5147] font-medium tabular-nums">
               {lead.phone}
             </div>
             <div className="w-28">
@@ -490,7 +490,7 @@ function LeadListView({
                 {stages.find((s) => s.id === lead.stage)?.label || lead.stage}
               </span>
             </div>
-            <div className="w-24 text-end text-sm text-[#091135] font-bold tabular-nums">
+            <div className="w-24 text-end text-sm text-[#1c1611] font-bold tabular-nums">
               {lead.value ? `${lead.value} ${t.common.jod}` : "—"}
             </div>
           </motion.div>

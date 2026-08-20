@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { formatCurrency } from "@/lib/utils";
 import { FileText, CreditCard, Banknote, Loader2, Download, AlertTriangle } from "lucide-react";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
@@ -20,7 +20,7 @@ interface Sale {
 }
 
 export function DailyReceipt() {
-  const { t } = useTranslation();
+  const { t, isRTL, FF } = useTranslation();
   const { shopId } = useWorkspaceStore();
   const supabase = createClient();
 
@@ -83,7 +83,7 @@ export function DailyReceipt() {
     return (
       <div style={{
         background: "#ffffff",
-        border: "1px solid #e1e9f0",
+        border: "1px solid #ede3cd",
         borderRadius: 12,
         padding: "32px 36px",
         display: "flex",
@@ -91,7 +91,7 @@ export function DailyReceipt() {
         justifyContent: "center",
         height: "100%",
       }}>
-        <Loader2 size={24} style={{ color: "#b1bbcd" }} className="animate-spin" />
+        <Loader2 size={24} style={{ color: "#a89e8c" }} className="animate-spin" />
       </div>
     );
   }
@@ -99,8 +99,8 @@ export function DailyReceipt() {
   if (error) {
     return (
       <div style={{
-        background: "#091135",
-        border: "1px solid #e1e9f0",
+        background: "#1c1611",
+        border: "1px solid #ede3cd",
         borderRadius: 12,
         padding: "32px 32px 28px",
         height: "100%",
@@ -138,8 +138,8 @@ export function DailyReceipt() {
 
   return (
     <div style={{
-      background: "#091135",   /* dark premium card */
-      border: "1px solid #e1e9f0",
+      background: "#1c1611",   /* dark premium card */
+      border: "1px solid #ede3cd",
       borderRadius: 12,
       padding: "32px 32px 28px",
       height: "100%",
@@ -162,11 +162,11 @@ export function DailyReceipt() {
               Today
             </p>
             <h3 style={{
-              fontFamily: "var(--font-intervar), sans-serif",
+              fontFamily: FF,
               fontSize: 18,
               fontWeight: 800,
               color: "#ffffff",
-              letterSpacing: "0.01em",
+              letterSpacing: headingTracking(isRTL, "0.01em"),
               margin: 0,
             }}>
               {t.dashboard.dailySummary || "Daily Summary"}

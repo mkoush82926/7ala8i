@@ -6,21 +6,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, CheckCircle, Eye, EyeOff, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 
 const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 const T = {
-  dark:    "#091135",
-  muted:   "#36394a",
-  outline: "#e1e9f0",
+  dark:    "#1c1611",
+  muted:   "#5a5147",
+  outline: "#ede3cd",
   surfLow: "#ffffff",
   white:   "#ffffff",
-  black:   "#091135",
-  accent:  "#127ee3",
+  black:   "#1c1611",
+  accent:  "#7c4a1e",
   error:   "#ba1a1a",
   errBg:   "#ffdad6",
-  green:   "#0f77ff",
-  greenBg: "rgba(15,119,255,0.1)",
+  green:   "#a67c3d",
+  greenBg: "rgba(166,124,61,0.1)",
 };
 
 export default function ResetPasswordPage() {
@@ -33,7 +33,7 @@ export default function ResetPasswordPage() {
   const [tokenReady, setTokenReady] = useState(false);
   const redirectTimer               = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
-  const { t, dir, isRTL } = useTranslation();
+  const { t, dir, isRTL, FFD } = useTranslation();
 
   useEffect(() => {
     const supabase = createClient();
@@ -75,7 +75,7 @@ export default function ResetPasswordPage() {
     return s;
   })();
   const strengthLabel = (isRTL ? ["", "ضعيفة", "مقبولة", "جيدة", "قوية"] : ["", "Weak", "Fair", "Good", "Strong"])[strength];
-  const strengthColor = ["", "#ba1a1a", "#0f77ff", "#0f77ff", "#127ee3"][strength];
+  const strengthColor = ["", "#ba1a1a", "#a67c3d", "#a67c3d", "#7c4a1e"][strength];
 
   return (
     <div style={{ background: T.white, minHeight: "100dvh", fontFamily: FF, direction: dir }}>
@@ -94,7 +94,7 @@ export default function ResetPasswordPage() {
                 <div style={{ width: 64, height: 64, borderRadius: 12, background: T.greenBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
                   <CheckCircle size={28} style={{ color: T.green }} />
                 </div>
-                <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 24, fontWeight: 700, color: T.dark, margin: 0 }}>{isRTL ? "تم تحديث كلمة المرور!" : "Password updated!"}</h1>
+                <h1 style={{ fontFamily: FFD, fontSize: 24, fontWeight: 700, color: T.dark, margin: 0 }}>{isRTL ? "تم تحديث كلمة المرور!" : "Password updated!"}</h1>
                 <p style={{ fontSize: 14, color: T.muted, maxWidth: 340, lineHeight: 1.6, margin: 0 }}>
                   {isRTL ? "تم تغيير كلمة مرورك. جارٍ تحويلك لتسجيل الدخول…" : "Your password has been changed. Redirecting you to sign in…"}
                 </p>
@@ -107,7 +107,7 @@ export default function ResetPasswordPage() {
                 <div style={{ width: 64, height: 64, borderRadius: 12, background: T.errBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
                   <XCircle size={28} style={{ color: T.error }} />
                 </div>
-                <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 22, fontWeight: 700, color: T.dark, margin: 0 }}>{isRTL ? "الرابط غير صالح أو منتهي الصلاحية" : "Invalid or expired link"}</h1>
+                <h1 style={{ fontFamily: FFD, fontSize: 22, fontWeight: 700, color: T.dark, margin: 0 }}>{isRTL ? "الرابط غير صالح أو منتهي الصلاحية" : "Invalid or expired link"}</h1>
                 <p style={{ fontSize: 14, color: T.muted, maxWidth: 340, lineHeight: 1.6, margin: 0 }}>
                   {isRTL ? "انتهت صلاحية رابط إعادة التعيين هذا. الرجاء طلب رابط جديد." : "This reset link has expired. Please request a new one."}
                 </p>
@@ -121,7 +121,7 @@ export default function ResetPasswordPage() {
                   <div style={{ width: 44, height: 44, background: T.black, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
                     <span style={{ color: T.white, fontSize: 20 }}>🔒</span>
                   </div>
-                  <h1 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 300, letterSpacing: "0.016em", color: T.dark, marginBottom: 10 }}>{isRTL ? "كلمة مرور جديدة" : "New password"}</h1>
+                  <h1 style={{ fontFamily: FFD, fontSize: 28, fontWeight: 300, letterSpacing: headingTracking(isRTL, "0.016em"), color: T.dark, marginBottom: 10 }}>{isRTL ? "كلمة مرور جديدة" : "New password"}</h1>
                   <p style={{ fontSize: 14, color: T.muted, fontWeight: 300, textAlign: "center" }}>{isRTL ? "اختر كلمة مرور قوية لحسابك." : "Choose a strong password for your account."}</p>
                 </div>
 
@@ -134,13 +134,13 @@ export default function ResetPasswordPage() {
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                   {/* New Password */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <label htmlFor="password" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: T.muted }}>{isRTL ? "كلمة المرور الجديدة" : "New Password"}</label>
+                    <label htmlFor="password" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.muted }}>{isRTL ? "كلمة المرور الجديدة" : "New Password"}</label>
                     <div style={{ position: "relative" }}>
                       <input
                         id="password" type={showPw ? "text" : "password"} required autoComplete="new-password"
                         placeholder={t.auth.passwordRules} value={password} onChange={(e) => setPassword(e.target.value)}
                         style={{ height: 52, width: "100%", padding: "0 48px 0 18px", borderRadius: 8, border: `1px solid ${T.outline}`, background: T.surfLow, fontFamily: FF, fontSize: 14, color: T.dark, outline: "none", transition: "all 0.15s", boxSizing: "border-box" }}
-                        onFocus={(e) => { e.currentTarget.style.background = T.white; e.currentTarget.style.border = "1px solid #0f77ff"; e.currentTarget.style.boxShadow = "var(--shadow-focus)"; }}
+                        onFocus={(e) => { e.currentTarget.style.background = T.white; e.currentTarget.style.border = "1px solid #a67c3d"; e.currentTarget.style.boxShadow = "var(--shadow-focus)"; }}
                         onBlur={(e) => { e.currentTarget.style.background = T.surfLow; e.currentTarget.style.border = `1px solid ${T.outline}`; e.currentTarget.style.boxShadow = "none"; }}
                       />
                       <button type="button" onClick={() => setShowPw((v) => !v)} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 4 }}>
@@ -161,7 +161,7 @@ export default function ResetPasswordPage() {
 
                   {/* Confirm Password */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <label htmlFor="confirm" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: T.muted }}>{isRTL ? "تأكيد كلمة المرور" : "Confirm Password"}</label>
+                    <label htmlFor="confirm" style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.muted }}>{isRTL ? "تأكيد كلمة المرور" : "Confirm Password"}</label>
                     <input
                       id="confirm" type="password" required autoComplete="new-password"
                       placeholder={isRTL ? "أعد إدخال كلمة المرور" : "Repeat your password"} value={confirm} onChange={(e) => setConfirm(e.target.value)}

@@ -22,7 +22,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useWorkspaceStore } from "@/store/workspace-store";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 
 const navItems = [
   { id: "dashboard", icon: LayoutDashboard, href: "/" },
@@ -78,11 +78,11 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       <div style={{ padding: "36px 24px 32px", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
           <h1
-            style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: "0.012em", color: "#091135", lineHeight: 1 }}
+            style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: "0.012em", color: "#1c1611", lineHeight: 1 }}
           >
             Halaqy
           </h1>
-          <p style={{ fontSize: 9, fontWeight: 700, color: "#36394a", textTransform: "uppercase", letterSpacing: "0.22em", marginTop: 8 }}>
+          <p style={{ fontSize: 9, fontWeight: 700, color: "#5a5147", textTransform: "uppercase", letterSpacing: "0.22em", marginTop: 8 }}>
             Digital Atelier
           </p>
         </div>
@@ -125,10 +125,10 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                 display: "flex", alignItems: "center", gap: 12,
                 padding: "13px 16px", borderRadius: 8,
                 textDecoration: "none", fontSize: 13, fontWeight: 600,
-                letterSpacing: "0.01em",
+                letterSpacing: headingTracking(isRTL, "0.01em"),
                 transition: "all 0.2s",
-                background: isActive ? "#f5f3ff" : "transparent",
-                color: isActive ? "#091135" : "#36394a",
+                background: isActive ? "#f7f1e4" : "transparent",
+                color: isActive ? "#1c1611" : "#5a5147",
               }}
             >
               <item.icon size={18} style={{ flexShrink: 0 }} />
@@ -141,7 +141,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       {/* Book Appointment CTA + Sign Out */}
       <div style={{ padding: "24px 20px 32px", marginTop: "auto" }}>
         {/* Divider line */}
-        <div style={{ height: 1, background: "#e1e9f0", marginBottom: 20 }} />
+        <div style={{ height: 1, background: "#ede3cd", marginBottom: 20 }} />
         <Link
           href={`/${locale}/calendar`}
           onClick={onClose}
@@ -156,9 +156,9 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             width: "100%", height: 40,
-            borderRadius: 8, border: "1px solid #e1e9f0",
+            borderRadius: 8, border: "1px solid #ede3cd",
             background: "transparent", fontSize: 13, fontWeight: 600,
-            color: "#36394a", cursor: "pointer",
+            color: "#5a5147", cursor: "pointer",
             transition: "all 0.15s",
           }}
           onMouseEnter={(e) => {
@@ -167,8 +167,8 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
             (e.currentTarget as HTMLButtonElement).style.background = "rgba(186,26,26,0.08)";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.color = "#36394a";
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "#e1e9f0";
+            (e.currentTarget as HTMLButtonElement).style.color = "#5a5147";
+            (e.currentTarget as HTMLButtonElement).style.borderColor = "#ede3cd";
             (e.currentTarget as HTMLButtonElement).style.background = "transparent";
           }}
         >
@@ -192,7 +192,7 @@ export function Sidebar() {
           "hidden lg:flex fixed inset-y-0 z-40 w-72 bg-[var(--bg-primary)] border-e border-[var(--border-primary)] flex-col pt-20 transition-all",
           "start-0"
         )}
-        style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#e1e9f0" }}
+        style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#ede3cd" }}
       >
         <SidebarContent />
       </aside>
@@ -216,7 +216,7 @@ export function Sidebar() {
                 "fixed inset-y-0 z-50 w-72 bg-[var(--bg-primary)] border-e border-[var(--border-primary)] flex flex-col",
                 "start-0"
               )}
-              style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#e1e9f0" }}
+              style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#ede3cd" }}
             >
               <SidebarContent onClose={() => setMobileSidebarOpen(false)} />
             </motion.aside>

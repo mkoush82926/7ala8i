@@ -7,7 +7,7 @@ import {
   Mail, Phone, ShieldCheck, Clock,
   X, Check, UserMinus, Copy, MessageCircle
 } from "lucide-react";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
@@ -27,15 +27,15 @@ interface TeamMember {
 }
 
 const avatarColors = [
-  { bg: "#f5f3ff", text: "#091135" },
-  { bg: "#e1e9f0", text: "#091135" },
-  { bg: "#091135", text: "#ffffff" },
-  { bg: "#b1bbcd", text: "#091135" },
-  { bg: "#36394a", text: "#ffffff" },
+  { bg: "#f7f1e4", text: "#1c1611" },
+  { bg: "#ede3cd", text: "#1c1611" },
+  { bg: "#1c1611", text: "#ffffff" },
+  { bg: "#a89e8c", text: "#1c1611" },
+  { bg: "#5a5147", text: "#ffffff" },
 ];
 
 export default function TeamPage() {
-  const { t, isRTL } = useTranslation();
+  const { t, isRTL, FF } = useTranslation();
   const { shopId } = useWorkspaceStore();
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -137,7 +137,7 @@ export default function TeamPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div>
-            <h2 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "0.016em", color: "var(--text-primary)", margin: 0 }}>
+            <h2 style={{ fontFamily: FF, fontSize: 28, fontWeight: 800, letterSpacing: headingTracking(isRTL, "0.016em"), color: "var(--text-primary)", margin: 0 }}>
               {isRTL ? "فريق العمل" : "Team & Staff"}
             </h2>
             <p style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 6, fontWeight: 400 }}>
@@ -658,7 +658,7 @@ function BarberServicesChecklist({ barber, services, onClose, onSaveSuccess, isR
               onClick={() => toggleService(s.id)}
               className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                 isSelected
-                  ? "border-[#091135]/20 bg-[var(--bg-secondary)]"
+                  ? "border-[#1c1611]/20 bg-[var(--bg-secondary)]"
                   : "border-[var(--border-primary)] hover:border-[var(--border-hover)]"
               }`}
             >

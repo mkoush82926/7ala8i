@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
-import { useTranslation, FONT_EN, FONT_AR } from "@/hooks/use-translation";
+import { useTranslation, headingTracking, FONT_EN, FONT_AR } from "@/hooks/use-translation";
 
 type UserType = "shop_admin" | "customer" | "barber";
 
@@ -31,27 +31,27 @@ const roles: { id: UserType; icon: string; title: string; desc: string }[] = [
   },
 ];
 
-const inputStyle = (isFocused = false): React.CSSProperties => ({
+const inputStyle = (isFocused = false, font: string = FONT_EN): React.CSSProperties => ({
   width: "100%",
   height: 56,
   padding: "0 20px",
   borderRadius: 8,
-  border: isFocused ? "1px solid #0f77ff" : "1px solid #e1e9f0",
+  border: isFocused ? "1px solid #a67c3d" : "1px solid #ede3cd",
   background: "#ffffff",
-  color: "#091135",
+  color: "#1c1611",
   fontSize: 14,
-  fontFamily: "var(--font-intervar),'Segoe UI',system-ui,sans-serif",
+  fontFamily: font,
   outline: "none",
   transition: "all 0.2s ease",
   boxShadow: isFocused ? "var(--shadow-focus)" : "none",
 });
 
-function StyledInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+function StyledInput({ font, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { font?: string }) {
   const [focused, setFocused] = useState(false);
   return (
     <input
       {...props}
-      style={inputStyle(focused)}
+      style={inputStyle(focused, font)}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
     />
@@ -158,14 +158,14 @@ export default function SignupPage() {
     <nav className="auth-nav"
       style={{
         background: "#ffffff",
-        borderBottom: "1px solid #e1e9f0",
+        borderBottom: "1px solid #ede3cd",
       }}
     >
-      <Link href="/landing" style={{ fontSize: 20, fontWeight: 800, color: "#091135", letterSpacing: "0.01em", fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", textDecoration: "none" }}>
+      <Link href="/landing" style={{ fontSize: 20, fontWeight: 800, color: "#1c1611", letterSpacing: "0.01em", fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", textDecoration: "none" }}>
         Halaqy
       </Link>
       <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-        <button style={{ background: "none", border: "none", cursor: "pointer", color: "#36394a" }}>
+        <button style={{ background: "none", border: "none", cursor: "pointer", color: "#5a5147" }}>
           <span className="material-symbols-outlined" style={{ fontSize: 20 }}>language</span>
         </button>
         <Link href="/auth/login" className="btn btn-secondary" style={{ borderRadius: 9999, minHeight: 36, padding: "0 16px", fontSize: 12 }}>
@@ -186,16 +186,16 @@ export default function SignupPage() {
             style={{ maxWidth: 480, width: "100%", textAlign: "center" }}
           >
             <div className="auth-card" style={{
-              background: "#ffffff", borderRadius: 12, border: "1px solid #e1e9f0",
+              background: "#ffffff", borderRadius: 12, border: "1px solid #ede3cd",
             }}>
-              <div style={{ width: 56, height: 56, background: "#0f77ff", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 32px" }}>
+              <div style={{ width: 56, height: 56, background: "#a67c3d", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 32px" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#fff", fontVariationSettings: "'FILL' 1" }}>check</span>
               </div>
-              <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "0.012em", color: "#091135", marginBottom: 12, fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif" }}>
+              <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "0.012em", color: "#1c1611", marginBottom: 12, fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif" }}>
                 Check your email
               </h2>
-              <p style={{ color: "#36394a", fontSize: 14, fontWeight: 300, lineHeight: 1.7, marginBottom: 40 }}>
-                We&apos;ve sent a confirmation link to <strong style={{ color: "#091135" }}>{email}</strong>. Click the link to activate your account.
+              <p style={{ color: "#5a5147", fontSize: 14, fontWeight: 300, lineHeight: 1.7, marginBottom: 40 }}>
+                We&apos;ve sent a confirmation link to <strong style={{ color: "#1c1611" }}>{email}</strong>. Click the link to activate your account.
               </p>
               <Link href="/auth/login" className="btn btn-primary" style={{ minHeight: 52, padding: "0 32px", width: "100%" }}>
                 Back to Sign In
@@ -209,7 +209,7 @@ export default function SignupPage() {
 
 
   return (
-    <div style={{ minHeight: "100dvh", background: "#ffffff", color: "#091135", fontFamily: FF, direction: dir, display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100dvh", background: "#ffffff", color: "#1c1611", fontFamily: FF, direction: dir, display: "flex", flexDirection: "column" }}>
       {navBar}
 
       {/* Step 1 — Role Selection */}
@@ -221,10 +221,10 @@ export default function SignupPage() {
             transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
             style={{ textAlign: "center", marginBottom: 72, maxWidth: 640 }}
           >
-            <h1 style={{ fontSize: 48, fontWeight: 300, fontFamily: FF, letterSpacing: "0.016em", color: "#091135", marginBottom: 20 }}>
+            <h1 style={{ fontSize: 48, fontWeight: 300, fontFamily: FF, letterSpacing: headingTracking(isRTL, "0.016em"), color: "#1c1611", marginBottom: 20 }}>
               {isRTL ? "كيف ستستخدم حلاقي؟" : "How will you use Halaqy?"}
             </h1>
-            <p style={{ color: "#36394a", fontSize: 18, fontWeight: 300, maxWidth: 400, margin: "0 auto" }}>
+            <p style={{ color: "#5a5147", fontSize: 18, fontWeight: 300, maxWidth: 400, margin: "0 auto" }}>
               Select the role that best describes your daily operations and goals.
             </p>
           </motion.div>
@@ -239,21 +239,21 @@ export default function SignupPage() {
                 onClick={() => { setSelectedRole(role.id); setStep("form"); }}
                 style={{
                   display: "flex", flexDirection: "column", padding: 48,
-                  border: "1px solid #e1e9f0", borderRadius: 12, textAlign: "left",
+                  border: "1px solid #ede3cd", borderRadius: 12, textAlign: "left",
                   background: "#ffffff", cursor: "pointer",
                   transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#0f77ff"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e1e9f0"; e.currentTarget.style.transform = "none"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#a67c3d"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#ede3cd"; e.currentTarget.style.transform = "none"; }}
               >
                 <div style={{ marginBottom: 56 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 30, color: "#36394a" }}>{role.icon}</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 30, color: "#5a5147" }}>{role.icon}</span>
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18, fontWeight: 600, color: "#091135", marginBottom: 12 }}>{role.title}</h3>
-                  <p style={{ fontSize: 14, color: "#36394a", fontWeight: 300, lineHeight: 1.7 }}>{role.desc}</p>
+                  <h3 style={{ fontSize: 18, fontWeight: 600, color: "#1c1611", marginBottom: 12 }}>{role.title}</h3>
+                  <p style={{ fontSize: 14, color: "#5a5147", fontWeight: 300, lineHeight: 1.7 }}>{role.desc}</p>
                 </div>
-                <div style={{ marginTop: 40, display: "flex", alignItems: "center", color: "#091135", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em" }}>
+                <div style={{ marginTop: 40, display: "flex", alignItems: "center", color: "#1c1611", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em" }}>
                   Select{" "}
                   <span className="material-symbols-outlined" style={{ fontSize: 14, marginLeft: 8 }}>arrow_forward</span>
                 </div>
@@ -262,9 +262,9 @@ export default function SignupPage() {
           </div>
 
           <div style={{ marginTop: 64, textAlign: "center" }}>
-            <p style={{ fontSize: 14, color: "#36394a", fontWeight: 300 }}>
+            <p style={{ fontSize: 14, color: "#5a5147", fontWeight: 300 }}>
               {t.auth.haveAccount}{" "}
-              <Link href="/auth/login" style={{ color: "#091135", fontWeight: 600, marginLeft: 4, textDecoration: "none", borderBottom: "1px solid #e1e9f0" }}>
+              <Link href="/auth/login" style={{ color: "#1c1611", fontWeight: 600, marginLeft: 4, textDecoration: "none", borderBottom: "1px solid #ede3cd" }}>
                 {t.auth.signInBtn}
               </Link>
             </p>
@@ -284,68 +284,68 @@ export default function SignupPage() {
             <button
               onClick={() => setStep("role")}
               className="nav-link"
-              style={{ color: "#36394a", marginBottom: 40 }}
+              style={{ color: "#5a5147", marginBottom: 40 }}
             >
               <ArrowLeft size={16} />
               Back
             </button>
 
             <div style={{ marginBottom: 40 }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 9999, background: "#f5f3ff", marginBottom: 20 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#091135" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 9999, background: "#f7f1e4", marginBottom: 20 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#1c1611" }}>
                   {roles.find((r) => r.id === selectedRole)?.icon}
                 </span>
-                <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#091135" }}>
+                <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.1em"), color: "#1c1611" }}>
                   {roles.find((r) => r.id === selectedRole)?.title}
                 </span>
               </div>
-              <h1 style={{ fontSize: 40, fontWeight: 800, fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", letterSpacing: "0.014em", color: "#091135", marginBottom: 10 }}>
+              <h1 style={{ fontSize: 40, fontWeight: 800, fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", letterSpacing: headingTracking(isRTL, "0.014em"), color: "#1c1611", marginBottom: 10 }}>
                 {t.auth.createYourAccount}
               </h1>
-              <p style={{ color: "#36394a", fontSize: 15, fontWeight: 300 }}>{t.auth.joinHalaqy}</p>
+              <p style={{ color: "#5a5147", fontSize: 15, fontWeight: 300 }}>{t.auth.joinHalaqy}</p>
             </div>
 
             <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
 
               {/* Full Name */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#36394a" }}>
+                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
                   {t.auth.fullName}
                 </label>
-                <StyledInput type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t.auth.fullName} required />
+                <StyledInput type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t.auth.fullName} required font={FF} />
               </div>
 
               {/* Shop Name (admin only) */}
               {selectedRole === "shop_admin" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#36394a" }}>
+                  <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
                     {t.auth.shopName}
                   </label>
-                  <StyledInput type="text" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder={t.auth.shopName} required />
+                  <StyledInput type="text" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder={t.auth.shopName} required font={FF} />
                 </div>
               )}
 
               {/* Phone (customer only) */}
               {selectedRole === "customer" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#36394a" }}>
+                  <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
                     {t.booking.phoneNumber}
                   </label>
-                  <StyledInput type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+962 7X XXX XXXX" />
+                  <StyledInput type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+962 7X XXX XXXX" font={FF} />
                 </div>
               )}
 
               {/* Email */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#36394a" }}>
+                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
                   {t.auth.emailAddress}
                 </label>
-                <StyledInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@domain.com" required />
+                <StyledInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@domain.com" required font={FF} />
               </div>
 
               {/* Password */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#36394a" }}>
+                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
                   {t.auth.password}
                 </label>
                 <div style={{ position: "relative" }}>
@@ -356,12 +356,13 @@ export default function SignupPage() {
                     placeholder={t.auth.passwordRules}
                     required
                     minLength={8}
-                    style={{ ...inputStyle(), paddingRight: 48 }}
+                    font={FF}
+                    style={{ ...inputStyle(false, FF), paddingRight: 48 }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#b1bbcd", display: "flex", alignItems: "center" }}
+                    style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#a89e8c", display: "flex", alignItems: "center" }}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -370,7 +371,7 @@ export default function SignupPage() {
 
               {/* Confirm Password */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "#36394a" }}>
+                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
                   {isRTL ? "تأكيد كلمة المرور" : "Confirm Password"}
                 </label>
                 <input
@@ -381,8 +382,8 @@ export default function SignupPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder={isRTL ? "أعد إدخال كلمة المرور" : "Repeat your password"}
                   style={{
-                    ...inputStyle(),
-                    border: confirmPassword && confirmPassword !== password ? "1px solid #ba1a1a" : inputStyle().border,
+                    ...inputStyle(false, FF),
+                    border: confirmPassword && confirmPassword !== password ? "1px solid #ba1a1a" : inputStyle(false, FF).border,
                   }}
                 />
                 {confirmPassword && confirmPassword !== password && (
@@ -414,9 +415,9 @@ export default function SignupPage() {
             </form>
 
             <div style={{ marginTop: 32, textAlign: "center" }}>
-              <p style={{ fontSize: 13, color: "#36394a" }}>
+              <p style={{ fontSize: 13, color: "#5a5147" }}>
                 {t.auth.haveAccount}{" "}
-                <Link href="/auth/login" style={{ color: "#091135", fontWeight: 700, marginLeft: 4, textDecoration: "none" }}>
+                <Link href="/auth/login" style={{ color: "#1c1611", fontWeight: 700, marginLeft: 4, textDecoration: "none" }}>
                   {t.auth.signInBtn}
                 </Link>
               </p>
@@ -425,8 +426,8 @@ export default function SignupPage() {
         </main>
       )}
 
-      <footer className="auth-footer" style={{ borderTop: "1px solid #e1e9f0" }}>
-        <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: "#b1bbcd" }}>
+      <footer className="auth-footer" style={{ borderTop: "1px solid #ede3cd" }}>
+        <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: "#a89e8c" }}>
           © 2026 Halaqy Digital.
         </p>
       </footer>

@@ -19,14 +19,14 @@ export default function GlobalError({
             padding: 32,
             textAlign: "center",
             background: "#ffffff",
-            color: "#091135",
+            color: "#1c1611",
           }}
         >
           <div style={{ maxWidth: 400 }}>
             <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>
               Something went wrong
             </h2>
-            <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 24, color: "#36394a" }}>
+            <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 24, color: "#5a5147" }}>
               {error.message || "An unexpected error occurred. Please try again."}
             </p>
             <button
@@ -35,7 +35,7 @@ export default function GlobalError({
                 height: 44,
                 padding: "0 24px",
                 borderRadius: 8,
-                background: "#127ee3",
+                background: "#7c4a1e",
                 color: "#ffffff",
                 fontWeight: 600,
                 fontSize: 14,

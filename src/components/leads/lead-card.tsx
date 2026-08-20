@@ -43,7 +43,7 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
         ...style,
         // Practice #1 — contrast card from background
         background: "#ffffff",
-        border: "1px solid #e1e9f0",
+        border: "1px solid #ede3cd",
         borderRadius: 12,
         padding: "16px",          // Practice #3 — 16px = 4×4 base unit
         cursor: "pointer",
@@ -60,13 +60,13 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
       // Hover handled via onMouseEnter/Leave for inline-style compat
       onMouseEnter={(e) => {
         if (!isDragging) {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "#e1e9f0";
+          (e.currentTarget as HTMLDivElement).style.borderColor = "#ede3cd";
           (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
         }
       }}
       onMouseLeave={(e) => {
         if (!isDragging) {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "#e1e9f0";
+          (e.currentTarget as HTMLDivElement).style.borderColor = "#ede3cd";
           (e.currentTarget as HTMLDivElement).style.transform = "";
         }
       }}
@@ -91,7 +91,7 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
         onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.opacity = "1"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.opacity = "0"; }}
       >
-        <GripVertical size={14} style={{ color: "#36394a" }} />
+        <GripVertical size={14} style={{ color: "#5a5147" }} />
       </div>
 
       {/* Lead Info */}
@@ -100,7 +100,7 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
         <div
           style={{
             width: 36, height: 36, borderRadius: "50%",
-            background: "#f5f3ff", color: "#091135",
+            background: "#f7f1e4", color: "#1c1611",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: "var(--font-intervar), sans-serif",
             // Practice #2 — font size ≥ 12px for avatars
@@ -115,7 +115,7 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
             // Practice #2 — 14px name with bold weight
-            fontSize: 14, fontWeight: 700, color: "#091135",
+            fontSize: 14, fontWeight: 700, color: "#1c1611",
             fontFamily: "var(--font-intervar), sans-serif",
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             margin: 0, lineHeight: 1.4,
@@ -125,7 +125,7 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
           {lead.notes && (
             <p style={{
               // Practice #2 — notes 2px less than name
-              fontSize: 12, color: "#36394a", marginTop: 2,
+              fontSize: 12, color: "#5a5147", marginTop: 2,
               whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
               lineHeight: 1.5,
             }}>
@@ -134,7 +134,7 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
           )}
         </div>
 
-        <ChevronRight size={15} style={{ color: "#e1e9f0", flexShrink: 0 }} />
+        <ChevronRight size={15} style={{ color: "#ede3cd", flexShrink: 0 }} />
       </div>
 
       {/* Meta Row — Practice #6: content variation handled gracefully */}
@@ -142,13 +142,13 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
         <div style={{
           display: "flex", alignItems: "center", gap: 12,
           marginTop: 12, paddingTop: 12,
-          borderTop: "1px solid #e1e9f0",  // subtle separator
+          borderTop: "1px solid #ede3cd",  // subtle separator
         }}>
           {lead.phone && (
             <div style={{
               display: "flex", alignItems: "center", gap: 4,
               // Practice #2 — meta 11px
-              fontSize: 11, color: "#36394a", fontWeight: 500,
+              fontSize: 11, color: "#5a5147", fontWeight: 500,
             }}>
               <Phone size={10} />
               <span style={{ fontVariantNumeric: "tabular-nums" }}>
@@ -159,7 +159,7 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
           {lead.value && (
             <div style={{
               display: "flex", alignItems: "center", gap: 4,
-              fontSize: 11, fontWeight: 700, color: "#091135",
+              fontSize: 11, fontWeight: 700, color: "#1c1611",
             }}>
               <DollarSign size={10} />
               <span style={{ fontVariantNumeric: "tabular-nums" }}>
@@ -168,7 +168,7 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
             </div>
           )}
           <span style={{
-            fontSize: 10, color: "#b1bbcd",
+            fontSize: 10, color: "#a89e8c",
             marginLeft: "auto",
           }}>
             {lead.createdAt}
@@ -188,7 +188,7 @@ export function LeadCardOverlay({ lead }: { lead: Lead }) {
       style={{
         borderRadius: 12, padding: 16,
         background: "#ffffff",
-        border: "1px solid rgba(9,17,53,0.15)",
+        border: "1px solid rgba(28,22,17,0.15)",
         boxShadow: "none",
         width: 284,
       }}
@@ -197,7 +197,7 @@ export function LeadCardOverlay({ lead }: { lead: Lead }) {
         <div
           style={{
             width: 36, height: 36, borderRadius: "50%",
-            background: "#091135", color: "#ffffff",
+            background: "#1c1611", color: "#ffffff",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: "var(--font-intervar), sans-serif", fontSize: 12, fontWeight: 700,
             flexShrink: 0,
@@ -206,11 +206,11 @@ export function LeadCardOverlay({ lead }: { lead: Lead }) {
           {lead.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: "#091135", margin: 0 }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: "#1c1611", margin: 0 }}>
             {lead.name}
           </p>
           {lead.notes && (
-            <p style={{ fontSize: 12, color: "#36394a", marginTop: 2 }}>
+            <p style={{ fontSize: 12, color: "#5a5147", marginTop: 2 }}>
               {lead.notes}
             </p>
           )}

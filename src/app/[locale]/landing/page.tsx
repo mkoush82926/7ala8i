@@ -6,22 +6,22 @@ import { useRef } from "react";
 import { useInView } from "framer-motion";
 import Link from "next/link";
 import { useThemeStore } from "@/store/theme-store";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, headingTracking, FONT_EN_DISPLAY } from "@/hooks/use-translation";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Design tokens ("Data Observatory on Cloud Paper") ───
 const T = {
-  black:   "#091135", // Midnight Ink — structural dark ink (was pure black)
+  black:   "#1c1611", // Midnight Ink — structural dark ink (was pure black)
   white:   "#ffffff", // Paper
-  dark:    "#091135", // Midnight Ink
-  mid:     "#36394a", // Slate — secondary/muted text
-  muted:   "#36394a", // Slate
-  outline: "#e1e9f0", // Frost Border
+  dark:    "#1c1611", // Midnight Ink
+  mid:     "#5a5147", // Slate — secondary/muted text
+  muted:   "#5a5147", // Slate
+  outline: "#ede3cd", // Frost Border
   surf:    "#ffffff", // Paper
-  surfLow: "#f5f3ff", // Lavender Wash — section-level tint zone
-  surfCont:"#e1e9f0", // Frost Border
-  surfHigh:"#e1e9f0", // Frost Border
+  surfLow: "#f7f1e4", // Lavender Wash — section-level tint zone
+  surfCont:"#ede3cd", // Frost Border
+  surfHigh:"#ede3cd", // Frost Border
 };
 
 function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
@@ -40,7 +40,7 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 }
 
 export default function LandingPage() {
-  const { FF, dir, isRTL, locale } = useTranslation();
+  const { FF, FFD, dir, isRTL, locale } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -130,7 +130,7 @@ export default function LandingPage() {
       {/* ═══ NAVBAR ═══ */}
       <nav className="landing-nav" style={{ borderBottom: `1px solid ${T.outline}33` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 48 }}>
-          <span style={{ fontFamily: FF, fontSize: 20, fontWeight: 800, letterSpacing: "0.008em", color: T.dark }}>
+          <span dir="ltr" style={{ fontFamily: FONT_EN_DISPLAY, fontSize: 20, fontWeight: 700, letterSpacing: "0.008em", color: T.dark }}>
             Halaqy.
           </span>
           <div className="hidden md:flex" style={{ alignItems: "center", gap: 32 }}>
@@ -138,7 +138,7 @@ export default function LandingPage() {
               <Link
                 key={item.label}
                 href={item.href}
-                style={{ fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: T.mid, textDecoration: "none" }}
+                style={{ fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.05em"), color: T.mid, textDecoration: "none" }}
               >
                 {item.label}
               </Link>
@@ -151,7 +151,7 @@ export default function LandingPage() {
             className="nav-link"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>language</span>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em" }}>{isRTL ? "EN" : "عربي"}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: isRTL ? "0.15em" : "normal" }}>{isRTL ? "EN" : "عربي"}</span>
           </button>
           <Link
             href={ctaHref}
@@ -194,7 +194,7 @@ export default function LandingPage() {
               key={item.label}
               href={item.href}
               onClick={() => setMobileMenuOpen(false)}
-              style={{ fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em", color: T.mid, textDecoration: "none" }}
+              style={{ fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.05em"), color: T.mid, textDecoration: "none" }}
             >
               {item.label}
             </Link>
@@ -206,7 +206,7 @@ export default function LandingPage() {
             style={{ alignSelf: "flex-start" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>language</span>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em" }}>{isRTL ? "EN" : "عربي"}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: isRTL ? "0.15em" : "normal" }}>{isRTL ? "EN" : "عربي"}</span>
           </button>
           <Link
             href={ctaHref}
@@ -236,19 +236,19 @@ export default function LandingPage() {
               marginBottom: 32,
             }}>
               <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>verified</span>
-              <span style={{ fontWeight: 900, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em" }}>
+              <span style={{ fontWeight: 900, fontSize: 10, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.15em") }}>
                 {isRTL ? "المعيار الرائد في الأردن" : "Jordan's Standard for Barbers"}
               </span>
             </div>
 
             <h1 style={{
-              fontFamily: FF, fontWeight: 800,
+              fontFamily: FFD, fontWeight: 800,
               fontSize: "clamp(3rem, 5.5vw, 5rem)",
-              lineHeight: 1, letterSpacing: "0.018em",
+              lineHeight: 1, letterSpacing: headingTracking(isRTL, "0.018em"),
               color: T.dark, marginBottom: 40,
             }}>
               {isRTL ? (
-                <>مستقبل إدارة <span style={{ color: T.mid }}>الحِرَف</span></>
+                <>مستقبل إدارة <span style={{ color: T.mid }}>الحرف</span></>
               ) : (
                 <>The Future of <span style={{ color: T.mid }}>Craft</span> Management</>
               )}
@@ -256,7 +256,7 @@ export default function LandingPage() {
 
             <p style={{ fontSize: 18, color: T.mid, fontWeight: 300, lineHeight: 1.7, maxWidth: 480, marginBottom: 48 }}>
               {isRTL
-                ? "ارتقِ بمشغلك مع الحجز والتحليلات وإدارة العملاء المُعادة تصورها للعصر الحديث."
+                ? "ارتق بمشغلك مع الحجز والتحليلات وإدارة العملاء المعادة تصورها للعصر الحديث."
                 : "Elevate your atelier with booking, analytics, and CRM reimagined for the modern era."}
             </p>
 
@@ -290,10 +290,10 @@ export default function LandingPage() {
               {/* Revenue Card */}
               <div style={{ gridColumn: "1 / -1", background: T.white, padding: 32, borderRadius: 12, border: `1px solid ${T.surfCont}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
-                  <h3 style={{ fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.15em", color: T.mid, margin: 0 }}>
+                  <h3 style={{ fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.15em"), color: T.mid, margin: 0 }}>
                     {isRTL ? "الإيرادات" : "Revenue"}
                   </h3>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#0f77ff", letterSpacing: "0.1em" }}>+12.4%</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#a67c3d", letterSpacing: "0.1em" }}>+12.4%</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 160 }}>
                   {[50, 75, 65, 100, 50, 80, 100].map((h, i) => (
@@ -309,17 +309,17 @@ export default function LandingPage() {
               </div>
 
               {/* Bookings Card */}
-              <div style={{ background: "#091135", padding: 32, borderRadius: 12, color: T.white }}>
+              <div style={{ background: "#1c1611", padding: 32, borderRadius: 12, color: T.white }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 24, marginBottom: 16, display: "block", opacity: 0.5 }}>calendar_month</span>
-                <div style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.2em", opacity: 0.4, marginTop: 4 }}>
+                <div style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), opacity: 0.4, marginTop: 4 }}>
                   {isRTL ? "حجز" : "Bookings"}
                 </div>
               </div>
 
               {/* Rating Card */}
               <div style={{ background: T.white, padding: 32, borderRadius: 12, border: `1px solid ${T.surfCont}` }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 24, marginBottom: 16, display: "block", color: "#0f77ff", fontVariationSettings: "'FILL' 1" }}>star</span>
-                <div style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.2em", color: T.mid, opacity: 0.6, marginTop: 4 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 24, marginBottom: 16, display: "block", color: "#a67c3d", fontVariationSettings: "'FILL' 1" }}>star</span>
+                <div style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.mid, opacity: 0.6, marginTop: 4 }}>
                   {isRTL ? "تقييم" : "Rating"}
                 </div>
               </div>
@@ -335,7 +335,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
           <Reveal>
             <div style={{ marginBottom: 96 }}>
-              <h2 style={{ fontFamily: FF, fontWeight: 800, fontSize: "clamp(1.8rem, 3vw, 2.6rem)", letterSpacing: "0.014em", color: T.dark, marginBottom: 24 }}>
+              <h2 style={{ fontFamily: FFD, fontWeight: 800, fontSize: "clamp(1.8rem, 3vw, 2.6rem)", letterSpacing: headingTracking(isRTL, "0.014em"), color: T.dark, marginBottom: 24 }}>
                 {isRTL ? "أدوات مصقولة لمحترفين مصقولين." : "Refined tools for refined masters."}
               </h2>
               <p style={{ color: T.mid, fontSize: 18, fontWeight: 300, lineHeight: 1.7, maxWidth: 500 }}>
@@ -353,7 +353,7 @@ export default function LandingPage() {
                   <div style={{ marginBottom: 32, borderBottom: `2px solid ${T.surfCont}`, width: 40, height: 40, display: "flex", alignItems: "flex-end" }}>
                     <span className="material-symbols-outlined" style={{ fontSize: 20, color: T.black }}>{f.icon}</span>
                   </div>
-                  <h3 style={{ fontWeight: 800, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: T.dark, marginBottom: 16 }}>
+                  <h3 style={{ fontWeight: 800, fontSize: 11, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.1em"), color: T.dark, marginBottom: 16 }}>
                     {f.title}
                   </h3>
                   <p style={{ color: T.mid, fontSize: 14, lineHeight: 1.7, fontWeight: 300 }}>{f.desc}</p>
@@ -371,7 +371,7 @@ export default function LandingPage() {
             {/* Left sticky */}
             <Reveal>
               <div style={{ maxWidth: 400, position: "sticky", top: 160 }}>
-                <h2 style={{ fontFamily: FF, fontWeight: 800, fontSize: "clamp(1.8rem, 3vw, 2.6rem)", letterSpacing: "0.014em", color: T.dark, marginBottom: 32 }}>
+                <h2 style={{ fontFamily: FFD, fontWeight: 800, fontSize: "clamp(1.8rem, 3vw, 2.6rem)", letterSpacing: headingTracking(isRTL, "0.014em"), color: T.dark, marginBottom: 32 }}>
                   {isRTL ? "من الإعداد إلى النمو." : "From setup to growth."}
                 </h2>
                 <p style={{ color: T.mid, fontSize: 18, fontWeight: 300, lineHeight: 1.7, marginBottom: 48 }}>
@@ -394,7 +394,7 @@ export default function LandingPage() {
                       {step.num}
                     </div>
                     <div>
-                      <h4 style={{ fontFamily: FF, fontWeight: 700, fontSize: 16, textTransform: "uppercase", letterSpacing: "0.12em", color: T.dark, marginBottom: 16 }}>
+                      <h4 style={{ fontFamily: FF, fontWeight: 700, fontSize: 16, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.12em"), color: T.dark, marginBottom: 16 }}>
                         {step.title}
                       </h4>
                       <p style={{ color: T.mid, fontWeight: 300, lineHeight: 1.7 }}>{step.desc}</p>
@@ -408,11 +408,11 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ PRICING ═══ */}
-      <section id="pricing" className="landing-section" style={{ background: "#091135", color: T.white }}>
+      <section id="pricing" className="landing-section" style={{ background: "#1c1611", color: T.white }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <Reveal>
             <div style={{ textAlign: "center", marginBottom: 96 }}>
-              <h2 style={{ fontFamily: FF, fontWeight: 800, fontSize: "clamp(2rem, 4vw, 3rem)", letterSpacing: "0.016em", color: T.white, marginBottom: 16 }}>
+              <h2 style={{ fontFamily: FFD, fontWeight: 800, fontSize: "clamp(2rem, 4vw, 3rem)", letterSpacing: headingTracking(isRTL, "0.016em"), color: T.white, marginBottom: 16 }}>
                 {isRTL ? "تسعير شفاف." : "Honest Pricing."}
               </h2>
               <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 18, fontWeight: 300 }}>
@@ -422,7 +422,7 @@ export default function LandingPage() {
           </Reveal>
 
           <Reveal delay={0.1}>
-            <div style={{ padding: 64, borderRadius: 12, background: T.white, color: "#091135", position: "relative", overflow: "hidden" }}>
+            <div style={{ padding: 64, borderRadius: 12, background: T.white, color: "#1c1611", position: "relative", overflow: "hidden" }}>
               {/* Header row */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 48, marginBottom: 64, paddingBottom: 64, borderBottom: `1px solid ${T.surfCont}` }}>
                 <div>
@@ -431,7 +431,7 @@ export default function LandingPage() {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontFamily: FF, fontWeight: 900, fontSize: 52, letterSpacing: "0.018em", color: T.dark, lineHeight: 1 }}>1.5 JOD</div>
-                  <div style={{ fontWeight: 900, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", color: T.mid, opacity: 0.5, marginTop: 4 }}>
+                  <div style={{ fontWeight: 900, fontSize: 10, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.mid, opacity: 0.5, marginTop: 4 }}>
                     {isRTL ? "لكل حلاق / شهر" : "Per Barber / Mo"}
                   </div>
                 </div>
@@ -441,7 +441,7 @@ export default function LandingPage() {
               <div className="card-grid-2" style={{ marginBottom: 64 }}>
                 {pricingFeats.map((feat, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 20, color: "#0f77ff", fontVariationSettings: "'wght' 700" }}>check</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 20, color: "#a67c3d", fontVariationSettings: "'wght' 700" }}>check</span>
                     <span style={{ fontSize: 14, fontWeight: 500, color: T.dark }}>{feat}</span>
                   </div>
                 ))}
@@ -454,7 +454,7 @@ export default function LandingPage() {
               >
                 {isRTL ? "ابدأ تجربة 14 يوم" : "Initiate 14-Day Trial"}
               </Link>
-              <p style={{ textAlign: "center", marginTop: 32, fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", color: T.mid, opacity: 0.5 }}>
+              <p style={{ textAlign: "center", marginTop: 32, fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.mid, opacity: 0.5 }}>
                 {isRTL ? "لا يتطلب التزامًا." : "No commitment required."}
               </p>
             </div>
@@ -466,7 +466,7 @@ export default function LandingPage() {
       <footer className="landing-section" style={{ background: T.white, borderTop: `1px solid ${T.surfCont}` }}>
         <div className="landing-footer-grid" style={{ maxWidth: 1280, margin: "0 auto" }}>
           <div>
-            <span style={{ fontFamily: FF, fontSize: 18, fontWeight: 900, letterSpacing: "0.008em", color: T.dark }}>Halaqy.</span>
+            <span dir="ltr" style={{ fontFamily: FONT_EN_DISPLAY, fontSize: 18, fontWeight: 700, letterSpacing: "0.008em", color: T.dark }}>Halaqy.</span>
             <p style={{ marginTop: 24, fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", lineHeight: 2, color: T.mid }}>
               The Digital Standard.
             </p>
@@ -476,13 +476,13 @@ export default function LandingPage() {
               style={{ marginTop: 32 }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>language</span>
-              <span style={{ fontWeight: 900, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.2em" }}>{isRTL ? "EN / عربي" : "AR / EN"}</span>
+              <span style={{ fontWeight: 900, fontSize: 9, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em") }}>{isRTL ? "EN / عربي" : "AR / EN"}</span>
             </button>
           </div>
 
           {footerCols.map((col) => (
             <div key={col.title}>
-              <h5 style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.2em", color: T.black, marginBottom: 32 }}>
+              <h5 style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.black, marginBottom: 32 }}>
                 {col.title}
               </h5>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 20 }}>
