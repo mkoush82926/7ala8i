@@ -30,6 +30,7 @@ export function SettingsPage() {
   const [copied, setCopied] = useState(false);
   const { t, locale, isRTL } = useTranslation();
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const posterQrCanvasRef = useRef<HTMLCanvasElement>(null);
   const bookingLink =
     typeof window !== "undefined"
       ? `${window.location.origin}/${locale}/shop/${shopId}`
@@ -53,13 +54,13 @@ export function SettingsPage() {
     const supabase = createClient();
     const { data } = await supabase
       .from("shops")
-      .select("name, description, contact_email, whatsapp, daily_goal")
+      .select("name, description, email, whatsapp, daily_goal")
       .eq("id", shopId)
       .single();
     if (data) {
       setFormShopName(data.name ?? shopName);
       setFormDescription(data.description ?? "");
-      setFormEmail(data.contact_email ?? "");
+      setFormEmail(data.email ?? "");
       setFormWhatsapp(data.whatsapp ?? "");
       setFormDailyGoal(String(data.daily_goal ?? 120));
     }
@@ -83,7 +84,7 @@ export function SettingsPage() {
       .update({
         name: formShopName,
         description: formDescription,
-        contact_email: formEmail,
+        email: formEmail,
         whatsapp: formWhatsapp,
         daily_goal: Number(formDailyGoal) || 0,
       } as Record<string, unknown>)
@@ -104,6 +105,142 @@ export function SettingsPage() {
     const link = document.createElement("a");
     link.href = url;
     link.download = "booking-qr-code.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function roundedRectPath(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number,
+  ) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function fitFontSize(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    weight: number,
+    maxWidth: number,
+    startSize: number,
+    minSize: number,
+  ) {
+    let size = startSize;
+    while (size > minSize) {
+      ctx.font = `${weight} ${size}px sans-serif`;
+      if (ctx.measureText(text).width <= maxWidth) break;
+      size -= 1;
+    }
+    return size;
+  }
+
+  function handleDownloadPosterKit() {
+    const qrSource = posterQrCanvasRef.current;
+    if (!qrSource) return;
+
+    const W = 600;
+    const H = 900;
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const shopDisplayName = (formShopName || shopName || "Halaqy").trim();
+    const tagline = isRTL
+      ? "امسح رمز QR لحجز موعدك القادم"
+      : "Scan to book your next appointment";
+    const instruction = isRTL
+      ? "لا حاجة لتطبيق — يعمل بكاميرا أي هاتف"
+      : "No app needed — works with any phone camera";
+
+    // Background
+    ctx.fillStyle = C.white;
+    ctx.fillRect(0, 0, W, H);
+
+    // Outer border (print/cut guide)
+    ctx.strokeStyle = C.outline;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, W - 2, H - 2);
+
+    // Header bar
+    ctx.fillStyle = C.black;
+    ctx.fillRect(0, 0, W, 110);
+    ctx.fillStyle = C.white;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "800 28px sans-serif";
+    ctx.fillText("Halaqy", W / 2, 55);
+
+    // Shop name (auto-fit width)
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = C.dark;
+    const shopFontSize = fitFontSize(ctx, shopDisplayName, 800, 500, 34, 20);
+    ctx.font = `800 ${shopFontSize}px sans-serif`;
+    ctx.fillText(shopDisplayName, W / 2, 178);
+
+    // Tagline
+    ctx.fillStyle = C.mid;
+    ctx.font = "600 17px sans-serif";
+    ctx.fillText(tagline, W / 2, 212);
+
+    // QR container
+    const boxSize = 420;
+    const boxX = (W - boxSize) / 2;
+    const boxY = 250;
+    roundedRectPath(ctx, boxX, boxY, boxSize, boxSize, 16);
+    ctx.fillStyle = C.amber;
+    ctx.fill();
+    ctx.strokeStyle = C.outline;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const qrSize = 360;
+    const qrX = boxX + (boxSize - qrSize) / 2;
+    const qrY = boxY + (boxSize - qrSize) / 2;
+    ctx.drawImage(qrSource, qrX, qrY, qrSize, qrSize);
+
+    // Booking link
+    const linkFontSize = fitFontSize(ctx, bookingLink, 600, 500, 16, 11);
+    ctx.fillStyle = "#0f77ff";
+    ctx.font = `600 ${linkFontSize}px sans-serif`;
+    ctx.fillText(bookingLink, W / 2, 710);
+
+    // Divider
+    ctx.strokeStyle = C.outline;
+    ctx.beginPath();
+    ctx.moveTo(80, 750);
+    ctx.lineTo(W - 80, 750);
+    ctx.stroke();
+
+    // Instruction
+    ctx.fillStyle = C.mid;
+    ctx.font = "500 14px sans-serif";
+    ctx.fillText(instruction, W / 2, 792);
+
+    // Footer
+    ctx.fillStyle = "#b1bbcd";
+    ctx.font = "700 11px sans-serif";
+    ctx.fillText("© 2026 HALAQY DIGITAL", W / 2, 856);
+
+    const url = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.href = url;
+    const safeName = shopDisplayName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    link.download = `${safeName || "booking"}-print-kit.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -366,11 +503,20 @@ export function SettingsPage() {
               <div style={{ marginBottom: 24, padding: 16, background: C.surfaceLow, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <QRCodeCanvas ref={qrCanvasRef} value={bookingLink} size={128} />
               </div>
+              {/* Hidden higher-res QR source used only to compose the printable poster */}
+              <div style={{ display: "none" }}>
+                <QRCodeCanvas ref={posterQrCanvasRef} value={bookingLink} size={480} />
+              </div>
               <p style={{ fontWeight: 700, fontSize: 14, color: C.dark, margin: "0 0 4px" }}>{isRTL ? "رمز QR للحجز" : "Booking QR Code"}</p>
               <p style={{ fontSize: 11, color: C.mid, margin: "0 0 16px" }}>{isRTL ? "ضعه على مكتب الاستقبال" : "Place this at your reception desk"}</p>
-              <button className="btn btn-secondary" style={{ width: "100%" }} onClick={handleDownloadQr}>
-                {isRTL ? "تنزيل بدقة عالية" : "Download High-Res"}
-              </button>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
+                <button className="btn btn-secondary" style={{ width: "100%" }} onClick={handleDownloadQr}>
+                  {isRTL ? "تنزيل بدقة عالية" : "Download High-Res"}
+                </button>
+                <button className="btn btn-secondary" style={{ width: "100%" }} onClick={handleDownloadPosterKit}>
+                  {isRTL ? "تنزيل ملصق للطباعة" : "Download Print Kit"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

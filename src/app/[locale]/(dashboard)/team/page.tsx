@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import {
   UserPlus, Search, MoreVertical,
   Mail, Phone, ShieldCheck, Clock,
-  X, Check, UserMinus
+  X, Check, UserMinus, Copy, MessageCircle
 } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
@@ -86,13 +86,32 @@ export default function TeamPage() {
 
   const [editingBarber, setEditingBarber] = useState<TeamMember | null>(null);
   const [removingMember, setRemovingMember] = useState<TeamMember | null>(null);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [creatingInvite, setCreatingInvite] = useState(false);
 
   const filtered = teamMembers.filter((member) =>
     member.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleInvite = () => {
-    toast("info", isRTL ? "دعوات الفريق قيد التطوير قريبًا." : "Team invites are coming soon.");
+  const handleInvite = async () => {
+    setCreatingInvite(true);
+    try {
+      const res = await fetch("/api/invite/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "barber" }),
+      });
+      const body = await res.json();
+      if (!res.ok || !body.success) {
+        toast("error", body.error || (isRTL ? "فشل إنشاء رابط الدعوة." : "Failed to create invite link."));
+        return;
+      }
+      setInviteLink(body.data.url);
+    } catch {
+      toast("error", isRTL ? "حدث خطأ غير متوقع." : "Something went wrong.");
+    } finally {
+      setCreatingInvite(false);
+    }
   };
 
   const handleRemoveMember = async (member: TeamMember) => {
@@ -141,12 +160,13 @@ export default function TeamPage() {
               <button
                 className="btn btn-primary"
                 onClick={handleInvite}
-                disabled
-                title={isRTL ? "دعوات الفريق قيد التطوير قريبًا" : "Team invites are coming soon"}
-                style={{ minHeight: "40px", padding: "0 20px", opacity: 0.5, cursor: "not-allowed" }}
+                disabled={creatingInvite}
+                style={{ minHeight: "40px", padding: "0 20px" }}
               >
                 <UserPlus size={16} />
-                <span className="hidden sm:inline">{isRTL ? "دعوة عضو (قريبًا)" : "Invite Staff (Soon)"}</span>
+                <span className="hidden sm:inline">
+                  {creatingInvite ? (isRTL ? "جارٍ الإنشاء..." : "Creating...") : (isRTL ? "دعوة عضو" : "Invite Staff")}
+                </span>
               </button>
             )}
           </div>
@@ -241,6 +261,15 @@ export default function TeamPage() {
         />
       )}
 
+      {/* Invite link */}
+      {inviteLink && (
+        <InviteLinkModal
+          link={inviteLink}
+          onClose={() => setInviteLink(null)}
+          isRTL={isRTL}
+        />
+      )}
+
       {/* Remove confirmation */}
       <ConfirmDialog
         open={!!removingMember}
@@ -263,6 +292,78 @@ export default function TeamPage() {
         destructive
       />
     </motion.div>
+  );
+}
+
+function InviteLinkModal({ link, onClose, isRTL }: { link: string; onClose: () => void; isRTL: boolean }) {
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+      toast("success", isRTL ? "تم نسخ الرابط" : "Link copied to clipboard");
+    } catch {
+      toast("error", isRTL ? "تعذر نسخ الرابط" : "Couldn't copy the link");
+    }
+  };
+
+  const whatsappMessage = isRTL
+    ? `انضم إلى فريقنا على Halaqy: ${link}`
+    : `Join our team on Halaqy: ${link}`;
+  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+        className="w-full max-w-md bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-[var(--radius-xl)] p-6"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-[var(--text-primary)]">
+            {isRTL ? "دعوة عضو جديد" : "Invite a team member"}
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--bg-secondary)] text-[var(--text-muted)] transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <p className="text-sm text-[var(--text-secondary)] mb-4">
+          {isRTL
+            ? "شارك هذا الرابط مع الحلاق الجديد لينضم إلى فريقك. صالح لمدة 7 أيام."
+            : "Share this link with your new barber so they can join your team. Valid for 7 days."}
+        </p>
+
+        <div className="flex items-center gap-2 mb-4">
+          <input
+            readOnly
+            value={link}
+            onFocus={(e) => e.target.select()}
+            className="flex-1 h-10 px-3 rounded-[var(--radius-inputs)] bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-sm text-[var(--text-primary)] outline-none"
+          />
+          <button
+            onClick={handleCopy}
+            className="btn btn-secondary shrink-0"
+            style={{ minHeight: 40, padding: "0 16px" }}
+          >
+            <Copy size={16} />
+            <span className="hidden sm:inline">{isRTL ? "نسخ" : "Copy"}</span>
+          </button>
+        </div>
+
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-secondary w-full justify-center"
+        >
+          <MessageCircle size={16} />
+          {isRTL ? "مشاركة عبر واتساب" : "Share via WhatsApp"}
+        </a>
+      </motion.div>
+    </div>
   );
 }
 
@@ -355,12 +456,12 @@ function BarberSettingsModal({ editingBarber, shopServices, setEditingBarber, re
 }
 
 function BarberWorkingHoursManager({ barber, onClose, isRTL }: { barber: TeamMember, onClose: () => void, isRTL: boolean }) {
-  const [schedule, setSchedule] = useState<{ day_of_week: number; start_time: string; end_time: string; is_working: boolean; id?: string }[]>([]);
+  const [schedule, setSchedule] = useState<{ day_of_week: number; start_time: string; end_time: string; is_working: boolean; break_start: string | null; break_end: string | null; id?: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const supabase = createClient();
 
-  const daysLabels = isRTL 
+  const daysLabels = isRTL
     ? ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
     : ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -369,18 +470,48 @@ function BarberWorkingHoursManager({ barber, onClose, isRTL }: { barber: TeamMem
       .then(({ data }) => {
         const fullSchedule = Array.from({ length: 7 }).map((_, i) => {
           const existing = data?.find(d => d.day_of_week === i);
-          return existing || { day_of_week: i, start_time: "09:00:00", end_time: "18:00:00", is_working: true };
+          return existing
+            ? { ...existing, break_start: existing.break_start ?? null, break_end: existing.break_end ?? null }
+            : { day_of_week: i, start_time: "09:00:00", end_time: "18:00:00", is_working: true, break_start: null, break_end: null };
         });
         setSchedule(fullSchedule);
         setLoading(false);
       });
   }, [barber.id, supabase]);
 
-  const updateDay = (dayIndex: number, field: "start_time" | "end_time" | "is_working", value: string | boolean) => {
+  const updateDay = (
+    dayIndex: number,
+    field: "start_time" | "end_time" | "is_working" | "break_start" | "break_end",
+    value: string | boolean | null,
+  ) => {
     setSchedule(prev => prev.map(d => d.day_of_week === dayIndex ? { ...d, [field]: value } : d));
   };
 
   const handleSave = async () => {
+    // Validate any configured break before touching the network.
+    for (const d of schedule) {
+      if (!d.is_working || (!d.break_start && !d.break_end)) continue;
+
+      if (!d.break_start || !d.break_end) {
+        toast("error", isRTL
+          ? `يرجى تحديد وقتي بداية ونهاية الاستراحة في ${daysLabels[d.day_of_week]}`
+          : `Set both a start and end time for the break on ${daysLabels[d.day_of_week]}.`);
+        return;
+      }
+      if (d.break_end <= d.break_start) {
+        toast("error", isRTL
+          ? `يجب أن تنتهي الاستراحة بعد بدايتها (${daysLabels[d.day_of_week]}).`
+          : `The break must end after it starts (${daysLabels[d.day_of_week]}).`);
+        return;
+      }
+      if (d.break_start < d.start_time || d.break_end > d.end_time) {
+        toast("error", isRTL
+          ? `يجب أن تقع الاستراحة ضمن ساعات العمل (${daysLabels[d.day_of_week]}).`
+          : `The break must fall within working hours (${daysLabels[d.day_of_week]}).`);
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const inserts = schedule.map(d => ({
@@ -388,7 +519,9 @@ function BarberWorkingHoursManager({ barber, onClose, isRTL }: { barber: TeamMem
         day_of_week: d.day_of_week,
         start_time: d.start_time,
         end_time: d.end_time,
-        is_working: d.is_working
+        is_working: d.is_working,
+        break_start: d.break_start,
+        break_end: d.break_end,
       }));
       const { error } = await supabase.from("working_hours").upsert(inserts, { onConflict: "barber_id, day_of_week" });
       if (error) throw error;
@@ -407,33 +540,63 @@ function BarberWorkingHoursManager({ barber, onClose, isRTL }: { barber: TeamMem
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3">
         {schedule.map((day, i) => (
-          <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${day.is_working ? "border-[var(--border-primary)] bg-[var(--bg-secondary)]" : "border-[var(--border-primary)] bg-[var(--bg-primary)] opacity-60"}`}>
-            <div className="flex items-center gap-2 w-32">
-              <input 
-                type="checkbox" 
-                checked={day.is_working} 
-                onChange={(e) => updateDay(i, "is_working", e.target.checked)}
-                className="w-4 h-4 rounded appearance-none border border-[var(--border-primary)] checked:bg-[var(--accent-mint)] checked:border-[var(--accent-mint)] outline-none cursor-pointer transition-colors relative"
-              />
-              <span className={`text-sm font-medium ${!day.is_working ? "line-through text-[var(--text-muted)]" : "text-[var(--text-primary)]"}`}>
-                {daysLabels[i]}
-              </span>
+          <div key={i} className={`flex flex-col gap-2 p-3 rounded-lg border ${day.is_working ? "border-[var(--border-primary)] bg-[var(--bg-secondary)]" : "border-[var(--border-primary)] bg-[var(--bg-primary)] opacity-60"}`}>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 w-32">
+                <input
+                  type="checkbox"
+                  checked={day.is_working}
+                  onChange={(e) => updateDay(i, "is_working", e.target.checked)}
+                  className="w-4 h-4 rounded appearance-none border border-[var(--border-primary)] checked:bg-[var(--accent-mint)] checked:border-[var(--accent-mint)] outline-none cursor-pointer transition-colors relative"
+                />
+                <span className={`text-sm font-medium ${!day.is_working ? "line-through text-[var(--text-muted)]" : "text-[var(--text-primary)]"}`}>
+                  {daysLabels[i]}
+                </span>
+              </div>
+
+              <div className={`flex items-center gap-2 flex-1 ${!day.is_working ? "pointer-events-none" : ""}`}>
+                <input
+                  type="time"
+                  value={day.start_time.substring(0, 5)}
+                  onChange={(e) => updateDay(i, "start_time", e.target.value + ":00")}
+                  className="h-8 px-2 rounded-[var(--radius-inputs)] bg-[var(--bg-primary)] border border-[var(--border-primary)] text-sm w-full md:w-28 text-center outline-none focus:border-[var(--text-primary)]"
+                />
+                <span className="text-[var(--text-muted)]">-</span>
+                <input
+                  type="time"
+                  value={day.end_time.substring(0, 5)}
+                  onChange={(e) => updateDay(i, "end_time", e.target.value + ":00")}
+                  className="h-8 px-2 rounded-[var(--radius-inputs)] bg-[var(--bg-primary)] border border-[var(--border-primary)] text-sm w-full md:w-28 text-center outline-none focus:border-[var(--text-primary)]"
+                />
+              </div>
             </div>
-            
-            <div className={`flex items-center gap-2 flex-1 ${!day.is_working ? "pointer-events-none" : ""}`}>
-              <input 
-                type="time" 
-                value={day.start_time.substring(0, 5)} 
-                onChange={(e) => updateDay(i, "start_time", e.target.value + ":00")}
-                className="h-8 px-2 rounded-[var(--radius-inputs)] bg-[var(--bg-primary)] border border-[var(--border-primary)] text-sm w-full md:w-28 text-center outline-none focus:border-[var(--text-primary)]"
+
+            <div className={`flex items-center gap-2 flex-wrap pt-2 border-t border-dashed border-[var(--border-primary)] ${!day.is_working ? "pointer-events-none opacity-50" : ""}`}>
+              <span className="text-xs font-medium text-[var(--text-muted)] whitespace-nowrap">
+                {isRTL ? "استراحة (اختياري — مثل وقت الصلاة)" : "Break (optional — e.g. prayer time)"}
+              </span>
+              <input
+                type="time"
+                value={day.break_start ? day.break_start.substring(0, 5) : ""}
+                onChange={(e) => updateDay(i, "break_start", e.target.value ? e.target.value + ":00" : null)}
+                className="h-8 px-2 rounded-[var(--radius-inputs)] bg-[var(--bg-primary)] border border-[var(--border-primary)] text-sm w-24 text-center outline-none focus:border-[var(--text-primary)]"
               />
               <span className="text-[var(--text-muted)]">-</span>
-              <input 
-                type="time" 
-                value={day.end_time.substring(0, 5)} 
-                onChange={(e) => updateDay(i, "end_time", e.target.value + ":00")}
-                className="h-8 px-2 rounded-[var(--radius-inputs)] bg-[var(--bg-primary)] border border-[var(--border-primary)] text-sm w-full md:w-28 text-center outline-none focus:border-[var(--text-primary)]"
+              <input
+                type="time"
+                value={day.break_end ? day.break_end.substring(0, 5) : ""}
+                onChange={(e) => updateDay(i, "break_end", e.target.value ? e.target.value + ":00" : null)}
+                className="h-8 px-2 rounded-[var(--radius-inputs)] bg-[var(--bg-primary)] border border-[var(--border-primary)] text-sm w-24 text-center outline-none focus:border-[var(--text-primary)]"
               />
+              {(day.break_start || day.break_end) && (
+                <button
+                  type="button"
+                  onClick={() => { updateDay(i, "break_start", null); updateDay(i, "break_end", null); }}
+                  className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--accent-rose)] transition-colors underline"
+                >
+                  {isRTL ? "إزالة" : "Clear"}
+                </button>
+              )}
             </div>
           </div>
         ))}

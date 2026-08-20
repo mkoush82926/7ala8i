@@ -9,7 +9,7 @@ const inviteAcceptSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     const parsed = inviteAcceptSchema.safeParse(body);
     if (!parsed.success) {
       const errors = parsed.error.flatten().fieldErrors;
@@ -21,30 +21,31 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Look up the invite
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: invite, error: inviteErr } = await (supabase.from("invites") as any)
-      .select("*")
-      .eq("token", token)
-      .eq("status", "pending")
-      .single();
+    const { data, error } = await (supabase.rpc as any)("accept_invite", { p_token: token });
 
-    if (inviteErr || !invite) {
-      return NextResponse.json(
-        { error: "Invalid or expired invite" },
-        { status: 404 },
-      );
+    if (error) {
+      const message = error.message || "";
+      if (message.includes("Not authenticated")) {
+        return NextResponse.json({ error: "Please log in to accept this invite" }, { status: 401 });
+      }
+      if (message.includes("already been used")) {
+        return NextResponse.json({ error: "This invite has already been used" }, { status: 409 });
+      }
+      if (message === "This invite has expired") {
+        return NextResponse.json({ error: "This invite has expired" }, { status: 410 });
+      }
+      return NextResponse.json({ error: "Invalid or expired invite" }, { status: 404 });
     }
 
-    // Mark invite as accepted
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from("invites") as any)
-      .update({ status: "accepted", updated_at: new Date().toISOString() })
-      .eq("id", invite.id);
+    const result = Array.isArray(data) ? data[0] : data;
+    if (!result) {
+      return NextResponse.json({ error: "Invalid or expired invite" }, { status: 404 });
+    }
 
     return NextResponse.json({
-      shopId: invite.shop_id,
-      role: invite.role,
+      shopId: result.shop_id,
+      role: result.role,
       message: "Invite accepted successfully",
     });
   } catch {

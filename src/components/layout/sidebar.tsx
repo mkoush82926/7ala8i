@@ -17,6 +17,7 @@ import {
   LogOut,
   X,
   IdCard,
+  Sun,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -25,6 +26,7 @@ import { useTranslation } from "@/hooks/use-translation";
 
 const navItems = [
   { id: "dashboard", icon: LayoutDashboard, href: "/" },
+  { id: "my-day", icon: Sun, href: "/my-day" },
   { id: "calendar", icon: Calendar, href: "/calendar" },
   { id: "leads", icon: Kanban, href: "/leads" },
   { id: "clients", icon: Users, href: "/clients" },
@@ -36,7 +38,7 @@ const navItems = [
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
-  const { t, locale } = useTranslation();
+  const { t, locale, isRTL } = useTranslation();
   const router = useRouter();
 
   const [currentUserRole, setCurrentUserRole] = React.useState<string | null>(null);
@@ -60,6 +62,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
   const labels: Record<string, string> = {
     dashboard: t.sidebar.dashboard,
+    "my-day":  isRTL ? "يومي" : "My Day",
     calendar:  t.sidebar.calendar,
     leads:     t.sidebar.leads,
     clients:   t.sidebar.clients,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -29,6 +29,7 @@ interface CustomerAppointment {
   end_time: string;
   status: string;
   price: number;
+  barber_id: string | null;
   barber_name: string | null;
   service_name: string | null;
 }
@@ -209,6 +210,7 @@ export default function CustomerDashboard() {
               end_time: a.end_time,
               status: a.status,
               price: a.price || 0,
+              barber_id: a.barber_id,
               barber_name: a.barber_id ? (barberMap.get(a.barber_id) || null) : null,
               service_name: a.service_name || null,
             };
@@ -251,6 +253,7 @@ export default function CustomerDashboard() {
               end_time: a.end_time,
               status: a.status,
               price: a.price || 0,
+              barber_id: a.barber_id,
               barber_name: null,
               service_name: a.service_name || null,
             };
@@ -366,6 +369,42 @@ export default function CustomerDashboard() {
   const initials = user?.full_name?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "U";
 
   const windowW = useWindowWidth();
+
+  // ─── Loyalty / rebooking nudge ───
+  // For a client with 2+ completed visits with the same barber, work out their average
+  // visit cadence and flag when they're overdue for the next one. Suppressed entirely if
+  // there's already an upcoming booking, or if there isn't enough history to compute a cadence.
+  const rebookingNudge = useMemo(() => {
+    if (loading || upcoming.length > 0) return null;
+
+    const completedByBarber = new Map<string, CustomerAppointment[]>();
+    for (const a of appointments) {
+      if (a.status === "completed" && a.barber_id) {
+        const list = completedByBarber.get(a.barber_id) || [];
+        list.push(a);
+        completedByBarber.set(a.barber_id, list);
+      }
+    }
+
+    for (const [, visits] of completedByBarber) {
+      if (visits.length < 2) continue;
+      const sorted = [...visits].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+      const gaps: number[] = [];
+      for (let i = 1; i < sorted.length; i++) {
+        gaps.push((new Date(sorted[i].start_time).getTime() - new Date(sorted[i - 1].start_time).getTime()) / 86400000);
+      }
+      const avgGapDays = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+      const mostRecent = sorted[sorted.length - 1];
+      const daysSinceLast = (Date.now() - new Date(mostRecent.start_time).getTime()) / 86400000;
+      if (daysSinceLast > avgGapDays) {
+        return {
+          shopId: mostRecent.shop_id,
+          barberName: mostRecent.barber_name || (isRTL ? "حلاقك" : "your barber"),
+        };
+      }
+    }
+    return null;
+  }, [appointments, loading, upcoming.length, isRTL]);
 
   return (
     <div style={{ background: "#ffffff", minHeight: "100vh", fontFamily: FF, direction: dir }}>
@@ -603,6 +642,32 @@ export default function CustomerDashboard() {
               ))}
             </div>
 
+            {/* Loyalty / rebooking nudge */}
+            {activeTab === "upcoming" && rebookingNudge && (
+              <div
+                style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  background: "#f5f3ff", border: "1px solid #e1e9f0", borderRadius: 12,
+                  padding: "16px 20px", marginTop: 16,
+                }}
+              >
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#091135", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#fff" }}>event_repeat</span>
+                </div>
+                <p style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: "#091135", margin: 0 }}>
+                  {isRTL
+                    ? `عادة ما تكون بحاجة لزيارة ${rebookingNudge.barberName} في مثل هذا الوقت — هل تحجز مرة أخرى؟`
+                    : `You're usually due for a visit with ${rebookingNudge.barberName} around now — book again?`}
+                </p>
+                <Link
+                  href={`/book/${rebookingNudge.shopId}`}
+                  style={{ flexShrink: 0, background: "#127ee3", color: "#fff", padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: "none" }}
+                >
+                  {isRTL ? "احجز" : "Book"}
+                </Link>
+              </div>
+            )}
+
             {/* Appointment list */}
             <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
               {loading ? (
@@ -722,7 +787,7 @@ export default function CustomerDashboard() {
                             {isUpcoming ? (
                               <>
                                 <Link
-                                  href={`/book/${appt.shop_id}`}
+                                  href={`/book/${appt.shop_id}?reschedule=${appt.id}`}
                                   style={{
                                     flex: 1, textAlign: "center", padding: "8px",
                                     borderRadius: 8, background: "#f5f3ff",
@@ -730,7 +795,7 @@ export default function CustomerDashboard() {
                                     textDecoration: "none",
                                   }}
                                 >
-                                  Book a New Time
+                                  {t.customer.reschedule}
                                 </Link>
                                 <button
                                   onClick={() => setCancelConfirm(appt.id)}
@@ -780,11 +845,6 @@ export default function CustomerDashboard() {
                               </>
                             )}
                           </div>
-                          {isUpcoming && (
-                            <p style={{ fontSize: 11, color: "#36394a", marginTop: 8, marginBottom: 0 }}>
-                              Your current booking stays active — cancel it above if you don&apos;t need it anymore.
-                            </p>
-                          )}
                         </div>
                       </motion.div>
                     );

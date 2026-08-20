@@ -63,6 +63,7 @@ function SkeletonCard({ wide = false }: { wide?: boolean }) {
 
 export default function ExplorePage() {
   const [shops, setShops] = useState<ShopRow[]>([]);
+  const [ratings, setRatings] = useState<Record<string, { avg: number; count: number }>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { FF, dir, t } = useTranslation();
@@ -83,7 +84,30 @@ export default function ExplorePage() {
         .from("shops")
         .select("id, name, address, google_maps_url")
         .order("name");
-      if (data) setShops(data as ShopRow[]);
+      if (data) {
+        setShops(data as ShopRow[]);
+        const shopIds = (data as ShopRow[]).map(s => s.id);
+        if (shopIds.length > 0) {
+          const { data: reviewRows } = await supabase
+            .from("reviews")
+            .select("shop_id, rating")
+            .in("shop_id", shopIds);
+          if (reviewRows) {
+            const totals: Record<string, { sum: number; count: number }> = {};
+            for (const r of reviewRows as { shop_id: string; rating: number }[]) {
+              const bucket = totals[r.shop_id] || { sum: 0, count: 0 };
+              bucket.sum += r.rating;
+              bucket.count += 1;
+              totals[r.shop_id] = bucket;
+            }
+            const computed: Record<string, { avg: number; count: number }> = {};
+            Object.entries(totals).forEach(([shopId, v]) => {
+              computed[shopId] = { avg: v.sum / v.count, count: v.count };
+            });
+            setRatings(computed);
+          }
+        }
+      }
       setLoading(false);
     }
     init();
@@ -519,6 +543,20 @@ export default function ExplorePage() {
                             {shop.name}
                           </h3>
                         </Link>
+                        {ratings[shop.id] && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 6 }}>
+                            <span
+                              className="material-symbols-outlined"
+                              style={{ fontSize: 14, color: "#0f77ff", fontVariationSettings: "'FILL' 1" }}
+                            >star</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#091135" }}>
+                              {ratings[shop.id].avg.toFixed(1)}
+                            </span>
+                            <span style={{ fontSize: 12, color: "#36394a", fontWeight: 500 }}>
+                              ({ratings[shop.id].count})
+                            </span>
+                          </div>
+                        )}
                         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 16 }}>
                           <span className="material-symbols-outlined" style={{ fontSize: 13, color: "#36394a" }}>location_on</span>
                           <span style={{ fontSize: 13, color: "#36394a", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>

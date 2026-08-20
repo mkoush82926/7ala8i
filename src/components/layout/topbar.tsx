@@ -4,8 +4,9 @@ import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
   Globe, ChevronDown, Bell, Menu, Users, Sun, Moon,
-  Settings, LogOut,
+  Settings, LogOut, Search, Loader2,
 } from "lucide-react";
+import { format } from "date-fns";
 import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { getInitials } from "@/lib/utils";
@@ -13,12 +14,15 @@ import { useTranslation } from "@/hooks/use-translation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "@/components/ui/toast";
+import { searchWorkspace, type WorkspaceSearchResult } from "@/lib/queries/search";
 
 interface NotificationRow {
   id: string;
   client_name: string;
   start_time: string;
 }
+
+const EMPTY_SEARCH_RESULT: WorkspaceSearchResult = { clients: [], leads: [], appointments: [] };
 
 /* ── Icon button helper ── */
 function IconBtn({
@@ -63,6 +67,226 @@ function IconBtn({
         }} />
       )}
     </button>
+  );
+}
+
+/* ── Search result row group (Clients / Leads / Appointments) ── */
+function ResultGroup({
+  title,
+  items,
+  onSelect,
+}: {
+  title: string;
+  items: { id: string; primary: string; secondary?: string }[];
+  onSelect: () => void;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div style={{ padding: "4px 0" }}>
+      <p style={{
+        fontSize: 10, fontWeight: 800, textTransform: "uppercase",
+        letterSpacing: "0.12em", color: "var(--text-tertiary)",
+        margin: "6px 12px 2px",
+      }}>
+        {title}
+      </p>
+      {items.map((item) => (
+        <button
+          key={item.id}
+          onClick={onSelect}
+          style={{
+            display: "flex", flexDirection: "column", width: "100%",
+            textAlign: "start", padding: "8px 12px", border: "none",
+            borderRadius: 8, background: "transparent", cursor: "pointer",
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-secondary)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{item.primary}</span>
+          {item.secondary && (
+            <span style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 1 }}>{item.secondary}</span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ── Real workspace search — debounced, grouped dropdown results ──
+   `variant="inline"` renders a persistent input (desktop, lg+).
+   `variant="icon"` renders a magnifying-glass IconBtn that opens the same
+   panel (mobile), matching the desktop/mobile duality already used above
+   for the barber view switcher. ── */
+function SearchBox({ variant }: { variant: "inline" | "icon" }) {
+  const { shopId } = useWorkspaceStore();
+  const { isRTL, locale } = useTranslation();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [term, setTerm] = useState("");
+  const [rawResults, setRawResults] = useState<WorkspaceSearchResult>(EMPTY_SEARCH_RESULT);
+  // Term the current `rawResults` were fetched for — lets "still fetching"
+  // be derived instead of tracked as a separate boolean set from an effect.
+  const [fetchedFor, setFetchedFor] = useState<string | null>(null);
+
+  // Keystrokes shouldn't each fire a new request — wait for a short pause
+  // (matches the Clients-page search debounce).
+  useEffect(() => {
+    const handle = setTimeout(() => setTerm(inputValue.trim()), 300);
+    return () => clearTimeout(handle);
+  }, [inputValue]);
+
+  useEffect(() => {
+    if (!shopId || !term) return;
+    let cancelled = false;
+    const supabase = createClient();
+    searchWorkspace(supabase, shopId, term).then((res) => {
+      if (cancelled) return;
+      setRawResults(res);
+      setFetchedFor(term);
+    });
+    return () => { cancelled = true; };
+  }, [shopId, term]);
+
+  // Stale results from a previous term shouldn't linger once the query is
+  // cleared — derive the displayed set instead of resetting it in an effect.
+  const results = shopId && term && fetchedFor === term ? rawResults : EMPTY_SEARCH_RESULT;
+
+  function goTo(path: string) {
+    setOpen(false);
+    setInputValue("");
+    router.push(`/${locale}${path}`);
+  }
+
+  const showResults = inputValue.trim().length > 0;
+  const isBusy = inputValue.trim() !== term || (term.length > 0 && fetchedFor !== term);
+  const hasResults =
+    results.clients.length + results.leads.length + results.appointments.length > 0;
+
+  const resultsBody = isBusy ? (
+    <div style={{ display: "flex", justifyContent: "center", padding: "20px 0" }}>
+      <Loader2 size={18} className="animate-spin" style={{ color: "var(--text-tertiary)" }} />
+    </div>
+  ) : !hasResults ? (
+    <p style={{ fontSize: 12, color: "var(--text-tertiary)", padding: "16px 12px", margin: 0, textAlign: "center" }}>
+      {isRTL ? `لا نتائج لـ "${term}"` : `No results for "${term}"`}
+    </p>
+  ) : (
+    <>
+      <ResultGroup
+        title={isRTL ? "العملاء" : "Clients"}
+        items={results.clients.map((c) => ({ id: c.id, primary: c.name, secondary: c.phone ?? undefined }))}
+        onSelect={() => goTo("/clients")}
+      />
+      <ResultGroup
+        title={isRTL ? "العملاء المحتملون" : "Leads"}
+        items={results.leads.map((l) => ({ id: l.id, primary: l.name, secondary: l.contact ?? undefined }))}
+        onSelect={() => goTo("/leads")}
+      />
+      <ResultGroup
+        title={isRTL ? "المواعيد" : "Appointments"}
+        items={results.appointments.map((a) => ({
+          id: a.id,
+          primary: a.client_name,
+          secondary: format(new Date(a.start_time), "MMM d, HH:mm"),
+        }))}
+        onSelect={() => goTo("/calendar")}
+      />
+    </>
+  );
+
+  if (variant === "icon") {
+    return (
+      <div style={{ position: "relative" }} className="lg:hidden">
+        <IconBtn onClick={() => setOpen((v) => !v)}>
+          <Search size={17} />
+        </IconBtn>
+        {open && (
+          <>
+            <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setOpen(false)} />
+            <div style={{
+              position: "absolute", top: "calc(100% + 8px)",
+              right: isRTL ? "auto" : 0, left: isRTL ? 0 : "auto",
+              width: 280, background: "var(--bg-primary)", border: "1px solid var(--border-primary)",
+              borderRadius: 12, zIndex: 50, padding: 10,
+            }}>
+              <input
+                autoFocus
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
+                placeholder={isRTL ? "بحث..." : "Search..."}
+                style={{
+                  width: "100%", height: 38, border: "1px solid var(--border-primary)",
+                  borderRadius: 8, padding: "0 12px", fontSize: 13, outline: "none",
+                  background: "var(--bg-primary)", color: "var(--text-primary)",
+                }}
+              />
+              {showResults && (
+                <div style={{ marginTop: 8, maxHeight: 320, overflowY: "auto" }}>
+                  {resultsBody}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: "relative" }} className="hidden lg:block">
+      <div style={{ position: "relative" }}>
+        <Search
+          size={15}
+          style={{
+            position: "absolute",
+            left: isRTL ? "auto" : 12,
+            right: isRTL ? 12 : "auto",
+            top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)",
+          }}
+        />
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => { setInputValue(e.target.value); setOpen(true); }}
+          onFocus={(e) => {
+            setOpen(true);
+            e.currentTarget.style.borderColor = "var(--border-hover)";
+            e.currentTarget.style.boxShadow = "var(--shadow-focus)";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = "var(--border-primary)";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+          onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
+          placeholder={isRTL ? "بحث عن عميل أو موعد..." : "Search clients, leads, appointments..."}
+          style={{
+            width: 240, height: 40,
+            background: "var(--bg-secondary)", border: "1px solid var(--border-primary)",
+            borderRadius: 8,
+            padding: isRTL ? "0 36px 0 12px" : "0 12px 0 36px",
+            fontSize: 13, outline: "none", color: "var(--text-primary)",
+            transition: "border-color 0.2s, box-shadow 0.2s",
+          }}
+        />
+      </div>
+      {open && showResults && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setOpen(false)} />
+          <div style={{
+            position: "absolute", top: "calc(100% + 8px)",
+            right: isRTL ? "auto" : 0, left: isRTL ? 0 : "auto",
+            width: 300, maxHeight: 360, overflowY: "auto",
+            background: "var(--bg-primary)", border: "1px solid var(--border-primary)",
+            borderRadius: 12, zIndex: 50, padding: 6,
+          }}>
+            {resultsBody}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -248,6 +472,9 @@ export function Topbar() {
             )}
           </div>
         )}
+
+        {/* Workspace search — desktop inline input */}
+        <SearchBox variant="inline" />
       </div>
 
       {/* ── RIGHT: icons + user ── */}
@@ -322,6 +549,9 @@ export function Topbar() {
             )}
           </div>
         )}
+
+        {/* Workspace search — mobile icon trigger */}
+        <SearchBox variant="icon" />
 
         {/* Notifications */}
         <div style={{ position: "relative" }}>

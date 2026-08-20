@@ -8,6 +8,7 @@ import { getPublicServices } from "@/lib/queries/services";
 import { getAvailableSlots } from "@/lib/queries/appointments";
 import { format, addDays, parseISO } from "date-fns";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 
 type BookingStep = "landing" | "services" | "barber" | "datetime" | "confirm";
@@ -62,8 +63,22 @@ function formatTime(t: string) {
 
 interface ServiceRow { id: string; name: string; name_ar: string | null; duration: number; price: number; }
 interface BarberRow  { id: string; full_name: string; barber_services?: { service_id: string }[]; }
-interface WorkingHourRow { barber_id: string; day_of_week: number; is_working: boolean; start_time: string; end_time: string; }
+// break_start/break_end are an optional recurring daily buffer (e.g. a prayer break) a barber
+// can configure — nullable, so most rows simply won't have one set.
+interface WorkingHourRow { barber_id: string; day_of_week: number; is_working: boolean; start_time: string; end_time: string; break_start?: string | null; break_end?: string | null; }
 interface OccupiedSlotRow { start_time: string; end_time: string; }
+interface ReviewRow { rating: number; }
+
+// Builds a wa.me-compatible phone string from whatever format a shop owner typed into
+// the WhatsApp settings field: strips everything but digits, and expands a local Jordanian
+// "0-prefixed" number (e.g. 0791234567) to its international form (962791234567).
+function toWhatsAppNumber(raw: string): string | null {
+  const digits = raw.replace(/[^0-9]/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("00")) return digits.slice(2);
+  if (digits.startsWith("0")) return `962${digits.slice(1)}`;
+  return digits;
+}
 
 // ─── Reusable inline-styled sub-components ───────────────────────
 
@@ -162,9 +177,15 @@ function NextBtn({ onClick, disabled, children }: { onClick: () => void; disable
 
 // ─── Main component ──────────────────────────────────────────────
 
-export function BookingEngine({ shopId }: { shopId?: string }) {
+export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: string; rescheduleAppointmentId?: string }) {
   const supabase = createClient();
   const { FF, dir, isRTL, t } = useTranslation();
+  const searchParams = useSearchParams();
+
+  // The reschedule context can arrive either as an explicit prop (same convention as
+  // `shopId`) or as a `?reschedule=` URL search param — the customer pages link here with
+  // the latter, since a page navigation can't hand off React props directly.
+  const rescheduleId = rescheduleAppointmentId ?? searchParams?.get("reschedule") ?? null;
 
   const [step, setStep]  = useState<BookingStep>("landing");
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -177,6 +198,7 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
   const [submitting,       setSubmitting]        = useState(false);
   const [bookingError,     setBookingError]      = useState<string | null>(null);
   const [phoneTouched,     setPhoneTouched]      = useState(false);
+  const [rescheduleWarning, setRescheduleWarning] = useState<string | null>(null);
   const phoneFormatValid = PHONE_REGEX.test(clientPhone.trim());
 
   const weekDays = useMemo(() => generateDays(14), []);
@@ -190,10 +212,19 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
   }, [shopId, supabase]);
 
   const { data: shopData } = useSupabaseQuery(
-    async () => await supabase.from("shops").select("id, name, address").eq("id", resolvedShopId).single(),
+    async () => await supabase.from("shops").select("id, name, address, whatsapp").eq("id", resolvedShopId).single(),
     [resolvedShopId], { enabled: !!resolvedShopId }
   );
-  const shop = shopData as { id: string; name: string; address: string } | null;
+  const shop = shopData as { id: string; name: string; address: string; whatsapp: string | null } | null;
+
+  // ─── Real shop rating (Tier 0 removed the fake one) ───
+  const { data: reviewsData } = useSupabaseQuery<ReviewRow[]>(
+    async () => await supabase.from("reviews").select("rating").eq("shop_id", resolvedShopId),
+    [resolvedShopId], { enabled: !!resolvedShopId }
+  );
+  const reviewList = reviewsData ?? [];
+  const numReviews = reviewList.length;
+  const avgRating  = numReviews > 0 ? reviewList.reduce((a, r) => a + r.rating, 0) / numReviews : 0;
 
   const { data: services, loading: servicesLoading, error: servicesError, refetch: refetchServices } = useSupabaseQuery<ServiceRow[]>(
     () => getPublicServices(supabase, resolvedShopId),
@@ -229,6 +260,8 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
     async () => {
       const ids = barberList.map(b => b.id);
       if (!ids.length) return { data: [], error: null };
+      // "*" already picks up break_start/break_end once that migration lands — no column
+      // list to keep in sync here.
       return await supabase.from("working_hours").select("*").in("barber_id", ids) as { data: WorkingHourRow[] | null; error: { message: string } | null };
     },
     [barberList], { enabled: barberList.length > 0 && step === "datetime" }
@@ -252,9 +285,14 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
     const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
     const set = new Set<string>();
 
-    const addWindow = (startMin: number, closeMin: number) => {
+    // breakStart/breakEnd (minutes) are this specific barber's recurring daily buffer (e.g. a
+    // prayer break) for the day — a slot whose service duration overlaps it is skipped for
+    // THIS barber's contribution only, so pooling ("any barber") still surfaces the slot if
+    // another barber is free then.
+    const addWindow = (startMin: number, closeMin: number, breakStart?: number, breakEnd?: number) => {
       for (let m = startMin; m + totalDuration <= closeMin; m += 30) {
         if (isToday && m < nowMinutes) continue; // already passed
+        if (breakStart != null && breakEnd != null && m < breakEnd && m + totalDuration > breakStart) continue;
         set.add(toTimeStr(m));
       }
     };
@@ -274,7 +312,9 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
       }
       const h = barberHours.find(x => x.day_of_week === dayNum);
       if (!h || !h.is_working) continue; // explicitly closed, or no entry for this day — no slots
-      addWindow(toMinutes(h.start_time), toMinutes(h.end_time));
+      const breakStart = h.break_start ? toMinutes(h.break_start) : undefined;
+      const breakEnd   = h.break_end   ? toMinutes(h.break_end)   : undefined;
+      addWindow(toMinutes(h.start_time), toMinutes(h.end_time), breakStart, breakEnd);
     }
 
     return Array.from(set).sort();
@@ -304,8 +344,20 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
   const morningTimes   = availableTimes.filter(t => parseInt(t) < 12);
   const afternoonTimes = availableTimes.filter(t => parseInt(t) >= 12);
 
+  // ─── WhatsApp confirmation deep link (shop's number, prefilled message) ───
+  const waNumber = useMemo(() => (shop?.whatsapp ? toWhatsAppNumber(shop.whatsapp) : null), [shop?.whatsapp]);
+  const waMessage = useMemo(() => {
+    const chosenServices = serviceList.filter(s => selectedServices.includes(s.id))
+      .map(s => (isRTL && s.name_ar ? s.name_ar : s.name)).join(", ");
+    const dateStr = format(new Date(selectedDate), "MMM d, yyyy");
+    const timeStr = selectedTime ? formatTime(selectedTime) : "";
+    return isRTL
+      ? `مرحباً ${shop?.name || ""}، أؤكد حجزي:\nالخدمة: ${chosenServices}\nالتاريخ: ${dateStr}\nالوقت: ${timeStr}\nالسعر: ${totalPrice.toFixed(2)} د.أ`
+      : `Hi ${shop?.name || ""}, confirming my booking:\nService: ${chosenServices}\nDate: ${dateStr}\nTime: ${timeStr}\nPrice: ${totalPrice.toFixed(2)} JOD`;
+  }, [serviceList, selectedServices, selectedDate, selectedTime, isRTL, shop?.name, totalPrice]);
+
   const handleBooking = async () => {
-    setSubmitting(true); setBookingError(null);
+    setSubmitting(true); setBookingError(null); setRescheduleWarning(null);
     try {
       const start = new Date(`${selectedDate}T${selectedTime}:00`);
       const end   = new Date(start.getTime() + totalDuration * 60000);
@@ -323,6 +375,29 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
       if (result.error || (!result.success && !result.appointment_id)) {
         setBookingError(result.error || "Something went wrong. Please try again."); return;
       }
+
+      // Atomic reschedule: the new booking now exists — release the old one too. If that
+      // fails, the new booking still stands; we just tell the customer honestly so they
+      // don't end up with two active appointments without knowing it.
+      if (rescheduleId) {
+        try {
+          const cancelRes = await fetch("/api/booking/cancel", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ appointment_id: rescheduleId }),
+          });
+          const cancelResult = await cancelRes.json();
+          if (!cancelRes.ok || !cancelResult.success) {
+            setRescheduleWarning(isRTL
+              ? "تم تأكيد موعدك الجديد، لكن تعذّر إلغاء موعدك القديم تلقائياً. يرجى إلغاؤه يدوياً من صفحة مواعيدي."
+              : "Your new appointment is confirmed, but we couldn't automatically cancel your previous booking. Please cancel it manually from My Bookings.");
+          }
+        } catch {
+          setRescheduleWarning(isRTL
+            ? "تم تأكيد موعدك الجديد، لكن تعذّر إلغاء موعدك القديم تلقائياً. يرجى إلغاؤه يدوياً من صفحة مواعيدي."
+            : "Your new appointment is confirmed, but we couldn't automatically cancel your previous booking. Please cancel it manually from My Bookings.");
+        }
+      }
+
       setBooked(true);
     } catch {
       setBookingError("Unable to connect. Please check your internet and try again.");
@@ -359,10 +434,27 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
               <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "0.014em", fontFamily: "var(--font-intervar),sans-serif", margin: "0 0 8px" }}>
                 {t.booking.bookAppointment}
               </h2>
-              <p style={{ fontSize: 14, color: C.subtle, marginBottom: 36, display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
+              <p style={{ fontSize: 14, color: C.subtle, marginBottom: numReviews > 0 ? 10 : 36, display: "flex", alignItems: "center", gap: 4, justifyContent: "center" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 14 }}>location_on</span>
                 {shop?.name || "Halaqy Studio"}{shop?.address ? `, ${shop.address}` : ""}
               </p>
+
+              {numReviews > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 36 }}>
+                  {[1, 2, 3, 4, 5].map(s => (
+                    <span
+                      key={s}
+                      className="material-symbols-outlined"
+                      style={{
+                        fontSize: 15, color: s <= Math.round(avgRating) ? C.blue : C.border,
+                        fontVariationSettings: s <= Math.round(avgRating) ? "'FILL' 1" : "'FILL' 0",
+                      }}
+                    >star</span>
+                  ))}
+                  <span style={{ fontSize: 13, fontWeight: 800, color: C.black, marginLeft: 2 }}>{avgRating.toFixed(1)}</span>
+                  <span style={{ fontSize: 12, color: C.muted }}>({numReviews} {t.booking.reviews})</span>
+                </div>
+              )}
 
               {/* Features */}
               <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 12, marginBottom: 36 }}>
@@ -936,6 +1028,17 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 })}
               </p>
 
+              {rescheduleWarning && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 10, textAlign: "left",
+                  padding: "14px 16px", background: "#fee2e2", borderRadius: 12,
+                  fontSize: 13, color: C.red, marginBottom: 24, maxWidth: 480, marginLeft: "auto", marginRight: "auto",
+                }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 18, flexShrink: 0 }}>warning</span>
+                  {rescheduleWarning}
+                </div>
+              )}
+
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "20px 24px", marginBottom: 32, textAlign: "left" }}>
                 {[
                   { label: "Barber",  value: selectedBarberName || "Any" },
@@ -968,6 +1071,21 @@ export function BookingEngine({ shopId }: { shopId?: string }) {
                 }}>
                   Explore More
                 </Link>
+                {waNumber && (
+                  <a
+                    href={`https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "13px 28px", borderRadius: 8,
+                      background: C.white, color: C.black, border: `1px solid ${C.border}`,
+                      fontWeight: 700, fontSize: 14, textDecoration: "none",
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#25D366" }}>chat</span>
+                    {isRTL ? "إرسال التأكيد عبر واتساب" : "Send confirmation via WhatsApp"}
+                  </a>
+                )}
               </div>
             </div>
           </motion.div>

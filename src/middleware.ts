@@ -19,6 +19,7 @@ const PUBLIC_ROUTES = [
   "/customer/shops",
   "/terms",
   "/privacy",
+  "/policy",
 ];
 
 

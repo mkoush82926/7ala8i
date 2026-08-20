@@ -252,10 +252,10 @@ export default function BookingDetailPage() {
           {isUpcoming && (
             <>
               <Link
-                href={`/book/${appt.shop_id}`}
+                href={`/book/${appt.shop_id}?reschedule=${appt.id}`}
                 className="flex-1 text-center py-4 bg-tertiary-fixed text-on-tertiary-fixed rounded-[8px] font-bold text-sm hover:opacity-90 active:scale-95 transition-all"
               >
-                {isRTL ? "احجز موعداً جديداً" : "Book a New Time"}
+                {t.customer.reschedule}
               </Link>
               <button
                 onClick={() => setShowCancelConfirm(true)}
@@ -275,13 +275,6 @@ export default function BookingDetailPage() {
             </Link>
           )}
         </div>
-        {isUpcoming && (
-          <p className="text-xs text-on-surface-variant mt-3 text-center sm:text-left">
-            {isRTL
-              ? "يبقى حجزك الحالي فعالاً — قم بإلغائه أعلاه إذا لم تعد بحاجة إليه."
-              : "Your current booking stays active — cancel it above if you don't need it anymore."}
-          </p>
-        )}
 
         {/* Shop Link */}
         <div className="mt-6 text-center">
