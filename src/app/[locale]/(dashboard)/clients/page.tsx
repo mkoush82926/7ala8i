@@ -45,7 +45,7 @@ export default function ClientsPage() {
     return () => clearTimeout(handle);
   }, [inputValue]);
 
-  const { data: queryResult, loading } = useSupabaseQuery(
+  const { data: queryResult, loading, error } = useSupabaseQuery(
     async () => {
       const { data, error, count } = await getClients(supabase, shopId, page, searchTerm);
       return {
@@ -79,13 +79,13 @@ export default function ClientsPage() {
             <p style={{ fontSize: 14, color: "#5a5147", marginTop: 6, fontWeight: 400 }}>
               {isRTL ? "إدارة قاعدة بيانات" : "Manage your database of"}{" "}
               <strong style={{ color: "#1c1611" }}>{totalCount}</strong>{" "}
-              {isRTL ? "عميل نشط" : "active clients"}
+              {isRTL ? "عميل نشط" : totalCount === 1 ? "active client" : "active clients"}
             </p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             {/* Search */}
             <div style={{ position: "relative" }}>
-              <span className="material-symbols-outlined" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#5a5147", fontSize: 18 }}>search</span>
+              <span className="material-symbols-outlined" style={{ position: "absolute", insetInlineStart: 12, top: "50%", transform: "translateY(-50%)", color: "#5a5147", fontSize: 18 }}>search</span>
               <input
                 type="text"
                 placeholder={isRTL ? "البحث بالاسم أو الهاتف..." : "Search by name, phone, or email..."}
@@ -93,7 +93,8 @@ export default function ClientsPage() {
                 onChange={(e) => setInputValue(e.target.value)}
                 style={{
                   width: 280, background: "#ffffff", border: "1px solid #ede3cd",
-                  borderRadius: 8, padding: "10px 16px 10px 40px",
+                  borderRadius: 8, paddingTop: 10, paddingBottom: 10,
+                  paddingInlineStart: 40, paddingInlineEnd: 16,
                   fontSize: 13, outline: "none", color: "#1c1611",
                   transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
@@ -122,7 +123,20 @@ export default function ClientsPage() {
       </div>
 
       {/* ── Client Grid ── */}
-      {clients.length === 0 && !loading ? (
+      {error ? (
+        <div style={{
+          textAlign: "center", padding: "80px 0",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+        }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 56, color: "#ede3cd" }}>error</span>
+          <p style={{ fontWeight: 700, color: "#5a5147", fontSize: 16 }}>
+            {isRTL ? "تعذر تحميل العملاء" : "Couldn't load clients"}
+          </p>
+          <p style={{ fontSize: 13, color: "#a89e8c", maxWidth: 320 }}>
+            {isRTL ? "يرجى المحاولة مرة أخرى لاحقاً" : "Please try again in a moment"}
+          </p>
+        </div>
+      ) : clients.length === 0 && !loading ? (
         <div style={{
           textAlign: "center", padding: "80px 0",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
@@ -152,6 +166,7 @@ export default function ClientsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
                 onClick={() => setSelectedClient(client)}
+                className="group"
                 style={{
                   // Practice #1 — white card on #f7f9fb bg with border + shadow
                   background: "#ffffff",
@@ -196,13 +211,14 @@ export default function ClientsPage() {
                   >
                     {initials}
                   </div>
-                  <div style={{ display: "flex", gap: 4, opacity: 0, transition: "opacity 0.2s" }} className="group-actions">
+                  <div style={{ display: "flex", gap: 4 }} className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         const phone = client.phone as string | undefined;
                         if (phone) window.location.href = `tel:${phone}`;
                       }}
+                      aria-label={isRTL ? "اتصال بالعميل" : "Call client"}
                       style={{
                         padding: 8, background: "#ffffff", border: "1px solid #ede3cd",
                         borderRadius: "50%", cursor: "pointer",
@@ -243,7 +259,7 @@ export default function ClientsPage() {
                       {totalSpent.toFixed(0)} JOD
                     </span>
                   </div>
-                  <div style={{ textAlign: "right" }}>
+                  <div style={{ textAlign: "end" }}>
                     <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.15em"), color: "#a89e8c", fontWeight: 700, display: "block" }}>
                       {isRTL ? "البريد" : "Email"}
                     </span>
@@ -273,6 +289,7 @@ export default function ClientsPage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
+              aria-label={isRTL ? "الصفحة السابقة" : "Previous page"}
               className="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
             >
               <ChevronLeft size={18} />
@@ -283,6 +300,7 @@ export default function ClientsPage() {
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={page * PAGE_SIZE >= totalCount}
+              aria-label={isRTL ? "الصفحة التالية" : "Next page"}
               className="w-10 h-10 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
             >
               <ChevronRight size={18} />
@@ -307,7 +325,7 @@ export default function ClientsPage() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: isRTL ? -400 : 400, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className={`fixed top-0 ${isRTL ? "start-0" : "end-0"} w-full sm:w-[380px] h-full bg-surface-container-lowest border-s border-surface-container z-[60] overflow-y-auto`}
+              className="fixed top-0 end-0 w-full sm:w-[380px] h-full bg-surface-container-lowest border-s border-surface-container z-[60] overflow-y-auto"
             >
               <div className="p-6">
                 {/* Close */}
@@ -317,6 +335,7 @@ export default function ClientsPage() {
                   </h3>
                   <button
                     onClick={() => setSelectedClient(null)}
+                    aria-label={isRTL ? "إغلاق" : "Close"}
                     className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
                   >
                     <X size={16} />

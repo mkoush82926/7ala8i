@@ -96,7 +96,8 @@ export default function MyDayPage() {
   const activeBarberId =
     role === "barber" ? currentUserId : selectedBarberId ?? barbers[0]?.id ?? null;
   const activeBarberName =
-    barbers.find((b) => b.id === activeBarberId)?.name || "Barber";
+    barbers.find((b) => b.id === activeBarberId)?.name ||
+    (isRTL ? "حلاق" : "Barber");
 
   // Refetch after a POS action (event-handler triggered, not effect-driven).
   const refetch = useCallback(async () => {
@@ -236,7 +237,7 @@ export default function MyDayPage() {
                 style={{
                   background: "#ffffff",
                   border: "1px solid #ede3cd",
-                  borderRadius: 16,
+                  borderRadius: 12,
                   padding: 20,
                   display: "flex",
                   flexDirection: "column",
@@ -309,6 +310,7 @@ export default function MyDayPage() {
                       disabled={busy}
                       onClick={() => handleNoShow(appt)}
                       title={isRTL ? "لم يحضر" : "No-show"}
+                      aria-label={isRTL ? "لم يحضر" : "No-show"}
                       style={{
                         minHeight: 52,
                         minWidth: 52,
@@ -329,6 +331,7 @@ export default function MyDayPage() {
                       disabled={busy}
                       onClick={() => handleCancel(appt)}
                       title={isRTL ? "إلغاء" : "Cancel"}
+                      aria-label={isRTL ? "إلغاء" : "Cancel"}
                       style={{
                         minHeight: 52,
                         minWidth: 52,
@@ -384,7 +387,7 @@ function EmptyState({
         padding: "56px 24px",
         background: "#ffffff",
         border: "1px solid #ede3cd",
-        borderRadius: 16,
+        borderRadius: 12,
         textAlign: "center",
       }}
     >

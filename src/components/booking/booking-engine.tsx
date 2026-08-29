@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { getPublicServices } from "@/lib/queries/services";
 import { getAvailableSlots } from "@/lib/queries/appointments";
+import { getServiceIcon } from "@/lib/service-icon";
 import { format, addDays, parseISO } from "date-fns";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -19,19 +20,20 @@ const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
 const PHONE_REGEX = /^\+?[0-9\s\-()]{7,20}$/;
 
 // ─── Colour tokens (inline so Tailwind purging can't break them) ───
-// Data Observatory on Cloud Paper palette — see design-system/clearbit-reference.md
+// "Ink & Brass" palette — ink / cream wash / frost border / brass accent / brown CTA
 const C = {
-  black:   "#1c1611", // Midnight Ink — structural dark ink / primary text
+  black:   "#1c1611", // Ink — structural dark ink / primary text
   white:   "#ffffff", // Paper — card & canvas surfaces
-  surface: "#f7f1e4", // Lavender Wash — section tint zones + repeated/structural selection state
+  surface: "#f7f1e4", // Cream Wash — section tint zones + repeated/structural selection state
   border:  "#ede3cd", // Frost Border — hairline borders
   muted:   "#5a5147", // Slate — secondary/muted text
   subtle:  "#5a5147", // Slate — secondary/muted text
   mist:    "#a89e8c", // Mist — soft secondary neutral, disabled states
-  blue:    "#a67c3d", // Electric Blue — focus outline, checkmarks, star icon (never CTA fill)
-  green:   "#7c4a1e", // Cobalt Surface — the single primary-CTA fill color
-  yellow:  "#a67c3d", // Electric Blue — reused for star ratings
+  accent:  "#a67c3d", // Brass accent — focus outline, checkmarks, star icon (never CTA fill)
+  cta:     "#7c4a1e", // Brown CTA — the single primary-CTA fill color
+  star:    "#a67c3d", // Brass — star rating fill (alias of accent)
   red:     "#ba1a1a", // destructive/error — separate semantic channel
+  redBg:   "#fee2e2", // destructive/error — light tint for error/warning banner backgrounds
 };
 
 function generateDays(count: number) {
@@ -44,16 +46,6 @@ function generateDays(count: number) {
       dayNum: format(date, "d"),
     };
   });
-}
-
-function getServiceIcon(name: string): string {
-  const n = name.toLowerCase();
-  if (n.includes("beard") || n.includes("shave")) return "face";
-  if (n.includes("color") || n.includes("dye"))  return "palette";
-  if (n.includes("spa") || n.includes("facial")) return "spa";
-  if (n.includes("keratin") || n.includes("treatment")) return "auto_awesome";
-  if (n.includes("kid") || n.includes("child"))  return "child_care";
-  return "content_cut";
 }
 
 function formatTime(t: string) {
@@ -114,10 +106,11 @@ function BottomBar({ children }: { children: React.ReactNode }) {
   );
 }
 
-function NavBtn({ onClick, icon }: { onClick: () => void; icon: string }) {
+function NavBtn({ onClick, icon, ariaLabel }: { onClick: () => void; icon: string; ariaLabel: string }) {
   return (
     <button
       onClick={onClick}
+      aria-label={ariaLabel}
       style={{
         width: 44, height: 44, borderRadius: 8, flexShrink: 0,
         background: C.white, border: `1px solid ${C.border}`,
@@ -160,8 +153,8 @@ function NextBtn({ onClick, disabled, children }: { onClick: () => void; disable
       onClick={onClick}
       disabled={disabled}
       style={{
-        height: 48, padding: "0 28px", borderRadius: 8,
-        background: disabled ? C.border : C.green,
+        height: 48, padding: "0 28px", borderRadius: 9999,
+        background: disabled ? C.border : C.cta,
         color: disabled ? C.mist : C.white,
         fontWeight: 700, fontSize: 14, fontFamily: FF,
         border: "none", cursor: disabled ? "not-allowed" : "pointer",
@@ -172,6 +165,70 @@ function NextBtn({ onClick, disabled, children }: { onClick: () => void; disable
     >
       {children || <>Next <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span></>}
     </button>
+  );
+}
+
+// Running total shown on the leading side of the persistent BottomBar — identical
+// content/shape on every step from "services" onward so the bar reads as one
+// consistent element as the wizard progresses. Renders nothing extra beyond the
+// bare price when nothing is selected yet (shouldn't normally happen past the
+// services step, but kept defensive).
+function BottomBarTotals({
+  totalPrice, totalDuration, selectedCount, isRTL, totalLabel, serviceLabel, servicesLabel, children,
+}: {
+  totalPrice: number; totalDuration: number; selectedCount: number; isRTL: boolean;
+  totalLabel: string; serviceLabel: string; servicesLabel: string; children?: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 22, fontWeight: 900, color: C.black }}>{totalPrice.toFixed(2)} {isRTL ? "د.أ" : "JOD"}</span>
+        <span style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>{totalLabel}</span>
+      </div>
+      {selectedCount > 0 && (
+        <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>
+          {selectedCount} {selectedCount === 1 ? serviceLabel : servicesLabel} · {totalDuration} min
+        </p>
+      )}
+      {children}
+    </div>
+  );
+}
+
+// Step-level chrome shared by every step except landing/success: a back arrow on
+// the leading edge and an "X" that exits back to the shop's public page on the
+// trailing edge. Flex order mirrors automatically under the root's dir="rtl", so
+// only the icon glyph itself needs to flip for RTL (same convention as the rest
+// of this file, e.g. the book/[shop_id] page header).
+function StepHeaderRow({ onBack, closeHref, isRTL, backLabel, closeLabel }: {
+  onBack: () => void; closeHref: string; isRTL: boolean; backLabel: string; closeLabel: string;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+      <button
+        onClick={onBack}
+        aria-label={backLabel}
+        style={{
+          width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+          background: "none", border: "none", padding: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", color: C.subtle,
+        }}
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: 22 }}>{isRTL ? "arrow_forward" : "arrow_back"}</span>
+      </button>
+      <Link
+        href={closeHref}
+        aria-label={closeLabel}
+        style={{
+          width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: C.subtle, textDecoration: "none",
+        }}
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: 22 }}>close</span>
+      </Link>
+    </div>
   );
 }
 
@@ -446,13 +503,13 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                       key={s}
                       className="material-symbols-outlined"
                       style={{
-                        fontSize: 15, color: s <= Math.round(avgRating) ? C.blue : C.border,
+                        fontSize: 15, color: s <= Math.round(avgRating) ? C.accent : C.border,
                         fontVariationSettings: s <= Math.round(avgRating) ? "'FILL' 1" : "'FILL' 0",
                       }}
                     >star</span>
                   ))}
-                  <span style={{ fontSize: 13, fontWeight: 800, color: C.black, marginLeft: 2 }}>{avgRating.toFixed(1)}</span>
-                  <span style={{ fontSize: 12, color: C.muted }}>({numReviews} {t.booking.reviews})</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: C.black, marginInlineStart: 2 }}>{avgRating.toFixed(1)}</span>
+                  <span style={{ fontSize: 12, color: C.muted }}>({numReviews} {numReviews === 1 ? t.booking.review : t.booking.reviews})</span>
                 </div>
               )}
 
@@ -466,7 +523,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                   <div key={f.icon} style={{
                     display: "flex", alignItems: "center", gap: 16,
                     padding: "16px 20px", background: C.surface, borderRadius: 12,
-                    textAlign: "left", border: `1px solid ${C.border}`,
+                    textAlign: "start", border: `1px solid ${C.border}`,
                   }}>
                     <div style={{
                       width: 44, height: 44, borderRadius: 12, background: C.white,
@@ -488,7 +545,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                 onClick={() => setStep("services")}
                 style={{
                   width: "100%", height: 52,
-                  background: C.green, color: C.white,
+                  background: C.cta, color: C.white,
                   borderRadius: 8, border: "none", cursor: "pointer",
                   fontWeight: 700, fontSize: 15, fontFamily: FF,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
@@ -511,6 +568,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
             initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
+            <StepHeaderRow onBack={() => setStep("landing")} closeHref={`/shop/${resolvedShopId}`} isRTL={isRTL} backLabel={t.common.back} closeLabel={t.common.close} />
             <div style={{ marginBottom: 32 }}>
               <StepLabel text={`${t.booking.step} 1 ${t.booking.of} 4 · ${t.booking.services}`} isRTL={isRTL} />
               <SectionTitle isRTL={isRTL} FF={FF}>{t.booking.selectServices}</SectionTitle>
@@ -534,7 +592,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                       key={service.id}
                       onClick={() => setSelectedServices(prev => isSelected ? prev.filter(id => id !== service.id) : [...prev, service.id])}
                       style={{
-                        padding: "20px", borderRadius: 12, textAlign: "left", cursor: "pointer",
+                        padding: "20px", borderRadius: 12, textAlign: "start", cursor: "pointer",
                         border: isSelected ? `2px solid ${C.black}` : `1.5px solid ${C.border}`,
                         background: isSelected ? C.surface : C.white,
                         transition: "all 140ms ease",
@@ -554,7 +612,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                         <div style={{
                           width: 22, height: 22, borderRadius: "50%",
                           border: isSelected ? "none" : `2px solid ${C.border}`,
-                          background: isSelected ? C.blue : "transparent",
+                          background: isSelected ? C.accent : "transparent",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           flexShrink: 0,
                         }}>
@@ -581,19 +639,13 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
             )}
 
             <BottomBar>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 22, fontWeight: 900, color: C.black }}>{totalPrice.toFixed(2)} {isRTL ? "د.أ" : "JOD"}</span>
-                  <span style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>{t.booking.total}</span>
-                </div>
-                {selectedServices.length > 0 && (
-                  <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>
-                    {selectedServices.length} {t.booking.service} · {totalDuration} min
-                  </p>
-                )}
-              </div>
+              <BottomBarTotals
+                totalPrice={totalPrice} totalDuration={totalDuration}
+                selectedCount={selectedServices.length} isRTL={isRTL}
+                totalLabel={t.booking.total} serviceLabel={t.booking.service} servicesLabel={t.booking.servicesPlural}
+              />
               <div style={{ display: "flex", gap: 10 }}>
-                <NavBtn onClick={() => setStep("landing")} icon="arrow_back" />
+                <NavBtn onClick={() => setStep("landing")} icon="arrow_back" ariaLabel={t.common.back} />
                 <NextBtn onClick={() => setStep("barber")} disabled={selectedServices.length === 0} />
               </div>
             </BottomBar>
@@ -606,6 +658,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
             initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
+            <StepHeaderRow onBack={() => setStep("services")} closeHref={`/shop/${resolvedShopId}`} isRTL={isRTL} backLabel={t.common.back} closeLabel={t.common.close} />
             <div style={{ marginBottom: 28 }}>
               <StepLabel text={`${t.booking.step} 2 ${t.booking.of} 4 · ${t.booking.chooseBarber}`} isRTL={isRTL} />
               <SectionTitle isRTL={isRTL} FF={FF}>{t.booking.chooseBarber}</SectionTitle>
@@ -613,25 +666,29 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 28 }}>
-              {/* Any barber option */}
-              <button
-                onClick={() => { setSelectedBarber("any"); setStep("datetime"); }}
-                style={{
-                  padding: "24px 20px", borderRadius: 12, textAlign: "left", cursor: "pointer",
-                  border: selectedBarber === "any" ? `2px solid ${C.black}` : `1.5px solid ${C.border}`,
-                  background: selectedBarber === "any" ? C.surface : C.white,
-                  display: "flex", flexDirection: "column", gap: 12, fontFamily: FF,
-                  transition: "all 140ms ease",
-                }}
-              >
-                <div style={{ width: 60, height: 60, borderRadius: "50%", background: C.surface, border: `2px dashed ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 26, color: C.muted }}>group</span>
-                </div>
-                <div>
-                  <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 4px" }}>{t.booking.anyBarber}</p>
-                  <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>{t.booking.anyBarberDesc}</p>
-                </div>
-              </button>
+              {/* Any barber option — skipped when exactly one barber can perform
+                  the selected services, since picking "any" or picking that one
+                  barber by name is the same outcome; showing both is just noise. */}
+              {filteredBarbers.length !== 1 && (
+                <button
+                  onClick={() => { setSelectedBarber("any"); setStep("datetime"); }}
+                  style={{
+                    padding: "24px 20px", borderRadius: 12, textAlign: "start", cursor: "pointer",
+                    border: selectedBarber === "any" ? `2px solid ${C.black}` : `1.5px solid ${C.border}`,
+                    background: selectedBarber === "any" ? C.surface : C.white,
+                    display: "flex", flexDirection: "column", gap: 12, fontFamily: FF,
+                    transition: "all 140ms ease",
+                  }}
+                >
+                  <div style={{ width: 60, height: 60, borderRadius: "50%", background: C.surface, border: `2px dashed ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 26, color: C.muted }}>group</span>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 4px" }}>{t.booking.anyBarber}</p>
+                    <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>{t.booking.anyBarberDesc}</p>
+                  </div>
+                </button>
+              )}
 
               {barbersLoading ? (
                 <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "center", padding: "32px 0" }}>
@@ -648,50 +705,60 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                   {isRTL ? "لا يوجد حلاق متاح لهذه الخدمة" : "No barber available for this service"}
                 </div>
               ) : (
-                filteredBarbers.map(barber => (
-                  <button
-                    key={barber.id}
-                    onClick={() => { setSelectedBarber(barber.id); setStep("datetime"); }}
-                    style={{
-                      padding: "24px 20px", borderRadius: 12, textAlign: "left", cursor: "pointer",
-                      border: selectedBarber === barber.id ? `2px solid ${C.black}` : `1.5px solid ${C.border}`,
-                      background: selectedBarber === barber.id ? C.surface : C.white,
-                      display: "flex", flexDirection: "column", gap: 12, fontFamily: FF,
-                      transition: "all 140ms ease",
-                    }}
-                  >
-                    <div style={{ width: 60, height: 60, borderRadius: "50%", background: C.black, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontSize: 22, fontWeight: 700, color: C.white }}>{barber.full_name[0]?.toUpperCase()}</span>
+                filteredBarbers.map(barber => {
+                  const isSelected = selectedBarber === barber.id;
+                  const selectBarber = () => { setSelectedBarber(barber.id); setStep("datetime"); };
+                  return (
+                    <div
+                      key={barber.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={selectBarber}
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectBarber(); } }}
+                      style={{
+                        padding: "24px 20px", borderRadius: 12, textAlign: "start", cursor: "pointer",
+                        border: isSelected ? `2px solid ${C.black}` : `1.5px solid ${C.border}`,
+                        background: isSelected ? C.surface : C.white,
+                        display: "flex", flexDirection: "column", gap: 12, fontFamily: FF,
+                        transition: "all 140ms ease",
+                      }}
+                    >
+                      <div style={{ width: 60, height: 60, borderRadius: "50%", background: C.black, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontSize: 22, fontWeight: 700, color: C.white }}>{barber.full_name[0]?.toUpperCase()}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+                        <div>
+                          <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 4px" }}>{barber.full_name}</p>
+                          <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Master Barber</p>
+                        </div>
+                        <button
+                          onClick={e => { e.stopPropagation(); selectBarber(); }}
+                          style={{
+                            flexShrink: 0, padding: "8px 18px", borderRadius: 9999, border: "none",
+                            background: isSelected ? C.black : C.cta,
+                            color: C.white, fontWeight: 700, fontSize: 12, fontFamily: FF, cursor: "pointer",
+                          }}
+                        >
+                          {isSelected ? (isRTL ? "محدد" : "Selected") : (isRTL ? "اختيار" : "Select")}
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <p style={{ fontSize: 15, fontWeight: 800, color: C.black, margin: "0 0 4px" }}>{barber.full_name}</p>
-                      <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Master Barber</p>
-                    </div>
-                  </button>
-                ))
+                  );
+                })
               )}
             </div>
 
-            {/* Selection summary */}
-            {selectedServices.length > 0 && (
-              <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 20px", marginBottom: 24 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: C.muted, marginBottom: 6 }}>Your Selection</p>
-                <p style={{ fontSize: 14, fontWeight: 700, color: C.black, marginBottom: 4 }}>
-                  {serviceList.filter(s => selectedServices.includes(s.id)).map(s => s.name).join(", ")}
-                </p>
-                <p style={{ fontSize: 12, color: C.muted }}>
-                  {totalDuration} min · {totalPrice.toFixed(2)} JOD
-                </p>
+            <BottomBar>
+              <BottomBarTotals
+                totalPrice={totalPrice} totalDuration={totalDuration}
+                selectedCount={selectedServices.length} isRTL={isRTL}
+                totalLabel={t.booking.total} serviceLabel={t.booking.service} servicesLabel={t.booking.servicesPlural}
+              />
+              <div style={{ display: "flex", gap: 10 }}>
+                <NavBtn onClick={() => setStep("services")} icon="arrow_back" ariaLabel={t.common.back} />
+                <NextBtn onClick={() => setStep("datetime")} disabled={!selectedBarber} />
               </div>
-            )}
-
-            <button
-              onClick={() => setStep("services")}
-              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, color: C.subtle, fontFamily: FF }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
-              Back to Services
-            </button>
+            </BottomBar>
           </motion.div>
         )}
 
@@ -701,6 +768,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
             initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
+            <StepHeaderRow onBack={() => setStep("barber")} closeHref={`/shop/${resolvedShopId}`} isRTL={isRTL} backLabel={t.common.back} closeLabel={t.common.close} />
             <div style={{ marginBottom: 28 }}>
               <StepLabel text={`${t.booking.step} 3 ${t.booking.of} 4 · ${t.booking.pickDateTime}`} isRTL={isRTL} />
               <SectionTitle isRTL={isRTL} FF={FF}>{t.booking.pickDateTime}</SectionTitle>
@@ -826,18 +894,22 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
             </div>
 
             <BottomBar>
-              <div>
+              <BottomBarTotals
+                totalPrice={totalPrice} totalDuration={totalDuration}
+                selectedCount={selectedServices.length} isRTL={isRTL}
+                totalLabel={t.booking.total} serviceLabel={t.booking.service} servicesLabel={t.booking.servicesPlural}
+              >
                 {selectedTime ? (
-                  <p style={{ fontSize: 14, fontWeight: 700, color: C.black, margin: 0 }}>
+                  <p style={{ fontSize: 12, color: C.black, fontWeight: 700, margin: "2px 0 0" }}>
                     <span style={{ color: C.muted, fontWeight: 500 }}>Selected · </span>
                     {format(new Date(selectedDate), "EEE, MMM d")} · {formatTime(selectedTime)}
                   </p>
                 ) : (
-                  <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Pick a time above</p>
+                  <p style={{ fontSize: 12, color: C.muted, margin: "2px 0 0" }}>Pick a time above</p>
                 )}
-              </div>
+              </BottomBarTotals>
               <div style={{ display: "flex", gap: 10 }}>
-                <NavBtn onClick={() => setStep("barber")} icon="arrow_back" />
+                <NavBtn onClick={() => setStep("barber")} icon="arrow_back" ariaLabel={t.common.back} />
                 <NextBtn onClick={() => setStep("confirm")} disabled={!selectedTime} />
               </div>
             </BottomBar>
@@ -850,6 +922,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
             initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
           >
+            <StepHeaderRow onBack={() => setStep("datetime")} closeHref={`/shop/${resolvedShopId}`} isRTL={isRTL} backLabel={t.common.back} closeLabel={t.common.close} />
             <div style={{ marginBottom: 28 }}>
               <StepLabel text={`${t.booking.step} 4 ${t.booking.of} 4 · ${t.booking.confirmBooking}`} isRTL={isRTL} />
               <SectionTitle isRTL={isRTL} FF={FF}>{t.booking.confirmBooking}</SectionTitle>
@@ -890,7 +963,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                             color: C.black, outline: "none", fontFamily: FF,
                             boxSizing: "border-box", transition: "all 150ms ease",
                           }}
-                          onFocus={e => { e.target.style.borderColor = C.blue; e.target.style.background = C.white; e.target.style.boxShadow = "var(--shadow-focus)"; }}
+                          onFocus={e => { e.target.style.borderColor = C.accent; e.target.style.background = C.white; e.target.style.boxShadow = "var(--shadow-focus)"; }}
                           onBlur={e => { if (isPhone) setPhoneTouched(true); e.target.style.borderColor = phoneShowsError ? C.red : C.border; e.target.style.background = C.white; e.target.style.boxShadow = "none"; }}
                         />
                         {phoneShowsError && (
@@ -910,7 +983,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                   background: C.surface, borderRadius: 12,
                   border: `1px solid ${C.border}`,
                 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 20, color: C.blue, flexShrink: 0 }}>payments</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 20, color: C.accent, flexShrink: 0 }}>payments</span>
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 700, color: C.black, margin: "0 0 4px" }}>No payment today</p>
                     <p style={{ fontSize: 12, color: C.subtle, margin: 0, lineHeight: 1.5 }}>
@@ -966,7 +1039,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                 </div>
 
                 {bookingError && (
-                  <div style={{ padding: "12px 16px", background: "#fee2e2", borderRadius: 12, fontSize: 13, color: C.red, marginBottom: 16 }}>
+                  <div style={{ padding: "12px 16px", background: C.redBg, borderRadius: 12, fontSize: 13, color: C.red, marginBottom: 16 }}>
                     {bookingError}
                   </div>
                 )}
@@ -976,7 +1049,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                   onClick={handleBooking}
                   style={{
                     width: "100%", height: 52,
-                    background: (!clientName.trim() || !clientPhone.trim() || !phoneFormatValid || submitting) ? C.border : C.green,
+                    background: (!clientName.trim() || !clientPhone.trim() || !phoneFormatValid || submitting) ? C.border : C.cta,
                     color: (!clientName.trim() || !clientPhone.trim() || !phoneFormatValid || submitting) ? C.mist : C.white, borderRadius: 8, border: "none",
                     fontWeight: 700, fontSize: 15, fontFamily: FF,
                     cursor: (!clientName.trim() || !clientPhone.trim() || !phoneFormatValid || submitting) ? "not-allowed" : "pointer",
@@ -990,14 +1063,6 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                 </p>
               </div>
             </div>
-
-            <button
-              onClick={() => setStep("datetime")}
-              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, color: C.subtle, fontFamily: FF, marginTop: 24 }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
-              Back
-            </button>
           </motion.div>
         )}
 
@@ -1012,7 +1077,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
               padding: "56px 40px", textAlign: "center",
             }}>
               <div style={{
-                width: 88, height: 88, borderRadius: "50%", background: C.blue,
+                width: 88, height: 88, borderRadius: "50%", background: C.accent,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 margin: "0 auto 24px",
               }}>
@@ -1031,8 +1096,8 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
 
               {rescheduleWarning && (
                 <div style={{
-                  display: "flex", alignItems: "center", gap: 10, textAlign: "left",
-                  padding: "14px 16px", background: "#fee2e2", borderRadius: 12,
+                  display: "flex", alignItems: "center", gap: 10, textAlign: "start",
+                  padding: "14px 16px", background: C.redBg, borderRadius: 12,
                   fontSize: 13, color: C.red, marginBottom: 24, maxWidth: 480, marginLeft: "auto", marginRight: "auto",
                 }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 18, flexShrink: 0 }}>warning</span>
@@ -1040,7 +1105,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                 </div>
               )}
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "20px 24px", marginBottom: 32, textAlign: "left" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "20px 24px", marginBottom: 32, textAlign: "start" }}>
                 {[
                   { label: "Barber",  value: selectedBarberName || "Any" },
                   { label: "Date",    value: format(new Date(selectedDate), "MMM d") },
@@ -1058,7 +1123,7 @@ export function BookingEngine({ shopId, rescheduleAppointmentId }: { shopId?: st
                 <Link href="/customer" style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: "13px 28px", borderRadius: 8,
-                  background: C.green, color: C.white,
+                  background: C.cta, color: C.white,
                   fontWeight: 700, fontSize: 14, textDecoration: "none",
                 }}>
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>event_note</span>

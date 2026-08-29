@@ -7,8 +7,6 @@ import { Loader2, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslation, headingTracking } from "@/hooks/use-translation";
 
-const FF = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
-
 const T = {
   dark:    "#1c1611",
   mid:     "#5a5147",
@@ -28,7 +26,7 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const supabase = createClient();
-  const { t, dir, isRTL, FFD } = useTranslation();
+  const { t, dir, isRTL, FF, FFD } = useTranslation();
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -198,6 +196,7 @@ export default function ForgotPasswordPage() {
                     disabled={loading}
                     className="btn btn-primary"
                     style={{ height: 52, width: "100%", opacity: loading ? 0.7 : 1 }}
+                    aria-label={isRTL ? "إرسال رابط إعادة التعيين" : "Send Reset Link"}
                   >
                     {loading ? (
                       <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />

@@ -31,6 +31,7 @@ export default function ResetPasswordPage() {
   const [success, setSuccess]       = useState(false);
   const [error, setError]           = useState("");
   const [tokenReady, setTokenReady] = useState(false);
+  const [checkingToken, setCheckingToken] = useState(true);
   const redirectTimer               = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
   const { t, dir, isRTL, FFD } = useTranslation();
@@ -38,10 +39,11 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const supabase = createClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setTokenReady(true);
+      if (event === "PASSWORD_RECOVERY") { setTokenReady(true); setCheckingToken(false); }
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setTokenReady(true);
+      setCheckingToken(false);
     });
     return () => {
       subscription.unsubscribe();
@@ -89,7 +91,12 @@ export default function ResetPasswordPage() {
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }} style={{ width: "100%", maxWidth: 480 }}>
           <div className="auth-card" style={{ background: T.white, borderRadius: 12, border: `1px solid ${T.outline}` }}>
 
-            {success ? (
+            {checkingToken ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", gap: 12 }}>
+                <Loader2 size={24} className="animate-spin" style={{ color: T.accent }} />
+                <p style={{ fontSize: 13, color: T.muted }}>{isRTL ? "جارٍ التحقق من الرابط…" : "Verifying your link…"}</p>
+              </div>
+            ) : success ? (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 16 }}>
                 <div style={{ width: 64, height: 64, borderRadius: 12, background: T.greenBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
                   <CheckCircle size={28} style={{ color: T.green }} />
@@ -119,7 +126,7 @@ export default function ResetPasswordPage() {
               <>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 40 }}>
                   <div style={{ width: 44, height: 44, background: T.black, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
-                    <span style={{ color: T.white, fontSize: 20 }}>🔒</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 22, color: T.white, fontVariationSettings: "'FILL' 1" }}>lock_reset</span>
                   </div>
                   <h1 style={{ fontFamily: FFD, fontSize: 28, fontWeight: 300, letterSpacing: headingTracking(isRTL, "0.016em"), color: T.dark, marginBottom: 10 }}>{isRTL ? "كلمة مرور جديدة" : "New password"}</h1>
                   <p style={{ fontSize: 14, color: T.muted, fontWeight: 300, textAlign: "center" }}>{isRTL ? "اختر كلمة مرور قوية لحسابك." : "Choose a strong password for your account."}</p>
@@ -139,11 +146,11 @@ export default function ResetPasswordPage() {
                       <input
                         id="password" type={showPw ? "text" : "password"} required autoComplete="new-password"
                         placeholder={t.auth.passwordRules} value={password} onChange={(e) => setPassword(e.target.value)}
-                        style={{ height: 52, width: "100%", padding: "0 48px 0 18px", borderRadius: 8, border: `1px solid ${T.outline}`, background: T.surfLow, fontFamily: FF, fontSize: 14, color: T.dark, outline: "none", transition: "all 0.15s", boxSizing: "border-box" }}
+                        style={{ height: 52, width: "100%", paddingInlineEnd: 48, paddingInlineStart: 18, borderRadius: 8, border: `1px solid ${T.outline}`, background: T.surfLow, fontFamily: FF, fontSize: 14, color: T.dark, outline: "none", transition: "all 0.15s", boxSizing: "border-box" }}
                         onFocus={(e) => { e.currentTarget.style.background = T.white; e.currentTarget.style.border = "1px solid #a67c3d"; e.currentTarget.style.boxShadow = "var(--shadow-focus)"; }}
                         onBlur={(e) => { e.currentTarget.style.background = T.surfLow; e.currentTarget.style.border = `1px solid ${T.outline}`; e.currentTarget.style.boxShadow = "none"; }}
                       />
-                      <button type="button" onClick={() => setShowPw((v) => !v)} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 4 }}>
+                      <button type="button" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? (isRTL ? "إخفاء كلمة المرور" : "Hide password") : (isRTL ? "إظهار كلمة المرور" : "Show password")} style={{ position: "absolute", insetInlineEnd: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 4 }}>
                         {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>

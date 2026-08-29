@@ -138,7 +138,7 @@ export default function BookingDetailPage() {
   const statusStyle = STATUS_STYLES[appt.status] || "bg-surface-container text-on-surface";
 
   return (
-    <div style={{ background: "#ffffff" }} className="font-body text-[#1c1611] min-h-screen" dir={dir}>
+    <div className="bg-white font-body text-[#1c1611] min-h-screen" dir={dir}>
       {/* ── Toast notification ── */}
       <AnimatePresence>
         {toast && (
@@ -178,7 +178,6 @@ export default function BookingDetailPage() {
         <div className="bg-white rounded-2xl border border-outline-variant overflow-hidden mb-6">
           {/* Shop Banner */}
           <div className="bg-primary p-8 relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10" />
             <div className="relative z-10">
               <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">{isRTL ? "موعدك" : "Your Appointment"}</p>
               <h1 className="font-black text-3xl text-white">{appt.shop_name}</h1>
@@ -290,7 +289,11 @@ export default function BookingDetailPage() {
           <span className="material-symbols-outlined">search</span>
           <span className="font-headline text-[10px] font-bold uppercase tracking-widest mt-1">{t.customer.explore}</span>
         </Link>
-        <Link className="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full w-12 h-12 scale-90 active:scale-100 transition-transform" href="/customer">
+        <Link
+          className="flex flex-col items-center justify-center bg-primary text-on-primary rounded-full w-12 h-12 scale-90 active:scale-100 transition-transform"
+          href="/customer"
+          aria-label={t.customer.myAppointments}
+        >
           <span className="material-symbols-outlined">event_note</span>
         </Link>
         <Link className="flex flex-col items-center justify-center text-on-surface-variant" href="/customer">

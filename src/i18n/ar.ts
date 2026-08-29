@@ -43,8 +43,12 @@ const ar: TranslationKeys = {
     calendar: "التقويم",
     leads: "العملاء المحتملون",
     clients: "العملاء",
+    services: "الخدمات",
+    team: "الفريق",
     analytics: "التحليلات",
     settings: "الإعدادات",
+    bookAppointment: "احجز موعد",
+    signOut: "تسجيل الخروج",
   },
 
   // ─── Topbar ───
@@ -98,6 +102,7 @@ const ar: TranslationKeys = {
   // ─── CRM / Leads ───
   leads: {
     crmPipeline: "مسار إدارة العملاء",
+    leadAcross: "عميل محتمل في",
     leadsAcross: "عميل محتمل في",
     stages: "مراحل",
     newLead: "عميل جديد",
@@ -180,7 +185,9 @@ const ar: TranslationKeys = {
     step: "خطوة",
     of: "من",
     reviews: "تقييم",
+    review: "تقييم",
     service: "خدمة",
+    servicesPlural: "خدمات",
   },
 
   // ─── Settings ───
@@ -371,10 +378,10 @@ const ar: TranslationKeys = {
     noResults: "لا توجد نتائج",
     tryDifferent: "جرب مصطلح بحث مختلف أو تصفح جميع المتاجر.",
     clearSearch: "مسح البحث",
-    featured: "مميز",
     openNow: "مفتوح الآن",
-    fromPrice: "يبدأ من 8 دنانير",
-    thirtyMin: "30 دقيقة",
+    locationUnavailable: "الموقع غير متوفر",
+    fromPrice: "يبدأ من {price} د.أ",
+    serviceDuration: "{duration} دقيقة",
     view: "عرض",
     bookNow: "احجز الآن",
     readyToLook: "مستعد للحصول على أفضل مظهر؟",

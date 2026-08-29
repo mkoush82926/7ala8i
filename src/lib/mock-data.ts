@@ -1,474 +1,194 @@
-// ═══════════════════════════════════════════════════════
-// HALAQY — Mock Data for Phase 1 (UI Development)
-// ═══════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────
+// LOCAL DESIGN-PREVIEW MOCK DATA — never used in production.
+//
+// Local Supabase isn't always running in dev (it needs Docker), so the
+// public marketplace pages (explore / shop profile / booking wizard) have
+// nothing to render. This file provides realistic, clearly-fictional
+// barbershop data so those pages can be previewed and iterated on visually
+// without a live backend.
+//
+// Gated by NEXT_PUBLIC_USE_MOCK_DATA, read only from .env.local (which is
+// git-ignored and never deployed) — see src/lib/supabase/client.ts. There is
+// no code path that can accidentally enable this in production: the flag
+// defaults to unset/false, and Vercel's env for the real deployment never
+// sets it.
+// ─────────────────────────────────────────────────────────────────────────
 
-export interface Appointment {
-  id: string;
-  clientName: string;
-  clientPhone: string;
-  barberId: string;
-  barberName: string;
-  service: string;
-  price: number;
-  date: string;
-  time: string;
-  duration: number; // in minutes
-  status: "pending" | "confirmed" | "completed" | "no-show";
-}
+export const MOCK_DATA_ENABLED = process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true";
 
-export interface DailySale {
-  id: string;
-  clientName: string;
-  service: string;
-  barberName: string;
-  amount: number;
-  time: string;
-  paymentMethod: "cash" | "card";
-}
+export const MOCK_SHOP_IDS = {
+  gentlemansChair: "11111111-1111-1111-1111-111111111111",
+  classicRazor: "22222222-2222-2222-2222-222222222222",
+  urbanClippers: "33333333-3333-3333-3333-333333333333",
+} as const;
 
-export interface Lead {
+export interface MockShop {
   id: string;
   name: string;
+  address: string;
   phone: string;
-  email?: string;
-  value?: number;
-  stage: "new" | "contacted" | "booked" | "completed" | "loyal";
-  notes?: string;
-  avatar?: string;
-  createdAt: string;
+  email: string;
+  instagram: string;
+  google_maps_url: string;
+  whatsapp: string;
 }
 
-export interface ChartDataPoint {
-  label: string;
-  revenue: number;
-  bookings: number;
+export const MOCK_SHOPS: MockShop[] = [
+  {
+    id: MOCK_SHOP_IDS.gentlemansChair,
+    name: "The Gentleman's Chair",
+    address: "Amman, Abdoun",
+    phone: "+962 79 123 4567",
+    email: "hello@gentlemanschair.jo",
+    instagram: "gentlemanschair",
+    google_maps_url: "https://maps.google.com/?q=Abdoun+Amman",
+    whatsapp: "+962791234567",
+  },
+  {
+    id: MOCK_SHOP_IDS.classicRazor,
+    name: "The Classic Razor",
+    address: "Amman, Al Weibdeh",
+    phone: "+962 78 987 6543",
+    email: "info@classicrazor.jo",
+    instagram: "classicrazor.jo",
+    google_maps_url: "https://maps.google.com/?q=Al+Weibdeh+Amman",
+    whatsapp: "+962789876543",
+  },
+  {
+    id: MOCK_SHOP_IDS.urbanClippers,
+    name: "Urban Clippers",
+    address: "Amman, Sweifieh",
+    phone: "+962 77 111 2222",
+    email: "contact@urbanclippers.jo",
+    instagram: "urbanclippers",
+    google_maps_url: "https://maps.google.com/?q=Sweifieh+Amman",
+    whatsapp: "+962771112222",
+  },
+];
+
+export interface MockService {
+  id: string;
+  shop_id: string;
+  name: string;
+  name_ar: string;
+  duration: number;
+  price: number;
 }
 
-// ─── Dashboard Metrics ───
-export const dashboardMetrics = {
-  todayBookings: 12,
-  todayBookingsChange: +15,
-  todaySales: 84.5,
-  todaySalesChange: +8.3,
-  weeklyTrajectory: 523.0,
-  weeklyTrajectoryChange: -2.1,
-  monthlyRevenue: 2140.0,
-  monthlyRevenueChange: +12.5,
-  dailyGoal: 120,
-  dailyProgress: 84.5,
-};
+export const MOCK_SERVICES: MockService[] = [
+  // Gentleman's Chair — the full menu
+  { id: "s-gc-1", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Classic Haircut", name_ar: "قص كلاسيكي", duration: 30, price: 8 },
+  { id: "s-gc-2", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Skin Fade", name_ar: "سكين فييد", duration: 30, price: 10 },
+  { id: "s-gc-3", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Beard Trim & Lineup", name_ar: "تحديد وتهذيب اللحية", duration: 15, price: 5 },
+  { id: "s-gc-4", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Haircut & Beard", name_ar: "قص ولحية", duration: 45, price: 12 },
+  { id: "s-gc-5", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Hot Towel Shave", name_ar: "حلاقة بالمنشفة الساخنة", duration: 30, price: 7 },
+  { id: "s-gc-6", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Kids Haircut", name_ar: "قص شعر أطفال", duration: 20, price: 6 },
+  { id: "s-gc-7", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Hair Coloring", name_ar: "صبغ شعر", duration: 60, price: 25 },
+  { id: "s-gc-8", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "VIP Grooming Package", name_ar: "باقة العناية VIP", duration: 120, price: 40 },
 
-// ─── Daily Sales Chart Data ───
-export const dailyChartData: ChartDataPoint[] = [
-  { label: "9 AM", revenue: 8, bookings: 1 },
-  { label: "10 AM", revenue: 22.5, bookings: 3 },
-  { label: "11 AM", revenue: 37, bookings: 5 },
-  { label: "12 PM", revenue: 45.5, bookings: 6 },
-  { label: "1 PM", revenue: 52, bookings: 7 },
-  { label: "2 PM", revenue: 60, bookings: 8 },
-  { label: "3 PM", revenue: 68.5, bookings: 9 },
-  { label: "4 PM", revenue: 76, bookings: 10 },
-  { label: "5 PM", revenue: 84.5, bookings: 12 },
+  // Classic Razor — a tighter menu
+  { id: "s-cr-1", shop_id: MOCK_SHOP_IDS.classicRazor, name: "Classic Haircut", name_ar: "قص كلاسيكي", duration: 30, price: 8 },
+  { id: "s-cr-2", shop_id: MOCK_SHOP_IDS.classicRazor, name: "Beard Trim", name_ar: "تهذيب اللحية", duration: 15, price: 5 },
+  { id: "s-cr-3", shop_id: MOCK_SHOP_IDS.classicRazor, name: "Haircut & Beard", name_ar: "قص ولحية", duration: 45, price: 12 },
+  { id: "s-cr-4", shop_id: MOCK_SHOP_IDS.classicRazor, name: "Hot Towel Shave", name_ar: "حلاقة بالمنشفة الساخنة", duration: 30, price: 7 },
+
+  // Urban Clippers
+  { id: "s-uc-1", shop_id: MOCK_SHOP_IDS.urbanClippers, name: "Skin Fade", name_ar: "سكين فييد", duration: 30, price: 10 },
+  { id: "s-uc-2", shop_id: MOCK_SHOP_IDS.urbanClippers, name: "Kids Haircut", name_ar: "قص شعر أطفال", duration: 20, price: 6 },
+  { id: "s-uc-3", shop_id: MOCK_SHOP_IDS.urbanClippers, name: "Haircut & Beard", name_ar: "قص ولحية", duration: 45, price: 12 },
+  { id: "s-uc-4", shop_id: MOCK_SHOP_IDS.urbanClippers, name: "Hair Coloring", name_ar: "صبغ شعر", duration: 60, price: 22 },
 ];
 
-export const weeklyChartData: ChartDataPoint[] = [
-  { label: "Mon", revenue: 125, bookings: 16 },
-  { label: "Tue", revenue: 98, bookings: 12 },
-  { label: "Wed", revenue: 142, bookings: 18 },
-  { label: "Thu", revenue: 110, bookings: 14 },
-  { label: "Fri", revenue: 178, bookings: 22 },
-  { label: "Sat", revenue: 195, bookings: 24 },
-  { label: "Sun", revenue: 75, bookings: 8 },
-];
+export interface MockBarber {
+  id: string;
+  shop_id: string;
+  full_name: string;
+  avatar_url: string;
+  role: "barber";
+  barber_services: { service_id: string }[];
+}
 
-export const monthlyChartData: ChartDataPoint[] = [
-  { label: "Week 1", revenue: 520, bookings: 64 },
-  { label: "Week 2", revenue: 610, bookings: 76 },
-  { label: "Week 3", revenue: 480, bookings: 58 },
-  { label: "Week 4", revenue: 530, bookings: 68 },
-];
-
-export const yearlyChartData: ChartDataPoint[] = [
-  { label: "Jan", revenue: 1800, bookings: 220 },
-  { label: "Feb", revenue: 2100, bookings: 260 },
-  { label: "Mar", revenue: 2400, bookings: 300 },
-  { label: "Apr", revenue: 2200, bookings: 275 },
-  { label: "May", revenue: 2600, bookings: 320 },
-  { label: "Jun", revenue: 2800, bookings: 345 },
-  { label: "Jul", revenue: 3100, bookings: 380 },
-  { label: "Aug", revenue: 2900, bookings: 360 },
-  { label: "Sep", revenue: 2700, bookings: 335 },
-  { label: "Oct", revenue: 2500, bookings: 310 },
-  { label: "Nov", revenue: 2300, bookings: 285 },
-  { label: "Dec", revenue: 2140, bookings: 266 },
-];
-
-// ─── Today's Transactions (Receipt) ───
-export const todaysSales: DailySale[] = [
+export const MOCK_BARBERS: MockBarber[] = [
   {
-    id: "s1",
-    clientName: "Tariq Mansour",
-    service: "Premium Haircut",
-    barberName: "Ahmad Al-Masri",
-    amount: 12.0,
-    time: "09:15",
-    paymentMethod: "cash",
+    id: "b-gc-1", shop_id: MOCK_SHOP_IDS.gentlemansChair, full_name: "Sami FadeMaster",
+    avatar_url: "https://i.pravatar.cc/150?u=b-gc-1", role: "barber",
+    barber_services: MOCK_SERVICES.filter(s => s.shop_id === MOCK_SHOP_IDS.gentlemansChair).map(s => ({ service_id: s.id })),
   },
   {
-    id: "s2",
-    clientName: "Sami Khalil",
-    service: "Beard Trim & Shape",
-    barberName: "Khalid Nasser",
-    amount: 8.0,
-    time: "09:45",
-    paymentMethod: "card",
+    id: "b-gc-2", shop_id: MOCK_SHOP_IDS.gentlemansChair, full_name: "Khaled Scissors",
+    avatar_url: "https://i.pravatar.cc/150?u=b-gc-2", role: "barber",
+    barber_services: MOCK_SERVICES.filter(s => s.shop_id === MOCK_SHOP_IDS.gentlemansChair).map(s => ({ service_id: s.id })),
   },
   {
-    id: "s3",
-    clientName: "Rami Abu-Said",
-    service: "Haircut + Beard",
-    barberName: "Omar Haddad",
-    amount: 15.0,
-    time: "10:00",
-    paymentMethod: "cash",
+    id: "b-cr-1", shop_id: MOCK_SHOP_IDS.classicRazor, full_name: "Omar Styling",
+    avatar_url: "https://i.pravatar.cc/150?u=b-cr-1", role: "barber",
+    barber_services: MOCK_SERVICES.filter(s => s.shop_id === MOCK_SHOP_IDS.classicRazor).map(s => ({ service_id: s.id })),
   },
   {
-    id: "s4",
-    clientName: "Nabil Darwish",
-    service: "Hot Towel Shave",
-    barberName: "Ahmad Al-Masri",
-    amount: 10.0,
-    time: "10:30",
-    paymentMethod: "cash",
-  },
-  {
-    id: "s5",
-    clientName: "Walid Khoury",
-    service: "Kids Haircut",
-    barberName: "Faris Jabari",
-    amount: 7.0,
-    time: "11:00",
-    paymentMethod: "card",
-  },
-  {
-    id: "s6",
-    clientName: "Bassem Hani",
-    service: "Premium Haircut",
-    barberName: "Yousef Qasem",
-    amount: 12.0,
-    time: "11:30",
-    paymentMethod: "cash",
-  },
-  {
-    id: "s7",
-    clientName: "Mazen Sabbagh",
-    service: "Full Grooming",
-    barberName: "Khalid Nasser",
-    amount: 20.5,
-    time: "12:00",
-    paymentMethod: "card",
+    id: "b-uc-1", shop_id: MOCK_SHOP_IDS.urbanClippers, full_name: "Rami The Classic",
+    avatar_url: "https://i.pravatar.cc/150?u=b-uc-1", role: "barber",
+    barber_services: MOCK_SERVICES.filter(s => s.shop_id === MOCK_SHOP_IDS.urbanClippers).map(s => ({ service_id: s.id })),
   },
 ];
 
-// ─── Appointments ───
-export const appointments: Appointment[] = [
-  {
-    id: "a1",
-    clientName: "Tariq Mansour",
-    clientPhone: "+962791234567",
-    barberId: "barber-001",
-    barberName: "Ahmad Al-Masri",
-    service: "Premium Haircut",
-    price: 12,
-    date: "2026-03-10",
-    time: "09:00",
-    duration: 45,
-    status: "completed",
-  },
-  {
-    id: "a2",
-    clientName: "Sami Khalil",
-    clientPhone: "+962797654321",
-    barberId: "barber-002",
-    barberName: "Khalid Nasser",
-    service: "Beard Trim",
-    price: 8,
-    date: "2026-03-10",
-    time: "09:30",
-    duration: 30,
-    status: "completed",
-  },
-  {
-    id: "a3",
-    clientName: "Rami Abu-Said",
-    clientPhone: "+962781112233",
-    barberId: "barber-003",
-    barberName: "Omar Haddad",
-    service: "Haircut + Beard",
-    price: 15,
-    date: "2026-03-10",
-    time: "10:00",
-    duration: 60,
-    status: "completed",
-  },
-  {
-    id: "a4",
-    clientName: "Nabil Darwish",
-    clientPhone: "+962789998877",
-    barberId: "barber-001",
-    barberName: "Ahmad Al-Masri",
-    service: "Hot Towel Shave",
-    price: 10,
-    date: "2026-03-10",
-    time: "10:30",
-    duration: 30,
-    status: "confirmed",
-  },
-  {
-    id: "a5",
-    clientName: "Walid Khoury",
-    clientPhone: "+962794445566",
-    barberId: "barber-004",
-    barberName: "Faris Jabari",
-    service: "Kids Haircut",
-    price: 7,
-    date: "2026-03-10",
-    time: "11:00",
-    duration: 30,
-    status: "confirmed",
-  },
-  {
-    id: "a6",
-    clientName: "Bassem Hani",
-    clientPhone: "+962782223344",
-    barberId: "barber-005",
-    barberName: "Yousef Qasem",
-    service: "Premium Haircut",
-    price: 12,
-    date: "2026-03-10",
-    time: "11:30",
-    duration: 45,
-    status: "pending",
-  },
-  {
-    id: "a7",
-    clientName: "Mazen Sabbagh",
-    clientPhone: "+962793334455",
-    barberId: "barber-002",
-    barberName: "Khalid Nasser",
-    service: "Full Grooming",
-    price: 20.5,
-    date: "2026-03-10",
-    time: "12:00",
-    duration: 75,
-    status: "pending",
-  },
-  {
-    id: "a8",
-    clientName: "Hisham Qadri",
-    clientPhone: "+962785556677",
-    barberId: "barber-003",
-    barberName: "Omar Haddad",
-    service: "Premium Haircut",
-    price: 12,
-    date: "2026-03-10",
-    time: "13:00",
-    duration: 45,
-    status: "pending",
-  },
-  {
-    id: "a9",
-    clientName: "Fadi Nassar",
-    clientPhone: "+962796667788",
-    barberId: "barber-001",
-    barberName: "Ahmad Al-Masri",
-    service: "Haircut + Beard",
-    price: 15,
-    date: "2026-03-10",
-    time: "14:00",
-    duration: 60,
-    status: "pending",
-  },
-  {
-    id: "a10",
-    clientName: "Zain Omari",
-    clientPhone: "+962787778899",
-    barberId: "barber-004",
-    barberName: "Faris Jabari",
-    service: "Beard Trim",
-    price: 8,
-    date: "2026-03-10",
-    time: "14:30",
-    duration: 30,
-    status: "no-show",
-  },
-  {
-    id: "a11",
-    clientName: "Layth Battah",
-    clientPhone: "+962798889900",
-    barberId: "barber-005",
-    barberName: "Yousef Qasem",
-    service: "Hot Towel Shave",
-    price: 10,
-    date: "2026-03-10",
-    time: "15:00",
-    duration: 30,
-    status: "pending",
-  },
-  {
-    id: "a12",
-    clientName: "Ammar Saleh",
-    clientPhone: "+962780001122",
-    barberId: "barber-002",
-    barberName: "Khalid Nasser",
-    service: "Premium Haircut",
-    price: 12,
-    date: "2026-03-10",
-    time: "16:00",
-    duration: 45,
-    status: "pending",
-  },
+export interface MockReview {
+  id: string;
+  shop_id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  clients: { name: string };
+}
+
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString();
+}
+
+export const MOCK_REVIEWS: MockReview[] = [
+  { id: "r-gc-1", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Best fade I've had in Amman — Sami really knows his craft.", created_at: daysAgo(2), clients: { name: "Yousef R." } },
+  { id: "r-gc-2", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Clean shop, friendly staff, quick service. Highly recommend.", created_at: daysAgo(5), clients: { name: "Tariq H." } },
+  { id: "r-gc-3", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 4, comment: "The hot towel shave is worth every dinar.", created_at: daysAgo(9), clients: { name: "Mahmoud S." } },
+  { id: "r-gc-4", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Been coming here for two years, never disappointed.", created_at: daysAgo(14), clients: { name: "Basel N." } },
+  { id: "r-gc-5", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 3, comment: "A bit busy on weekends, but the quality makes up for the wait.", created_at: daysAgo(20), clients: { name: "Fadi K." } },
+  { id: "r-gc-6", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Khaled's beard lineup is unreal. My go-to shop now.", created_at: daysAgo(26), clients: { name: "Zaid A." } },
+
+  { id: "r-cr-1", shop_id: MOCK_SHOP_IDS.classicRazor, rating: 5, comment: "Old-school barbering done right. Great atmosphere.", created_at: daysAgo(4), clients: { name: "Hassan T." } },
+  { id: "r-cr-2", shop_id: MOCK_SHOP_IDS.classicRazor, rating: 4, comment: "Solid haircut, reasonable prices, easy to book online.", created_at: daysAgo(11), clients: { name: "Ali Z." } },
+  { id: "r-cr-3", shop_id: MOCK_SHOP_IDS.classicRazor, rating: 5, comment: "Omar is precise and fast. In and out in 30 minutes looking sharp.", created_at: daysAgo(18), clients: { name: "Karam F." } },
+
+  { id: "r-uc-1", shop_id: MOCK_SHOP_IDS.urbanClippers, rating: 5, comment: "Modern space, great music, even better haircuts.", created_at: daysAgo(3), clients: { name: "Saeed M." } },
+  { id: "r-uc-2", shop_id: MOCK_SHOP_IDS.urbanClippers, rating: 4, comment: "Rami nailed the color job, exactly what I asked for.", created_at: daysAgo(8), clients: { name: "Majed S." } },
 ];
 
-// ─── CRM Leads ───
-export const leads: Lead[] = [
-  {
-    id: "l1",
-    name: "Ibrahim Al-Rashid",
-    phone: "+962791001001",
-    email: "ibrahim@email.com",
-    value: 200,
-    stage: "new",
-    notes: "Wedding groom",
-    createdAt: "2026-03-08",
-  },
-  {
-    id: "l2",
-    name: "Karim Shaheen",
-    phone: "+962792002002",
-    value: 50,
-    stage: "contacted",
-    notes: "VIP regular - monthly package",
-    createdAt: "2026-03-07",
-  },
-  {
-    id: "l3",
-    name: "Sultan Al-Nouri",
-    phone: "+962793003003",
-    email: "sultan@email.com",
-    value: 350,
-    stage: "booked",
-    notes: "Groomsmen package x7",
-    createdAt: "2026-03-05",
-  },
-  {
-    id: "l4",
-    name: "Adel Hamdan",
-    phone: "+962794004004",
-    stage: "completed",
-    createdAt: "2026-03-01",
-  },
-  {
-    id: "l5",
-    name: "Murad Salim",
-    phone: "+962795005005",
-    value: 25,
-    stage: "loyal",
-    notes: "Monthly loyalty member",
-    createdAt: "2026-02-15",
-  },
-  {
-    id: "l6",
-    name: "Rakan Al-Tamimi",
-    phone: "+962796006006",
-    value: 100,
-    stage: "new",
-    notes: "Corporate event styling",
-    createdAt: "2026-03-09",
-  },
-  {
-    id: "l7",
-    name: "Bilal Farouk",
-    phone: "+962797007007",
-    stage: "contacted",
-    createdAt: "2026-03-06",
-  },
-  {
-    id: "l8",
-    name: "Hatem Qureshi",
-    phone: "+962798008008",
-    value: 75,
-    stage: "new",
-    notes: "Interested in membership",
-    createdAt: "2026-03-10",
-  },
-];
+export interface MockWorkingHour {
+  barber_id: string;
+  day_of_week: number; // 0 = Sunday, matches JS Date#getDay()
+  is_working: boolean;
+  start_time: string;
+  end_time: string;
+  break_start: string | null;
+  break_end: string | null;
+}
 
-// ─── Services ───
-export const services = [
-  {
-    id: "svc-1",
-    name: "Premium Haircut",
-    price: 12,
-    duration: 45,
-    icon: "scissors",
-  },
-  {
-    id: "svc-2",
-    name: "Beard Trim & Shape",
-    price: 8,
-    duration: 30,
-    icon: "scissors",
-  },
-  {
-    id: "svc-3",
-    name: "Haircut + Beard",
-    price: 15,
-    duration: 60,
-    icon: "scissors",
-  },
-  {
-    id: "svc-4",
-    name: "Hot Towel Shave",
-    price: 10,
-    duration: 30,
-    icon: "scissors",
-  },
-  {
-    id: "svc-5",
-    name: "Kids Haircut",
-    price: 7,
-    duration: 30,
-    icon: "scissors",
-  },
-  {
-    id: "svc-6",
-    name: "Full Grooming Package",
-    price: 20.5,
-    duration: 75,
-    icon: "sparkles",
-  },
-  {
-    id: "svc-7",
-    name: "Hair Coloring",
-    price: 25,
-    duration: 90,
-    icon: "palette",
-  },
-  {
-    id: "svc-8",
-    name: "Facial Treatment",
-    price: 18,
-    duration: 45,
-    icon: "heart",
-  },
-];
+// Sun–Thu 9:00–18:00 with a 1hr midday break, closed Friday, half-day Saturday
+// — a realistic Jordanian barbershop week.
+function standardWeek(barberId: string): MockWorkingHour[] {
+  const days = [0, 1, 2, 3, 4, 5, 6];
+  return days.map((day) => {
+    if (day === 5) {
+      return { barber_id: barberId, day_of_week: day, is_working: false, start_time: "00:00", end_time: "00:00", break_start: null, break_end: null };
+    }
+    if (day === 6) {
+      return { barber_id: barberId, day_of_week: day, is_working: true, start_time: "10:00", end_time: "16:00", break_start: null, break_end: null };
+    }
+    return { barber_id: barberId, day_of_week: day, is_working: true, start_time: "09:00", end_time: "18:00", break_start: "13:00", break_end: "14:00" };
+  });
+}
 
-// ─── Acquisition Channels ───
-export const acquisitionData = [
-  { name: "Instagram", value: 38, color: "var(--accent-lavender)" },
-  { name: "Word of Mouth", value: 28, color: "var(--accent-mint)" },
-  { name: "Walk-in", value: 20, color: "var(--accent-blue)" },
-  { name: "Google", value: 10, color: "var(--accent-amber)" },
-  { name: "Other", value: 4, color: "var(--accent-rose)" },
-];
+export const MOCK_WORKING_HOURS: MockWorkingHour[] = MOCK_BARBERS.flatMap((b) => standardWeek(b.id));
+
+// No pre-existing bookings — every generated slot shows as open for this
+// fresh design preview.
+export const MOCK_APPOINTMENTS: { start_time: string; end_time: string; barber_id: string; shop_id: string; status: string }[] = [];

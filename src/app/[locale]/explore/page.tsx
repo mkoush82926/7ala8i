@@ -13,14 +13,29 @@ interface ShopRow {
   google_maps_url: string | null;
 }
 
-const SHOP_IMAGES = [
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuA7Bsh2lEbD6ZTy5h9T1ZG2MfsCUuywaaZd_nDq-ITBCub76GRU6XIlZTHFIOusrp-JJ09EY9hZIjSKHLqnLzJfWCNu69nSF9e1itU_wlbDpZS5P3oKnHge0HXclB_FldVVgc0CztwnMJvSXaFvlCVR-NgFXTd--q1AfHMIHEy0DUze4UyYtmmM0GoN-gVDSNGchj-GxzY4-HtCnSHTY5Qs2s-4Tfv3m3YaHGC1dWQF9kDDUDLMwPV5_NaI5cgUrBO8y0bjvwJEh01V",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDSCFMQFuOkdgX7Yi5aFyGJXWyFRL_0nsmIzQuSp9pTlpt0Jvzq7s8XQDRzmyMREhhu_R0pMPnXp1r9E7-w7Sl1lcker-7vzu2GkfOzpBimNcBYFpgelUb0ov4bh9zAzfSXHDJpnrLD7ON1LD3w9DS08fanZhKmjYKr_ovtIKPYVWSWY3XKrJhIm-fJ4XGFofFMjZ5sfasoDqch4mdVsdubVvgiVb50yUWBFIPtQpctKjRGuCABoP2bWgRF2sLf3Pwz3dLtvd9JKI-9",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuCi3P0YWjSoB1W30rvVp7iaIzU52UVcRYzlZZxCqyS8oPQZgIcGRE80gF7jJr9736TXDTpefv_eH6Jj-o_jvyvFoaJTYsXFeqa1Nj7vvzJeaDpsdgYgGPSz-Ud7vQBfK1UfnpoqHsW6y-bi3x7Ot7yQNiG0k43hkr9-aJDf066iT8l3se2D1p2FzMq-EjLBHitsEEEFNc1PmwlmGN-v4Wv0dZM0hNSgH_BhbqAMPJUsrSM8BRn36lR5KOeGjmVfX05fJUrqZ6jDzwnY",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDL395efcii6egq6DbxYxfSxw9lPtASWvr9nyiIX3PDRD5DPM2aqD-bM24z4nlQJNFIo6duutRJce1FKomv5xJynkuGaW0lIyG9K81I9sKdFbDMa4ZlJBaVyqTtLKGyHgdrvugCLceYGsmCazNcaFoKYgZVmVbd0X-4DWwtJ5e_2xrcb-S5B2FuUTH6MxUgF-0fhNjhhQAleMA_50MfPbTo3QOjn5ysqxr19Eq5CPPMcDcTBff8hfbQCevSW-MLwmXp7v4SCUrkGcw7",
+// Per-shop cover tile: deterministic accent + initials instead of a handful
+// of stock photos cycling round-robin across unrelated shops.
+const COVER_PALETTE = [
+  { bg: "#1c1611", fg: "#f7f1e4" },
+  { bg: "#a67c3d", fg: "#ffffff" },
+  { bg: "#5a5147", fg: "#f7f1e4" },
 ];
 
-const CATEGORIES = ["All", "Classic Cuts", "Luxury Grooming", "Beard Studio", "Kids Friendly"];
+function coverForShop(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return COVER_PALETTE[hash % COVER_PALETTE.length];
+}
+
+function shopInitials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(w => w[0])
+    .join("")
+    .toUpperCase();
+}
 
 // FF is direction-aware — set per render from useTranslation hook
 const FF_DEFAULT = "var(--font-jakarta),'Segoe UI',system-ui,sans-serif";
@@ -34,7 +49,7 @@ const containerStyle: React.CSSProperties = {
   boxSizing: "border-box",
 };
 
-function SkeletonCard({ wide = false }: { wide?: boolean }) {
+function SkeletonCard() {
   return (
     <div
       style={{
@@ -42,12 +57,11 @@ function SkeletonCard({ wide = false }: { wide?: boolean }) {
         borderRadius: 12,
         overflow: "hidden",
         border: "1px solid #ede3cd",
-        gridColumn: wide ? "span 2" : undefined,
       }}
     >
       <div
         style={{
-          aspectRatio: wide ? "2/1" : "4/3",
+          aspectRatio: "4/3",
           background: "#f7f1e4",
           animation: "shimmerMove 1.6s ease-in-out infinite",
         }}
@@ -64,13 +78,10 @@ function SkeletonCard({ wide = false }: { wide?: boolean }) {
 export default function ExplorePage() {
   const [shops, setShops] = useState<ShopRow[]>([]);
   const [ratings, setRatings] = useState<Record<string, { avg: number; count: number }>>({});
+  const [cheapestService, setCheapestService] = useState<Record<string, { price: number; duration: number }>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { FF, dir, t, isRTL } = useTranslation();
-  const categories = dir === "rtl"
-    ? ["الكل", "قصات كلاسيكية", "عناية فاخرة", "استوديو اللحية", "مناسب للأطفال"]
-    : ["All", "Classic Cuts", "Luxury Grooming", "Beard Studio", "Kids Friendly"];
-  const [activeCategory, setActiveCategory] = useState("All");
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -105,6 +116,26 @@ export default function ExplorePage() {
               computed[shopId] = { avg: v.sum / v.count, count: v.count };
             });
             setRatings(computed);
+          }
+
+          // Real per-shop "from" price + duration, computed from each shop's
+          // actual services (cheapest service wins) — mirrors the field
+          // selection used by getPublicServices() in lib/queries/services.ts,
+          // fetched in bulk here (one query for all shops on this listing)
+          // rather than one getPublicServices() call per shop.
+          const { data: serviceRows } = await supabase
+            .from("services")
+            .select("shop_id, duration, price")
+            .in("shop_id", shopIds)
+            .order("price", { ascending: true });
+          if (serviceRows) {
+            const cheapest: Record<string, { price: number; duration: number }> = {};
+            for (const svc of serviceRows as { shop_id: string; duration: number; price: number }[]) {
+              if (!(svc.shop_id in cheapest)) {
+                cheapest[svc.shop_id] = { price: svc.price, duration: svc.duration };
+              }
+            }
+            setCheapestService(cheapest);
           }
         }
       }
@@ -173,17 +204,19 @@ export default function ExplorePage() {
             Halaqy.
           </Link>
 
-          {/* Desktop Search */}
+          {/* Search — shrinks to fit on mobile now that Sign In/Get Started
+              are hidden below md (the bottom tab bar covers account access there) */}
           <div
             style={{
               flex: 1,
+              minWidth: 0,
               maxWidth: 440,
               display: "flex",
               alignItems: "center",
               height: 40,
               gap: 10,
-              paddingLeft: 14,
-              paddingRight: 12,
+              paddingInlineStart: 14,
+              paddingInlineEnd: 12,
               background: "#f7f1e4",
               borderRadius: 8,
               border: "1.5px solid #ede3cd",
@@ -225,6 +258,7 @@ export default function ExplorePage() {
             {searchTerm && (
               <button
                 onClick={e => { e.stopPropagation(); setSearchTerm(""); }}
+                aria-label={t.explore.clearSearch}
                 style={{ background: "none", border: "none", cursor: "pointer", display: "flex", color: "#5a5147", padding: 0, flexShrink: 0 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
@@ -232,8 +266,9 @@ export default function ExplorePage() {
             )}
           </div>
 
-          {/* Nav actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", flexShrink: 0 }}>
+          {/* Nav actions — hidden on mobile; the bottom tab bar's Account
+              link covers sign-in there, and there's no room for both. */}
+          <div className="hidden md:flex" style={{ alignItems: "center", gap: 8, marginInlineStart: "auto", flexShrink: 0 }}>
             {isLoggedIn ? (
               <Link
                 href="/customer"
@@ -368,7 +403,7 @@ export default function ExplorePage() {
         </section>
 
         {/* ════════════════════════════════════
-            FILTER BAR
+            RESULTS BAR
         ════════════════════════════════════ */}
         <div
           style={{
@@ -379,32 +414,9 @@ export default function ExplorePage() {
             borderBottom: "1px solid #ede3cd",
           }}
         >
-          <div style={{ ...containerStyle, display: "flex", alignItems: "center", gap: 8, paddingTop: 12, paddingBottom: 12, overflowX: "auto" }}>
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                style={{
-                  padding: "8px 18px",
-                  borderRadius: 9999,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                  cursor: "pointer",
-                  flexShrink: 0,
-                  border: "1.5px solid",
-                  background: activeCategory === cat ? "#f7f1e4" : "#fff",
-                  color: activeCategory === cat ? "#1c1611" : "#5a5147",
-                  borderColor: activeCategory === cat ? "#f7f1e4" : "#ede3cd",
-                  transition: "all 120ms ease",
-                  fontFamily: FF,
-                }}
-              >
-                {cat}
-              </button>
-            ))}
+          <div style={{ ...containerStyle, display: "flex", alignItems: "center", paddingTop: 12, paddingBottom: 12 }}>
             {!loading && (
-              <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 600, color: "#a89e8c", whiteSpace: "nowrap", flexShrink: 0 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#5a5147", whiteSpace: "nowrap" }}>
                 {t.explore.found.replace('{count}', filtered.length.toString())}
               </span>
             )}
@@ -424,7 +436,7 @@ export default function ExplorePage() {
                 gap: 20,
               }}
             >
-              <SkeletonCard wide />
+              <SkeletonCard />
               <SkeletonCard />
               <SkeletonCard />
               <SkeletonCard />
@@ -471,8 +483,8 @@ export default function ExplorePage() {
             >
               <AnimatePresence>
                 {filtered.map((shop, idx) => {
-                  const img     = SHOP_IMAGES[idx % SHOP_IMAGES.length];
-                  const isFeatured = idx === 0;
+                  const cover = coverForShop(shop.id);
+                  const cheapest = cheapestService[shop.id];
 
                   return (
                     <motion.div
@@ -487,41 +499,35 @@ export default function ExplorePage() {
                         border: "1px solid #ede3cd",
                         transition: "transform 150ms ease",
                         cursor: "pointer",
-                        gridColumn: isFeatured ? "1 / span 2" : undefined,
                       }}
                       whileHover={{ y: -4 }}
                     >
-                      {/* Cover image */}
+                      {/* Cover tile — per-shop accent + initials (no stock photos) */}
                       <div
                         style={{
                           position: "relative",
                           overflow: "hidden",
-                          aspectRatio: isFeatured ? "2.4/1" : "4/3",
-                          background: "#ede3cd",
+                          aspectRatio: "4/3",
+                          background: cover.bg,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
-                        <img
-                          src={img}
-                          alt={shop.name}
-                          style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 500ms ease" }}
-                          onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.06)"; }}
-                          onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; }}
-                        />
-
-                        {/* Top-left badges */}
-                        <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 6, alignItems: "center" }}>
-                          {isFeatured && (
-                            <span
-                              style={{
-                                background: "#f7f1e4", color: "#1c1611",
-                                padding: "3px 10px", borderRadius: 9999,
-                                fontSize: 10, fontWeight: 800, letterSpacing: headingTracking(isRTL, "0.08em"), textTransform: "uppercase",
-                              }}
-                            >
-                              ★ {t.explore.featured}
-                            </span>
-                          )}
-                        </div>
+                        <span
+                          className="material-symbols-outlined"
+                          style={{ position: "absolute", fontSize: 120, color: cover.fg, opacity: 0.12 }}
+                          aria-hidden="true"
+                        >content_cut</span>
+                        <span
+                          style={{
+                            fontSize: 40, fontWeight: 900, color: cover.fg,
+                            fontFamily: "var(--font-intervar), sans-serif",
+                            letterSpacing: "0.02em",
+                          }}
+                        >
+                          {shopInitials(shop.name)}
+                        </span>
                       </div>
 
                       {/* Card body */}
@@ -529,7 +535,7 @@ export default function ExplorePage() {
                         <Link href={`/shop/${shop.id}`} style={{ textDecoration: "none" }}>
                           <h3
                             style={{
-                              fontSize: isFeatured ? 20 : 16,
+                              fontSize: 16,
                               fontWeight: 900,
                               color: "#1c1611",
                               letterSpacing: "0.012em",
@@ -560,21 +566,28 @@ export default function ExplorePage() {
                         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 16 }}>
                           <span className="material-symbols-outlined" style={{ fontSize: 13, color: "#5a5147" }}>location_on</span>
                           <span style={{ fontSize: 13, color: "#5a5147", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {shop.address || "Amman, Jordan"}
+                            {shop.address || t.explore.locationUnavailable}
                           </span>
                         </div>
 
                         {/* Footer */}
                         <div
                           style={{
-                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            display: "flex", alignItems: "center",
+                            justifyContent: cheapest ? "space-between" : "flex-end",
                             paddingTop: 14, borderTop: "1px solid #ede3cd",
                           }}
                         >
-                          <div>
-                            <span style={{ fontSize: 15, fontWeight: 800, color: "#1c1611" }}>{t.explore.fromPrice}</span>
-                            <span style={{ fontSize: 12, color: "#5a5147", marginLeft: 6 }}>· {t.explore.thirtyMin}</span>
-                          </div>
+                          {cheapest && (
+                            <div>
+                              <span style={{ fontSize: 15, fontWeight: 800, color: "#1c1611" }}>
+                                {t.explore.fromPrice.replace("{price}", cheapest.price.toString())}
+                              </span>
+                              <span style={{ fontSize: 12, color: "#5a5147", marginInlineStart: 6 }}>
+                                · {t.explore.serviceDuration.replace("{duration}", cheapest.duration.toString())}
+                              </span>
+                            </div>
+                          )}
                           <div style={{ display: "flex", gap: 8 }}>
                             <Link
                               href={`/shop/${shop.id}`}
@@ -668,12 +681,11 @@ export default function ExplorePage() {
       <nav
         style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
-          display: "flex", justifyContent: "space-around", alignItems: "center",
           background: "#ffffff",
           borderTop: "1px solid #ede3cd",
           padding: "12px 16px max(16px, env(safe-area-inset-bottom))",
         }}
-        className="md:hidden"
+        className="md:hidden flex justify-around items-center"
       >
         <Link href="/explore" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none" }}>
           <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#f7f1e4", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -695,11 +707,9 @@ export default function ExplorePage() {
       <style>{`
         @media (max-width: 900px) {
           .explore-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .explore-grid > :first-child { grid-column: 1 / -1 !important; }
         }
         @media (max-width: 560px) {
           .explore-grid { grid-template-columns: 1fr !important; }
-          .explore-grid > :first-child { grid-column: 1 !important; }
         }
       `}</style>
     </div>

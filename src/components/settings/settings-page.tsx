@@ -22,6 +22,7 @@ const C = {
   white: "#ffffff",
   black: "#1c1611",
   amber: "#f7f1e4",
+  brass: "#a67c3d",
 };
 
 export function SettingsPage() {
@@ -52,7 +53,7 @@ export function SettingsPage() {
     }
     setLoadingShop(true);
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("shops")
       .select("name, description, email, whatsapp, daily_goal")
       .eq("id", shopId)
@@ -63,6 +64,11 @@ export function SettingsPage() {
       setFormEmail(data.email ?? "");
       setFormWhatsapp(data.whatsapp ?? "");
       setFormDailyGoal(String(data.daily_goal ?? 120));
+    } else if (error) {
+      toast(
+        "error",
+        isRTL ? "تعذر تحميل بيانات المتجر." : "Failed to load shop details.",
+      );
     }
     setLoadingShop(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,7 +80,7 @@ export function SettingsPage() {
 
   async function handleSave() {
     if (!shopId) {
-      toast("success", "Settings saved locally!");
+      toast("success", isRTL ? "تم حفظ الإعدادات محليًا!" : "Settings saved locally!");
       return;
     }
     setSaving(true);
@@ -92,7 +98,7 @@ export function SettingsPage() {
 
     setSaving(false);
     if (error) {
-      toast("error", "Failed to save: " + error.message);
+      toast("error", (isRTL ? "فشل الحفظ: " : "Failed to save: ") + error.message);
     } else {
       toast("success", isRTL ? "تم حفظ الإعدادات بنجاح!" : "Settings saved successfully!");
     }
@@ -212,7 +218,7 @@ export function SettingsPage() {
 
     // Booking link
     const linkFontSize = fitFontSize(ctx, bookingLink, 600, 500, 16, 11);
-    ctx.fillStyle = "#a67c3d";
+    ctx.fillStyle = C.brass;
     ctx.font = `600 ${linkFontSize}px sans-serif`;
     ctx.fillText(bookingLink, W / 2, 710);
 
@@ -256,14 +262,14 @@ export function SettingsPage() {
   const handleCopy = () => {
     navigator.clipboard.writeText(bookingLink);
     setCopied(true);
-    toast("success", "Booking link copied to clipboard!");
+    toast("success", isRTL ? "تم نسخ رابط الحجز!" : "Booking link copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
   };
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
     background: "#ffffff",
-    border: "1px solid #ede3cd",
+    border: `1px solid ${C.outline}`,
     borderRadius: 8,
     padding: "12px 16px",
     fontSize: 14,
@@ -343,7 +349,7 @@ export function SettingsPage() {
               {isRTL ? "تحديث ملفك الشخصي العام والتفضيلات العامة." : "Update your public profile and global preferences."}
             </p>
           </div>
-          <div style={{ background: C.white, padding: 32, borderRadius: 12, border: "1px solid #ede3cd" }}>
+          <div style={{ background: C.white, padding: 32, borderRadius: 12, border: `1px solid ${C.outline}` }}>
             {loadingShop ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8, color: C.mid, fontSize: 14 }}>
                 <Loader2 size={16} className="animate-spin" />
@@ -379,7 +385,7 @@ export function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>WhatsApp Number</label>
+                  <label style={labelStyle}>{isRTL ? "رقم واتساب" : "WhatsApp Number"}</label>
                   <input
                     style={inputStyle}
                     type="tel"
@@ -429,7 +435,7 @@ export function SettingsPage() {
                     </div>
                     <div>
                       <p style={{ fontWeight: 700, fontSize: 14, color: C.dark, margin: 0 }}>{member.name || "Team Member"}</p>
-                      <p style={{ fontSize: 12, color: C.mid, margin: 0 }}>Barber · Active</p>
+                      <p style={{ fontSize: 12, color: C.mid, margin: 0 }}>{t.calendar.barber} · {t.common.active}</p>
                     </div>
                   </div>
                 </div>
@@ -472,7 +478,7 @@ export function SettingsPage() {
             <div style={{ background: C.black, color: C.white, padding: 40, borderRadius: 12, display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 280, position: "relative", overflow: "hidden" }}>
               <div style={{ position: "relative", zIndex: 1 }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 9999, background: "rgba(255,255,255,0.1)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.1em"), marginBottom: 24 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#a67c3d", animation: "pulse 2s infinite" }} />
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.brass, animation: "pulse 2s infinite" }} />
                   {t.settings.onlineBookingLink}
                 </span>
                 <h3 style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 28, fontWeight: 900, letterSpacing: "0.016em", color: C.white, margin: 0 }}>
@@ -485,7 +491,7 @@ export function SettingsPage() {
                   className="btn btn-secondary"
                   style={{ border: "none" }}
                 >
-                  {copied ? "✓ Copied!" : (isRTL ? "نسخ الرابط" : "Copy Public URL")}
+                  {copied ? (isRTL ? "✓ تم النسخ!" : "✓ Copied!") : (isRTL ? "نسخ الرابط" : "Copy Public URL")}
                 </button>
                 <a
                   href={bookingLink}

@@ -42,10 +42,21 @@ const STATUS_CONFIG: Record<string, { label: string; bgColor: string; textColor:
   no_show:    { label: "No-show",   bgColor: "#f7f1e4", textColor: "#5a5147" },
 };
 
-const SHOP_IMAGES = [
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuA7Bsh2lEbD6ZTy5h9T1ZG2MfsCUuywaaZd_nDq-ITBCub76GRU6XIlZTHFIOusrp-JJ09EY9hZIjSKHLqnLzJfWCNu69nSF9e1itU_wlbDpZS5P3oKnHge0HXclB_FldVVgc0CztwnMJvSXaFvlCVR-NgFXTd--q1AfHMIHEy0DUze4UyYtmmM0GoN-gVDSNGchj-GxzY4-HtCnSHTY5Qs2s-4Tfv3m3YaHGC1dWQF9kDDUDLMwPV5_NaI5cgUrBO8y0bjvwJEh01V",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDSCFMQFuOkdgX7Yi5aFyGJXWyFRL_0nsmIzQuSp9pTlpt0Jvzq7s8XQDRzmyMREhhu_R0pMPnXp1r9E7-w7Sl1lcker-7vzu2GkfOzpBimNcBYFpgelUb0ov4bh9zAzfSXHDJpnrLD7ON1LD3w9DS08fanZhKmjYKr_ovtIKPYVWSWY3XKrJhIm-fJ4XGFofFMjZ5sfasoDqch4mdVsdubVvgiVb50yUWBFIPtQpctKjRGuCABoP2bWgRF2sLf3Pwz3dLtvd9JKI-9",
-];
+// Deterministic per-shop initials + accent color for the appointment thumbnail
+// (no shop photo is fetched from the DB, so a repeating stock photo would lie
+// about being shop-specific — an initials tile is an honest per-item stand-in).
+function shopInitials(name: string) {
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .map(w => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "?"
+  );
+}
+const SHOP_TILE_COLORS = ["#1c1611", "#a67c3d"];
 
 type Tab = "upcoming" | "past" | "cancelled";
 
@@ -59,7 +70,7 @@ function SkeletonCard() {
           <div className="shimmer-card rounded-lg" style={{ height: 20, width: "65%" }} />
           <div className="shimmer-card rounded-lg" style={{ height: 14, width: "50%" }} />
         </div>
-        <div className="space-y-2 shrink-0" style={{ textAlign: "right" }}>
+        <div className="space-y-2 shrink-0" style={{ textAlign: "end" }}>
           <div className="shimmer-card rounded-lg" style={{ height: 14, width: 48 }} />
           <div className="shimmer-card rounded-lg" style={{ height: 18, width: 60 }} />
         </div>
@@ -433,8 +444,8 @@ export default function CustomerDashboard() {
         style={{
           display: windowW >= 1024 ? "flex" : "none",
           flexDirection: "column",
-          position: "fixed", left: 0, top: 0, height: "100%",
-          width: 240, background: "#fff", borderRight: "1px solid #ede3cd", zIndex: 40
+          position: "fixed", insetInlineStart: 0, top: 0, height: "100%",
+          width: 240, background: "#fff", borderInlineEnd: "1px solid #ede3cd", zIndex: 40
         }}
       >
         {/* Logo */}
@@ -516,6 +527,7 @@ export default function CustomerDashboard() {
           </Link>
           <button
             onClick={() => setLogoutConfirm(true)}
+            aria-label={t.customer.signOut}
             style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#f7f1e4", border: "none", cursor: "pointer", color: "#5a5147" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
@@ -524,7 +536,7 @@ export default function CustomerDashboard() {
       </header>
 
       {/* ── Main Content ── */}
-      <div style={{ paddingLeft: windowW >= 1024 ? 240 : 0 }}>
+      <div style={{ paddingInlineStart: windowW >= 1024 ? 240 : 0 }}>
         <main style={{ paddingTop: windowW >= 1024 ? 0 : 64, paddingBottom: windowW >= 1024 ? 48 : 112 }}>
           {/* Inner container */}
           <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 20px" }}>
@@ -627,7 +639,7 @@ export default function CustomerDashboard() {
                   {tab.count > 0 && (
                     <span
                       style={{
-                        marginLeft: 5, fontSize: 11, fontWeight: 700,
+                        marginInlineStart: 5, fontSize: 11, fontWeight: 700,
                         padding: "1px 6px", borderRadius: 9999,
                         background: activeTab === tab.key ? "#f7f1e4" : "#ffffff",
                         color: activeTab === tab.key ? "#1c1611" : "#5a5147",
@@ -729,12 +741,17 @@ export default function CustomerDashboard() {
                         <div style={{ padding: 20 }}>
                           <div className="flex items-start gap-4">
                             {/* Shop thumbnail */}
-                            <div style={{ width: 52, height: 52, borderRadius: 12, overflow: "hidden", background: "#f7f1e4", flexShrink: 0 }}>
-                              <img
-                                src={SHOP_IMAGES[i % SHOP_IMAGES.length]}
-                                alt={appt.shop_name}
-                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                              />
+                            <div
+                              className="flex items-center justify-center"
+                              style={{
+                                width: 52, height: 52, borderRadius: 12, flexShrink: 0,
+                                background: SHOP_TILE_COLORS[i % SHOP_TILE_COLORS.length],
+                              }}
+                              aria-hidden="true"
+                            >
+                              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16, fontFamily: "var(--font-intervar),sans-serif" }}>
+                                {shopInitials(appt.shop_name)}
+                              </span>
                             </div>
 
                             {/* Main info */}
@@ -770,7 +787,7 @@ export default function CustomerDashboard() {
                             </div>
 
                             {/* Date + price */}
-                            <div style={{ textAlign: "right", flexShrink: 0 }}>
+                            <div style={{ textAlign: "end", flexShrink: 0 }}>
                               <p style={{ fontWeight: 700, color: "#1c1611", fontSize: 14, margin: 0 }}>{format(date, "MMM d")}</p>
                               <p style={{ fontSize: 12, color: "#5a5147", margin: "1px 0" }}>{format(date, "h:mm a")}</p>
                               <p style={{ fontWeight: 800, color: "#1c1611", fontSize: 14, margin: 0 }}>{appt.price} JOD</p>
@@ -877,7 +894,7 @@ export default function CustomerDashboard() {
           style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer", color: "#5a5147" }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 22 }}>person</span>
-          <span style={{ fontSize: 10, fontWeight: 700 }}>Account</span>
+          <span style={{ fontSize: 10, fontWeight: 700 }}>{t.customer.settings}</span>
         </button>
       </nav>
 
@@ -904,6 +921,7 @@ export default function CustomerDashboard() {
                 <h3 style={{ fontSize: 20, fontWeight: 900, color: "#1c1611", fontFamily: FF }}>{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h3>
                 <button
                   onClick={() => setEditProfile(false)}
+                  aria-label={t.common.close}
                   style={{ width: 32, height: 32, borderRadius: "50%", background: "#f7f1e4", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
@@ -1051,6 +1069,7 @@ export default function CustomerDashboard() {
                 <h3 style={{ fontSize: 20, fontWeight: 900, color: "#1c1611", fontFamily: FF }}>{isRTL ? "أضف تقييماً" : "Leave a Review"}</h3>
                 <button
                   onClick={() => { setReviewAppt(null); setReviewRating(0); }}
+                  aria-label={t.common.close}
                   style={{ width: 32, height: 32, borderRadius: "50%", background: "#f7f1e4", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
@@ -1071,6 +1090,7 @@ export default function CustomerDashboard() {
                     onClick={() => setReviewRating(star)}
                     onMouseEnter={() => setReviewHover(star)}
                     onMouseLeave={() => setReviewHover(0)}
+                    aria-label={isRTL ? `تقييم ${star} من 5` : `Rate ${star} star${star > 1 ? "s" : ""}`}
                     style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "inline-flex", transition: "transform 120ms ease" }}
                     onMouseDown={e => { e.currentTarget.style.transform = "scale(0.85)"; }}
                     onMouseUp={e => { e.currentTarget.style.transform = "scale(1)"; }}

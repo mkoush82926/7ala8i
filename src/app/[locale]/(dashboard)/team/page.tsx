@@ -144,7 +144,7 @@ export default function TeamPage() {
               {isRTL ? "إدارة جداول الحلاقين والموظفين." : "Manage your barbers, schedules, and permissions."}
             </p>
           </div>
-          <div style={{ display: "flex", gap: 8, width: "100%" }} className="sm:w-auto">
+          <div style={{ display: "flex", gap: 8 }} className="w-full sm:w-auto">
             {/* Search */}
             <div style={{ position: "relative", flex: 1 }}>
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
@@ -193,6 +193,8 @@ export default function TeamPage() {
                 <button
                   onClick={() => setEditingBarber(member)}
                   className="absolute top-4 end-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors opacity-0 group-hover:opacity-100"
+                  aria-label={isRTL ? "إعدادات العضو" : "Member settings"}
+                  title={isRTL ? "إعدادات العضو" : "Member settings"}
                 >
                   <MoreVertical size={18} />
                 </button>
@@ -229,8 +231,20 @@ export default function TeamPage() {
                 {/* Quick Stats / Contacts */}
                 <div className="w-full flex justify-between items-center pt-4 border-t border-[var(--border-primary)]">
                   <div className="flex items-center gap-4 text-[var(--text-muted)]">
-                    <button className="hover:text-[var(--text-primary)] transition-colors"><Mail size={16} /></button>
-                    <button className="hover:text-[var(--text-primary)] transition-colors"><Phone size={16} /></button>
+                    <button
+                      className="hover:text-[var(--text-primary)] transition-colors"
+                      aria-label={isRTL ? "البريد الإلكتروني" : "Email"}
+                      title={isRTL ? "البريد الإلكتروني" : "Email"}
+                    >
+                      <Mail size={16} />
+                    </button>
+                    <button
+                      className="hover:text-[var(--text-primary)] transition-colors"
+                      aria-label={isRTL ? "الهاتف" : "Phone"}
+                      title={isRTL ? "الهاتف" : "Phone"}
+                    >
+                      <Phone size={16} />
+                    </button>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
                     <Clock size={14} />
@@ -325,6 +339,7 @@ function InviteLinkModal({ link, onClose, isRTL }: { link: string; onClose: () =
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--bg-secondary)] text-[var(--text-muted)] transition-colors"
+            aria-label={isRTL ? "إغلاق" : "Close"}
           >
             <X size={18} />
           </button>
@@ -396,9 +411,10 @@ function BarberSettingsModal({ editingBarber, shopServices, setEditingBarber, re
           <h3 className="text-lg font-bold text-[var(--text-primary)]">
             {editingBarber.full_name} {isRTL ? "- الإعدادات" : "- Settings"}
           </h3>
-          <button 
+          <button
             onClick={() => setEditingBarber(null)}
             className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--bg-secondary)] text-[var(--text-muted)] transition-colors"
+            aria-label={isRTL ? "إغلاق" : "Close"}
           >
             <X size={18} />
           </button>

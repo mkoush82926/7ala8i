@@ -8,17 +8,15 @@ import type { TranslationKeys } from "@/i18n/en";
 const translations: Record<string, TranslationKeys> = { en, ar };
 
 // ── Font constants — "Ink & Brass" system ──────────────────────────────────
-// Body/UI text: InterVar (EN) / Noto Sans Arabic (AR) — clean, humanist,
-// optimized for small-size legibility.
-export const FONT_EN = "var(--font-intervar),'Segoe UI',system-ui,sans-serif";
-export const FONT_AR = "var(--font-noto-arabic),'Segoe UI',Tahoma,Arial,sans-serif";
+// Body/UI text: BDO Grotesk (EN) / Cairo (AR) — clean, geometric, optimized
+// for small-size legibility.
+export const FONT_EN = "var(--font-bdo-grotesk),'Segoe UI',system-ui,sans-serif";
+export const FONT_AR = "var(--font-cairo),'Segoe UI',Tahoma,Arial,sans-serif";
 
-// Display/headline text: Fraunces (EN) / Noto Naskh Arabic (AR) — both carry
-// genuine typographic character (ink-trap serif / calligraphic Naskh) so
-// neither script reads as the generic leftover. Use ONLY for headings, never
-// body copy or dense UI.
-export const FONT_EN_DISPLAY = "var(--font-fraunces),Georgia,serif";
-export const FONT_AR_DISPLAY = "var(--font-naskh-arabic),'Segoe UI',Tahoma,Arial,sans-serif";
+// Display/headline text: BDO Grotesk (EN) / Cairo (AR) — both scripts now use
+// one grotesque sans at body and display sizes rather than a serif/sans pair.
+export const FONT_EN_DISPLAY = "var(--font-bdo-grotesk),'Segoe UI',system-ui,sans-serif";
+export const FONT_AR_DISPLAY = "var(--font-cairo),'Segoe UI',Tahoma,Arial,sans-serif";
 
 /**
  * Letter-spacing for display headings. Arabic is a cursive, connected

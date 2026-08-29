@@ -66,8 +66,8 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     calendar:  t.sidebar.calendar,
     leads:     t.sidebar.leads,
     clients:   t.sidebar.clients,
-    services:  "Services",
-    team:      "Team",
+    services:  t.sidebar.services,
+    team:      t.sidebar.team,
     analytics: t.sidebar.analytics,
     settings:  t.sidebar.settings,
   };
@@ -90,6 +90,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           {onClose && (
             <button
               onClick={onClose}
+              aria-label={t.common.close}
               className="md:hidden flex items-center justify-center w-11 h-11 rounded-lg text-on-surface-variant hover:bg-secondary-container transition-colors cursor-pointer"
             >
               <X size={18} />
@@ -149,7 +150,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           style={{ width: "100%", justifyContent: "center", marginBottom: 12 }}
         >
           <CalendarPlus size={16} />
-          Book Appointment
+          {t.sidebar.bookAppointment}
         </Link>
         <button
           onClick={handleSignOut}
@@ -173,7 +174,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           }}
         >
           <LogOut size={14} />
-          Sign Out
+          {t.sidebar.signOut}
         </button>
       </div>
     </div>

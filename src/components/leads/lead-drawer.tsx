@@ -113,6 +113,7 @@ export function LeadDrawer() {
               </h3>
               <button
                 onClick={() => setDrawerOpen(false)}
+                aria-label={t.common.close}
                 className="w-7 h-7 rounded-[var(--radius-sm)] flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] transition-colors cursor-pointer"
               >
                 <X size={16} />

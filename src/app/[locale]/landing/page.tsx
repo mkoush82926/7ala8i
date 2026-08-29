@@ -1,28 +1,76 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { useRef } from "react";
-import { useInView } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+import { motion, useInView } from "framer-motion";
 import Link from "next/link";
-import { useThemeStore } from "@/store/theme-store";
 import { useTranslation, headingTracking, FONT_EN_DISPLAY } from "@/hooks/use-translation";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Design tokens ("Data Observatory on Cloud Paper") ───
 const T = {
-  black:   "#1c1611", // Midnight Ink — structural dark ink (was pure black)
+  black:   "#1c1611", // Midnight Ink — structural dark ink
   white:   "#ffffff", // Paper
   dark:    "#1c1611", // Midnight Ink
   mid:     "#5a5147", // Slate — secondary/muted text
-  muted:   "#5a5147", // Slate
   outline: "#ede3cd", // Frost Border
-  surf:    "#ffffff", // Paper
   surfLow: "#f7f1e4", // Lavender Wash — section-level tint zone
   surfCont:"#ede3cd", // Frost Border
-  surfHigh:"#ede3cd", // Frost Border
+  accent:  "#a67c3d", // Brass — the sole chromatic note
 };
+
+// ─── Reduced-motion guard for scroll-linked parallax ───
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handler = () => setReduced(mq.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return reduced;
+}
+
+// ─── Looping ambient background video (the real barbershop-tool footage from
+// /public/videos), dimmed under a tinted overlay so foreground text and
+// controls stay legible. Paused (first-frame only) when the visitor prefers
+// reduced motion. ───
+function BackgroundVideo({ src, overlay }: { src: string; overlay: string }) {
+  const reducedMotion = usePrefersReducedMotion();
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // The `autoPlay` attribute isn't reliably honored once React owns the
+  // element (it's applied as a property post-hydration rather than at parse
+  // time), so drive playback explicitly instead of trusting the attribute.
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || reducedMotion) return;
+    el.play().catch(() => {});
+  }, [reducedMotion]);
+
+  return (
+    <>
+      {/* Blurred + slightly scaled up (to hide the blur's edge falloff) so the
+          footage reads as soft ambient texture instead of a sharp photo that
+          competes with the foreground heading/body text for attention. */}
+      <video
+        ref={videoRef}
+        src={src}
+        loop
+        muted
+        playsInline
+        aria-hidden
+        style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0,
+          filter: "blur(4px) saturate(0.8)", transform: "scale(1.08)",
+        }}
+      />
+      <div style={{ position: "absolute", inset: 0, background: overlay, zIndex: 0 }} />
+    </>
+  );
+}
 
 function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const ref = useRef(null);
@@ -30,8 +78,8 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 16 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, delay, ease: [0.25, 1, 0.5, 1] }}
     >
       {children}
@@ -39,25 +87,130 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
+// Small uppercase brand-accent label used above every section heading —
+// centralized so the eyebrow treatment can never drift out of sync between
+// sections (weight, tracking, and color were previously duplicated ad hoc).
+function Eyebrow({ children, isRTL, dark = false }: { children: React.ReactNode; isRTL: boolean; dark?: boolean }) {
+  return (
+    <div style={{
+      fontWeight: 700, fontSize: 12, textTransform: "uppercase",
+      letterSpacing: headingTracking(isRTL, "0.14em"),
+      color: dark ? "#d8b88a" : T.accent,
+      marginBottom: 16,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+// Centered eyebrow + title + subtitle — the standard section header used by
+// Features, How It Works, Pricing, and Contact so every page introduces
+// itself the same way instead of jumping straight into content.
+function SectionHeading({
+  eyebrow, title, subtitle, FFD, isRTL, dark = false, marginBottom = 64,
+}: {
+  eyebrow: string;
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+  FFD: string;
+  isRTL: boolean;
+  dark?: boolean;
+  marginBottom?: number;
+}) {
+  return (
+    <Reveal>
+      <div style={{ textAlign: "center", maxWidth: 560, margin: `0 auto ${marginBottom}px` }}>
+        <Eyebrow isRTL={isRTL} dark={dark}>{eyebrow}</Eyebrow>
+        <h2 style={{
+          fontFamily: FFD, fontWeight: 800, fontSize: "clamp(1.8rem, 3.4vw, 2.6rem)",
+          letterSpacing: headingTracking(isRTL, "0.014em"),
+          color: dark ? T.white : T.dark, marginBottom: subtitle ? 16 : 0,
+        }}>
+          {title}
+        </h2>
+        {subtitle && (
+          <p style={{ color: dark ? "rgba(255,255,255,0.6)" : T.mid, fontSize: 16, fontWeight: 300, lineHeight: 1.7 }}>
+            {subtitle}
+          </p>
+        )}
+      </div>
+    </Reveal>
+  );
+}
+
+// A large heading + thin rule + paragraph, alternately aligned — the Nodenza "statement block" motif
+function Statement({
+  align, eyebrow, title, body, FFD, isRTL,
+}: {
+  align: "start" | "end";
+  eyebrow?: string;
+  title: React.ReactNode;
+  body: React.ReactNode;
+  FFD: string;
+  isRTL: boolean;
+}) {
+  return (
+    <Reveal>
+      <div className={`landing-statement${align === "end" ? " landing-statement--end" : ""}`}>
+        {eyebrow && <Eyebrow isRTL={isRTL}>{eyebrow}</Eyebrow>}
+        <h2 style={{ fontFamily: FFD, fontWeight: 800, fontSize: "clamp(1.9rem, 3.4vw, 2.6rem)", letterSpacing: headingTracking(isRTL, "0.014em"), color: T.dark, marginBottom: 20 }}>
+          {title}
+        </h2>
+        <div className="landing-statement-rule" style={{ width: 56, height: 2, background: T.accent, marginBottom: 20 }} />
+        <p style={{ color: T.mid, fontSize: 16, fontWeight: 300, lineHeight: 1.75 }}>
+          {body}
+        </p>
+      </div>
+    </Reveal>
+  );
+}
+
 export default function LandingPage() {
-  const { FF, FFD, dir, isRTL, locale } = useTranslation();
+  const { FF, FFD, isRTL, locale } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const snapContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => setIsLoggedIn(!!user));
   }, []);
 
-  // Close the mobile drawer if the viewport grows past the md breakpoint
+  // Full-page scroll-snap: this page owns its own scroll container (rather
+  // than the document), so lock the document body's scroll for as long as
+  // we're mounted and restore it on the way out.
   useEffect(() => {
-    function handleResize() {
-      if (window.innerWidth >= 768) setMobileMenuOpen(false);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
+  // Keyboard paging (Space / Page Down / arrows) — the document itself no
+  // longer scrolls, so without this the browser's default "scroll the page"
+  // key handling would have nothing to act on.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const container = snapContainerRef.current;
+      if (!container) return;
+      const isTypingTarget = document.activeElement instanceof HTMLElement
+        && ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName);
+      if (isTypingTarget) return;
+      if (e.key === " " && document.activeElement !== document.body) return; // don't hijack a focused button's activation
+
+      if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ") {
+        e.preventDefault();
+        container.scrollBy({ top: container.clientHeight, behavior: "smooth" });
+      } else if (e.key === "ArrowUp" || e.key === "PageUp") {
+        e.preventDefault();
+        container.scrollBy({ top: -container.clientHeight, behavior: "smooth" });
+      }
     }
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   const navLinks = isLoggedIn
@@ -69,12 +222,14 @@ export default function LandingPage() {
     : [
         { label: isRTL ? "الميزات" : "Features", href: "#features" },
         { label: isRTL ? "التسعير" : "Pricing", href: "#pricing" },
+        { label: isRTL ? "الخصوصية" : "Privacy", href: "/privacy" },
+        { label: isRTL ? "الشروط" : "Terms", href: "/terms" },
       ];
 
   const ctaHref = isLoggedIn ? "/" : "/auth/signup";
   const ctaLabel = isLoggedIn
     ? (isRTL ? "لوحة التحكم" : "Dashboard")
-    : (isRTL ? "ابدأ الآن" : "GET STARTED");
+    : (isRTL ? "ابدأ الآن" : "Get Started");
 
   const handleToggleLocale = () => {
     const newLocale = locale === "en" ? "ar" : "en";
@@ -82,281 +237,206 @@ export default function LandingPage() {
     router.push(newPath || `/${newLocale}`);
   };
 
+  const pillars = [
+    { icon: "calendar_month", title: isRTL ? "أدر" : "Manage", desc: isRTL ? "شغّل تقويمك وفريقك وسجل عملائك من لوحة تحكم واحدة مصممة للاستخدام اليومي." : "Run your calendar, team, and client history from one dashboard built for daily use." },
+    { icon: "event_available", title: isRTL ? "احجز" : "Book", desc: isRTL ? "امنح عملاءك بوابة حجز بعلامتك التجارية، متاحة في أي وقت ومن أي جهاز." : "Give clients a branded booking page they can use anytime, from any device." },
+    { icon: "trending_up", title: isRTL ? "انمُ" : "Grow", desc: isRTL ? "حوّل الرؤى إلى قرارات، واحتفظ بعملائك عبر طلبات مراجعة تلقائية." : "Turn insights into decisions, and keep clients coming back with automated review requests." },
+  ];
+
   const features = [
-    { icon: "schedule",      title: isRTL ? "تقويم ذكي"        : "Smart Calendar",     desc: isRTL ? "إدارة جداول زمنية متكيفة تتزامن مع سير عمل فريقك الطبيعي."             : "Adaptive timeline management that synchronizes with your team's natural workflow." },
-    { icon: "account_tree", title: isRTL ? "مسار إدارة العملاء": "CRM Pipeline",       desc: isRTL ? "تصور رحلة عميلك بشكل أنيق من الاكتشاف إلى الولاء طويل الأمد."         : "Elegantly visualize your client journey from discovery to long-term loyalty." },
-    { icon: "link",          title: isRTL ? "الحجز الإلكتروني"  : "Online Booking",    desc: isRTL ? "بوابة حجز بسيطة مصممة للعيش على المنصات الاجتماعية وحضورك على الويب." : "A minimalist booking portal designed to live on social platforms and your web presence." },
-    { icon: "insights",      title: isRTL ? "تقارير وتحليلات"   : "Insights",          desc: isRTL ? "أطر تحليلية عميقة لفك رموز الاحتفاظ وتحسين ساعات الذروة."              : "Deep analytical frameworks to decode retention and optimize peak performance hours." },
-    { icon: "thumb_up",      title: isRTL ? "مركز السمعة"       : "Reputation Hub",    desc: isRTL ? "حلقات تغذية راجعة آلية تضخم حضورك في محركات الاكتشاف المحلية."          : "Automated feedback loops that amplify your presence in local discovery engines." },
-    { icon: "smartphone",    title: isRTL ? "تجربة متحركة"      : "Native Experience", desc: isRTL ? "تطبيقات iOS و Android سلسة للإدارة خارج المكتب."                        : "Fluid iOS and Android applications for management beyond the desk." },
+    { icon: "schedule",      title: isRTL ? "تقويم ذكي"        : "Smart Calendar",     desc: isRTL ? "إدارة جداول زمنية متكيفة تتزامن مع سير عمل فريقك."             : "Adaptive scheduling that fits your team's natural rhythm." },
+    { icon: "account_tree",  title: isRTL ? "مسار إدارة العملاء": "CRM Pipeline",       desc: isRTL ? "تصور رحلة عميلك من الاكتشاف إلى الولاء طويل الأمد."           : "Follow every client from first visit to long-term loyalty." },
+    { icon: "link",          title: isRTL ? "الحجز الإلكتروني"  : "Online Booking",    desc: isRTL ? "بوابة حجز بسيطة تعيش على منصاتك الاجتماعية وموقعك."           : "A simple booking page that lives on your socials and site." },
+    { icon: "insights",      title: isRTL ? "تقارير وتحليلات"   : "Insights",          desc: isRTL ? "أطر تحليلية لفهم الاحتفاظ بالعملاء وأوقات الذروة."             : "Clear reporting on retention and your busiest hours." },
+    { icon: "thumb_up",      title: isRTL ? "مركز السمعة"       : "Reputation",        desc: isRTL ? "تذكيرات تلقائية تعزز حضورك في نتائج البحث المحلية."           : "Automated review requests that build your local reputation." },
+    { icon: "smartphone",    title: isRTL ? "تجربة متحركة"      : "Mobile App",        desc: isRTL ? "تطبيقات iOS و Android لإدارة عملك من أي مكان."                : "iOS and Android apps for managing things on the go." },
   ];
 
   const steps = [
-    { num: "01", title: isRTL ? "أنشئ"  : "Construct", desc: isRTL ? "أدخل موظفيك وخدماتك والأسعار الديناميكية."                                           : "Input your personnel, services, and dynamic pricing. Define your atmosphere through visual assets." },
-    { num: "02", title: isRTL ? "وزّع"  : "Distribute", desc: isRTL ? "ادمج بوابتك الفريدة عبر قنوات التواصل والملفات الشخصية الاجتماعية."               : "Integrate your unique portal across communication channels and social profiles." },
-    { num: "03", title: isRTL ? "حسّن"  : "Optimize",   desc: isRTL ? "استفد من محركات التسويق الآلية لتطوير الاحتفاظ وتعظيم الإيرادات."                  : "Leverage automated marketing engines to cultivate retention and maximize revenue output." },
+    { num: "01", title: isRTL ? "أنشئ"  : "Set up",    desc: isRTL ? "أدخل موظفيك وخدماتك وأسعارك."                                 : "Add your team, services, and pricing." },
+    { num: "02", title: isRTL ? "وزّع"  : "Share",     desc: isRTL ? "شارك رابط الحجز الخاص بك عبر التواصل الاجتماعي والويب."       : "Share your booking link across social and web." },
+    { num: "03", title: isRTL ? "حسّن"  : "Grow",      desc: isRTL ? "استخدم الأتمتة لتحسين الاحتفاظ بالعملاء وزيادة الإيرادات."      : "Use automation to improve retention and revenue." },
   ];
 
   const pricingFeats = [
-    isRTL ? "حجوزات لا محدودة"   : "Infinite Bookings",
-    isRTL ? "مجموعة CRM الكاملة" : "Full CRM Suite",
-    isRTL ? "رؤى متقدمة"         : "Advanced Insights",
-    isRTL ? "بوابة حجز مخصصة"   : "Branded Booking Portal",
-    isRTL ? "أتمتة المراجعات"    : "Review Automation",
-    isRTL ? "وصول للتطبيق"       : "Native App Access",
-  ];
-
-  const footerCols = [
-    { title: isRTL ? "المنصة"  : "Platform", links: [
-        { label: isRTL ? "الميزات" : "Features", href: "#features" },
-        { label: isRTL ? "التسعير" : "Pricing", href: "#pricing" },
-        { label: isRTL ? "التطبيقات" : "Applications" },
-      ] },
-    { title: "Studio", links: [
-        { label: isRTL ? "من نحن"  : "About" },
-        { label: isRTL ? "الوظائف" : "Careers" },
-        { label: "Journal" },
-      ] },
-    { title: isRTL ? "القانوني": "Legal", links: [
-        { label: isRTL ? "الخصوصية": "Privacy", href: "/privacy" },
-        { label: isRTL ? "الشروط"  : "Terms", href: "/terms" },
-        { label: "Support" },
-      ] },
+    isRTL ? "حجوزات لا محدودة"   : "Unlimited bookings",
+    isRTL ? "مجموعة CRM الكاملة" : "Full CRM suite",
+    isRTL ? "رؤى متقدمة"         : "Advanced insights",
+    isRTL ? "بوابة حجز مخصصة"   : "Branded booking page",
+    isRTL ? "أتمتة المراجعات"    : "Review automation",
+    isRTL ? "وصول للتطبيق"       : "Mobile app access",
   ];
 
   return (
-    <div style={{ fontFamily: FF, background: T.white, color: T.dark, overflowX: "hidden" }}>
+    <div
+      ref={snapContainerRef}
+      className="landing-snap-container"
+      style={{ fontFamily: FF, background: T.white, color: T.dark, overflowX: "hidden", position: "relative" }}
+    >
 
-      {/* ═══ NAVBAR ═══ */}
-      <nav className="landing-nav" style={{ borderBottom: `1px solid ${T.outline}33` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 48 }}>
-          <span dir="ltr" style={{ fontFamily: FONT_EN_DISPLAY, fontSize: 20, fontWeight: 700, letterSpacing: "0.008em", color: T.dark }}>
+      {/* ═══ FLOATING PILL NAV — fixed above the snapped pages ═══ */}
+      <div style={{ position: "fixed", insetInlineStart: 0, insetInlineEnd: 0, top: 16, zIndex: 50, padding: "0 16px" }}>
+        <nav
+          style={{
+            maxWidth: 1100, margin: "0 auto", display: "flex",
+            alignItems: "center", justifyContent: "space-between",
+            background: T.white, borderRadius: 16,
+            border: `1px solid ${T.surfCont}`,
+            boxShadow: `0 0 24px 0 ${T.accent}26`,
+            padding: "15px 15px 15px 20px",
+          }}
+        >
+          <span dir="ltr" style={{ fontFamily: FONT_EN_DISPLAY, fontSize: 18, fontWeight: 700, letterSpacing: "0.008em", color: T.dark }}>
             Halaqy.
           </span>
-          <div className="hidden md:flex" style={{ alignItems: "center", gap: 32 }}>
-            {navLinks.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                style={{ fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.05em"), color: T.mid, textDecoration: "none" }}
-              >
-                {item.label}
-              </Link>
-            ))}
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={isRTL ? "فتح القائمة" : "Toggle menu"}
+            aria-expanded={menuOpen}
+            style={{
+              width: 44, height: 44, borderRadius: 9999, border: "none", cursor: "pointer",
+              background: T.dark, color: T.white,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+              {menuOpen ? "close" : "menu"}
+            </span>
+          </button>
+        </nav>
+
+        {/* Dropdown menu panel */}
+        {menuOpen && (
+          <div style={{ maxWidth: 1100, margin: "12px auto 0" }}>
+            <div style={{
+              background: T.white, borderRadius: 24, border: `1px solid ${T.surfCont}`,
+              boxShadow: "0 24px 60px -20px rgba(28,22,17,0.22)",
+              padding: 24, display: "flex", flexDirection: "column", gap: 4,
+            }}>
+              {navLinks.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  style={{ padding: "12px 8px", fontSize: 16, fontWeight: 500, color: T.dark, textDecoration: "none", borderRadius: 8 }}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <div style={{ height: 1, background: T.outline, margin: "8px 0" }} />
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                <button onClick={handleToggleLocale} className="nav-link" style={{ fontSize: 14 }}>
+                  {isRTL ? "English" : "العربية"}
+                </button>
+                <Link
+                  href={ctaHref}
+                  className="btn btn-primary"
+                  style={{ borderRadius: 9999, minHeight: 48, padding: "0 28px", fontSize: 14, fontWeight: 700 }}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {ctaLabel}
+                </Link>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="hidden md:flex" style={{ alignItems: "center", gap: 24 }}>
-          <button
-            onClick={handleToggleLocale}
-            className="nav-link"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>language</span>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: isRTL ? "0.15em" : "normal" }}>{isRTL ? "EN" : "عربي"}</span>
-          </button>
-          <Link
-            href={ctaHref}
-            className="btn btn-primary"
-            style={{ borderRadius: 8 }}
-          >
-            {ctaLabel}
-          </Link>
-        </div>
-
-        {/* Mobile hamburger toggle */}
-        <button
-          className="md:hidden"
-          onClick={() => setMobileMenuOpen((v) => !v)}
-          aria-label={isRTL ? "فتح القائمة" : "Toggle menu"}
-          aria-expanded={mobileMenuOpen}
-          style={{
-            background: "none", border: "none", cursor: "pointer", color: T.dark,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 40, height: 40,
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 26 }}>
-            {mobileMenuOpen ? "close" : "menu"}
-          </span>
-        </button>
-      </nav>
-
-      {/* Mobile nav drawer */}
-      {mobileMenuOpen && (
-        <div
-          style={{
-            display: "flex", flexDirection: "column", gap: 20,
-            padding: "24px", background: T.white,
-            borderBottom: `1px solid ${T.outline}`,
-          }}
-        >
-          {navLinks.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              onClick={() => setMobileMenuOpen(false)}
-              style={{ fontWeight: 700, fontSize: 13, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.05em"), color: T.mid, textDecoration: "none" }}
-            >
-              {item.label}
-            </Link>
-          ))}
-          <div style={{ height: 1, background: T.outline }} />
-          <button
-            onClick={() => { handleToggleLocale(); setMobileMenuOpen(false); }}
-            className="nav-link"
-            style={{ alignSelf: "flex-start" }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>language</span>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: isRTL ? "0.15em" : "normal" }}>{isRTL ? "EN" : "عربي"}</span>
-          </button>
-          <Link
-            href={ctaHref}
-            className="btn btn-primary"
-            style={{ borderRadius: 8, justifyContent: "center" }}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            {ctaLabel}
-          </Link>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* ═══ HERO ═══ */}
-      <section className="landing-section" style={{ background: T.white, position: "relative" }}>
-        <div className="landing-hero-grid" style={{ maxWidth: 1280, margin: "0 auto" }}>
+      <section className="landing-snap-page" style={{
+        position: "relative", overflow: "hidden",
+        alignItems: "center",
+        background: `linear-gradient(180deg, ${T.surfLow} 0%, ${T.white} 100%)`,
+        padding: "96px 24px 120px",
+      }}>
 
-          {/* Left copy */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.25, 1, 0.5, 1] }}
-          >
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "6px 16px", borderRadius: 9999,
-              background: T.surfHigh, color: T.mid,
-              marginBottom: 32,
-            }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>verified</span>
-              <span style={{ fontWeight: 900, fontSize: 10, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.15em") }}>
-                {isRTL ? "المعيار الرائد في الأردن" : "Jordan's Standard for Barbers"}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.25, 1, 0.5, 1] }}
+          style={{ position: "relative", zIndex: 1, maxWidth: 760, textAlign: "center" }}
+        >
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <Eyebrow isRTL={isRTL}>{isRTL ? "المعيار الرائد في الأردن" : "Jordan's Standard for Barbers"}</Eyebrow>
+          </div>
+
+          <h1 style={{
+            fontFamily: FFD, fontWeight: 800,
+            fontSize: "clamp(2.6rem, 6.5vw, 4.6rem)",
+            lineHeight: 1.06, letterSpacing: headingTracking(isRTL, "0.014em"),
+            color: T.dark, marginBottom: 28,
+          }}>
+            {isRTL ? (
+              <>مستقبل إدارة <span style={{ color: T.accent }}>الحرف</span></>
+            ) : (
+              <>The future of <span style={{ color: T.accent }}>craft</span> management</>
+            )}
+          </h1>
+
+          <p style={{ fontSize: 18, color: T.mid, fontWeight: 300, lineHeight: 1.7, maxWidth: 480, margin: "0 auto 40px" }}>
+            {isRTL
+              ? "الحجز والتحليلات وإدارة العملاء، معادة تصورها لمشغلك."
+              : "Booking, analytics, and CRM — reimagined for the modern atelier."}
+          </p>
+
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 16 }}>
+            <Link
+              href="/auth/signup"
+              className="btn btn-primary"
+              style={{ minHeight: 56, padding: "0 36px", borderRadius: 9999, fontSize: 15, fontWeight: 700 }}
+            >
+              {isRTL ? "ابدأ البناء" : "Get started now"}
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                {isRTL ? "arrow_back" : "arrow_forward"}
               </span>
-            </div>
+            </Link>
+            <Link
+              href="/auth/signup"
+              className="btn"
+              style={{
+                minHeight: 56, padding: "0 36px", borderRadius: 9999, fontSize: 15, fontWeight: 700,
+                background: T.white, color: T.dark, border: `1px solid ${T.surfCont}`,
+              }}
+            >
+              {isRTL ? "احجز عرضاً تجريبياً" : "Book a demo"}
+            </Link>
+          </div>
+        </motion.div>
 
-            <h1 style={{
-              fontFamily: FFD, fontWeight: 800,
-              fontSize: "clamp(3rem, 5.5vw, 5rem)",
-              lineHeight: 1, letterSpacing: headingTracking(isRTL, "0.018em"),
-              color: T.dark, marginBottom: 40,
-            }}>
-              {isRTL ? (
-                <>مستقبل إدارة <span style={{ color: T.mid }}>الحرف</span></>
-              ) : (
-                <>The Future of <span style={{ color: T.mid }}>Craft</span> Management</>
-              )}
-            </h1>
-
-            <p style={{ fontSize: 18, color: T.mid, fontWeight: 300, lineHeight: 1.7, maxWidth: 480, marginBottom: 48 }}>
-              {isRTL
-                ? "ارتق بمشغلك مع الحجز والتحليلات وإدارة العملاء المعادة تصورها للعصر الحديث."
-                : "Elevate your atelier with booking, analytics, and CRM reimagined for the modern era."}
-            </p>
-
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
-              <Link
-                href="/auth/signup"
-                className="btn btn-primary"
-                style={{ minHeight: 56, padding: "0 40px", borderRadius: 8, fontSize: 14, fontWeight: 800 }}
-              >
-                {isRTL ? "ابدأ البناء" : "Start Building"}
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
-              </Link>
-              <Link
-                href="/auth/signup"
-                className="btn btn-secondary"
-                style={{ minHeight: 56, padding: "0 40px", borderRadius: 8, fontSize: 14, fontWeight: 800 }}
-              >
-                {isRTL ? "احجز عرضاً تجريبياً" : "Book Demo"}
-              </Link>
-            </div>
-          </motion.div>
-
-          {/* Right — Dashboard Preview */}
-          <motion.div
-            initial={{ opacity: 0, y: 60 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.3, ease: [0.25, 1, 0.5, 1] }}
-            style={{ position: "relative" }}
-          >
-            <div className="card-grid-2" style={{ padding: 16 }}>
-              {/* Revenue Card */}
-              <div style={{ gridColumn: "1 / -1", background: T.white, padding: 32, borderRadius: 12, border: `1px solid ${T.surfCont}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
-                  <h3 style={{ fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.15em"), color: T.mid, margin: 0 }}>
-                    {isRTL ? "الإيرادات" : "Revenue"}
-                  </h3>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#a67c3d", letterSpacing: "0.1em" }}>+12.4%</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 160 }}>
-                  {[50, 75, 65, 100, 50, 80, 100].map((h, i) => (
-                    <motion.div
-                      key={i}
-                      style={{ flex: 1, borderRadius: 9999, background: i === 3 || i === 6 ? T.black : T.surfHigh }}
-                      initial={{ height: 0 }}
-                      animate={{ height: `${h}%` }}
-                      transition={{ duration: 0.7, delay: 0.5 + i * 0.07, ease: [0.25, 1, 0.5, 1] }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Bookings Card */}
-              <div style={{ background: "#1c1611", padding: 32, borderRadius: 12, color: T.white }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 24, marginBottom: 16, display: "block", opacity: 0.5 }}>calendar_month</span>
-                <div style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), opacity: 0.4, marginTop: 4 }}>
-                  {isRTL ? "حجز" : "Bookings"}
-                </div>
-              </div>
-
-              {/* Rating Card */}
-              <div style={{ background: T.white, padding: 32, borderRadius: 12, border: `1px solid ${T.surfCont}` }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 24, marginBottom: 16, display: "block", color: "#a67c3d", fontVariationSettings: "'FILL' 1" }}>star</span>
-                <div style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.mid, opacity: 0.6, marginTop: 4 }}>
-                  {isRTL ? "تقييم" : "Rating"}
-                </div>
-              </div>
-            </div>
-            {/* Decorative accent (flat, no blur/gradient) */}
-            <div style={{ position: "absolute", top: -80, right: -80, width: 320, height: 320, background: "transparent", borderRadius: "50%", zIndex: -1 }} />
-          </motion.div>
+        {/* Scroll indicator */}
+        <div style={{
+          position: "absolute", bottom: 40, left: "50%", transform: "translateX(-50%)",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 8, zIndex: 1,
+        }}>
+          <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.14em"), color: T.mid, borderBottom: `1px solid ${T.mid}`, paddingBottom: 4 }}>
+            {isRTL ? "مرر للأسفل" : "Scroll"}
+          </span>
         </div>
       </section>
 
-      {/* ═══ FEATURES ═══ */}
-      <section id="features" className="landing-section" style={{ background: T.surfLow }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-          <Reveal>
-            <div style={{ marginBottom: 96 }}>
-              <h2 style={{ fontFamily: FFD, fontWeight: 800, fontSize: "clamp(1.8rem, 3vw, 2.6rem)", letterSpacing: headingTracking(isRTL, "0.014em"), color: T.dark, marginBottom: 24 }}>
-                {isRTL ? "أدوات مصقولة لمحترفين مصقولين." : "Refined tools for refined masters."}
-              </h2>
-              <p style={{ color: T.mid, fontSize: 18, fontWeight: 300, lineHeight: 1.7, maxWidth: 500 }}>
-                {isRTL
-                  ? "كل ما هو مطلوب للقضاء على الاحتكاك التشغيلي، مما يتيح لك التركيز على فن حرفتك."
-                  : "Everything needed to eliminate operational friction, allowing you to focus on the artistry of your craft."}
-              </p>
-            </div>
-          </Reveal>
-
+      {/* ═══ VALUE PILLARS — Manage / Book / Grow ═══ */}
+      <section className="landing-snap-page" style={{ background: T.white, padding: "96px 24px" }}>
+        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+          <SectionHeading
+            FFD={FFD}
+            isRTL={isRTL}
+            eyebrow={isRTL ? "لماذا حلاقي" : "Why Halaqy"}
+            title={isRTL ? "منصة واحدة، كل ما يحتاجه مشغلك." : "One platform, everything your shop needs."}
+            marginBottom={72}
+          />
           <div className="card-grid-3">
-            {features.map((f, i) => (
-              <Reveal key={i} delay={i * 0.06}>
-                <div>
-                  <div style={{ marginBottom: 32, borderBottom: `2px solid ${T.surfCont}`, width: 40, height: 40, display: "flex", alignItems: "flex-end" }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 20, color: T.black }}>{f.icon}</span>
+            {pillars.map((p, i) => (
+              <Reveal key={i} delay={i * 0.08}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{
+                    width: 56, height: 56, borderRadius: 9999, background: T.surfLow,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    margin: "0 auto 24px",
+                  }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 26, color: T.accent }}>{p.icon}</span>
                   </div>
-                  <h3 style={{ fontWeight: 800, fontSize: 11, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.1em"), color: T.dark, marginBottom: 16 }}>
-                    {f.title}
-                  </h3>
-                  <p style={{ color: T.mid, fontSize: 14, lineHeight: 1.7, fontWeight: 300 }}>{f.desc}</p>
+                  <h3 style={{ fontWeight: 700, fontSize: 18, color: T.dark, marginBottom: 10 }}>{p.title}</h3>
+                  <p style={{ color: T.mid, fontSize: 14, lineHeight: 1.7, fontWeight: 300 }}>{p.desc}</p>
                 </div>
               </Reveal>
             ))}
@@ -364,41 +444,30 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ HOW IT WORKS ═══ */}
-      <section className="landing-section" style={{ background: T.white }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-          <div style={{ display: "flex", gap: "clamp(48px, 10vw, 128px)", alignItems: "flex-start", flexWrap: "wrap" }}>
-            {/* Left sticky */}
-            <Reveal>
-              <div style={{ maxWidth: 400, position: "sticky", top: 160 }}>
-                <h2 style={{ fontFamily: FFD, fontWeight: 800, fontSize: "clamp(1.8rem, 3vw, 2.6rem)", letterSpacing: headingTracking(isRTL, "0.014em"), color: T.dark, marginBottom: 32 }}>
-                  {isRTL ? "من الإعداد إلى النمو." : "From setup to growth."}
-                </h2>
-                <p style={{ color: T.mid, fontSize: 18, fontWeight: 300, lineHeight: 1.7, marginBottom: 48 }}>
-                  {isRTL
-                    ? "فلسفة إعداد مبسّطة تتيح لك قبول أول حجز رقمي في غضون دقائق."
-                    : "A streamlined onboarding philosophy allows you to accept your first digital booking within minutes."}
-                </p>
-                <div style={{ aspectRatio: "4/3", background: T.surfHigh, borderRadius: 12, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.3 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 80, color: T.mid }}>content_cut</span>
-                </div>
-              </div>
-            </Reveal>
-
-            {/* Right steps */}
-            <div style={{ flex: 1, minWidth: 280, display: "flex", flexDirection: "column", gap: 96, paddingTop: 32 }}>
-              {steps.map((step, i) => (
-                <Reveal key={i} delay={i * 0.12}>
-                  <div style={{ display: "flex", gap: 48, alignItems: "flex-start" }}>
-                    <div style={{ fontFamily: FF, fontSize: 52, fontWeight: 900, color: T.surfHigh, lineHeight: 1, flexShrink: 0 }}>
-                      {step.num}
+      {/* ═══ FEATURES ═══ */}
+      <section id="features" className="landing-snap-page" style={{ background: T.surfLow, padding: "96px 24px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <SectionHeading
+            FFD={FFD}
+            isRTL={isRTL}
+            eyebrow={isRTL ? "الميزات" : "Features"}
+            title={isRTL ? "كل ما يحتاجه مشغلك، في مكان واحد." : "Everything your shop needs, in one place."}
+            subtitle={isRTL
+              ? "من أول حجز إلى آخر مراجعة، صُممت هذه الأدوات لتعمل معًا بلا احتكاك."
+              : "From the first booking to the last review, these tools are built to work together."}
+          />
+          <div style={{ borderRadius: 20, overflow: "hidden", border: `1px solid ${T.surfCont}`, background: T.surfCont, boxShadow: "0 32px 70px -32px rgba(28,22,17,0.12)" }}>
+            <div className="landing-feature-grid">
+              {features.map((f, i) => (
+                <Reveal key={i} delay={i * 0.05}>
+                  <div className="landing-feature-cell">
+                    <div className="landing-feature-icon">
+                      <span className="material-symbols-outlined">{f.icon}</span>
                     </div>
-                    <div>
-                      <h4 style={{ fontFamily: FF, fontWeight: 700, fontSize: 16, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.12em"), color: T.dark, marginBottom: 16 }}>
-                        {step.title}
-                      </h4>
-                      <p style={{ color: T.mid, fontWeight: 300, lineHeight: 1.7 }}>{step.desc}</p>
-                    </div>
+                    <h3 style={{ fontWeight: 700, fontSize: 15, color: T.dark, marginBottom: 10 }}>
+                      {f.title}
+                    </h3>
+                    <p style={{ color: T.mid, fontSize: 14, lineHeight: 1.7, fontWeight: 300 }}>{f.desc}</p>
                   </div>
                 </Reveal>
               ))}
@@ -407,41 +476,99 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ═══ HOW IT WORKS ═══ */}
+      <section className="landing-snap-page" style={{ background: T.white, padding: "96px 24px" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <SectionHeading
+            FFD={FFD}
+            isRTL={isRTL}
+            eyebrow={isRTL ? "كيف يعمل" : "How It Works"}
+            title={isRTL ? "من الإعداد إلى النمو." : "From setup to growth."}
+            subtitle={isRTL
+              ? "أنشئ بوابة حجزك واقبل أول موعد رقمي خلال دقائق."
+              : "Set up your booking page and take your first digital appointment in minutes."}
+            marginBottom={56}
+          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+            {steps.map((step, i) => (
+              <Reveal key={i} delay={i * 0.08}>
+                <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.accent, flexShrink: 0, paddingTop: 3 }}>
+                    {step.num}
+                  </div>
+                  <div>
+                    <h4 style={{ fontWeight: 700, fontSize: 16, color: T.dark, marginBottom: 8 }}>
+                      {step.title}
+                    </h4>
+                    <p style={{ color: T.mid, fontWeight: 300, lineHeight: 1.7, fontSize: 15 }}>{step.desc}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ MISSION / APPROACH — alternating statement blocks ═══ */}
+      <section className="landing-snap-page" style={{ position: "relative", overflow: "hidden", padding: "120px 24px" }}>
+        <BackgroundVideo
+          src="/videos/1.mp4"
+          overlay={`linear-gradient(180deg, ${T.white}f2 0%, ${T.surfLow}ee 50%, ${T.white}f2 100%)`}
+        />
+        <div style={{ position: "relative", zIndex: 1, maxWidth: 1000, margin: "0 auto", display: "flex", flexDirection: "column", gap: 96 }}>
+          <Statement
+            align="start"
+            eyebrow={isRTL ? "مهمتنا" : "Our Mission"}
+            FFD={FFD}
+            isRTL={isRTL}
+            title={isRTL ? "أدوات مصقولة لمحترفين مصقولين." : "Refined tools for refined masters."}
+            body={isRTL
+              ? "كل ما هو مطلوب لتقليل الاحتكاك التشغيلي والتركيز على حرفتك."
+              : "Everything you need to cut operational friction and focus on your craft."}
+          />
+          <Statement
+            align="end"
+            eyebrow={isRTL ? "نهجنا" : "Our Approach"}
+            FFD={FFD}
+            isRTL={isRTL}
+            title={isRTL ? "نُبنى مع الحلاقين، لا لهم فقط." : "Built with barbers, not just for them."}
+            body={isRTL
+              ? "نعمل مباشرة مع مشاغل حقيقية لتشكيل كل ميزة — فلا شيء يُطلق ما لم يصمد أمام ازدحام يوم السبت."
+              : "We work directly with working shops to shape every feature — nothing ships that doesn't survive a Saturday rush."}
+          />
+        </div>
+      </section>
+
       {/* ═══ PRICING ═══ */}
-      <section id="pricing" className="landing-section" style={{ background: "#1c1611", color: T.white }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <Reveal>
-            <div style={{ textAlign: "center", marginBottom: 96 }}>
-              <h2 style={{ fontFamily: FFD, fontWeight: 800, fontSize: "clamp(2rem, 4vw, 3rem)", letterSpacing: headingTracking(isRTL, "0.016em"), color: T.white, marginBottom: 16 }}>
-                {isRTL ? "تسعير شفاف." : "Honest Pricing."}
-              </h2>
-              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 18, fontWeight: 300 }}>
-                {isRTL ? "مسار واحد شفاف لكل متجر." : "A single, transparent path for every shop."}
-              </p>
-            </div>
-          </Reveal>
+      <section id="pricing" className="landing-snap-page" style={{ background: T.surfLow, padding: "96px 24px" }}>
+        <div style={{ maxWidth: 640, margin: "0 auto" }}>
+          <SectionHeading
+            FFD={FFD}
+            isRTL={isRTL}
+            eyebrow={isRTL ? "التسعير" : "Pricing"}
+            title={isRTL ? "تسعير شفاف." : "Honest pricing."}
+            subtitle={isRTL ? "مسار واحد شفاف لكل متجر." : "One simple plan for every shop."}
+          />
 
           <Reveal delay={0.1}>
-            <div style={{ padding: 64, borderRadius: 12, background: T.white, color: "#1c1611", position: "relative", overflow: "hidden" }}>
-              {/* Header row */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 48, marginBottom: 64, paddingBottom: 64, borderBottom: `1px solid ${T.surfCont}` }}>
+            <div style={{ padding: 48, borderRadius: 24, background: T.white, border: `1px solid ${T.surfCont}`, boxShadow: "0 32px 70px -32px rgba(28,22,17,0.22)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24, marginBottom: 40, paddingBottom: 40, borderBottom: `1px solid ${T.surfCont}` }}>
                 <div>
-                  <h3 style={{ fontFamily: FF, fontWeight: 800, fontSize: 30, letterSpacing: "0.01em", color: T.dark, marginBottom: 12 }}>Professional</h3>
-                  <p style={{ color: T.mid, fontWeight: 300 }}>{isRTL ? "حرية تشغيل كاملة." : "Total operational freedom."}</p>
+                  <h3 style={{ fontWeight: 700, fontSize: 22, color: T.dark, marginBottom: 6 }}>Professional</h3>
+                  <p style={{ color: T.mid, fontWeight: 300, fontSize: 14 }}>{isRTL ? "حرية تشغيل كاملة." : "Total operational freedom."}</p>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontFamily: FF, fontWeight: 900, fontSize: 52, letterSpacing: "0.018em", color: T.dark, lineHeight: 1 }}>1.5 JOD</div>
-                  <div style={{ fontWeight: 900, fontSize: 10, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.mid, opacity: 0.5, marginTop: 4 }}>
-                    {isRTL ? "لكل حلاق / شهر" : "Per Barber / Mo"}
+                <div style={{ textAlign: "end" }}>
+                  <div style={{ fontWeight: 800, fontSize: 40, color: T.dark, lineHeight: 1, fontVariantNumeric: "tabular-nums lining-nums" }}>1.5 JOD</div>
+                  <div style={{ fontWeight: 500, fontSize: 12, color: T.mid, marginTop: 6 }}>
+                    {isRTL ? "لكل حلاق / شهر" : "per barber / month"}
                   </div>
                 </div>
               </div>
 
-              {/* Features grid */}
-              <div className="card-grid-2" style={{ marginBottom: 64 }}>
+              <div className="card-grid-2" style={{ marginBottom: 40 }}>
                 {pricingFeats.map((feat, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 20, color: "#a67c3d", fontVariationSettings: "'wght' 700" }}>check</span>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 18, color: T.accent }}>check</span>
                     <span style={{ fontSize: 14, fontWeight: 500, color: T.dark }}>{feat}</span>
                   </div>
                 ))}
@@ -450,11 +577,11 @@ export default function LandingPage() {
               <Link
                 href="/auth/signup"
                 className="btn btn-primary"
-                style={{ width: "100%", minHeight: 64, borderRadius: 8, fontSize: 14, fontWeight: 800 }}
+                style={{ width: "100%", minHeight: 52, borderRadius: 9999, fontSize: 15, fontWeight: 700 }}
               >
-                {isRTL ? "ابدأ تجربة 14 يوم" : "Initiate 14-Day Trial"}
+                {isRTL ? "ابدأ تجربة 14 يوم" : "Start 14-day trial"}
               </Link>
-              <p style={{ textAlign: "center", marginTop: 32, fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.mid, opacity: 0.5 }}>
+              <p style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: T.mid }}>
                 {isRTL ? "لا يتطلب التزامًا." : "No commitment required."}
               </p>
             </div>
@@ -462,53 +589,53 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ FOOTER ═══ */}
-      <footer className="landing-section" style={{ background: T.white, borderTop: `1px solid ${T.surfCont}` }}>
-        <div className="landing-footer-grid" style={{ maxWidth: 1280, margin: "0 auto" }}>
-          <div>
-            <span dir="ltr" style={{ fontFamily: FONT_EN_DISPLAY, fontSize: 18, fontWeight: 700, letterSpacing: "0.008em", color: T.dark }}>Halaqy.</span>
-            <p style={{ marginTop: 24, fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", lineHeight: 2, color: T.mid }}>
-              The Digital Standard.
+      {/* ═══ CONTACT + FOOTER — the final "page" ═══ */}
+      <section className="landing-snap-page" style={{ position: "relative", overflow: "hidden", background: T.dark, color: T.white, padding: "96px 24px 32px" }}>
+        <BackgroundVideo
+          src="/videos/2.mp4"
+          overlay={`linear-gradient(180deg, ${T.dark}c8 0%, ${T.dark}dc 55%, ${T.dark}ea 100%)`}
+        />
+
+        <Reveal>
+          <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
+            <Eyebrow isRTL={isRTL} dark>{isRTL ? "تواصل" : "Get In Touch"}</Eyebrow>
+            <h2 style={{ fontFamily: FFD, fontWeight: 800, fontSize: "clamp(1.8rem, 3.4vw, 2.6rem)", letterSpacing: headingTracking(isRTL, "0.014em"), marginBottom: 16 }}>
+              {isRTL ? "نرحب بك للتواصل." : "We'd love to hear from you."}
+            </h2>
+            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 16, fontWeight: 300, marginBottom: 40 }}>
+              {isRTL ? "ابدأ اليوم أو تحدث معنا حول احتياجات مشغلك." : "Start today, or talk to us about your shop's needs."}
             </p>
-            <button
-              onClick={handleToggleLocale}
-              className="nav-link"
-              style={{ marginTop: 32 }}
+            <Link
+              href="/auth/signup"
+              className="btn"
+              style={{ minHeight: 52, padding: "0 36px", borderRadius: 9999, fontSize: 15, fontWeight: 700, background: T.white, color: T.dark }}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>language</span>
-              <span style={{ fontWeight: 900, fontSize: 9, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em") }}>{isRTL ? "EN / عربي" : "AR / EN"}</span>
-            </button>
+              {isRTL ? "ابدأ الآن" : "Get started"}
+            </Link>
+          </div>
+        </Reveal>
+
+        {/* Footer bar */}
+        <div style={{
+          position: "relative", zIndex: 1, maxWidth: 1100, margin: "96px auto 0", width: "100%",
+          borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 32,
+          display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 24,
+        }}>
+          <span dir="ltr" style={{ fontFamily: FONT_EN_DISPLAY, fontSize: 17, fontWeight: 700, color: T.white }}>Halaqy.</span>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 32 }}>
+            {navLinks.filter((l) => !l.href.startsWith("/customer") && !l.href.startsWith("/calendar") && !l.href.startsWith("/leads") && l.href !== "/").map((link) => (
+              <Link key={link.label} href={link.href} style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", textDecoration: "none" }}>
+                {link.label}
+              </Link>
+            ))}
           </div>
 
-          {footerCols.map((col) => (
-            <div key={col.title}>
-              <h5 style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.black, marginBottom: 32 }}>
-                {col.title}
-              </h5>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 20 }}>
-                {col.links.map((link) => (
-                  <li key={link.label}>
-                    {link.href ? (
-                      <Link href={link.href} className="nav-link">
-                        {link.label}
-                      </Link>
-                    ) : (
-                      <span style={{ color: T.mid, fontWeight: 500 }}>{link.label}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        {/* Bottom bar */}
-        <div style={{ maxWidth: 1280, margin: "96px auto 0", paddingTop: 48, borderTop: `1px solid ${T.surfCont}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p style={{ fontWeight: 700, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.2em", color: T.mid, opacity: 0.5 }}>
-            © 2026 Halaqy Digital Atelier.
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", margin: 0 }}>
+            © 2026 Halaqy.
           </p>
         </div>
-      </footer>
+      </section>
     </div>
   );
 }

@@ -189,6 +189,7 @@ export function TimelineView() {
           <div className="flex items-center gap-2 text-[var(--text-secondary)]">
             <button
               onClick={() => setSelectedDate((d) => subDays(d, 1))}
+              aria-label={isRTL ? "اليوم السابق" : "Previous day"}
               className="w-11 h-11 flex items-center justify-center rounded-[var(--radius-sm)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
             >
               <ChevronLeft size={18} />
@@ -198,6 +199,7 @@ export function TimelineView() {
             </span>
             <button
               onClick={() => setSelectedDate((d) => addDays(d, 1))}
+              aria-label={isRTL ? "اليوم التالي" : "Next day"}
               className="w-11 h-11 flex items-center justify-center rounded-[var(--radius-sm)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
             >
               <ChevronRight size={18} />
@@ -210,6 +212,8 @@ export function TimelineView() {
           <div className="flex items-center gap-1 p-1 rounded-[8px] bg-[var(--bg-secondary)] border border-[var(--border-primary)]">
             <button
               onClick={() => setView("timeline")}
+              aria-label={isRTL ? "عرض الجدول الزمني" : "Timeline view"}
+              aria-pressed={view === "timeline"}
               className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "timeline"
                   ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
@@ -220,6 +224,8 @@ export function TimelineView() {
             </button>
             <button
               onClick={() => setView("list")}
+              aria-label={isRTL ? "عرض القائمة" : "List view"}
+              aria-pressed={view === "list"}
               className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "list"
                   ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
@@ -288,8 +294,12 @@ export function TimelineView() {
       {!loading && !error && filteredAppointments.length === 0 && (
         <EmptyState
           icon={CalendarX}
-          title="No appointments for this day"
-          description="Appointments booked for this date will appear here."
+          title={isRTL ? "لا توجد مواعيد لهذا اليوم" : "No appointments for this day"}
+          description={
+            isRTL
+              ? "ستظهر هنا المواعيد المحجوزة لهذا التاريخ."
+              : "Appointments booked for this date will appear here."
+          }
         />
       )}
 
@@ -364,7 +374,7 @@ export function TimelineView() {
                         format(now, "yyyy-MM-dd") && (
                         <div
                           className="absolute top-0 bottom-0 w-[1px] bg-[var(--accent-mint)]/50 z-20 pointer-events-none"
-                          style={{ left: `${currentPosition}%` }}
+                          style={{ insetInlineStart: `${currentPosition}%` }}
                         >
                           <div className="absolute top-0 -translate-x-1/2 -mt-1 w-2 h-2 rounded-full bg-[var(--accent-mint)]" />
                         </div>
@@ -399,7 +409,7 @@ export function TimelineView() {
                             colors.border,
                           )}
                           style={{
-                            left: `${(startSlot / 12) * 100}%`,
+                            insetInlineStart: `${(startSlot / 12) * 100}%`,
                             width: `${(widthSlots / 12) * 100}%`,
                             bottom: "6px",
                           }}

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPublicServices } from "@/lib/queries/services";
+import { getServiceIcon } from "@/lib/service-icon";
 import { motion } from "framer-motion";
 import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { format } from "date-fns";
@@ -50,6 +51,18 @@ const FALLBACK_SHOP_IMAGES = [
   "https://lh3.googleusercontent.com/aida-public/AB6AXuDL395efcii6egq6DbxYxfSxw9lPtASWvr9nyiIX3PDRD5DPM2aqD-bM24z4nlQJNFIo6duutRJce1FKomv5xJynkuGaW0lIyG9K81I9sKdFbDMa4ZlJBaVyqTtLKGyHgdrvugCLceYGsmCazNcaFoKYgZVmVbd0X-4DWwtJ5e_2xrcb-S5B2FuUTH6MxUgF-0fhNjhhQAleMA_50MfPbTo3QOjn5ysqxr19Eq5CPPMcDcTBff8hfbQCevSW-MLwmXp7v4SCUrkGcw7",
 ];
 
+// Best-effort "city" extraction for the breadcrumb. Shop addresses in this
+// app are freeform text (see `shops.address`), but every seeded example uses
+// a "City, Street/Area" convention (e.g. "Amman, Abdoun"). We only trust the
+// first comma-separated segment as a city when that convention is actually
+// present (2+ segments) — a single freeform segment is ambiguous, so we
+// omit the city rather than guess at one.
+function parseCityFromAddress(address: string | null): string | null {
+  if (!address) return null;
+  const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+  return parts.length > 1 ? parts[0] : null;
+}
+
 function Stars({ rating, size = 16 }: { rating: number; size?: number }) {
   return (
     <div className="flex items-center gap-0.5">
@@ -92,6 +105,58 @@ export default function ShopProfilePage() {
   const [loading, setLoading] = useState(true);
   const [stickyVisible, setStickyVisible] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
+
+  // ── Hero image carousel (existing FALLBACK_SHOP_IMAGES only — no per-shop
+  // photos exist yet) ──
+  const [heroIndex, setHeroIndex] = useState(0);
+  const heroTouchStartX = useRef<number | null>(null);
+  const goToPrevImage = () =>
+    setHeroIndex((i) => (i - 1 + FALLBACK_SHOP_IMAGES.length) % FALLBACK_SHOP_IMAGES.length);
+  const goToNextImage = () =>
+    setHeroIndex((i) => (i + 1) % FALLBACK_SHOP_IMAGES.length);
+  const handleHeroTouchStart = (e: React.TouchEvent) => {
+    heroTouchStartX.current = e.touches[0]?.clientX ?? null;
+  };
+  const handleHeroTouchEnd = (e: React.TouchEvent) => {
+    const startX = heroTouchStartX.current;
+    heroTouchStartX.current = null;
+    if (startX === null) return;
+    const deltaX = e.changedTouches[0]?.clientX - startX;
+    const SWIPE_THRESHOLD = 40;
+    if (deltaX <= -SWIPE_THRESHOLD) goToNextImage();
+    else if (deltaX >= SWIPE_THRESHOLD) goToPrevImage();
+  };
+
+  // ── "Save" is local-only UI state — there is no favorites table in this
+  // codebase yet (checked src/lib and src/app for "favorite"), so this does
+  // NOT persist anywhere: it resets on refresh and is not synced to the
+  // account. It exists purely as a harmless UI affordance.
+  const [isSaved, setIsSaved] = useState(false);
+
+  // ── Share: Web Share API where available, falling back to copying the
+  // page URL to the clipboard. ──
+  const [shareFeedback, setShareFeedback] = useState<null | "shared" | "copied" | "failed">(null);
+  const handleShare = async () => {
+    const shareData = {
+      title: shop?.name,
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareFeedback("shared");
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareFeedback("copied");
+      } else {
+        setShareFeedback("failed");
+      }
+    } catch {
+      // User cancelled the native share sheet, or the clipboard write was
+      // blocked — either way, no error state is worth surfacing.
+    }
+    setTimeout(() => setShareFeedback(null), 2200);
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -150,6 +215,8 @@ export default function ShopProfilePage() {
     ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
     : 0;
   const numReviews = reviews.length;
+  const shopCity = parseCityFromAddress(shop.address);
+  const startingPrice = services.length > 0 ? Math.min(...services.map((s) => s.price)) : null;
 
   // Rating breakdown
   const ratingCounts = [5,4,3,2,1].map(s => ({
@@ -162,7 +229,7 @@ export default function ShopProfilePage() {
 
       {/* ── Sticky booking bar (appears on scroll) ── */}
       <div className={`sticky-booking-bar ${stickyVisible ? "visible" : ""}`}>
-        <div className="max-w-5xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <div>
             <p className="font-black text-[#1c1611] text-base" style={{ fontFamily: "var(--font-intervar),sans-serif" }}>
               {shop.name}
@@ -186,9 +253,10 @@ export default function ShopProfilePage() {
 
       {/* ── Top Bar (non-sticky) ── */}
       <header className="fixed top-0 w-full z-40 bg-transparent">
-        <div className="max-w-5xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
           <button
             onClick={() => router.back()}
+            aria-label={t.common.back}
             className="flex items-center gap-1.5 bg-white text-[#5a5147] hover:text-[#1c1611] transition-colors h-9 px-3.5 rounded-[8px] border border-[#ede3cd] text-sm font-semibold"
             style={{ cursor: "pointer" }}
           >
@@ -204,42 +272,143 @@ export default function ShopProfilePage() {
         </div>
       </header>
 
-      {/* ── Hero ── */}
-      <div ref={heroRef} className="relative h-72 sm:h-96 overflow-hidden bg-[#1c1611]">
-        <img
-          src={FALLBACK_SHOP_IMAGES[0]}
-          alt={shop.name}
-          className="w-full h-full object-cover opacity-60"
-        />
-        <div className="absolute inset-0 bg-[#1c1611]/60" />
-        <div className="absolute bottom-0 left-0 right-0 px-5 sm:px-8 pb-8 max-w-5xl mx-auto">
-          {numReviews > 0 && (
-            <div className="flex items-center gap-2 mb-3">
-              <Stars rating={avgRating} size={14} />
-              <span className="text-white font-bold text-sm">{avgRating.toFixed(1)}</span>
-              <span className="text-white/60 text-sm">({numReviews} {t.booking.reviews})</span>
-            </div>
+      {/* ── Breadcrumb (sits below the fixed top bar; scrolls away with the
+           page, unlike the header) ── */}
+      <nav aria-label={isRTL ? "مسار التنقل" : "Breadcrumb"} className="pt-16 bg-white">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-3 border-b border-[#ede3cd] flex items-center gap-1.5 text-xs font-semibold text-[#5a5147] overflow-x-auto no-scrollbar whitespace-nowrap">
+          <Link href="/" className="hover:text-[#1c1611] transition-colors shrink-0">
+            {isRTL ? "الرئيسية" : "Home"}
+          </Link>
+          <span className="text-[#ede3cd] shrink-0">/</span>
+          <Link href="/explore" className="hover:text-[#1c1611] transition-colors shrink-0">
+            {isRTL ? "الحلاقين" : "Barbers"}
+          </Link>
+          {shopCity && (
+            <>
+              <span className="text-[#ede3cd] shrink-0">/</span>
+              <span className="shrink-0">{shopCity}</span>
+            </>
           )}
+          <span className="text-[#ede3cd] shrink-0">/</span>
+          <span className="text-[#1c1611] font-bold shrink-0" aria-current="page">{shop.name}</span>
+        </div>
+      </nav>
+
+      {/* ── Hero image carousel ── */}
+      <div
+        ref={heroRef}
+        className="relative h-72 sm:h-96 overflow-hidden bg-[#1c1611]"
+        onTouchStart={handleHeroTouchStart}
+        onTouchEnd={handleHeroTouchEnd}
+      >
+        {FALLBACK_SHOP_IMAGES.map((src, i) => (
+          <img
+            key={src}
+            src={src}
+            alt={`${shop.name} ${i + 1}/${FALLBACK_SHOP_IMAGES.length}`}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+            style={{ opacity: i === heroIndex ? 0.6 : 0 }}
+            aria-hidden={i !== heroIndex}
+          />
+        ))}
+        <div className="absolute inset-0 bg-[#1c1611]/60" />
+
+        {/* Floating circular save / share buttons, overlaid on the photo —
+            no back button here: the fixed top bar's own Back control sits
+            in the exact same corner and duplicating it just stacked two
+            identical controls on top of each other. */}
+        <div className="absolute top-4 end-4 z-20 flex items-center gap-2">
+          <button
+            onClick={() => setIsSaved((v) => !v)}
+            aria-label={isSaved ? (isRTL ? "إزالة من المحفوظات" : "Remove from saved") : (isRTL ? "حفظ" : "Save")}
+            aria-pressed={isSaved}
+            className="w-10 h-10 rounded-full bg-white/95 hover:bg-white flex items-center justify-center shadow-md transition-colors"
+            style={{ cursor: "pointer" }}
+          >
+            <span
+              className="material-symbols-outlined text-xl"
+              style={{ color: isSaved ? "#a67c3d" : "#1c1611", fontVariationSettings: isSaved ? "'FILL' 1" : "'FILL' 0" }}
+            >favorite</span>
+          </button>
+          <div className="relative">
+            <button
+              onClick={handleShare}
+              aria-label={t.common.share}
+              className="w-10 h-10 rounded-full bg-white/95 hover:bg-white flex items-center justify-center shadow-md transition-colors"
+              style={{ cursor: "pointer" }}
+            >
+              <span className="material-symbols-outlined text-[#1c1611] text-xl">share</span>
+            </button>
+            {shareFeedback && (
+              <div className="absolute top-12 end-0 z-30 whitespace-nowrap bg-[#1c1611] text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-md">
+                {shareFeedback === "copied" && (isRTL ? "تم نسخ الرابط" : "Link copied")}
+                {shareFeedback === "shared" && (isRTL ? "تمت المشاركة" : "Shared")}
+                {shareFeedback === "failed" && (isRTL ? "تعذرت المشاركة" : "Couldn't share")}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Prev / next arrows + counter — only meaningful with 2+ photos */}
+        {FALLBACK_SHOP_IMAGES.length > 1 && (
+          <>
+            <button
+              onClick={goToPrevImage}
+              aria-label={isRTL ? "الصورة السابقة" : "Previous photo"}
+              className="absolute start-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-md transition-colors"
+              style={{ cursor: "pointer" }}
+            >
+              <span className="material-symbols-outlined text-[#1c1611] text-lg">chevron_left</span>
+            </button>
+            <button
+              onClick={goToNextImage}
+              aria-label={isRTL ? "الصورة التالية" : "Next photo"}
+              className="absolute end-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-md transition-colors"
+              style={{ cursor: "pointer" }}
+            >
+              <span className="material-symbols-outlined text-[#1c1611] text-lg">chevron_right</span>
+            </button>
+            <div className="absolute bottom-4 end-4 z-20 bg-black/50 text-white text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur-sm">
+              {heroIndex + 1}/{FALLBACK_SHOP_IMAGES.length}
+            </div>
+          </>
+        )}
+
+        <div className="absolute bottom-0 left-0 right-0 px-5 sm:px-8 pb-8 max-w-6xl mx-auto">
           <h1
             className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-2"
             style={{ fontFamily: "var(--font-intervar),sans-serif", letterSpacing: "0.018em" }}
           >
             {shop.name}
           </h1>
-          {shop.address && (
-            <div className="flex items-center gap-1.5 text-white/70 text-sm font-medium">
-              <span className="material-symbols-outlined text-base">location_on</span>
-              {shop.address}
+          {/* Compact info row: rating + review count, and address, in one line */}
+          {(numReviews > 0 || shop.address) && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
+              {numReviews > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <Stars rating={avgRating} size={14} />
+                  <span className="text-white font-bold">{avgRating.toFixed(1)}</span>
+                  <span className="text-white/60">({numReviews} {numReviews === 1 ? t.booking.review : t.booking.reviews})</span>
+                </div>
+              )}
+              {shop.address && (
+                <div className="flex items-center gap-1.5 text-white/70 font-medium">
+                  <span className="material-symbols-outlined text-base">location_on</span>
+                  {shop.address}
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      <main className="pb-28">
-        <div className="max-w-5xl mx-auto px-5 sm:px-8">
+      <main className="pb-28 lg:pb-16">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 lg:grid lg:grid-cols-[1fr_360px] lg:gap-10 lg:items-start">
+        <div>
 
-          {/* ── Quick Info Cards ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 -mt-6 relative z-20 mb-12">
+          {/* ── Quick Info Cards — mobile/tablet only; the sticky sidebar
+               covers this job on desktop ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 -mt-6 relative z-20 mb-12 lg:hidden">
             {[
               shop.phone && {
                 href: `tel:${shop.phone}`,
@@ -303,12 +472,10 @@ export default function ShopProfilePage() {
                     className="flex items-center justify-between p-4 bg-white rounded-2xl border border-[#ede3cd] hover:border-[#a67c3d] hover:-translate-y-0.5 transition-all group"
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
-                        <img
-                          src={FALLBACK_SHOP_IMAGES[idx % FALLBACK_SHOP_IMAGES.length]}
-                          alt={service.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
+                      <div className="w-12 h-12 rounded-xl bg-[#f7f1e4] flex items-center justify-center shrink-0 group-hover:bg-[#1c1611] transition-colors">
+                        <span className="material-symbols-outlined text-xl text-[#5a5147] group-hover:text-white transition-colors">
+                          {getServiceIcon(service.name)}
+                        </span>
                       </div>
                       <div>
                         <h3 className="font-bold text-[#1c1611] text-sm">{isRTL && service.name_ar ? service.name_ar : service.name}</h3>
@@ -341,7 +508,11 @@ export default function ShopProfilePage() {
                   {isRTL ? "فريقنا" : "Our Team"}
                 </h2>
                 <div className="flex-1 h-px bg-[#ede3cd]" />
-                <span className="text-xs font-bold text-[#5a5147] uppercase tracking-wider shrink-0">{isRTL ? `${barbers.length} حلاقين` : `${barbers.length} Barbers`}</span>
+                <span className="text-xs font-bold text-[#5a5147] uppercase tracking-wider shrink-0">
+                  {isRTL
+                    ? `${barbers.length} ${barbers.length === 1 ? "حلاق" : "حلاقين"}`
+                    : `${barbers.length} ${barbers.length === 1 ? "Barber" : "Barbers"}`}
+                </span>
               </div>
               {/* Horizontal scroll row */}
               <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1">
@@ -395,7 +566,7 @@ export default function ShopProfilePage() {
                       {avgRating.toFixed(1)}
                     </div>
                     <Stars rating={avgRating} size={16} />
-                    <p className="text-xs text-[#5a5147] font-semibold mt-1">{numReviews} {t.booking.reviews}</p>
+                    <p className="text-xs text-[#5a5147] font-semibold mt-1">{numReviews} {numReviews === 1 ? t.booking.review : t.booking.reviews}</p>
                   </div>
                   {/* Bar chart */}
                   <div className="flex-1 space-y-2">
@@ -435,7 +606,7 @@ export default function ShopProfilePage() {
                       </div>
                     </div>
                     {review.comment && (
-                      <p className="text-sm text-[#5a5147] leading-relaxed pl-12 italic">
+                      <p className="text-sm text-[#5a5147] leading-relaxed ps-12 italic">
                         &ldquo;{review.comment}&rdquo;
                       </p>
                     )}
@@ -445,7 +616,10 @@ export default function ShopProfilePage() {
             </section>
           )}
 
-          {/* ── Book CTA Banner ── */}
+          {/* ── Book CTA Banner — kept on all breakpoints; without it the
+               page just stops dead after the reviews grid on desktop with
+               nothing closing it out, even though the sidebar also has its
+               own persistent Book Now button ── */}
           <section
             className="rounded-2xl p-8 md:p-12 text-center relative overflow-hidden mb-8"
             style={{ background: "#1c1611" }}
@@ -470,6 +644,73 @@ export default function ShopProfilePage() {
               </Link>
             </div>
           </section>
+        </div>
+
+        {/* ── Booking sidebar — desktop only (lg+), sticky while the left
+             column scrolls. Replaces the quick-info-cards + closing CTA
+             banner's job with one persistent panel instead of scattering
+             "book now" prompts through the page. ── */}
+        <aside className="hidden lg:block lg:sticky" style={{ top: 96 }}>
+          <div className="bg-white rounded-2xl border border-[#ede3cd] p-6 shadow-[0_8px_30px_-14px_rgba(28,22,17,0.18)]">
+            <h2 className="text-xl font-black text-[#1c1611] mb-1" style={{ fontFamily: FF }}>
+              {shop.name}
+            </h2>
+            {numReviews > 0 && (
+              <div className="flex items-center gap-1.5 mb-2">
+                <Stars rating={avgRating} size={14} />
+                <span className="text-sm font-bold text-[#1c1611]">{avgRating.toFixed(1)}</span>
+                <span className="text-xs text-[#5a5147]">({numReviews} {numReviews === 1 ? t.booking.review : t.booking.reviews})</span>
+              </div>
+            )}
+            {shop.address && (
+              <div className="flex items-start gap-1.5 text-sm text-[#5a5147] font-medium mb-4">
+                <span className="material-symbols-outlined text-base shrink-0">location_on</span>
+                {shop.address}
+              </div>
+            )}
+
+            {startingPrice !== null && (
+              <div className="flex items-baseline gap-1.5 py-4 border-y border-[#ede3cd] mb-4">
+                <span className="text-xs text-[#5a5147] font-semibold">{isRTL ? "يبدأ من" : "From"}</span>
+                <span className="text-2xl font-black text-[#1c1611]">{startingPrice} {t.common.jod}</span>
+              </div>
+            )}
+
+            <Link
+              href={`/book/${shop.id}`}
+              className="btn-premium btn-premium-dark w-full justify-center mb-4"
+              style={{ minHeight: 52 }}
+            >
+              {t.explore.bookNow}
+            </Link>
+            <p className="text-center text-xs text-[#5a5147] mb-5">
+              {isRTL ? "بدون دفع اليوم · إلغاء مجاني" : "No payment today · Free cancellation"}
+            </p>
+
+            {(shop.phone || shop.instagram || shop.google_maps_url) && (
+              <div className="flex flex-col gap-1 pt-4 border-t border-[#ede3cd]">
+                {shop.phone && (
+                  <a href={`tel:${shop.phone}`} className="flex items-center gap-3 py-1.5 text-sm text-[#5a5147] hover:text-[#1c1611] transition-colors">
+                    <span className="material-symbols-outlined text-[18px]">call</span>
+                    {shop.phone}
+                  </a>
+                )}
+                {shop.instagram && (
+                  <a href={`https://instagram.com/${shop.instagram.replace("@", "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 py-1.5 text-sm text-[#5a5147] hover:text-[#1c1611] transition-colors">
+                    <span className="material-symbols-outlined text-[18px]">photo_camera</span>
+                    {shop.instagram}
+                  </a>
+                )}
+                {shop.google_maps_url && (
+                  <a href={shop.google_maps_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 py-1.5 text-sm text-[#5a5147] hover:text-[#1c1611] transition-colors">
+                    <span className="material-symbols-outlined text-[18px]">map</span>
+                    {isRTL ? "عرض على الخريطة" : "View on Map"}
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+        </aside>
         </div>
       </main>
 

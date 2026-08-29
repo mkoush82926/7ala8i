@@ -6,6 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
 import { GripVertical, Phone, DollarSign, ChevronRight } from "lucide-react";
 import type { Lead } from "@/lib/types";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface LeadCardProps {
   lead: Lead;
@@ -22,6 +23,7 @@ interface LeadCardProps {
    6. Content variation — graceful fallback when phone/value absent
 ───────────────────────────────────────────────────────────────── */
 export function LeadCard({ lead, onClick }: LeadCardProps) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -78,16 +80,17 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
       }}
       onClick={onClick}
     >
-      {/* Drag Handle — revealed on hover */}
+      {/* Drag Handle — revealed on hover (opacity toggled via mouse handlers below;
+          inline style always wins over a Tailwind class here, so no className needed) */}
       <div
         {...attributes}
         {...listeners}
         style={{
-          position: "absolute", top: 12, right: 12,
+          position: "absolute", top: 12, insetInlineEnd: 12,
           opacity: 0, transition: "opacity 0.2s",
           cursor: "grab",
         }}
-        className="group-hover:opacity-100"
+        aria-label="Drag to reorder"
         onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.opacity = "1"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.opacity = "0"; }}
       >
@@ -163,13 +166,13 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
             }}>
               <DollarSign size={10} />
               <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                {lead.value} JOD
+                {lead.value} {t.common.jod}
               </span>
             </div>
           )}
           <span style={{
-            fontSize: 10, color: "#a89e8c",
-            marginLeft: "auto",
+            fontSize: 10, color: "#5a5147",
+            marginInlineStart: "auto",
           }}>
             {lead.createdAt}
           </span>

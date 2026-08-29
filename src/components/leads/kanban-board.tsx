@@ -249,7 +249,7 @@ export function KanbanBoard() {
             {t.leads.crmPipeline}
           </h2>
           <p className="text-[#5a5147] mt-2 font-medium text-sm">
-            {leads.length} {t.leads.leadsAcross} {stages.length}{" "}
+            {leads.length} {leads.length === 1 ? t.leads.leadAcross : t.leads.leadsAcross} {stages.length}{" "}
             {t.leads.stages}
           </p>
         </div>
@@ -259,6 +259,8 @@ export function KanbanBoard() {
           <div className="flex items-center gap-1 p-1 rounded-[12px] bg-[var(--bg-secondary)] border border-[var(--border-primary)]">
             <button
               onClick={() => setView("kanban")}
+              aria-label={isRTL ? "عرض كانبان" : "Kanban view"}
+              aria-pressed={view === "kanban"}
               className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "kanban"
                   ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
@@ -269,6 +271,8 @@ export function KanbanBoard() {
             </button>
             <button
               onClick={() => setView("list")}
+              aria-label={isRTL ? "عرض القائمة" : "List view"}
+              aria-pressed={view === "list"}
               className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
                 view === "list"
                   ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
@@ -431,6 +435,11 @@ function LeadListView({
 
       {/* Table body */}
       <div>
+        {leads.length === 0 && (
+          <div className="text-center py-12 text-sm text-[#5a5147]">
+            {t.common.noData}
+          </div>
+        )}
         {leads.map((lead, i) => (
           <motion.div
             key={lead.id}

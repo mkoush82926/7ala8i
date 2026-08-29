@@ -41,8 +41,12 @@ const en = {
     calendar: "Calendar",
     leads: "Leads",
     clients: "Clients",
+    services: "Services",
+    team: "Team",
     analytics: "Analytics",
     settings: "Settings",
+    bookAppointment: "Book Appointment",
+    signOut: "Sign Out",
   },
 
   // ─── Topbar ───
@@ -96,6 +100,7 @@ const en = {
   // ─── CRM / Leads ───
   leads: {
     crmPipeline: "CRM Pipeline",
+    leadAcross: "lead across",
     leadsAcross: "leads across",
     stages: "stages",
     newLead: "New Lead",
@@ -179,7 +184,9 @@ const en = {
     step: "Step",
     of: "of",
     reviews: "reviews",
-    service: "service(s)",
+    review: "review",
+    service: "service",
+    servicesPlural: "services",
   },
 
   // ─── Settings ───
@@ -388,10 +395,10 @@ const en = {
     noResults: "No results found",
     tryDifferent: "Try a different search term or browse all shops.",
     clearSearch: "Clear Search",
-    featured: "Featured",
     openNow: "Open Now",
-    fromPrice: "From 8 JOD",
-    thirtyMin: "30 min",
+    locationUnavailable: "Location unavailable",
+    fromPrice: "From {price} JOD",
+    serviceDuration: "{duration} min",
     view: "View",
     bookNow: "Book Now",
     readyToLook: "Ready to look your best?",

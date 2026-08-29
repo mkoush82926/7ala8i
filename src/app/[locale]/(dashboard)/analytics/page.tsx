@@ -110,7 +110,7 @@ export default function AnalyticsPage() {
       </div>
 
       {loading && data ? (
-        <div style={{ position: "fixed", top: 16, right: 16, background: "#1c1611", color: "white", padding: "8px 16px", borderRadius: 8, fontSize: 13, zIndex: 50, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ position: "fixed", top: 16, insetInlineEnd: 16, background: "#1c1611", color: "white", padding: "8px 16px", borderRadius: 8, fontSize: 13, zIndex: 50, display: "flex", alignItems: "center", gap: 8 }}>
           <Loader2 size={14} className="animate-spin" /> Updating...
         </div>
       ) : null}
@@ -150,7 +150,7 @@ export default function AnalyticsPage() {
                   color: m.dir === "up" ? "#a67c3d" : m.dir === "down" ? "#ba1a1a" : "#1c1611",
                 }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 2 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14, marginInlineEnd: 2 }}>
                   {m.dir === "up" ? "trending_up" : m.dir === "down" ? "trending_down" : "trending_flat"}
                 </span>
                 {m.change > 0 ? "+" : ""}{m.change}%
@@ -234,7 +234,7 @@ export default function AnalyticsPage() {
                   }}>#{i + 1}</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#1c1611", flex: 1 }}>{b.name}</span>
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#a89e8c" }}>{b.pct}%</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#1c1611", fontVariantNumeric: "tabular-nums", minWidth: 70, textAlign: "right" }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#1c1611", fontVariantNumeric: "tabular-nums", minWidth: 70, textAlign: "end" }}>
                     {b.revenue.toLocaleString()} JOD
                   </span>
                 </div>
@@ -321,7 +321,7 @@ export default function AnalyticsPage() {
             ))}
             {peakHoursData.map((row) => (
               <React.Fragment key={row.hour}>
-                <div style={{ fontSize: 10, fontWeight: 600, color: "#5a5147", paddingRight: 8, display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>{row.hour}</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "#5a5147", paddingInlineEnd: 8, display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>{row.hour}</div>
                 {row.vals.map((v: number, di: number) => (
                   <div
                     key={di}

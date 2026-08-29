@@ -29,15 +29,18 @@ function IconBtn({
   onClick,
   children,
   badge,
+  ariaLabel,
 }: {
   onClick?: () => void;
   children: React.ReactNode;
   badge?: boolean;
+  ariaLabel?: string;
 }) {
   const [hover, setHover] = useState(false);
   return (
     <button
       onClick={onClick}
+      aria-label={ariaLabel}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
@@ -58,7 +61,7 @@ function IconBtn({
     >
       {children}
       {badge && (
-        <span style={{
+        <span aria-hidden="true" style={{
           position: "absolute", top: 7, right: 7,
           width: 7, height: 7,
           background: "#ba1a1a",
@@ -199,7 +202,7 @@ function SearchBox({ variant }: { variant: "inline" | "icon" }) {
   if (variant === "icon") {
     return (
       <div style={{ position: "relative" }} className="lg:hidden">
-        <IconBtn onClick={() => setOpen((v) => !v)}>
+        <IconBtn onClick={() => setOpen((v) => !v)} ariaLabel={isRTL ? "بحث" : "Search"}>
           <Search size={17} />
         </IconBtn>
         {open && (
@@ -351,7 +354,7 @@ export function Topbar() {
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         {/* Mobile hamburger */}
         <div className="lg:hidden">
-            <IconBtn onClick={toggleMobileSidebar}>
+            <IconBtn onClick={toggleMobileSidebar} ariaLabel={isRTL ? "فتح القائمة" : "Open menu"}>
               <Menu size={18} />
             </IconBtn>
         </div>
@@ -483,7 +486,7 @@ export function Topbar() {
         {/* Mobile view switcher */}
         {role === "shop_admin" && (
           <div style={{ position: "relative" }} className="lg:hidden">
-            <IconBtn onClick={() => setDropdownOpen((v) => !v)}>
+            <IconBtn onClick={() => setDropdownOpen((v) => !v)} ariaLabel={isRTL ? "تبديل العرض" : "Switch view"}>
               <Users size={17} />
             </IconBtn>
 
@@ -556,7 +559,11 @@ export function Topbar() {
 
         {/* Notifications */}
         <div style={{ position: "relative" }}>
-          <IconBtn badge={unreadCount > 0} onClick={() => { setBellOpen(!bellOpen); setUnreadCount(0); }}>
+          <IconBtn
+            badge={unreadCount > 0}
+            onClick={() => { setBellOpen(!bellOpen); setUnreadCount(0); }}
+            ariaLabel={t.topbar?.notifications || (isRTL ? "الإشعارات" : "Notifications")}
+          >
             <Bell size={17} />
           </IconBtn>
           {bellOpen && (
@@ -567,8 +574,14 @@ export function Topbar() {
                 width: 280, background: "var(--bg-primary)", border: "1px solid var(--border-primary)",
                 borderRadius: 12, zIndex: 50, padding: 12
               }}>
-                <h4 style={{ fontSize: 13, fontWeight: 700, margin: "0 0 8px", color: "var(--text-primary)" }}>Recent Bookings</h4>
-                {notifications.length === 0 ? <p style={{ fontSize: 12, color: "var(--text-tertiary)" }}>No recent bookings.</p> : (
+                <h4 style={{ fontSize: 13, fontWeight: 700, margin: "0 0 8px", color: "var(--text-primary)" }}>
+                  {isRTL ? "أحدث الحجوزات" : "Recent Bookings"}
+                </h4>
+                {notifications.length === 0 ? (
+                  <p style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+                    {isRTL ? "لا توجد حجوزات حديثة." : "No recent bookings."}
+                  </p>
+                ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {notifications.map(n => (
                       <div key={n.id} style={{ display: "flex", flexDirection: "column", background: "var(--bg-secondary)", padding: "8px 10px", borderRadius: 8 }}>
@@ -586,12 +599,12 @@ export function Topbar() {
         </div>
 
         {/* Language */}
-        <IconBtn onClick={handleToggleLocale}>
+        <IconBtn onClick={handleToggleLocale} ariaLabel={isRTL ? "تغيير اللغة" : "Switch language"}>
           <Globe size={17} />
         </IconBtn>
 
         {/* Theme */}
-        <IconBtn onClick={toggleTheme}>
+        <IconBtn onClick={toggleTheme} ariaLabel={isRTL ? "تبديل المظهر" : "Toggle theme"}>
           {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
         </IconBtn>
 

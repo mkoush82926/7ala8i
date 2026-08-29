@@ -135,7 +135,7 @@ function UpcomingAppointments() {
               background: "#f7f1e4",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <CalendarCheck size={26} style={{ color: "#ede3cd" }} />
+              <CalendarCheck size={26} style={{ color: "#a67c3d" }} />
             </div>
             <div style={{ textAlign: "center" }}>
               <p style={{ fontSize: 14, fontWeight: 700, color: "#5a5147", margin: "0 0 6px" }}>
@@ -150,7 +150,7 @@ function UpcomingAppointments() {
         ) : (
           <div className="overflow-x-auto">
             {/* Exact Stitch table structure */}
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-start border-collapse">
               <thead>
                 <tr className="bg-secondary-container">
                   {cols.map((col) => (
@@ -192,7 +192,7 @@ function UpcomingAppointments() {
                       {statusBadge(apt.status, apt.paymentStatus)}
                     </td>
                     {/* Actions */}
-                    <td className="px-8 py-6 text-right">
+                    <td className="px-8 py-6 text-end">
                       {role !== "client" && apt.paymentStatus !== "paid" && (
                         <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           {/* Mark Paid */}
@@ -210,6 +210,7 @@ function UpcomingAppointments() {
                               })
                             }
                             title="Mark Paid"
+                            aria-label="Mark Paid"
                             className="w-8 h-8 flex items-center justify-center text-[#a67c3d] hover:bg-[#f7f1e4] rounded-lg transition-colors cursor-pointer"
                           >
                             <CheckCircle size={20} />
@@ -219,6 +220,7 @@ function UpcomingAppointments() {
                             disabled={loadingId === apt.id}
                             onClick={() => markNoShow(apt.id)}
                             title="No-show"
+                            aria-label="No-show"
                             className="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-secondary-container rounded-lg transition-colors cursor-pointer"
                           >
                             <UserX size={20} />
@@ -228,6 +230,7 @@ function UpcomingAppointments() {
                             disabled={loadingId === apt.id}
                             onClick={() => cancelAppointment(apt.id)}
                             title="Cancel"
+                            aria-label="Cancel"
                             className="w-8 h-8 flex items-center justify-center text-[#ba1a1a] hover:bg-[rgba(186,26,26,0.08)] rounded-lg transition-colors cursor-pointer"
                           >
                             <XCircle size={20} />

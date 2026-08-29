@@ -152,7 +152,8 @@ export default function ServicesPage() {
           {currentUserRole === 'shop_admin' && (
             <button
               onClick={openAdd}
-              className="h-10 px-5 rounded-[var(--radius-buttons)] bg-[#7c4a1e] text-white font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
+              aria-label={svc.addService}
+              className="h-10 px-5 rounded-[var(--radius-buttons)] bg-[var(--accent-mint)] text-white font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
             >
               <Plus size={15} />
               <span className="hidden sm:inline">{svc.addService}</span>
@@ -278,12 +279,7 @@ export default function ServicesPage() {
               </div>
 
               {currentUserRole === 'shop_admin' && (
-                <div
-                  className={cn(
-                    "absolute top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing",
-                    isRTL ? "left-2" : "right-2",
-                  )}
-                >
+                <div className="absolute top-1/2 end-2 -translate-y-1/2 text-[var(--text-muted)] opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing">
                   <GripVertical size={14} />
                 </div>
               )}
@@ -321,6 +317,7 @@ export default function ServicesPage() {
                   </h3>
                   <button
                     onClick={() => setShowForm(false)}
+                    aria-label={t.common.close}
                     className="w-8 h-8 rounded-[var(--radius-buttons)] flex items-center justify-center text-[#5a5147] hover:text-[#1c1611] hover:bg-[var(--bg-secondary)] transition-all cursor-pointer"
                   >
                     <X size={16} />
@@ -417,7 +414,7 @@ export default function ServicesPage() {
                   <button
                     type="submit"
                     disabled={saving || !name.trim() || !price.trim()}
-                    className="h-11 rounded-[var(--radius-buttons)] bg-[#7c4a1e] text-white font-bold text-[13px] flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
+                    className="h-11 rounded-[var(--radius-buttons)] bg-[var(--accent-mint)] text-white font-bold text-[13px] flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
                     style={{ marginTop: 8 }}
                   >
                     {saving ? <Loader2 size={15} className="animate-spin" /> : null}
