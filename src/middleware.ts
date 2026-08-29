@@ -89,10 +89,24 @@ export async function middleware(request: NextRequest) {
           );
         },
       },
+      global: {
+        // Never let a stalled Supabase Auth call hang past the middleware's
+        // hard 25s execution limit — bail out well before that so we return
+        // a response instead of getting killed with MIDDLEWARE_INVOCATION_TIMEOUT.
+        fetch: (input, init) =>
+          fetch(input, { ...init, signal: AbortSignal.timeout(5000) }),
+      },
     },
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    // Auth check timed out or failed — fall through as unauthenticated
+    // rather than hanging the middleware invocation.
+  }
 
   // Not logged in — redirect to login for protected routes
   if (!user) {
