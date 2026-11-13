@@ -38,7 +38,7 @@ export async function login(formData: FormData): Promise<AuthActionResult> {
     if (!rl.success) return { error: 'rateLimited' }
 
     const supabase = await createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
         const key = authErrorKey(error)
@@ -46,8 +46,23 @@ export async function login(formData: FormData): Promise<AuthActionResult> {
         return { error: key === 'generic' ? 'invalidCredentials' : key }
     }
 
+    // With no explicit ?next, send each role straight to its home. Relying on
+    // the middleware redirect after a server-action redirect renders the right
+    // page but leaves the browser URL on "/".
+    let destination = target
+    if (!formData.get('next') && data.user) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', data.user.id)
+            .maybeSingle()
+        if ((profile as { role?: string } | null)?.role === 'customer') {
+            destination = `/${locale}/customer`
+        }
+    }
+
     revalidatePath('/', 'layout')
-    redirect(target)
+    redirect(destination)
 }
 
 /**

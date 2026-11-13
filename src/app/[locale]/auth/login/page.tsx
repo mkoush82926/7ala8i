@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Lock, Mail, Users } from 'lucide-react'
@@ -36,6 +36,17 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
   const emailRef = useRef<HTMLInputElement>(null)
+
+  // Browser autofill (or fast typing on a slow phone) can fill the inputs
+  // before React hydrates; adopt those DOM values instead of wiping them.
+  useEffect(() => {
+    const domEmail = emailRef.current?.value
+    const pw = emailRef.current?.form?.elements.namedItem('password')
+    const domPassword = pw instanceof HTMLInputElement ? pw.value : ''
+     
+    if (domEmail) setEmail((v) => v || domEmail)
+    if (domPassword) setPassword((v) => v || domPassword)
+  }, [])
 
   const emailError =
     touched.email && !email.trim()

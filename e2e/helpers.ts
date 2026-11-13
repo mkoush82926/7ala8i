@@ -23,9 +23,14 @@ export function getSeed(): SeedData {
 
 export async function login(page: Page, email: string, password: string) {
   await page.goto("/en/auth/login");
+  // Wait for hydration so React doesn't race the typed values.
+  await page.waitForLoadState("networkidle");
   await page.locator("#email").fill(email);
   await page.locator("#password").fill(password);
   await page.locator('button[type="submit"]').click();
+  // The sign-in server action must finish (and set the session cookie)
+  // before callers navigate elsewhere, or the navigation aborts it.
+  await page.waitForURL((url) => !url.pathname.includes("/auth/login"), { timeout: 15_000 });
 }
 
 /**
@@ -36,12 +41,17 @@ export async function login(page: Page, email: string, password: string) {
  */
 export async function completeBooking(page: Page, shopId: string, serviceName: string) {
   await page.goto(`/en/book/${shopId}`);
-  await page.getByRole("button", { name: en.booking.bookAppointment }).first().click();
+  // Older builds showed a landing step first; the wizard now opens on services.
+  const start = page.getByRole("button", { name: en.booking.bookAppointment }).first();
+  if (await start.isVisible({ timeout: 1500 }).catch(() => false)) await start.click();
 
   await page.getByRole("button", { name: new RegExp(escapeRegExp(serviceName)) }).first().click();
   await page.getByRole("button", { name: en.common.next, exact: false }).click();
 
-  await page.getByRole("button", { name: new RegExp(escapeRegExp(en.booking.anyBarber)) }).click();
+  // With a single barber the wizard pre-selects them and hides "Any barber".
+  const anyBarber = page.getByRole("button", { name: new RegExp(escapeRegExp(en.booking.anyBarber)) });
+  if (await anyBarber.isVisible({ timeout: 1500 }).catch(() => false)) await anyBarber.click();
+  await page.getByRole("button", { name: en.common.next, exact: false }).click();
 
   await page
     .getByRole("button", { name: /\d{1,2}:\d{2}\s?(AM|PM)/i })

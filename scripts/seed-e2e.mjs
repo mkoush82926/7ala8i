@@ -81,7 +81,8 @@ export async function seedE2E({
 }
 
 // Allow `node scripts/seed-e2e.mjs` for manual/local seeding outside Playwright.
-if (import.meta.url === `file://${process.argv[1]}`) {
+// No import.meta: Playwright loads this file as CommonJS via global-setup.
+if (process.argv[1]?.endsWith("seed-e2e.mjs")) {
   seedE2E()
     .then((seeded) => console.log(JSON.stringify(seeded, null, 2)))
     .catch((err) => {
