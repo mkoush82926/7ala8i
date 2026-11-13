@@ -20,6 +20,12 @@ export function useStatusLabel() {
           return t.calendar.noShow;
         case "cancelled":
           return t.calendar.cancelled;
+        case "arrived":
+          return t.calendar.arrived;
+        case "in_chair":
+          return t.calendar.inChair;
+        case "awaiting_deposit":
+          return t.calendar.awaitingDeposit;
       }
     },
     [t],

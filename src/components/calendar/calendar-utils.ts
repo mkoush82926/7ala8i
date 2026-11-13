@@ -32,6 +32,24 @@ export const STATUS_STYLES: Record<AppointmentStatus, { bg: string; border: stri
     text: "text-[var(--text-muted)] line-through",
     dot: "bg-[var(--border-primary)]",
   },
+  awaiting_deposit: {
+    bg: "bg-[var(--accent-amber-muted)]",
+    border: "border-dashed border-[var(--accent-brass)]",
+    text: "text-[var(--accent-text)]",
+    dot: "bg-[var(--accent-brass)]",
+  },
+  arrived: {
+    bg: "bg-[var(--accent-blue-muted)]",
+    border: "border-[var(--accent-text)]",
+    text: "text-[var(--accent-text)]",
+    dot: "bg-[var(--accent-text)]",
+  },
+  in_chair: {
+    bg: "bg-[var(--accent-mint-muted)]",
+    border: "border-[var(--accent-mint)]",
+    text: "text-[var(--text-primary)]",
+    dot: "bg-[var(--accent-mint)]",
+  },
 };
 
 export const DEFAULT_DAY_START = 8;

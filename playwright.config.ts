@@ -7,6 +7,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["html", { open: "never" }], ["github"]] : "list",
+  // Visual regression defaults (see e2e/fixtures.ts → snapshot()).
+  snapshotPathTemplate: "{testDir}/__snapshots__/{testFilePath}/{arg}-{projectName}{ext}",
+  expect: {
+    toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: "disabled", caret: "hide", scale: "css" },
+  },
   use: {
     baseURL: process.env.E2E_BASE_URL || "http://127.0.0.1:3000",
     trace: "on-first-retry",
@@ -15,6 +20,12 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    // Mobile-first checks at 375px for specs tagged @mobile (en + ar).
+    {
+      name: "mobile",
+      grep: /@mobile/,
+      use: { ...devices["Pixel 5"], viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true },
+    },
   ],
   // Runs a real production build (`next build && next start`). Mock preview
   // mode is refused in production builds (src/lib/env.ts), so E2E always

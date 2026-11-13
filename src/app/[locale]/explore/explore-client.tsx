@@ -316,13 +316,13 @@ export default function ExploreClient() {
                         </Link>
                       </h2>
                       {shop.rating ? (
-                        <p
-                          className="flex items-center gap-1 mb-1.5 text-[13px]"
-                          aria-label={interpolate(t.explore.ratingCount, {
-                            rating: shop.rating.avg.toFixed(1),
-                            count: formatNumber(shop.rating.count),
-                          })}
-                        >
+                        <p className="flex items-center gap-1 mb-1.5 text-[13px]">
+                          <span className="sr-only">
+                            {interpolate(t.explore.ratingCount, {
+                              rating: shop.rating.avg.toFixed(1),
+                              count: formatNumber(shop.rating.count),
+                            })}
+                          </span>
                           <Star size={14} aria-hidden="true" style={{ color: "var(--accent-brass)", fill: "var(--accent-brass)" }} />
                           <span aria-hidden="true" className="font-bold text-[var(--text-primary)]">
                             {shop.rating.avg.toFixed(1)}

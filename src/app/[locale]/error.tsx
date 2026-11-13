@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { reportError } from "@/lib/error-reporting";
 import Link from "next/link";
 import { AlertTriangle, Home, RefreshCw, Search } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
@@ -23,6 +24,7 @@ export default function LocaleError({
   useEffect(() => {
     // Client-side report; server errors are already logged with the same digest.
     console.error("[ui:error-boundary]", { digest: error.digest, name: error.name, message: error.message });
+    void reportError(error, { tags: { digest: error.digest, boundary: "locale" } });
   }, [error]);
 
   return (

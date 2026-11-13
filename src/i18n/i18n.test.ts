@@ -34,10 +34,18 @@ describe("i18n dictionaries", () => {
     expect(empty).toEqual([]);
   });
 
+  // CLDR plural forms (zero/one/two/few/many/other): Arabic may spell the
+  // number out ("خدمة واحدة", "خدمتان"), so {count} is optional there — but
+  // no other placeholder may differ.
+  const PLURAL_FORM = /\.(zero|one|two|few|many|other)$/;
+  const withoutCount = (s: string) => placeholders(s).filter((p) => p !== "{count}");
+
   it("use the same {placeholders} in both languages", () => {
-    const mismatched = Object.keys(flatEn).filter(
-      (k) => k in flatAr && placeholders(flatEn[k]).join() !== placeholders(flatAr[k]).join(),
-    );
+    const mismatched = Object.keys(flatEn).filter((k) => {
+      if (!(k in flatAr)) return false;
+      if (PLURAL_FORM.test(k)) return withoutCount(flatEn[k]).join() !== withoutCount(flatAr[k]).join();
+      return placeholders(flatEn[k]).join() !== placeholders(flatAr[k]).join();
+    });
     expect(mismatched).toEqual([]);
   });
 

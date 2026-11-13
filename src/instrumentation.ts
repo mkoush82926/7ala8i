@@ -7,6 +7,10 @@
 // shown to users on the error pages can be matched to the full stack trace.
 //
 // Keep this file dependency-free: it is bundled for the Edge runtime too.
+// Optional Sentry-compatible reporting (src/lib/error-reporting.ts) is a
+// fetch-based no-op unless SENTRY_DSN is set.
+
+import { reportError } from "@/lib/error-reporting";
 
 type RequestErrorContext = {
   routerKind: "Pages Router" | "App Router";
@@ -35,7 +39,7 @@ function headerValue(headers: RequestInfo["headers"], name: string): string | un
 }
 
 export async function register() {
-  // No SDK to initialise yet. Plug Sentry/OpenTelemetry in here when added.
+  // Nothing to initialise: error reporting is stateless and DSN-gated.
 }
 
 export async function onRequestError(error: unknown, request: RequestInfo, context: RequestErrorContext) {
@@ -73,4 +77,15 @@ export async function onRequestError(error: unknown, request: RequestInfo, conte
   } catch {
     console.error("[request_error]", entry.route, entry.digest, err.message);
   }
+
+  // No-op without SENTRY_DSN; never throws.
+  await reportError(err, {
+    tags: {
+      digest,
+      route: context.routePath,
+      routeType: context.routeType,
+      method: request.method,
+      runtime: entry.runtime,
+    },
+  });
 }

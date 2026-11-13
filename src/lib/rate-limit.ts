@@ -149,3 +149,54 @@ export function getClientIp(req: Request): string {
     pick(h.get("x-forwarded-for"));
   return ip && ip.length <= 64 ? ip : "unknown";
 }
+
+// ─── Shared presets (WS-P0) ───
+// Every anon-callable endpoint (search, guest booking, token links, OTP) is
+// limited per IP AND per subject (phone / token) with these presets, so the
+// numbers live in one place. Window in seconds.
+export interface RateLimitRule {
+  max: number;
+  windowSec: number;
+}
+
+export const RATE_LIMITS = {
+  /** Public search / listing endpoints, per IP. */
+  search: { max: 60, windowSec: 60 },
+  /** Guest/customer booking attempts, per IP. */
+  bookingIp: { max: 20, windowSec: 60 },
+  /** Booking attempts for one phone number. */
+  bookingPhone: { max: 5, windowSec: 3600 },
+  /** OTP sends per phone. */
+  otpPhone: { max: 3, windowSec: 600 },
+  /** OTP sends per IP. */
+  otpIp: { max: 10, windowSec: 600 },
+  /** Signed token links (manage / review), per IP. */
+  tokenIp: { max: 30, windowSec: 60 },
+} as const satisfies Record<string, RateLimitRule>;
+
+export type RateLimitPreset = keyof typeof RATE_LIMITS;
+
+export interface RateLimitCheck {
+  /** Namespaced key, e.g. rateLimitKey("booking", "ip", ip). Empty/undefined skips the check. */
+  key: string | null | undefined;
+  rule: RateLimitRule | RateLimitPreset;
+}
+
+/**
+ * Runs several limits in order and stops at the first one that fails, e.g.
+ *   const r = await rateLimitAll([
+ *     { key: rateLimitKey("booking", "ip", ip), rule: "bookingIp" },
+ *     { key: phone && rateLimitKey("booking", "phone", phone), rule: "bookingPhone" },
+ *   ]);
+ *   if (!r.success) return apiErrorCode("RATE_LIMITED", { retryAfter: r.retryAfter });
+ */
+export async function rateLimitAll(checks: ReadonlyArray<RateLimitCheck>): Promise<RateLimitResult & { failedKey?: string }> {
+  let last: RateLimitResult = { success: true, remaining: null, retryAfter: 0, source: "memory" };
+  for (const check of checks) {
+    if (!check.key) continue;
+    const rule = typeof check.rule === "string" ? RATE_LIMITS[check.rule] : check.rule;
+    last = await rateLimit(check.key, rule.max, rule.windowSec);
+    if (!last.success) return { ...last, failedKey: check.key };
+  }
+  return last;
+}

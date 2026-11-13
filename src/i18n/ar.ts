@@ -208,6 +208,9 @@ const ar: TranslationKeys = {
     pending: "قيد الانتظار",
     completed: "مكتمل",
     noShow: "لم يحضر",
+    arrived: "وصل",
+    inChair: "على الكرسي",
+    awaitingDeposit: "بانتظار العربون",
     client: "العميل",
     service: "الخدمة",
     barber: "الحلاق",
@@ -1281,6 +1284,23 @@ const ar: TranslationKeys = {
     csvDate: "التاريخ",
     csvPayment: "الدفع",
     csvSource: "المصدر",
+  },
+  // ─── Shared UI primitives ───
+  primitives: {
+    book: "احجز",
+    bookNow: "احجز الآن",
+    fromPrice: "من {price}",
+    free: "مجاناً",
+    priceWas: "السعر السابق {price}",
+    bookingSummaryLabel: "ملخص الحجز",
+    servicesCount: {
+      zero: "لا خدمات",
+      one: "خدمة واحدة",
+      two: "خدمتان",
+      few: "{count} خدمات",
+      many: "{count} خدمة",
+      other: "{count} خدمة",
+    },
   },
 } as const;
 

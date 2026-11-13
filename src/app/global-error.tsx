@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { reportError } from "@/lib/error-reporting";
 import { usePathname } from "next/navigation";
 import en from "@/i18n/en";
 import ar from "@/i18n/ar";
@@ -51,6 +52,7 @@ export default function GlobalError({
 
   useEffect(() => {
     console.error("[ui:global-error]", { digest: error.digest, name: error.name, message: error.message });
+    void reportError(error, { tags: { digest: error.digest, boundary: "global" } });
   }, [error]);
 
   const button: React.CSSProperties = {

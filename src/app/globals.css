@@ -173,6 +173,9 @@
   --accent-text:    #7c5a26;
   --accent-brass:   #a67c3d;
   --on-accent:      #ffffff;
+  /* Primary booking CTA (BookingCta): ≈ 6.3:1 */
+  --cta-bg:         #7c5a26;
+  --cta-fg:         #ffffff;
 
   /* Hairline UI borders (≥ 3:1 for meaningful boundaries) and the softer
      paper divider used by cards/inputs */
@@ -272,6 +275,8 @@
   --accent-text:    #d6b07a;
   --accent-brass:   #c9a063;
   --on-accent:      #ffffff;
+  --cta-bg:         #d6b07a;
+  --cta-fg:         #14110e;
 
   --border-primary: #6f6558;
   --border-subtle:  #3a3128;

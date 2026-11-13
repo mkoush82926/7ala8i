@@ -12,6 +12,9 @@ const BADGE_CLASS: Record<AppointmentStatus, string> = {
   completed: "badge-completed",
   no_show: "badge-noshow",
   cancelled: "badge-cancelled",
+  arrived: "badge-upcoming",
+  in_chair: "badge-upcoming",
+  awaiting_deposit: "badge-pending",
 };
 
 export function statusLabel(t: TranslationKeys, status: AppointmentStatus): string {
@@ -26,6 +29,12 @@ export function statusLabel(t: TranslationKeys, status: AppointmentStatus): stri
       return t.calendar.noShow;
     case "cancelled":
       return t.calendar.cancelled;
+    case "arrived":
+      return t.calendar.arrived;
+    case "in_chair":
+      return t.calendar.inChair;
+    case "awaiting_deposit":
+      return t.calendar.awaitingDeposit;
   }
 }
 

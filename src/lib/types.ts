@@ -4,26 +4,64 @@
 // ═══════════════════════════════════════════════════════
 
 // ─── Canonical enums (single source of truth; mirror the DB CHECKs in
-//     supabase/migrations/20250101001600_production_hardening.sql) ───
+//     supabase/migrations/20250101001600_production_hardening.sql and
+//     20250101001900_marketplace_spine.sql) ───
 
-/** Appointment status. The DB only accepts these spellings ('no_show', never 'no-show'). */
-export const APPOINTMENT_STATUSES = ["pending", "confirmed", "completed", "no_show", "cancelled"] as const;
+/**
+ * Appointment status. The DB only accepts these spellings ('no_show', never 'no-show').
+ *   awaiting_deposit — booked, slot held until the deposit is paid
+ *   arrived          — client checked in at the shop
+ *   in_chair         — service in progress
+ */
+export const APPOINTMENT_STATUSES = [
+  "pending",
+  "confirmed",
+  "completed",
+  "no_show",
+  "cancelled",
+  "arrived",
+  "in_chair",
+  "awaiting_deposit",
+] as const;
 export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number];
 
-/** Statuses that occupy a barber's time (used for availability / overlap). */
-export const ACTIVE_APPOINTMENT_STATUSES = ["pending", "confirmed"] as const satisfies readonly AppointmentStatus[];
+/**
+ * Statuses that occupy a barber's time (used for availability / overlap).
+ * Mirrors the WHERE clause of the appointments_no_overlap exclusion constraint.
+ */
+export const ACTIVE_APPOINTMENT_STATUSES = [
+  "pending",
+  "confirmed",
+  "awaiting_deposit",
+  "arrived",
+  "in_chair",
+] as const satisfies readonly AppointmentStatus[];
 
 /** Terminal statuses — no further transitions allowed. */
 export const TERMINAL_APPOINTMENT_STATUSES = ["completed", "no_show", "cancelled"] as const satisfies readonly AppointmentStatus[];
 
+/** Front-desk flow order (check-in → chair → done), for timelines and progress UIs. */
+export const APPOINTMENT_FLOW = ["awaiting_deposit", "pending", "confirmed", "arrived", "in_chair", "completed"] as const satisfies readonly AppointmentStatus[];
+
 /** Allowed staff-driven status transitions (shared by the status API and calendar UI). */
 export const APPOINTMENT_STATUS_TRANSITIONS: Record<AppointmentStatus, readonly AppointmentStatus[]> = {
-  pending: ["confirmed", "completed", "cancelled", "no_show"],
-  confirmed: ["completed", "cancelled", "no_show"],
+  awaiting_deposit: ["confirmed", "cancelled", "no_show"],
+  pending: ["confirmed", "awaiting_deposit", "arrived", "in_chair", "completed", "cancelled", "no_show"],
+  confirmed: ["arrived", "in_chair", "completed", "cancelled", "no_show"],
+  arrived: ["in_chair", "completed", "cancelled"],
+  in_chair: ["completed", "cancelled"],
   completed: [],
   no_show: [],
   cancelled: [],
 };
+
+export function isActiveAppointmentStatus(value: unknown): boolean {
+  return typeof value === "string" && (ACTIVE_APPOINTMENT_STATUSES as readonly string[]).includes(value);
+}
+
+export function canTransitionAppointment(from: AppointmentStatus, to: AppointmentStatus): boolean {
+  return APPOINTMENT_STATUS_TRANSITIONS[from].includes(to);
+}
 
 export function isAppointmentStatus(value: unknown): value is AppointmentStatus {
   return typeof value === "string" && (APPOINTMENT_STATUSES as readonly string[]).includes(value);
@@ -35,6 +73,8 @@ export function normalizeAppointmentStatus(value: unknown): AppointmentStatus | 
   const v = value.trim().toLowerCase().replace(/[-\s]/g, "_");
   if (v === "noshow") return "no_show";
   if (v === "canceled") return "cancelled";
+  if (v === "inchair" || v === "in_service") return "in_chair";
+  if (v === "checked_in") return "arrived";
   return isAppointmentStatus(v) ? v : null;
 }
 

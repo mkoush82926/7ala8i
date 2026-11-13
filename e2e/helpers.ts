@@ -53,10 +53,12 @@ export async function completeBooking(page: Page, shopId: string, serviceName: s
   if (await anyBarber.isVisible({ timeout: 1500 }).catch(() => false)) await anyBarber.click();
   await page.getByRole("button", { name: en.common.next, exact: false }).click();
 
-  await page
-    .getByRole("button", { name: /\d{1,2}:\d{2}\s?(AM|PM)/i })
-    .first()
-    .click();
+  // Specs book in parallel: take a random enabled slot so they don't race
+  // for the same one.
+  const slots = page.getByRole("button", { name: /\d{1,2}:\d{2}\s?(AM|PM)/i, disabled: false });
+  await slots.first().waitFor();
+  const count = await slots.count();
+  await slots.nth(Math.floor(Math.random() * Math.min(count, 8))).click();
   await page.getByRole("button", { name: en.common.next, exact: false }).click();
 
   // Prefer the accessible label; fall back to the field type so a copy or
@@ -70,6 +72,6 @@ export async function completeBooking(page: Page, shopId: string, serviceName: s
     .getByLabel(en.booking.phoneNumber)
     .or(page.locator('input[type="tel"]'))
     .first()
-    .fill("+962791112222");
+    .fill(`+96279${String(Math.floor(1_000_000 + Math.random() * 8_999_999))}`);
   await page.getByRole("button", { name: en.booking.confirmBooking }).click();
 }

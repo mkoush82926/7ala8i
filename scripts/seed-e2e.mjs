@@ -61,6 +61,16 @@ export async function seedE2E({
     throw new Error(`Owner profile/shop was not auto-provisioned: ${profileErr?.message}`);
   }
 
+  // Local stack only: start every run from an empty diary for the seeded
+  // shop and empty rate-limit buckets. Otherwise earlier runs' bookings take
+  // the first slots, hit the per-client "5 upcoming bookings" limit, and
+  // repeated logins trip the login limiter (keys are hashed, so the whole
+  // table is cleared).
+  if (/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/|$)/.test(url)) {
+    await supabase.from("appointments").delete().eq("shop_id", profile.shop_id);
+    await supabase.from("rate_limits").delete().neq("key", "");
+  }
+
   const { data: service, error: serviceErr } = await supabase
     .from("services")
     .select("id, name")

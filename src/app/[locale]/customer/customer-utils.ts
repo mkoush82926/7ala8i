@@ -3,7 +3,7 @@
  * unit-tested. The DB (cancel_customer_booking) is the authority; these
  * helpers only decide what the UI offers.
  */
-import { normalizeAppointmentStatus, type AppointmentStatus } from "@/lib/types";
+import { isActiveAppointmentStatus, normalizeAppointmentStatus, type AppointmentStatus } from "@/lib/types";
 
 export type AppointmentTab = "upcoming" | "past" | "cancelled";
 
@@ -20,7 +20,7 @@ export function statusOf(appt: Pick<AppointmentLike, "status">): AppointmentStat
 }
 
 export function isActiveStatus(status: AppointmentStatus): boolean {
-  return status === "pending" || status === "confirmed";
+  return isActiveAppointmentStatus(status);
 }
 
 /** Upcoming = still active AND starts in the future (not "today or later"). */

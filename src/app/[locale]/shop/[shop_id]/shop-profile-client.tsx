@@ -265,7 +265,11 @@ export default function ShopProfileClient({
       <span
         className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
         style={{
-          background: openState ? "var(--accent-mint-muted)" : "var(--bg-secondary)",
+          // Opaque base under the translucent tint: the badge sits on the
+          // shop's cover colour, which must not lower the text contrast.
+          background: openState
+            ? "linear-gradient(var(--accent-mint-muted), var(--accent-mint-muted)), var(--bg-primary)"
+            : "var(--bg-secondary)",
           color: openState ? "var(--accent-text)" : "var(--text-secondary)",
         }}
       >

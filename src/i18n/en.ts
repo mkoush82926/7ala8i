@@ -206,6 +206,9 @@ const en = {
     pending: "Pending",
     completed: "Completed",
     noShow: "No Show",
+    arrived: "Arrived",
+    inChair: "In the chair",
+    awaitingDeposit: "Awaiting deposit",
     client: "Client",
     service: "Service",
     barber: "Barber",
@@ -1298,6 +1301,23 @@ const en = {
     csvDate: "Date",
     csvPayment: "Payment",
     csvSource: "Source",
+  },
+  // ─── Shared UI primitives ───
+  primitives: {
+    book: "Book",
+    bookNow: "Book now",
+    fromPrice: "from {price}",
+    free: "Free",
+    priceWas: "Was {price}",
+    bookingSummaryLabel: "Booking summary",
+    servicesCount: {
+      zero: "{count} services",
+      one: "{count} service",
+      two: "{count} services",
+      few: "{count} services",
+      many: "{count} services",
+      other: "{count} services",
+    },
   },
 };
 
