@@ -1,3 +1,6 @@
+-- (Replay guard added 2026-11: policies/triggers/indexes below are drop-then-create /
+-- IF NOT EXISTS so this file also applies on top of production, which already
+-- has many of them from the SQL editor. Fresh-database result is unchanged.)
 -- 014_working_hour_breaks_and_invites.sql
 --
 -- Two independent Tier 2 additions:
@@ -33,6 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_invites_token ON public.invites(token);
 ALTER TABLE public.invites ENABLE ROW LEVEL SECURITY;
 
 -- Shop admins can create and manage invites for their own shop.
+DROP POLICY IF EXISTS "invites_insert_admin" ON public.invites;
 CREATE POLICY "invites_insert_admin" ON public.invites
   FOR INSERT WITH CHECK (
     shop_id = public.get_current_shop_id()
@@ -42,6 +46,7 @@ CREATE POLICY "invites_insert_admin" ON public.invites
     )
   );
 
+DROP POLICY IF EXISTS "invites_select_admin_own_shop" ON public.invites;
 CREATE POLICY "invites_select_admin_own_shop" ON public.invites
   FOR SELECT USING (
     shop_id = public.get_current_shop_id()
@@ -51,6 +56,7 @@ CREATE POLICY "invites_select_admin_own_shop" ON public.invites
     )
   );
 
+DROP POLICY IF EXISTS "invites_update_admin_own_shop" ON public.invites;
 CREATE POLICY "invites_update_admin_own_shop" ON public.invites
   FOR UPDATE USING (
     shop_id = public.get_current_shop_id()

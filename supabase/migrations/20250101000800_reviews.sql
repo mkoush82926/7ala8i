@@ -1,3 +1,6 @@
+-- (Replay guard added 2026-11: policies/triggers/indexes below are drop-then-create /
+-- IF NOT EXISTS so this file also applies on top of production, which already
+-- has many of them from the SQL editor. Fresh-database result is unchanged.)
 -- Create reviews table
 CREATE TABLE IF NOT EXISTS public.reviews (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -13,17 +16,20 @@ CREATE TABLE IF NOT EXISTS public.reviews (
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 
 -- Allow anyone to read reviews
+DROP POLICY IF EXISTS "Anyone can view reviews" ON public.reviews;
 CREATE POLICY "Anyone can view reviews" 
 ON public.reviews FOR SELECT 
 USING (true);
 
 -- Allow authenticated users to insert reviews
+DROP POLICY IF EXISTS "Authenticated users can insert reviews" ON public.reviews;
 CREATE POLICY "Authenticated users can insert reviews" 
 ON public.reviews FOR INSERT 
 TO authenticated 
 WITH CHECK (true);
 
 -- Allow admins/owners to delete reviews (optional)
+DROP POLICY IF EXISTS "Shop owners can delete reviews for their shop" ON public.reviews;
 CREATE POLICY "Shop owners can delete reviews for their shop" 
 ON public.reviews FOR DELETE 
 TO authenticated 

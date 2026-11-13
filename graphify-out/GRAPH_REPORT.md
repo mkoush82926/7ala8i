@@ -1,34 +1,34 @@
 # Graph Report - 7ala8i  (2026-11-13)
 
 ## Corpus Check
-- 279 files · ~194,781 words
+- 282 files · ~208,792 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 17 file(s) not represented in the graph (top: .woff2 7, (none) 5, .css 2)
 
 ## Summary
-- 1996 nodes · 5134 edges · 142 communities (94 shown, 48 thin omitted)
+- 2042 nodes · 5177 edges · 141 communities (88 shown, 53 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 29 edges (avg confidence: 0.91)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e354af00`
+- Built from commit: `6b26671e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - createClient
-- clients.ts
+- clients/page.tsx
 - toast.tsx
-- shop-profile-client.tsx
+- interpolate
 - useTranslation
 - booking-utils.ts
 - with
-- dialog.tsx
-- toast.tsx
+- use-appointments.ts
+- Halaqy Build Roadmap: Fresha-level capability, built for Jordan
 - useWorkspaceStore
-- interpolate
+- leads-store.ts
 - validations.ts
-- i18n.test.ts
+- notification-bell.tsx
 - my-day/page.tsx
 - vitest
 - Halaqy (حلقي)
@@ -37,7 +37,7 @@
 - devDependencies
 - MockQueryBuilder
 - use-services.ts
-- team/page.tsx
+- createClient
 - kanban-board.tsx
 - middleware.ts
 - mock-data.ts
@@ -45,12 +45,12 @@
 - analytics/page.tsx
 - database.types.ts
 - api-helpers.ts
-- clients/page.tsx
+- cn
 - legal-page.tsx
 - scripts
 - compilerOptions
 - Supabase
-- cn
+- rehearse-prod-upgrade.sh
 - en.ts
 - cn
 - Changelog
@@ -59,13 +59,12 @@
 - Changelog
 - Writing Guidelines for Postgres References
 - settings-page.tsx
-- EmptyState
 - analytics-page.ts
 - 20250101001600_production_hardening.sql
 - server.ts
 - env.ts
 - analytics-period.ts
-- search.ts
+- 20250101000100_initial_schema.sql
 - timeline-view.tsx
 - analytics.ts
 - public.appointments
@@ -79,20 +78,20 @@
 - Halaqy Master Development Plan
 - Halaqy — Full Project Roadmap
 - 20250101000210_indexes.sql
-- @supabase/supabase-js
+- EmptyState
 - Halaqy Redesign — "Data Observatory on Cloud Paper" (Clearbit reference)
 - Halaqy — AI Conversation History & Project Summary
-- shop-data.ts
+- route.full.test.ts
 - public.clients
-- next.config.ts
+- lead-csv.ts
 - Phase 6: UI/UX Enhancements
 - instrumentation.ts
 - Supabase Postgres Best Practices
 - eslint.config.mjs
 - Phase 0: Critical Fixes (Broken/Non-Functional)
-- idempotency.ts
+- glass-button.tsx
 - landing/page.tsx
-- auth.users
+- 20250101001600_production_hardening.sql
 - vite-tsconfig-paths
 - Phase 4: New Features — Customer Portal Enhancements
 - Phase 5: New Features — Notifications & Communication
@@ -100,7 +99,7 @@
 - Phase 8: Performance & SEO
 - Phase 9: Deployment & DevOps
 - accept/route.test.ts
-- 20250101001800_private_columns_and_verified_links.sql
+- Phase 3: New Features — Team Management
 - 20250101000900_notifications.sql
 - generate_seed.js
 - public.invites
@@ -141,15 +140,11 @@
 - .mcp.json
 - postcss.config.mjs
 - public.barber_services
-- route.full.test.ts
-- Phase 3: New Features — Team Management
+- @testing-library/jest-dom
 - vitest
 - public.payments
-- pg_temp.reset_fk
-- dialog.test.tsx
+- pg_temp.enum_column_to_text
 - book/[shop_id]/page.tsx
-- robots.ts
-- use-supabase-query.ts
 
 ## God Nodes (most connected - your core abstractions)
 1. `useTranslation()` - 135 edges
@@ -164,77 +159,77 @@
 10. `headingTracking()` - 43 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Phase 5 — POS & Payments (Pay in Shop Only)` --references--> `useDashboardMetrics()`  [INFERRED]
-  PROJECT_HISTORY.md → src/hooks/use-dashboard-data.ts
 - `0.1 — Fix Database Migration Inconsistencies` --references--> `UserRole`  [INFERRED]
   PLAN.md → src/lib/types.ts
 - `Authentication` --references--> `signup()`  [INFERRED]
   TODO.md → src/app/[locale]/auth/actions.ts
 - `7. Monitoring` --references--> `logServerError()`  [INFERRED]
   docs/DEPLOYMENT.md → src/lib/api-helpers.ts
+- `Phase 5 — POS & Payments (Pay in Shop Only)` --references--> `useDashboardMetrics()`  [INFERRED]
+  PROJECT_HISTORY.md → src/hooks/use-dashboard-data.ts
 - `6. Guidelines for Future Changes (for any AI)` --references--> `rateLimit()`  [INFERRED]
   PROJECT_HISTORY.md → src/lib/rate-limit.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (142 total, 48 thin omitted)
+## Communities (141 total, 53 thin omitted)
 
 ### Community 0 - "createClient"
 Cohesion: 0.05
-Nodes (85): lucide-react, next, react, AuthActionResult, clientIp(), login(), logout(), signup() (+77 more)
+Nodes (72): csp, nextConfig, securityHeaders, supa, lucide-react, next, AuthActionResult, login() (+64 more)
 
-### Community 1 - "clients.ts"
-Cohesion: 0.21
-Nodes (17): ClientMutationError, ClientMutationErrorCode, ClientsPage, toClientMutationError(), useClients(), cleanClientInput(), Client, CLIENT_COLUMNS (+9 more)
+### Community 1 - "clients/page.tsx"
+Cohesion: 0.10
+Nodes (45): @supabase/supabase-js@^2.99.0, @supabase/supabase-js, AVATAR_TONES, ClientFormDialog(), ClientListItem(), ClientsPage(), ClientsView(), codeMessage() (+37 more)
 
 ### Community 2 - "toast.tsx"
-Cohesion: 0.10
-Nodes (40): DashboardLayout(), ADMIN, canAccessPath(), findNavItem(), homePathFor(), isNavActive(), NAV_ITEMS, NavId (+32 more)
+Cohesion: 0.06
+Nodes (65): @testing-library/react@^16.3.2, @testing-library/react, DashboardLayout(), ADMIN, canAccessPath(), findNavItem(), homePathFor(), isNavActive() (+57 more)
 
-### Community 3 - "shop-profile-client.tsx"
-Cohesion: 0.15
-Nodes (29): fill(), generateMetadata(), getShopProfile, Params, ShopPage(), loadShopProfile(), ShopProfileResult, HoursCard() (+21 more)
+### Community 3 - "interpolate"
+Cohesion: 0.06
+Nodes (68): AppointmentDetail, BookingDetailPage(), confirmCancel(), AppointmentLike, AppointmentTab, CancelBlockReason, CancellationState, cancellationState() (+60 more)
 
 ### Community 4 - "useTranslation"
 Cohesion: 0.10
-Nodes (40): Architecture, handleExport(), AppointmentDetailsDialog(), LeadCard(), NotificationBell(), openNotification(), setRead(), FONT_AR (+32 more)
+Nodes (46): Architecture, AnalyticsPage(), handleExport(), ChangePill(), DAY_ORDER, heatColor(), PERIODS, RevenueTrendChart (+38 more)
 
 ### Community 5 - "booking-utils.ts"
 Cohesion: 0.05
-Nodes (75): RFC-5545, BookingShell(), BarberAvatar(), BarberRow, BookingEngine(), BookingStep, BottomBar(), C (+67 more)
+Nodes (73): RFC-5545, BarberAvatar(), BarberRow, BookingEngine(), BookingStep, BottomBar(), C, CardsSkeleton() (+65 more)
 
 ### Community 6 - "with"
 Cohesion: 0.05
 Nodes (42): name, runs-on, steps, timeout-minutes, concurrency, cancel-in-progress, group, continue-on-error (+34 more)
 
-### Community 7 - "dialog.tsx"
-Cohesion: 0.15
-Nodes (16): react-dom@19.2.3, react-dom, DialogProps, DialogSize, dialogStack, DRAWER_WIDTH, DrawerSide, FOCUSABLE (+8 more)
+### Community 7 - "use-appointments.ts"
+Cohesion: 0.12
+Nodes (28): AppointmentDetailsDialogProps, AppointmentForm(), handleSubmit(), AppointmentFormDefaults, AppointmentFormDialogProps, roundedNow(), ServiceOption, SOURCES (+20 more)
 
-### Community 8 - "toast.tsx"
-Cohesion: 0.09
-Nodes (31): isThemedPath(), nav, THEMED_SEGMENTS, themeInitScript, ThemeProvider(), announcement, clearToasts(), containerListeners (+23 more)
+### Community 8 - "Halaqy Build Roadmap: Fresha-level capability, built for Jordan"
+Cohesion: 0.06
+Nodes (32): 1. Executive summary, 2. Design and UX upgrade principles (Ink & Brass, not Fresha), 3. Day-0 owner actions and open decisions, 4. Phased roadmap, 5. Out of scope until the owner provides external accounts, 6. Explicitly deprioritised, 7. Feature parity matrix, Decisions needed before the named workstream starts (+24 more)
 
 ### Community 9 - "useWorkspaceStore"
-Cohesion: 0.13
-Nodes (30): date-fns, DashboardPage(), PendingAction, SalesChart, DailyReceipt(), escapeCsvValue(), MethodRow(), tint() (+22 more)
-
-### Community 10 - "interpolate"
 Cohesion: 0.16
-Nodes (24): AppointmentDetail, BookingDetailPage(), confirmCancel(), AppointmentLike, AppointmentTab, CancelBlockReason, CancellationState, cancellationState() (+16 more)
+Nodes (20): DashboardPage(), DailyReceipt(), escapeCsvValue(), MethodRow(), tint(), RFC-4180, ChangeBadge(), MetricCards() (+12 more)
+
+### Community 10 - "leads-store.ts"
+Cohesion: 0.14
+Nodes (25): errorCodeOf(), Client, createLead(), createLeads(), deleteLead(), deleteLeads(), getLeads(), LEAD_COLUMNS (+17 more)
 
 ### Community 11 - "validations.ts"
 Cohesion: 0.07
 Nodes (33): BOOKING_SOURCES, PAYMENT_METHODS, AppointmentStatusSchema, AvailabilityQuerySchema, BookingInput, BookingSchema, CancelBookingInput, CancelBookingSchema (+25 more)
 
-### Community 12 - "i18n.test.ts"
-Cohesion: 0.16
-Nodes (7): NotificationRow, fmt, t, flatAr, flatEn, flatten(), Tree
+### Community 12 - "notification-bell.tsx"
+Cohesion: 0.20
+Nodes (12): BADGE_CLASS, statusLabel(), describeNotification(), localDay(), NotificationBell(), openNotification(), setRead(), NotificationPayload (+4 more)
 
 ### Community 13 - "my-day/page.tsx"
-Cohesion: 0.15
-Nodes (20): isResolved(), MyDayPage(), confirmCheckout(), confirmPending(), setOverride(), Pending, UpcomingAppointments(), confirmPending() (+12 more)
+Cohesion: 0.13
+Nodes (32): date-fns, ClientDrawer(), isResolved(), MyDayPage(), confirmCheckout(), confirmPending(), setOverride(), Pending (+24 more)
 
 ### Community 14 - "vitest"
 Cohesion: 0.17
@@ -246,55 +241,55 @@ Nodes (25): 1. Environment variables (Vercel → Project → Settings → Enviro
 
 ### Community 16 - "dependencies"
 Cohesion: 0.09
-Nodes (23): dependencies, clsx@^2.1.1, date-fns@^4.1.0, @dnd-kit/utilities@^3.2.2, framer-motion@^12.35.2, lucide-react@^0.577.0, next@16.1.6, qrcode.react@^4.2.0 (+15 more)
+Nodes (22): dependencies, clsx@^2.1.1, date-fns@^4.1.0, @dnd-kit/core@^6.3.1, @dnd-kit/sortable@^10.0.0, framer-motion@^12.35.2, lucide-react@^0.577.0, next@16.1.6 (+14 more)
 
 ### Community 17 - "booking/route.ts"
-Cohesion: 0.40
-Nodes (15): POST(), parseIdempotencyKey(), CreateOutcome, GET(), POST(), callRpc(), POST(), apiErrorCode() (+7 more)
+Cohesion: 0.22
+Nodes (15): Entry, parseIdempotencyKey(), prune(), runIdempotent(), store, CreateOutcome, GET(), POST() (+7 more)
 
 ### Community 18 - "devDependencies"
 Cohesion: 0.07
 Nodes (36): devDependencies, @axe-core/playwright@^4.13.0, husky@^9.1.7, jsdom@^30.0.1, lint-staged@^17.3.0, @playwright/test@^1.62.1, supabase@^2.114.0, tailwindcss@^4 (+28 more)
 
 ### Community 21 - "use-services.ts"
-Cohesion: 0.10
-Nodes (31): FormErrors, FormField, ICONS, ServiceRow(), ServiceRowBody(), ServiceRowProps, ServicesPage(), handleSave() (+23 more)
+Cohesion: 0.06
+Nodes (49): @dnd-kit/utilities@^3.2.2, @dnd-kit/utilities, FormErrors, FormField, ICONS, ServiceRow(), ServiceRowBody(), ServiceRowProps (+41 more)
 
-### Community 22 - "team/page.tsx"
-Cohesion: 0.20
-Nodes (19): AVATAR_TONES, codeMessage(), DaySchedule, dbErrorMessage(), MemberSettingsDialog(), PanelActions(), roleLabel(), RolePanel() (+11 more)
+### Community 22 - "createClient"
+Cohesion: 0.17
+Nodes (13): zustand, AuthProvider(), createClient(), createRealClient(), SupabaseBrowserClient, createMockClient(), BOOKABLE_ROLES, INITIAL_DATA (+5 more)
 
 ### Community 23 - "kanban-board.tsx"
-Cohesion: 0.06
-Nodes (57): @dnd-kit/core@^6.3.1, @dnd-kit/sortable@^10.0.0, @dnd-kit/core, @dnd-kit/sortable, LeadsPage(), DragPreview, isStage(), KanbanBoard() (+49 more)
+Cohesion: 0.11
+Nodes (35): @dnd-kit/core, @dnd-kit/sortable, react, LeadsPage(), initialsOf(), Dict, errorText(), DragPreview (+27 more)
 
 ### Community 24 - "middleware.ts"
-Cohesion: 0.16
-Nodes (17): MOCK_AUTH_ROLE, ADMIN_ONLY_ROUTES, AppRole, config, CUSTOMER_ROUTES, isLocale(), isPublicPath(), Locale (+9 more)
+Cohesion: 0.15
+Nodes (18): MOCK_AUTH_ROLE, MOCK_DATA_ENABLED, ADMIN_ONLY_ROUTES, AppRole, config, CUSTOMER_ROUTES, isLocale(), isPublicPath() (+10 more)
 
 ### Community 25 - "mock-data.ts"
 Cohesion: 0.11
 Nodes (16): MOCK_BARBERS, MOCK_SERVICE_SEED, MOCK_SERVICES, MOCK_SHOP_IDS, MOCK_WORKING_HOURS, MockAdminProfile, MockBarber, MockClient (+8 more)
 
 ### Community 26 - "helpers.ts"
-Cohesion: 0.40
-Nodes (6): completeBooking(), escapeRegExp(), getSeed(), login(), SeedData, @playwright/test
+Cohesion: 0.18
+Nodes (12): globalSetup(), completeBooking(), escapeRegExp(), getSeed(), login(), SeedData, @playwright/test, E2E_CUSTOMER (+4 more)
 
 ### Community 27 - "analytics/page.tsx"
-Cohesion: 0.16
-Nodes (15): RevenuePoint, RevenueTrendChartProps, SLICE_COLORS, SourceSlice, tick, AnalyticsPage(), ChangePill(), DAY_ORDER (+7 more)
+Cohesion: 0.18
+Nodes (8): recharts@^3.8.0, recharts, RevenuePoint, RevenueTrendChartProps, SLICE_COLORS, SourceSlice, tick, SourcesDonut
 
 ### Community 28 - "database.types.ts"
-Cohesion: 0.13
-Nodes (16): FunctionName, BookingResult, BusySlot, CancelBookingResult, CompleteSaleResult, DashboardMetrics, Database, Json (+8 more)
+Cohesion: 0.08
+Nodes (31): FunctionName, Appt, Appt, SaleItem, MockAppointment, StaffAppointmentInput, BookingResult, CompleteSaleResult (+23 more)
 
 ### Community 29 - "api-helpers.ts"
-Cohesion: 0.12
-Nodes (25): POST, API_ERROR_CODES, apiError(), ApiErrorCode, ApiErrorOptions, ApiErrorResponse, ApiResponse, apiResponse() (+17 more)
+Cohesion: 0.15
+Nodes (32): POST(), POST, POST(), API_ERROR_CODES, apiError(), ApiErrorCode, apiErrorCode(), ApiErrorOptions (+24 more)
 
-### Community 30 - "clients/page.tsx"
-Cohesion: 0.22
-Nodes (17): AVATAR_TONES, ClientDrawer(), ClientFormDialog(), ClientListItem(), ClientsPage(), ClientsView(), codeMessage(), ContactField() (+9 more)
+### Community 30 - "cn"
+Cohesion: 0.13
+Nodes (37): renderActions(), SettingsRoute(), AVATAR_TONES, codeMessage(), DaySchedule, dbErrorMessage(), InviteDialog(), MemberSettingsDialog() (+29 more)
 
 ### Community 31 - "legal-page.tsx"
 Cohesion: 0.21
@@ -312,17 +307,17 @@ Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModu
 Cohesion: 0.11
 Nodes (15): Fix suggestion, Source, What happened, Skill Feedback, Steps, Core Principles, Debugging, Making and Committing Schema Changes (+7 more)
 
-### Community 35 - "cn"
-Cohesion: 0.24
-Nodes (14): InviteDialog(), formFor(), LeadDrawer(), useStages(), ConfirmDialog(), ConfirmDialogProps, Dialog(), DialogFooter() (+6 more)
+### Community 35 - "rehearse-prod-upgrade.sh"
+Cohesion: 0.80
+Nodes (4): psql_admin(), psql_pg(), row_counts(), rehearse-prod-upgrade.sh script
 
 ### Community 36 - "en.ts"
-Cohesion: 0.13
-Nodes (9): C, detectLocale(), GlobalError(), ExplorePage(), Dict, ar, DeepStringRecord, en (+1 more)
+Cohesion: 0.12
+Nodes (11): C, detectLocale(), GlobalError(), ExplorePage(), ar, DeepStringRecord, en, flatAr (+3 more)
 
 ### Community 37 - "cn"
-Cohesion: 0.16
-Nodes (17): ChangeBadge(), MetricCards(), StatCard, colors, Confetti(), ConfettiPiece, ConfettiProps, generatePieces() (+9 more)
+Cohesion: 0.40
+Nodes (5): colors, Confetti(), ConfettiPiece, ConfettiProps, generatePieces()
 
 ### Community 38 - "Changelog"
 Cohesion: 0.12
@@ -333,8 +328,8 @@ Cohesion: 0.12
 Nodes (16): 1. Technology Stack & Architecture, 2.1 Supabase, 2.2 Vercel, 2. External Services & Configuration, 3. Auth Model, Roles & Security, 4. Functional History by Phase, 5. Running & Developing Locally, 6. Guidelines for Future Changes (for any AI) (+8 more)
 
 ### Community 40 - "mock-client.ts"
-Cohesion: 0.12
-Nodes (15): MOCK_ADMIN_ID, MOCK_ADMIN_PROFILE, MOCK_APPOINTMENTS, MOCK_CLIENTS, MOCK_PROFILES, MOCK_REVIEWS, ACTIVE, localDay() (+7 more)
+Cohesion: 0.11
+Nodes (17): MOCK_ADMIN_ID, MOCK_ADMIN_PROFILE, MOCK_APPOINTMENTS, MOCK_CLIENTS, MOCK_PROFILES, MOCK_REVIEWS, BusySlot, CancelBookingResult (+9 more)
 
 ### Community 41 - "Changelog"
 Cohesion: 0.12
@@ -346,19 +341,15 @@ Nodes (15): 1. Concrete Transformation Patterns, 2. Error-First Structure, 3. Qu
 
 ### Community 43 - "settings-page.tsx"
 Cohesion: 0.08
-Nodes (47): SettingsRoute(), copyDayToWorkingDays(), CURRENCIES, DayHours, DayHoursError, DEFAULT_DAY, FieldError, hhmm() (+39 more)
-
-### Community 44 - "EmptyState"
-Cohesion: 0.19
-Nodes (14): ExploreClient(), ShopCardSkeleton(), ExploreShop, filterShops(), normalizeSearch(), shops, coverForShop(), hashString() (+6 more)
+Nodes (45): copyDayToWorkingDays(), CURRENCIES, DayHours, DayHoursError, DEFAULT_DAY, FieldError, hhmm(), isFormDirty() (+37 more)
 
 ### Community 45 - "analytics-page.ts"
-Cohesion: 0.16
-Nodes (14): Builder, csvCell(), ExportRow, getFullAnalytics(), MAX_ROWS, MetricDelta, normalizeSource(), PAGE_SIZE (+6 more)
+Cohesion: 0.14
+Nodes (16): AnalyticsData, Builder, csvCell(), ExportRow, getFullAnalytics(), MAX_ROWS, MetricDelta, normalizeSource() (+8 more)
 
 ### Community 46 - "20250101001600_production_hardening.sql"
-Cohesion: 0.09
-Nodes (23): public.profiles, public.get_current_shop_id(), public.get_current_shop_id(), public.working_hours, public.current_profile_shop_and_role(), appointment_status_side_effects, guard_last_shop_admin, idx_profiles_shop_role (+15 more)
+Cohesion: 0.11
+Nodes (16): public.profiles, public.get_current_shop_id(), public.get_current_shop_id(), public.working_hours, public.current_profile_shop_and_role(), guard_last_shop_admin, idx_profiles_shop_role, idx_working_hours_barber (+8 more)
 
 ### Community 47 - "server.ts"
 Cohesion: 0.17
@@ -369,24 +360,24 @@ Cohesion: 0.08
 Nodes (22): zod, createInviteSchema, POST, siteOrigin(), getUserMock, insertMock, inviteSingle, profileSingle (+14 more)
 
 ### Community 49 - "analytics-period.ts"
-Cohesion: 0.24
-Nodes (16): addDays(), bucketKeyOf(), dayKey(), DEFAULT_TIMEZONE, formatterCache, getPeriodRange(), monthKey(), offsetMs() (+8 more)
+Cohesion: 0.26
+Nodes (15): addDays(), bucketKeyOf(), dayKey(), formatterCache, getPeriodRange(), monthKey(), offsetMs(), pad() (+7 more)
 
-### Community 50 - "search.ts"
-Cohesion: 0.35
-Nodes (12): clientSearchFilter(), buildIlikeOrFilter(), Client, containsPattern(), EMPTY_RESULT, escapeLikePattern(), MAX_SEARCH_LENGTH, normalizeSearchTerm() (+4 more)
+### Community 50 - "20250101000100_initial_schema.sql"
+Cohesion: 0.13
+Nodes (13): idx_appointments_barber_date, idx_appointments_shop_date, idx_daily_sales_shop_date, on_auth_user_created, on_shops_updated, public.barbers, public.daily_sales, public.get_user_shop_id() (+5 more)
 
 ### Community 51 - "timeline-view.tsx"
-Cohesion: 0.06
-Nodes (71): framer-motion, CalendarPage(), Appt, Appt, AppointmentDetailsDialogProps, AppointmentForm(), handleSubmit(), AppointmentFormDefaults (+63 more)
+Cohesion: 0.15
+Nodes (21): framer-motion, CalendarPage(), AppointmentFormDialog(), blockPlacement(), combineDayAndTime(), computeHourRange(), DEFAULT_DAY_END, DEFAULT_DAY_START (+13 more)
 
 ### Community 52 - "analytics.ts"
-Cohesion: 0.22
-Nodes (15): bucketLabel(), Client, DashboardMetricsView, getBarberPerformance(), getDashboardMetrics(), getRevenueChart(), fetchAllRows(), getAppointmentsForExport() (+7 more)
+Cohesion: 0.20
+Nodes (16): bucketLabel(), Client, DashboardMetricsView, getBarberPerformance(), getDashboardMetrics(), getRevenueChart(), fetchAllRows(), getAppointmentsForExport() (+8 more)
 
 ### Community 53 - "public.appointments"
-Cohesion: 0.12
-Nodes (26): idx_appointments_barber_date, idx_appointments_shop_date, idx_daily_sales_shop_date, on_auth_user_created, on_shops_updated, public.appointments, public.barbers, public.daily_sales (+18 more)
+Cohesion: 0.14
+Nodes (17): public.appointments, public.shops, idx_daily_sales_shop_date, public.daily_sales, idx_appointments_barber_active, idx_appointments_client, idx_appointments_shop_start, idx_daily_sales_shop_created (+9 more)
 
 ### Community 54 - "health/route.ts"
 Cohesion: 0.23
@@ -428,9 +419,9 @@ Nodes (5): 2.1 — Services CRUD Page, Feature Status Summary, Halaqy — Full P
 Cohesion: 0.12
 Nodes (12): idx_appointments_barber, idx_appointments_client, idx_appointments_shop_date, idx_appointments_status, idx_clients_phone, idx_clients_shop, idx_leads_shop_stage, idx_profiles_shop (+4 more)
 
-### Community 64 - "@supabase/supabase-js"
-Cohesion: 0.23
-Nodes (8): globalSetup(), @supabase/supabase-js@^2.99.0, @supabase/supabase-js, E2E_CUSTOMER, E2E_OWNER, ensureUser(), findUserByEmail(), seedE2E()
+### Community 64 - "EmptyState"
+Cohesion: 0.20
+Nodes (14): SalesChart, buildRevenueSeries(), ChartTooltip(), Period, periodRange(), RevenuePoint, SalesChart(), ActionControl() (+6 more)
 
 ### Community 65 - "Halaqy Redesign — "Data Observatory on Cloud Paper" (Clearbit reference)"
 Cohesion: 0.25
@@ -440,17 +431,17 @@ Nodes (7): Core tokens (already live in `src/app/globals.css` and `:root`), Do's
 Cohesion: 0.25
 Nodes (7): Halaqy — AI Conversation History & Project Summary, 🔜 Next Immediate Steps (Phase 3 Continued), Phase 1 & 2: UI Foundation & Core Components, Phase 2.5: UI Polish & Public Landing Page, Phase 3 (Currently Active): Backend Integration (Supabase), 🚀 Phases Completed, 📅 Project Overview
 
-### Community 67 - "shop-data.ts"
+### Community 67 - "route.full.test.ts"
 Cohesion: 0.25
-Nodes (8): AnyClient, BarberData, ReviewData, ServiceData, SHOP_COLUMNS, ShopData, ShopProfileData, WorkingHourRow
+Nodes (6): bookingResult, fromMock, getUserMock, rateLimitMock, rpcMock, validPayload
 
 ### Community 68 - "public.clients"
-Cohesion: 0.21
-Nodes (12): public.clients, idx_reviews_rating, idx_reviews_shop_id, public.reviews, idx_clients_auth_user, idx_clients_email_lower, idx_clients_shop_phone_digits, idx_reviews_shop_created (+4 more)
+Cohesion: 0.38
+Nodes (6): idx_reviews_rating, idx_reviews_shop_id, public.reviews, idx_reviews_shop_created, public.get_my_appointments(), public.submit_review()
 
-### Community 69 - "next.config.ts"
-Cohesion: 0.29
-Nodes (4): csp, nextConfig, securityHeaders, supa
+### Community 69 - "lead-csv.ts"
+Cohesion: 0.39
+Nodes (6): clean(), MAX_IMPORT_BYTES, MAX_IMPORT_ROWS, parseCsvLine(), parseLeadsCsv(), RFC-4180
 
 ### Community 70 - "Phase 6: UI/UX Enhancements"
 Cohesion: 0.29
@@ -472,17 +463,17 @@ Nodes (5): eslintConfig, eslint@^9, eslint-config-next@16.1.6, eslint, eslint-co
 Cohesion: 0.33
 Nodes (6): 0.1 — Fix Database Migration Inconsistencies, 0.2 — Fix Workspace Store Hydration, 0.3 — Fix Leads Store Hydration, 0.4 — Fix Dashboard Upcoming Appointments, 0.5 — Fix Landing Page Links, Phase 0: Critical Fixes (Broken/Non-Functional)
 
-### Community 75 - "idempotency.ts"
+### Community 75 - "glass-button.tsx"
 Cohesion: 0.40
-Nodes (4): Entry, prune(), runIdempotent(), store
+Nodes (4): GlassButton(), GlassButtonProps, sizes, variants
 
 ### Community 76 - "landing/page.tsx"
-Cohesion: 0.32
-Nodes (13): BackgroundVideo(), LandingShell(), shouldStream(), Eyebrow(), generateMetadata(), headingTracking(), Headline(), LandingPage() (+5 more)
+Cohesion: 0.25
+Nodes (16): BackgroundVideo(), LandingNav(), LandingShell(), shouldStream(), useViewer(), Viewer, Eyebrow(), generateMetadata() (+8 more)
 
-### Community 77 - "auth.users"
-Cohesion: 0.18
-Nodes (5): public.link_customer_client(), on_auth_user_created, public.cancel_customer_booking(), public.create_public_booking(), public.link_customer_client()
+### Community 77 - "20250101001600_production_hardening.sql"
+Cohesion: 0.14
+Nodes (17): public.clients, appointment_status_side_effects, idx_clients_auth_user, idx_clients_email_lower, idx_clients_shop_phone_digits, on_auth_user_created, on_shops_updated, public.accept_invite() (+9 more)
 
 ### Community 78 - "vite-tsconfig-paths"
 Cohesion: 0.40
@@ -508,9 +499,9 @@ Nodes (4): 8.1 — Performance, 8.2 — SEO, 8.3 — PWA (Progressive Web App), 
 Cohesion: 0.50
 Nodes (4): 9.1 — Vercel Deployment, 9.2 — CI/CD, 9.3 — Monitoring, Phase 9: Deployment & DevOps
 
-### Community 85 - "20250101001800_private_columns_and_verified_links.sql"
-Cohesion: 0.25
-Nodes (4): public.get_my_shop_private(), public.get_profile_phones(), public.shop_daily_goal(), public.verified_identity()
+### Community 85 - "Phase 3: New Features — Team Management"
+Cohesion: 0.50
+Nodes (4): 3.1 — Invite System, 3.2 — Team Page in Settings, 3.3 — Barber Dashboard View, Phase 3: New Features — Team Management
 
 ### Community 86 - "20250101000900_notifications.sql"
 Cohesion: 0.27
@@ -524,14 +515,6 @@ Nodes (6): idx_invites_token, public.accept_invite(), public.get_invite_by_token
 Cohesion: 0.33
 Nodes (5): public.services, public.barber_services, idx_barber_services_service, public.barber_offers_services(), public.seed_staff_defaults()
 
-### Community 127 - "route.full.test.ts"
-Cohesion: 0.25
-Nodes (6): bookingResult, fromMock, getUserMock, rateLimitMock, rpcMock, validPayload
-
-### Community 128 - "Phase 3: New Features — Team Management"
-Cohesion: 0.50
-Nodes (4): 3.1 — Invite System, 3.2 — Team Page in Settings, 3.3 — Barber Dashboard View, Phase 3: New Features — Team Management
-
 ### Community 129 - "vitest"
 Cohesion: 0.18
 Nodes (7): vitest, rateLimitMock, rpcMock, createBrowserClientMock, CookieMethods, cookieStore, createServerClientMock
@@ -540,41 +523,29 @@ Nodes (7): vitest, rateLimitMock, rpcMock, createBrowserClientMock, CookieMethod
 Cohesion: 0.83
 Nodes (3): idx_payments_appointment, idx_payments_shop_created, public.payments
 
-### Community 138 - "dialog.test.tsx"
-Cohesion: 0.33
-Nodes (4): @testing-library/react@^16.3.2, @testing-library/user-event@^14.6.4, @testing-library/react, @testing-library/user-event
-
 ### Community 139 - "book/[shop_id]/page.tsx"
-Cohesion: 0.47
-Nodes (5): BookingShopPage(), generateMetadata(), getShopName, Params, MOCK_DATA_ENABLED
-
-### Community 140 - "robots.ts"
-Cohesion: 0.67
-Nodes (3): PRIVATE_PATHS, robots(), siteOrigin()
-
-### Community 141 - "use-supabase-query.ts"
-Cohesion: 0.50
-Nodes (3): QueryFnResult, QueryOptions, QueryState
+Cohesion: 0.48
+Nodes (5): BookingShell(), BookingShopPage(), generateMetadata(), getShopName, Params
 
 ## Knowledge Gaps
 - **3 isolated node(s):** `RFC-4180`, `RFC-5545`, `RFC-4180`
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 786 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **48 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 818 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **53 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `next` connect `createClient` to `toast.tsx`, `shop-profile-client.tsx`, `useTranslation`, `booking-utils.ts`, `toast.tsx`, `useWorkspaceStore`, `interpolate`, `book/[shop_id]/page.tsx`, `robots.ts`, `dependencies`, `booking/route.ts`, `devDependencies`, `kanban-board.tsx`, `middleware.ts`, `analytics/page.tsx`, `api-helpers.ts`, `clients/page.tsx`, `legal-page.tsx`, `en.ts`, `settings-page.tsx`, `EmptyState`, `timeline-view.tsx`, `health/route.ts`, `[locale]/layout.tsx`, `sitemap.ts`, `next.config.ts`, `landing/page.tsx`, `accept/route.test.ts`, `route.full.test.ts`?**
-  _High betweenness centrality (0.123) - this node is a cross-community bridge._
+- **Why does `next` connect `createClient` to `clients/page.tsx`, `toast.tsx`, `interpolate`, `useTranslation`, `booking-utils.ts`, `book/[shop_id]/page.tsx`, `notification-bell.tsx`, `my-day/page.tsx`, `dependencies`, `booking/route.ts`, `devDependencies`, `kanban-board.tsx`, `middleware.ts`, `api-helpers.ts`, `legal-page.tsx`, `en.ts`, `settings-page.tsx`, `timeline-view.tsx`, `health/route.ts`, `[locale]/layout.tsx`, `sitemap.ts`, `EmptyState`, `route.full.test.ts`, `landing/page.tsx`, `accept/route.test.ts`?**
+  _High betweenness centrality (0.121) - this node is a cross-community bridge._
 - **Are the 3 inferred relationships involving `useTranslation()` (e.g. with `Architecture` and `Current State — What's Actually Undermining the Experience`) actually correct?**
   _`useTranslation()` has 3 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `RFC-4180`, `RFC-5545`, `RFC-4180` to the rest of the system?**
   _3 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `createClient` be split into smaller, more focused modules?**
-  _Cohesion score 0.05197920831667333 - nodes in this community are weakly interconnected._
-- **Why does `useTranslation()` connect `createClient` to `toast.tsx`, `shop-profile-client.tsx`, `useTranslation`, `booking-utils.ts`, `dialog.tsx`, `toast.tsx`, `useWorkspaceStore`, `interpolate`, `my-day/page.tsx`, `use-services.ts`, `team/page.tsx`, `kanban-board.tsx`, `analytics/page.tsx`, `clients/page.tsx`, `cn`, `cn`, `settings-page.tsx`, `EmptyState`, `timeline-view.tsx`, `Halaqy (7ala8i) — UX Enhancement Plan`?**
-  _High betweenness centrality (0.067) - this node is a cross-community bridge._
-- **Should `toast.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.1036734693877551 - nodes in this community are weakly interconnected._
-- **Why does `vitest` connect `vitest` to `createClient`, `clients.ts`, `toast.tsx`, `shop-profile-client.tsx`, `useTranslation`, `booking-utils.ts`, `toast.tsx`, `useWorkspaceStore`, `interpolate`, `dialog.test.tsx`, `i18n.test.ts`, `validations.ts`, `vitest`, `devDependencies`, `use-services.ts`, `kanban-board.tsx`, `middleware.ts`, `mock-data.ts`, `api-helpers.ts`, `cn`, `settings-page.tsx`, `EmptyState`, `analytics-page.ts`, `env.ts`, `search.ts`, `timeline-view.tsx`, `analytics.ts`, `health/route.ts`, `rate-limit.ts`, `vite-tsconfig-paths`, `accept/route.test.ts`, `route.full.test.ts`?**
+  _Cohesion score 0.05121293800539083 - nodes in this community are weakly interconnected._
+- **Why does `vitest` connect `vitest` to `createClient`, `clients/page.tsx`, `toast.tsx`, `interpolate`, `useTranslation`, `booking-utils.ts`, `use-appointments.ts`, `useWorkspaceStore`, `leads-store.ts`, `validations.ts`, `notification-bell.tsx`, `vitest`, `devDependencies`, `use-services.ts`, `kanban-board.tsx`, `middleware.ts`, `mock-data.ts`, `database.types.ts`, `api-helpers.ts`, `en.ts`, `settings-page.tsx`, `analytics-page.ts`, `env.ts`, `timeline-view.tsx`, `analytics.ts`, `health/route.ts`, `rate-limit.ts`, `route.full.test.ts`, `lead-csv.ts`, `vite-tsconfig-paths`, `accept/route.test.ts`?**
+  _High betweenness centrality (0.070) - this node is a cross-community bridge._
+- **Should `clients/page.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.09577677224736049 - nodes in this community are weakly interconnected._
+- **Why does `useTranslation()` connect `useTranslation` to `createClient`, `clients/page.tsx`, `toast.tsx`, `interpolate`, `booking-utils.ts`, `use-appointments.ts`, `useWorkspaceStore`, `leads-store.ts`, `book/[shop_id]/page.tsx`, `notification-bell.tsx`, `my-day/page.tsx`, `use-services.ts`, `kanban-board.tsx`, `cn`, `settings-page.tsx`, `timeline-view.tsx`, `Halaqy (7ala8i) — UX Enhancement Plan`, `EmptyState`, `landing/page.tsx`?**
   _High betweenness centrality (0.061) - this node is a cross-community bridge._

@@ -1,3 +1,6 @@
+-- (Replay guard added 2026-11: policies/triggers/indexes below are drop-then-create /
+-- IF NOT EXISTS so this file also applies on top of production, which already
+-- has many of them from the SQL editor. Fresh-database result is unchanged.)
 -- Create notifications table
 CREATE TABLE IF NOT EXISTS public.notifications (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -13,10 +16,12 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 -- RLS
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own notifications" ON public.notifications;
 CREATE POLICY "Users can view their own notifications" 
 ON public.notifications FOR SELECT 
 USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can update their own notifications (mark read)" ON public.notifications;
 CREATE POLICY "Users can update their own notifications (mark read)" 
 ON public.notifications FOR UPDATE 
 USING (user_id = auth.uid());
@@ -56,6 +61,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS trigger_notify_shop_on_appointment ON public.appointments;
 CREATE TRIGGER trigger_notify_shop_on_appointment
     AFTER INSERT ON public.appointments
     FOR EACH ROW EXECUTE FUNCTION public.notify_shop_on_appointment();
@@ -97,9 +103,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS trigger_notify_client_on_appointment_status ON public.appointments;
 CREATE TRIGGER trigger_notify_client_on_appointment_status
     AFTER UPDATE ON public.appointments
     FOR EACH ROW EXECUTE FUNCTION public.notify_client_on_appointment_status();
 
 -- Index for real-time reads
-CREATE INDEX idx_notifications_user_id ON public.notifications(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id, created_at DESC);

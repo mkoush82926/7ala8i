@@ -1,3 +1,6 @@
+-- (Replay guard added 2026-11: policies/triggers/indexes below are drop-then-create /
+-- IF NOT EXISTS so this file also applies on top of production, which already
+-- has many of them from the SQL editor. Fresh-database result is unchanged.)
 -- 015_profiles_rls_hardening.sql
 --
 -- Two real, pre-existing RLS gaps found while reviewing the Tier 2
@@ -43,7 +46,7 @@ SECURITY DEFINER
 STABLE
 SET search_path = public
 AS $$
-  SELECT p.shop_id, p.role FROM public.profiles p WHERE p.id = (select auth.uid());
+  SELECT p.shop_id, p.role::text FROM public.profiles p WHERE p.id = (select auth.uid());  -- ::text: enum on prod
 $$;
 
 DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
@@ -52,15 +55,16 @@ CREATE POLICY "profiles_update_own" ON public.profiles
   WITH CHECK (
     id = (select auth.uid())
     AND shop_id IS NOT DISTINCT FROM (SELECT c.shop_id FROM public.current_profile_shop_and_role() c)
-    AND role IS NOT DISTINCT FROM (SELECT c.role FROM public.current_profile_shop_and_role() c)
+    AND role::text IS NOT DISTINCT FROM (SELECT c.role FROM public.current_profile_shop_and_role() c)
   );
 
+DROP POLICY IF EXISTS "profiles_update_admin_same_shop" ON public.profiles;
 CREATE POLICY "profiles_update_admin_same_shop" ON public.profiles
   FOR UPDATE USING (
     shop_id = public.get_current_shop_id()
     AND EXISTS (
       SELECT 1 FROM public.profiles p
-      WHERE p.id = (select auth.uid()) AND p.role = 'shop_admin'
+      WHERE p.id = (select auth.uid()) AND p.role::text = 'shop_admin'
     )
   )
   WITH CHECK (

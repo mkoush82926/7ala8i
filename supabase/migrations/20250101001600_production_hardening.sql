@@ -36,15 +36,15 @@
 --   015_profiles_rls_hardening.sql         → 20250101001500_profiles_rls_hardening.sql
 --   (new) this file                        → 20250101001600_production_hardening.sql
 --
--- ─── ALREADY-DEPLOYED DATABASE: repair history BEFORE `supabase db push` ───
--- (Prod was partly built in the SQL editor; first inspect what is recorded:
---    supabase migration list --linked )
--- Mark the old short versions as reverted (history only, no SQL runs):
---   supabase migration repair --linked --status reverted 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015
--- Mark the renamed files 0100…1500 as applied (they are already in prod):
---   supabase migration repair --linked --status applied 20250101000100 20250101000110 20250101000200 20250101000210 20250101000300 20250101000310 20250101000400 20250101000410 20250101000500 20250101000600 20250101000700 20250101000800 20250101000900 20250101001000 20250101001100 20250101001200 20250101001300 20250101001400 20250101001500
--- Then apply only this file:
---   supabase db push --linked
+-- ─── ALREADY-DEPLOYED DATABASE (production) ───────────────────────────────
+-- (Superseded 2026-11.) Production does NOT contain everything in 0100…1500
+-- (no barbers/barber_services/working_hours/invites; enum role/stage), so
+-- those files must really run there; do NOT mark them as applied. Every file
+-- 0100…1800 is replay-safe on top of production and was rehearsed with
+-- scripts/rehearse-prod-upgrade.sh against a restored prod backup:
+--   supabase migration repair --linked --status reverted <the 6 dashboard versions>
+--   supabase db push --linked --include-all --dry-run
+--   supabase db push --linked --include-all
 -- Recommended pre-flight on prod (read-only):
 --   select tablename, policyname, cmd, roles, qual, with_check from pg_policies where schemaname='public' order by 1,2;
 --   select conrelid::regclass, conname, pg_get_constraintdef(oid) from pg_constraint where connamespace='public'::regnamespace;
@@ -74,6 +74,9 @@ ALTER TABLE public.shops ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'JOD';
 ALTER TABLE public.shops ADD COLUMN IF NOT EXISTS cancellation_policy_hours INT DEFAULT 24;
 ALTER TABLE public.shops ADD COLUMN IF NOT EXISTS cancellation_fee_percent NUMERIC(5,2) DEFAULT 0;
 ALTER TABLE public.shops ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+-- Production was built without 001_initial_schema's shops.settings column;
+-- 20250101001800 (get_my_shop_private) reads it.
+ALTER TABLE public.shops ADD COLUMN IF NOT EXISTS settings JSONB DEFAULT '{}';
 ALTER TABLE public.shops ALTER COLUMN currency SET DEFAULT 'JOD';
 -- The UI always displayed JOD while the column defaulted to 'USD'; every
 -- existing shop is Jordanian, so backfill before the UI switches to
@@ -87,6 +90,69 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+
+-- Production (built in the SQL editor) has profiles.role as enum user_role and
+-- leads.stage as enum lead_stage; a replayed database has TEXT + CHECK. The
+-- functions below write TEXT values into these columns (e.g. accept_invite sets
+-- role = v_role), which an enum column rejects. Convert the enums to TEXT,
+-- values unchanged. Policies that depend on the column block ALTER ... TYPE, so
+-- they are captured, dropped and recreated identically (enum literal casts
+-- rewritten to ::text); section 7 then replaces them with the canonical set.
+-- No-op where the column is already TEXT.
+CREATE OR REPLACE FUNCTION pg_temp.enum_column_to_text(p_table regclass, p_column text)
+RETURNS void LANGUAGE plpgsql AS $fn$
+DECLARE
+  v_attnum  int2;
+  v_type    regtype;
+  v_default text;
+  r         record;
+  v_sql     text;
+  v_defs    text[] := '{}';
+BEGIN
+  SELECT a.attnum, a.atttypid::regtype INTO v_attnum, v_type
+  FROM pg_attribute a WHERE a.attrelid = p_table AND a.attname = p_column AND NOT a.attisdropped;
+  IF v_attnum IS NULL OR NOT EXISTS (SELECT 1 FROM pg_type t WHERE t.oid = v_type AND t.typtype = 'e') THEN
+    RETURN;
+  END IF;
+
+  FOR r IN
+    SELECT DISTINCT pol.oid, pol.polname, pol.polrelid::regclass AS tbl,
+           CASE WHEN pol.polpermissive THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END AS kind,
+           CASE pol.polcmd WHEN 'r' THEN 'SELECT' WHEN 'a' THEN 'INSERT' WHEN 'w' THEN 'UPDATE'
+                           WHEN 'd' THEN 'DELETE' ELSE 'ALL' END AS cmd,
+           CASE WHEN pol.polroles = '{0}' THEN 'PUBLIC'
+                ELSE (SELECT string_agg(quote_ident(rolname), ', ') FROM pg_roles WHERE oid = ANY (pol.polroles)) END AS roles,
+           pg_get_expr(pol.polqual, pol.polrelid)      AS qual,
+           pg_get_expr(pol.polwithcheck, pol.polrelid) AS wc
+    FROM pg_depend d JOIN pg_policy pol ON pol.oid = d.objid
+    WHERE d.classid = 'pg_policy'::regclass AND d.refclassid = 'pg_class'::regclass
+      AND d.refobjid = p_table AND d.refobjsubid = v_attnum
+  LOOP
+    v_sql := format('CREATE POLICY %I ON %s AS %s FOR %s TO %s', r.polname, r.tbl, r.kind, r.cmd, r.roles);
+    IF r.qual IS NOT NULL THEN v_sql := v_sql || ' USING (' || r.qual || ')'; END IF;
+    IF r.wc   IS NOT NULL THEN v_sql := v_sql || ' WITH CHECK (' || r.wc || ')'; END IF;
+    v_defs := v_defs || replace(v_sql, '::' || v_type::text, '::text');
+    EXECUTE format('DROP POLICY %I ON %s', r.polname, r.tbl);
+  END LOOP;
+
+  SELECT pg_get_expr(ad.adbin, ad.adrelid) INTO v_default
+  FROM pg_attrdef ad WHERE ad.adrelid = p_table AND ad.adnum = v_attnum;
+  EXECUTE format('ALTER TABLE %s ALTER COLUMN %I DROP DEFAULT', p_table, p_column);
+  EXECUTE format('ALTER TABLE %s ALTER COLUMN %I TYPE text USING %I::text', p_table, p_column, p_column);
+  IF v_default IS NOT NULL THEN
+    EXECUTE format('ALTER TABLE %s ALTER COLUMN %I SET DEFAULT %s', p_table, p_column,
+                   replace(v_default, '::' || v_type::text, '::text'));
+  END IF;
+
+  FOR i IN 1 .. coalesce(array_length(v_defs, 1), 0) LOOP
+    EXECUTE v_defs[i];
+  END LOOP;
+  RAISE NOTICE '%.% converted from enum % to text (% dependent policies recreated)',
+    p_table, p_column, v_type, coalesce(array_length(v_defs, 1), 0);
+END $fn$;
+
+SELECT pg_temp.enum_column_to_text('public.profiles', 'role');
+SELECT pg_temp.enum_column_to_text('public.leads', 'stage');
 
 DO $$
 BEGIN
@@ -169,6 +235,10 @@ ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS payment_status TEXT DEF
 ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS payment_method TEXT;
 ALTER TABLE public.appointments ALTER COLUMN client_id DROP NOT NULL;
 ALTER TABLE public.appointments ALTER COLUMN barber_id DROP NOT NULL;
+-- Prod (SQL editor) has client_name NOT NULL and price without a default;
+-- align with the replayed schema the app and tests are built against.
+ALTER TABLE public.appointments ALTER COLUMN client_name DROP NOT NULL;
+ALTER TABLE public.appointments ALTER COLUMN price SET DEFAULT 0;
 
 -- Canonical status spelling is 'no_show'. Convert legacy values, then
 -- (re)assert one CHECK.
@@ -394,27 +464,66 @@ BEGIN
 END $$;
 
 -- Double-booking guard: no two active appointments for one barber may overlap.
+-- Staff writes (direct INSERT/UPDATE under RLS) rely on this constraint
+-- (23P01 -> SLOT_TAKEN), so this block never finishes without it:
+--   * no overlapping active rows (fresh DB)  -> full constraint;
+--   * overlaps only among appointments that already ENDED (stale legacy
+--     'pending' rows on production) -> the same constraint, restricted to
+--     appointments ending after the newest such legacy overlap. Nothing is
+--     modified; every current/future booking is fully guarded. Once the
+--     legacy rows are resolved the constraint can be recreated without the
+--     cutoff (see the COMMENT on it);
+--   * an overlap involving an appointment that has not ended yet, or an
+--     active row with end_time < start_time -> hard failure (needs a human
+--     decision; the migration, and so `db push`, stops here).
 DO $$
+DECLARE
+  v_future_overlaps int;
+  v_cutoff timestamptz;
 BEGIN
-  IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'appointments_no_overlap') THEN
+  IF EXISTS (SELECT 1 FROM pg_constraint
+             WHERE conname = 'appointments_no_overlap' AND conrelid = 'public.appointments'::regclass) THEN
     RETURN;
   END IF;
-  IF EXISTS (
-    SELECT 1 FROM public.appointments a
-    JOIN public.appointments b
-      ON a.barber_id = b.barber_id AND a.id < b.id
-     AND a.status IN ('pending','confirmed') AND b.status IN ('pending','confirmed')
-     AND a.start_time < b.end_time AND b.start_time < a.end_time
-  ) THEN
-    RAISE NOTICE 'Overlapping active appointments exist; appointments_no_overlap not created. '
-                 'Resolve them and re-run the ALTER TABLE from this migration. The booking RPC still '
-                 'prevents new overlaps with an advisory lock.';
-  ELSIF EXISTS (SELECT 1 FROM public.appointments WHERE end_time <= start_time AND status IN ('pending','confirmed')) THEN
-    RAISE NOTICE 'Active appointments with end_time <= start_time exist; appointments_no_overlap not created.';
-  ELSE
+
+  IF EXISTS (SELECT 1 FROM public.appointments
+             WHERE end_time < start_time AND status IN ('pending','confirmed') AND barber_id IS NOT NULL) THEN
+    RAISE EXCEPTION 'Active appointments with end_time < start_time exist; fix them before applying this migration '
+                    '(appointments_no_overlap cannot be created).';
+  END IF;
+
+  SELECT count(*) FILTER (WHERE greatest(a.end_time, b.end_time) >= now()),
+         max(greatest(a.end_time, b.end_time))
+    INTO v_future_overlaps, v_cutoff
+  FROM public.appointments a
+  JOIN public.appointments b
+    ON a.barber_id = b.barber_id AND a.id < b.id
+   AND a.status IN ('pending','confirmed') AND b.status IN ('pending','confirmed')
+   AND a.start_time < b.end_time AND b.start_time < a.end_time;
+
+  IF v_future_overlaps > 0 THEN
+    RAISE EXCEPTION '% overlapping active appointment pair(s) that have not ended yet; resolve them '
+                    '(cancel or reassign) before applying this migration.', v_future_overlaps;
+  ELSIF v_cutoff IS NULL THEN
     ALTER TABLE public.appointments ADD CONSTRAINT appointments_no_overlap
       EXCLUDE USING gist (barber_id WITH =, tstzrange(start_time, end_time, '[)') WITH &&)
       WHERE (status IN ('pending', 'confirmed') AND barber_id IS NOT NULL);
+  ELSE
+    EXECUTE format(
+      'ALTER TABLE public.appointments ADD CONSTRAINT appointments_no_overlap
+         EXCLUDE USING gist (barber_id WITH =, tstzrange(start_time, end_time, %L) WITH &&)
+         WHERE (status IN (%L, %L) AND barber_id IS NOT NULL AND end_time > %L::timestamptz)',
+      '[)', 'pending', 'confirmed', v_cutoff);
+    EXECUTE format(
+      'COMMENT ON CONSTRAINT appointments_no_overlap ON public.appointments IS %L',
+      'Legacy overlapping appointments ending on/before ' || v_cutoff::text || ' are grandfathered. '
+      || 'After resolving them, drop and re-add this constraint without the end_time cutoff.');
+    RAISE NOTICE 'appointments_no_overlap created for appointments ending after % (older legacy overlaps grandfathered, no rows changed)', v_cutoff;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                 WHERE conname = 'appointments_no_overlap' AND conrelid = 'public.appointments'::regclass) THEN
+    RAISE EXCEPTION 'appointments_no_overlap was not created';
   END IF;
 END $$;
 
@@ -868,6 +977,78 @@ CREATE POLICY invites_update_admin_own_shop ON public.invites
 CREATE POLICY invites_delete_admin_own_shop ON public.invites
   FOR DELETE TO authenticated
   USING (shop_id = (SELECT public.get_current_shop_id()) AND (SELECT public.is_shop_admin()));
+
+-- ─── Drop any policy outside the canonical set above ───
+-- Production also carries policies created in the SQL editor under names this
+-- file never knew (e.g. appointments_select_all / profiles_select_all /
+-- shops_select_all USING (true)). Permissive policies are OR-ed, so leaving any
+-- of them would silently undo the lockdown above. The allow-list is exactly the
+-- set this file creates; on a database built from these migrations this is a
+-- no-op.
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT p.tablename, p.policyname FROM pg_policies p
+    WHERE p.schemaname = 'public'
+      AND (p.tablename, p.policyname) NOT IN (VALUES
+    ('appointments', 'appointments_delete_admin'),
+    ('appointments', 'appointments_insert_staff'),
+    ('appointments', 'appointments_select_customer'),
+    ('appointments', 'appointments_select_staff'),
+    ('appointments', 'appointments_update_staff'),
+    ('barber_services', 'barber_services_delete_admin'),
+    ('barber_services', 'barber_services_insert_admin'),
+    ('barber_services', 'barber_services_select_public'),
+    ('barber_services', 'barber_services_update_admin'),
+    ('clients', 'clients_delete_admin'),
+    ('clients', 'clients_insert_staff'),
+    ('clients', 'clients_select_self'),
+    ('clients', 'clients_select_staff'),
+    ('clients', 'clients_update_staff'),
+    ('daily_sales', 'daily_sales_delete_admin'),
+    ('daily_sales', 'daily_sales_insert_staff'),
+    ('daily_sales', 'daily_sales_select_staff'),
+    ('daily_sales', 'daily_sales_update_admin'),
+    ('invites', 'invites_delete_admin_own_shop'),
+    ('invites', 'invites_insert_admin'),
+    ('invites', 'invites_select_admin_own_shop'),
+    ('invites', 'invites_update_admin_own_shop'),
+    ('leads', 'leads_delete_admin'),
+    ('leads', 'leads_insert_admin'),
+    ('leads', 'leads_select_admin'),
+    ('leads', 'leads_update_admin'),
+    ('notifications', 'notifications_delete_own'),
+    ('notifications', 'notifications_select_own'),
+    ('notifications', 'notifications_update_own'),
+    ('payments', 'payments_delete_admin'),
+    ('payments', 'payments_insert_staff'),
+    ('payments', 'payments_select_staff'),
+    ('payments', 'payments_update_admin'),
+    ('profiles', 'profiles_select_public_staff'),
+    ('profiles', 'profiles_select_same_shop'),
+    ('profiles', 'profiles_select_self'),
+    ('profiles', 'profiles_update_admin_same_shop'),
+    ('profiles', 'profiles_update_own'),
+    ('reviews', 'reviews_delete_admin'),
+    ('reviews', 'reviews_select_public'),
+    ('services', 'services_delete_admin'),
+    ('services', 'services_insert_admin'),
+    ('services', 'services_select_own_shop'),
+    ('services', 'services_select_public'),
+    ('services', 'services_update_admin'),
+    ('shops', 'shops_select_public'),
+    ('shops', 'shops_update_admin'),
+    ('working_hours', 'working_hours_delete'),
+    ('working_hours', 'working_hours_insert'),
+    ('working_hours', 'working_hours_select_public'),
+    ('working_hours', 'working_hours_update')
+      )
+  LOOP
+    RAISE NOTICE 'dropping non-canonical policy % on public.%', r.policyname, r.tablename;
+    EXECUTE format('DROP POLICY %I ON public.%I', r.policyname, r.tablename);
+  END LOOP;
+END $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 8. INVARIANT TRIGGERS

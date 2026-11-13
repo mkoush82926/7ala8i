@@ -1,3 +1,6 @@
+-- (Replay guard added 2026-11: policies/triggers/indexes below are drop-then-create /
+-- IF NOT EXISTS so this file also applies on top of production, which already
+-- has many of them from the SQL editor. Fresh-database result is unchanged.)
 -- ============================================
 -- Add 'customer' role and allow customer signups
 -- Run this in the Supabase SQL Editor
@@ -18,6 +21,7 @@ END $$;
 ALTER TABLE public.profiles ALTER COLUMN shop_id DROP NOT NULL;
 
 -- Allow customers to read their own profile
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
 CREATE POLICY "Users can read own profile" ON public.profiles
   FOR SELECT TO authenticated
   USING (id = auth.uid());

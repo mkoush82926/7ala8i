@@ -1,3 +1,6 @@
+-- (Replay guard added 2026-11: policies/triggers/indexes below are drop-then-create /
+-- IF NOT EXISTS so this file also applies on top of production, which already
+-- has many of them from the SQL editor. Fresh-database result is unchanged.)
 -- 006_working_hours.sql
 
 CREATE TABLE IF NOT EXISTS public.working_hours (
@@ -14,10 +17,12 @@ CREATE TABLE IF NOT EXISTS public.working_hours (
 ALTER TABLE public.working_hours ENABLE ROW LEVEL SECURITY;
 
 -- Anyone can read (needed for public booking page)
+DROP POLICY IF EXISTS "working_hours_select" ON public.working_hours;
 CREATE POLICY "working_hours_select" ON public.working_hours
   FOR SELECT USING (true);
 
 -- Only shop admins or the barber themselves can manage their working hours
+DROP POLICY IF EXISTS "working_hours_all_admin_or_self" ON public.working_hours;
 CREATE POLICY "working_hours_all_admin_or_self" ON public.working_hours
   FOR ALL USING (
     barber_id = auth.uid() OR
@@ -34,7 +39,7 @@ DECLARE
   barber record;
   day int;
 BEGIN
-  FOR barber IN SELECT id FROM public.profiles WHERE role IN ('shop_admin', 'professional') LOOP
+  FOR barber IN SELECT id FROM public.profiles WHERE role::text IN ('shop_admin', 'professional') LOOP  -- ::text: enum-safe on prod
     FOR day IN 0..6 LOOP
       BEGIN
         INSERT INTO public.working_hours (barber_id, day_of_week, start_time, end_time, is_working)

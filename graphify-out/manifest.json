@@ -48,9 +48,9 @@
     "semantic_hash": ""
   },
   "e2e/helpers.ts": {
-    "mtime": 1794489369.1412256,
-    "seen": 1794489577.705549,
-    "ast_hash": "cd6138d2c58a4d7f35cb2b435e682176",
+    "mtime": 1794529763.9608521,
+    "seen": 1794531451.3486679,
+    "ast_hash": "f6660231e6c9f46607ca7c5f175ed0ba",
     "semantic_hash": ""
   },
   "eslint.config.mjs": {
@@ -90,9 +90,9 @@
     "semantic_hash": ""
   },
   "scripts/seed-e2e.mjs": {
-    "mtime": 1794487552.6172757,
-    "seen": 1794489577.7055519,
-    "ast_hash": "38e1becd3e46ed734859d78a7b1a46e2",
+    "mtime": 1794529423.5097945,
+    "seen": 1794531451.348673,
+    "ast_hash": "1ec8e2f9ec089e6b24fd298df9618438",
     "semantic_hash": ""
   },
   "skills-lock.json": {
@@ -174,9 +174,9 @@
     "semantic_hash": ""
   },
   "src/app/[locale]/auth/actions.ts": {
-    "mtime": 1794489308.5808356,
-    "seen": 1794489577.705558,
-    "ast_hash": "ab8b8717df25e2039efc9dfdc25a9e3c",
+    "mtime": 1794529488.6226714,
+    "seen": 1794531451.348683,
+    "ast_hash": "00b93986d5f500bf069413050cccd3e7",
     "semantic_hash": ""
   },
   "src/app/[locale]/auth/auth-errors.test.ts": {
@@ -210,9 +210,9 @@
     "semantic_hash": ""
   },
   "src/app/[locale]/auth/login/page.tsx": {
-    "mtime": 1794489351.525026,
-    "seen": 1794489577.70556,
-    "ast_hash": "9177f904c2738437b3a96932627ccae5",
+    "mtime": 1794529689.45444,
+    "seen": 1794531451.348686,
+    "ast_hash": "af60a209726b06600102e4a3d0046713",
     "semantic_hash": ""
   },
   "src/app/[locale]/auth/reset-password/page.tsx": {
@@ -1476,15 +1476,15 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20250101000100_initial_schema.sql": {
-    "mtime": 1786992625.0409622,
-    "seen": 1794489591.702865,
-    "ast_hash": "986450b59090f112fc5a9b1c0993fc83",
+    "mtime": 1794530829.9122715,
+    "seen": 1794531451.348771,
+    "ast_hash": "143620a8dbe0fd236428ede3dc100de9",
     "semantic_hash": ""
   },
   "supabase/migrations/20250101000110_rls_policies.sql": {
-    "mtime": 1786992625.0410476,
-    "seen": 1794489591.702865,
-    "ast_hash": "32c6b48a6658114e0fd3c4533ff7d41b",
+    "mtime": 1794530882.7719529,
+    "seen": 1794531451.348772,
+    "ast_hash": "6bade7c20dca1bb80b05d650a1292da4",
     "semantic_hash": ""
   },
   "supabase/migrations/20250101000200_add_missing_columns.sql": {
@@ -1500,9 +1500,9 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20250101000300_customer_role.sql": {
-    "mtime": 1794486644.1359167,
-    "seen": 1794489591.702867,
-    "ast_hash": "c41559b1fd5639e5b1873e412ae6660c",
+    "mtime": 1794530882.7724686,
+    "seen": 1794531451.348774,
+    "ast_hash": "400c9394f0c4d096712429bf900d2ffe",
     "semantic_hash": ""
   },
   "supabase/migrations/20250101000310_public_booking_functions.sql": {
@@ -1524,15 +1524,15 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20250101000500_barber_services.sql": {
-    "mtime": 1786992625.0416074,
-    "seen": 1794489591.702868,
-    "ast_hash": "3abec795fee040822b54a840377c2dcf",
+    "mtime": 1794530924.3501132,
+    "seen": 1794531451.3487759,
+    "ast_hash": "a9768d4fc30705e3f92ac25c2b3e50a8",
     "semantic_hash": ""
   },
   "supabase/migrations/20250101000600_working_hours.sql": {
-    "mtime": 1786992625.0416727,
-    "seen": 1794489591.702869,
-    "ast_hash": "7f2748752036d6b61127bf827c0370f8",
+    "mtime": 1794530924.352373,
+    "seen": 1794531451.3487759,
+    "ast_hash": "927aef546f56c36ef0aa757238ef205d",
     "semantic_hash": ""
   },
   "supabase/migrations/20250101000700_payments_and_policies.sql": {
@@ -1542,15 +1542,15 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20250101000800_reviews.sql": {
-    "mtime": 1786992625.041834,
-    "seen": 1794489591.702869,
-    "ast_hash": "ced835037459d40c7cff27841f60324d",
+    "mtime": 1794530882.773384,
+    "seen": 1794531451.348777,
+    "ast_hash": "b8e54ccb147f4b6f32fdcb3ddb44b215",
     "semantic_hash": ""
   },
   "supabase/migrations/20250101000900_notifications.sql": {
-    "mtime": 1786992625.04192,
-    "seen": 1794489591.7028701,
-    "ast_hash": "13eef15ffff4d2cd8646e7aa6213a396",
+    "mtime": 1794530882.7735696,
+    "seen": 1794531451.348778,
+    "ast_hash": "8e3d8f751b88f5422f9ec829c2b35179",
     "semantic_hash": ""
   },
   "supabase/migrations/20250101001000_consolidate_shop_id_functions.sql": {
@@ -1578,21 +1578,21 @@
     "semantic_hash": ""
   },
   "supabase/migrations/20250101001400_working_hour_breaks_and_invites.sql": {
-    "mtime": 1787169747.929969,
-    "seen": 1794489591.702872,
-    "ast_hash": "0c7a637e2b64f8f4cd0b82a52a3f25ec",
+    "mtime": 1794530882.7739902,
+    "seen": 1794531451.34878,
+    "ast_hash": "8664eb6477ad59c45ec5063c1d1fea27",
     "semantic_hash": ""
   },
   "supabase/migrations/20250101001500_profiles_rls_hardening.sql": {
-    "mtime": 1787215615.028607,
-    "seen": 1794489591.702872,
-    "ast_hash": "26cb17d3721ab3315a24296fe53126d4",
+    "mtime": 1794530963.5198138,
+    "seen": 1794531451.348781,
+    "ast_hash": "8a81a4402ec86e780e24421aa7a1a565",
     "semantic_hash": ""
   },
   "supabase/migrations/20250101001600_production_hardening.sql": {
-    "mtime": 1794487641.062187,
-    "seen": 1794489591.702873,
-    "ast_hash": "22c196103078489cce27d6274cf97bbb",
+    "mtime": 1794545589.32213,
+    "seen": 1794545766.217252,
+    "ast_hash": "d4ab14f06dc66268ff2afcb206130fdb",
     "semantic_hash": ""
   },
   "supabase/seed.sql": {
@@ -1707,6 +1707,24 @@
     "mtime": 1794528379.3569965,
     "seen": 1794528655.7278411,
     "ast_hash": "3bb1a626f9efa0d461022a182ca889ec",
+    "semantic_hash": ""
+  },
+  "scripts/rehearse-prod-upgrade.sh": {
+    "mtime": 1794545643.098481,
+    "seen": 1794545766.2171571,
+    "ast_hash": "86144ad533a96faf98cf5827f0d299a7",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/20250101000150_default_api_grants.sql": {
+    "mtime": 1794529356.0150187,
+    "seen": 1794531451.348772,
+    "ast_hash": "e65d0e7c89e805e13a3ba54c0fccf415",
+    "semantic_hash": ""
+  },
+  "docs/FRESHA_PARITY_ROADMAP.md": {
+    "mtime": 1794545750.6796606,
+    "seen": 1794545766.217282,
+    "ast_hash": "384279b417e66bfe77d34a853e792bfd",
     "semantic_hash": ""
   },
   "package-lock.json": {

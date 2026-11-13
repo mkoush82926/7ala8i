@@ -1,10 +1,16 @@
 -- Halaqy MVP Schema
 -- Run this in the Supabase SQL Editor to create all tables
+--
+-- (Replay guards added 2026-11: production was built in the SQL editor and
+-- already has shops/profiles/services/clients/appointments/leads/daily_sales
+-- plus most of these policies. Every statement here is now IF NOT EXISTS /
+-- drop-then-create so `supabase db push --include-all` can replay this file on
+-- top of production; on a fresh database the result is unchanged.)
 
 -- ============================================
 -- SHOPS
 -- ============================================
-CREATE TABLE public.shops (
+CREATE TABLE IF NOT EXISTS public.shops (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   email TEXT,
@@ -21,7 +27,7 @@ CREATE TABLE public.shops (
 -- ============================================
 -- PROFILES (linked to auth.users)
 -- ============================================
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
   role TEXT NOT NULL DEFAULT 'shop_admin' CHECK (role IN ('shop_admin', 'barber')),
@@ -33,7 +39,7 @@ CREATE TABLE public.profiles (
 -- ============================================
 -- SERVICES
 -- ============================================
-CREATE TABLE public.services (
+CREATE TABLE IF NOT EXISTS public.services (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -48,7 +54,7 @@ CREATE TABLE public.services (
 -- ============================================
 -- BARBERS
 -- ============================================
-CREATE TABLE public.barbers (
+CREATE TABLE IF NOT EXISTS public.barbers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
   profile_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
@@ -60,7 +66,7 @@ CREATE TABLE public.barbers (
 -- ============================================
 -- CLIENTS
 -- ============================================
-CREATE TABLE public.clients (
+CREATE TABLE IF NOT EXISTS public.clients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -73,7 +79,7 @@ CREATE TABLE public.clients (
 -- ============================================
 -- APPOINTMENTS
 -- ============================================
-CREATE TABLE public.appointments (
+CREATE TABLE IF NOT EXISTS public.appointments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
   barber_id UUID NOT NULL REFERENCES public.barbers(id) ON DELETE CASCADE,
@@ -87,13 +93,13 @@ CREATE TABLE public.appointments (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_appointments_shop_date ON public.appointments(shop_id, date);
-CREATE INDEX idx_appointments_barber_date ON public.appointments(barber_id, date);
+CREATE INDEX IF NOT EXISTS idx_appointments_shop_date ON public.appointments(shop_id, date);
+CREATE INDEX IF NOT EXISTS idx_appointments_barber_date ON public.appointments(barber_id, date);
 
 -- ============================================
 -- LEADS
 -- ============================================
-CREATE TABLE public.leads (
+CREATE TABLE IF NOT EXISTS public.leads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -108,7 +114,7 @@ CREATE TABLE public.leads (
 -- ============================================
 -- DAILY SALES
 -- ============================================
-CREATE TABLE public.daily_sales (
+CREATE TABLE IF NOT EXISTS public.daily_sales (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
   appointment_id UUID REFERENCES public.appointments(id) ON DELETE SET NULL,
@@ -121,7 +127,7 @@ CREATE TABLE public.daily_sales (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_daily_sales_shop_date ON public.daily_sales(shop_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_daily_sales_shop_date ON public.daily_sales(shop_id, created_at);
 
 -- ============================================
 -- ROW LEVEL SECURITY
@@ -143,49 +149,64 @@ RETURNS UUID AS $$
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- SHOPS: users can read/update their own shop
+DROP POLICY IF EXISTS "Users can view own shop" ON public.shops;
 CREATE POLICY "Users can view own shop" ON public.shops
   FOR SELECT USING (id = public.get_user_shop_id());
+DROP POLICY IF EXISTS "Users can update own shop" ON public.shops;
 CREATE POLICY "Users can update own shop" ON public.shops
   FOR UPDATE USING (id = public.get_user_shop_id());
 
 -- PROFILES: users can read profiles in their shop
+DROP POLICY IF EXISTS "Users can view shop profiles" ON public.profiles;
 CREATE POLICY "Users can view shop profiles" ON public.profiles
   FOR SELECT USING (shop_id = public.get_user_shop_id());
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles
   FOR UPDATE USING (id = auth.uid());
 
 -- SERVICES: read by shop members, public read for booking
+DROP POLICY IF EXISTS "Shop members can manage services" ON public.services;
 CREATE POLICY "Shop members can manage services" ON public.services
   FOR ALL USING (shop_id = public.get_user_shop_id());
+DROP POLICY IF EXISTS "Public can read active services" ON public.services;
 CREATE POLICY "Public can read active services" ON public.services
   FOR SELECT USING (is_active = true);
 
 -- BARBERS: read by shop members, public read for booking
+DROP POLICY IF EXISTS "Shop members can manage barbers" ON public.barbers;
 CREATE POLICY "Shop members can manage barbers" ON public.barbers
   FOR ALL USING (shop_id = public.get_user_shop_id());
+DROP POLICY IF EXISTS "Public can read active barbers" ON public.barbers;
 CREATE POLICY "Public can read active barbers" ON public.barbers
   FOR SELECT USING (is_active = true);
 
 -- CLIENTS: shop members only
+DROP POLICY IF EXISTS "Shop members can manage clients" ON public.clients;
 CREATE POLICY "Shop members can manage clients" ON public.clients
   FOR ALL USING (shop_id = public.get_user_shop_id());
 -- Public can insert clients (from booking)
+DROP POLICY IF EXISTS "Public can create clients" ON public.clients;
 CREATE POLICY "Public can create clients" ON public.clients
   FOR INSERT WITH CHECK (true);
 
 -- APPOINTMENTS: shop members + public insert
+DROP POLICY IF EXISTS "Shop members can manage appointments" ON public.appointments;
 CREATE POLICY "Shop members can manage appointments" ON public.appointments
   FOR ALL USING (shop_id = public.get_user_shop_id());
+DROP POLICY IF EXISTS "Public can create appointments" ON public.appointments;
 CREATE POLICY "Public can create appointments" ON public.appointments
   FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public can read appointments for availability" ON public.appointments;
 CREATE POLICY "Public can read appointments for availability" ON public.appointments
   FOR SELECT USING (true);
 
 -- LEADS: shop members only
+DROP POLICY IF EXISTS "Shop members can manage leads" ON public.leads;
 CREATE POLICY "Shop members can manage leads" ON public.leads
   FOR ALL USING (shop_id = public.get_user_shop_id());
 
 -- DAILY SALES: shop members only
+DROP POLICY IF EXISTS "Shop members can manage sales" ON public.daily_sales;
 CREATE POLICY "Shop members can manage sales" ON public.daily_sales
   FOR ALL USING (shop_id = public.get_user_shop_id());
 
@@ -200,6 +221,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS on_shops_updated ON public.shops;
 CREATE TRIGGER on_shops_updated
   BEFORE UPDATE ON public.shops
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -236,6 +258,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
