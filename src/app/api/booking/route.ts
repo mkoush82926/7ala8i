@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { rateLimit, rateLimitKey, getClientIp } from "@/lib/rate-limit";
-import { AvailabilityQuerySchema, CreateBookingSchema } from "@/lib/validations";
+import { rateLimit, rateLimitKey, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
+import { AvailabilityQuerySchema } from "@/lib/validations";
+import { publicBookingSecurity, readOtpEnv } from "@/lib/otp/config";
+import { samePhone } from "@/lib/otp/phone";
+import { verifyCaptcha } from "@/lib/otp/turnstile";
 import {
   apiErrorCode,
   apiValidationError,
@@ -10,7 +13,9 @@ import {
 } from "@/lib/api-helpers";
 import type { BookingResult } from "@/lib/supabase/database.types";
 import { parseIdempotencyKey, runIdempotent } from "./idempotency";
-import { callRpc } from "./rpc";
+import { callRpc, callRpcLoose } from "./rpc";
+import { CreateBookingV2Schema, toRpcArgs } from "./schema";
+import { bookingDbError, bookingError } from "./errors";
 
 // Public columns only: anon may not select("*") on shops/profiles.
 const SHOP_COLUMNS = "id, name, address, currency, timezone, cancellation_policy_hours";
@@ -78,15 +83,43 @@ type CreateOutcome =
   | { ok: false; error: unknown };
 
 /**
+ * Phone verification gate (feature-flagged; see src/lib/otp/config.ts).
+ *   off      → nothing to check.
+ *   hook     → a one-time token from /api/booking/otp/verify (the RPC
+ *              consumes it), or a signed-in user whose phone is confirmed.
+ *   supabase → a signed-in user whose confirmed phone matches.
+ */
+async function phoneGate(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  mode: ReturnType<typeof publicBookingSecurity>["otpMode"],
+  phone: string,
+  otpToken: string | undefined,
+): Promise<"ok" | "required"> {
+  if (mode === "off") return "ok";
+  if (mode === "hook" && otpToken) return "ok";
+  try {
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user as { phone?: string | null; phone_confirmed_at?: string | null } | null | undefined;
+    if (user?.phone_confirmed_at && samePhone(user.phone, phone)) return "ok";
+  } catch {
+    // treated as not verified
+  }
+  return "required";
+}
+
+/**
  * POST /api/booking — create a public booking.
  * Price, end time, service name and the barber for "any" are decided by the
  * create_public_booking RPC; the client only sends what the customer chose.
  * Send an `Idempotency-Key` header (same value on retries) to avoid duplicates.
+ *
+ * Body: legacy { serviceIds[] , source } or v2 { items[{serviceId, variantId?,
+ * note?}], src?, entry?, otpToken?, captchaToken? } — see ./schema.ts.
  */
 export async function POST(req: NextRequest) {
   // Rate limit first, before any other network call.
   const ip = getClientIp(req);
-  const rl = await rateLimit(rateLimitKey("booking", ip), 10, 60);
+  const rl = await rateLimit(rateLimitKey("booking", ip), RATE_LIMITS.bookingIp.max, RATE_LIMITS.bookingIp.windowSec);
   if (!rl.success) return apiErrorCode("RATE_LIMITED", { retryAfter: rl.retryAfter });
 
   let body: unknown;
@@ -96,34 +129,45 @@ export async function POST(req: NextRequest) {
     return apiErrorCode("VALIDATION_FAILED");
   }
 
-  const parsed = CreateBookingSchema.safeParse(body);
+  const parsed = CreateBookingV2Schema.safeParse(body);
   if (!parsed.success) return apiValidationError(parsed.error);
-  const { shopId, serviceIds, barberId, clientName, clientPhone, startTime, source, notes } = parsed.data;
+  const input = parsed.data;
+
+  const phoneRl = await rateLimit(
+    rateLimitKey("booking", "phone", input.clientPhone.replace(/\D/g, "").slice(-9)),
+    RATE_LIMITS.bookingPhone.max * 2,
+    RATE_LIMITS.bookingPhone.windowSec,
+  );
+  if (!phoneRl.success) return apiErrorCode("RATE_LIMITED", { retryAfter: phoneRl.retryAfter });
 
   try {
+    const env = readOtpEnv();
+    const security = publicBookingSecurity(env);
+
+    if (security.turnstileSiteKey) {
+      const captcha = await verifyCaptcha(input.captchaToken, ip, env);
+      if (!captcha.ok) return bookingError("CAPTCHA_FAILED");
+    }
+
     const supabase = await createClient();
 
+    if ((await phoneGate(supabase, security.otpMode, input.clientPhone, input.otpToken)) === "required") {
+      return bookingError("OTP_REQUIRED");
+    }
+
+    const args = toRpcArgs(input);
     const create = async (): Promise<CreateOutcome> => {
-      const { data, error } = await callRpc(supabase, "create_public_booking", {
-        p_shop_id: shopId,
-        p_client_name: clientName,
-        p_client_phone: clientPhone,
-        p_service_ids: serviceIds,
-        p_barber_id: barberId,
-        p_start_time: startTime,
-        p_source: source,
-        p_notes: notes ?? null,
-      });
+      const { data, error } = await callRpcLoose<BookingResult>(supabase, "create_public_booking", args);
       if (error || !data) return { ok: false, error: error ?? new Error("create_public_booking returned no data") };
       return { ok: true, booking: data };
     };
 
     const idemKey = parseIdempotencyKey(req.headers.get("idempotency-key"));
     const { result, replayed } = idemKey
-      ? await runIdempotent(rateLimitKey("booking", ip, shopId, idemKey), create, (r) => r.ok)
+      ? await runIdempotent(rateLimitKey("booking", ip, input.shopId, idemKey), create, (r) => r.ok)
       : { result: await create(), replayed: false };
 
-    if (!result.ok) return dbErrorResponse("booking.create", result.error);
+    if (!result.ok) return bookingDbError("booking.create", result.error);
 
     return NextResponse.json(
       { success: true, appointment_id: result.booking.appointment_id, booking: result.booking },

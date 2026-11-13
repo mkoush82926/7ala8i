@@ -142,6 +142,7 @@ function UpcomingAppointments() {
       amount: a.price,
       currency,
       whenLabel: whenLabel(a.startTime),
+      barberId: a.barberId ?? null,
     });
 
   function renderActions(a: Appt, compact = false) {

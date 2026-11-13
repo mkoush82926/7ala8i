@@ -12,6 +12,9 @@ import {
   Copy,
   Download,
   ExternalLink,
+  Globe,
+  Receipt,
+  Wallet,
   Link2,
   Loader2,
   Plus,
@@ -33,6 +36,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ListSkeleton } from "@/components/ui/skeleton";
 import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
 import { cn } from "@/lib/utils";
+import { shopPath } from "@/components/shop/lib/slug";
 import {
   CURRENCIES,
   TIMEZONES,
@@ -97,6 +101,7 @@ export function SettingsPage() {
   const [shopErrors, setShopErrors] = useState<Partial<Record<ShopField, FieldError>>>({});
   const [shopStatus, setShopStatus] = useState<"loading" | "ready" | "error">("loading");
   const [savingShop, setSavingShop] = useState(false);
+  const [shopSlugs, setShopSlugs] = useState<{ slug: string | null; slug_ar: string | null }>({ slug: null, slug_ar: null });
   const shopDirty = isFormDirty(shopForm, shopSnapshot);
 
   const loadShop = useCallback(async () => {
@@ -118,6 +123,8 @@ export function SettingsPage() {
       (r) => r.shop_id === shopId,
     );
     const form = shopRowToForm({ ...(data as ShopRow), daily_goal: priv?.daily_goal ?? null }, shopName);
+    const slugRow = data as { slug?: string | null; slug_ar?: string | null };
+    setShopSlugs({ slug: slugRow.slug ?? null, slug_ar: slugRow.slug_ar ?? null });
     setShopSnapshot(form);
     setShopForm(form);
     setShopErrors({});
@@ -302,7 +309,8 @@ export function SettingsPage() {
 
   // ── Booking link + QR ──
   const origin = useSyncExternalStore(noopSubscribe, () => window.location.origin, () => "");
-  const bookingLink = `${origin}/${locale}/shop/${shopId}`;
+  // Pretty slug URL once loaded; the UUID URL still works (it 301-redirects to the slug).
+  const bookingLink = `${origin}${shopPath({ id: shopId ?? "", ...shopSlugs }, locale)}`;
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
   const posterQrCanvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
@@ -416,6 +424,13 @@ export function SettingsPage() {
     { id: "team", label: st.team, description: st.teamDesc, icon: Users },
   ];
   const activeTab = tabs.find((tb) => tb.id === view) ?? null;
+  // Dedicated pages (WS-1A public profile, WS-1F business settings).
+  const pageLinks: { href: string; label: string; description: string; icon: typeof Store }[] = [
+    { href: href("/settings/profile"), label: t.publicProfile.pageTitle, description: t.publicProfile.pageDesc, icon: Globe },
+    { href: href("/settings/hours"), label: t.settingsPages.hours, description: t.shifts.hoursPageSubtitle, icon: CalendarClock },
+    { href: href("/settings/payments"), label: t.settingsPages.payments, description: t.paymentSettings.pageSubtitle, icon: Wallet },
+    { href: href("/settings/tax"), label: t.settingsPages.tax, description: t.taxSettings.pageSubtitle, icon: Receipt },
+  ];
 
   const errorText = (field: ShopField, code: FieldError | undefined) => {
     if (!code) return undefined;
@@ -558,6 +573,23 @@ export function SettingsPage() {
                   </span>
                   <ChevronRight size={18} aria-hidden className="shrink-0 text-[var(--text-muted)] rtl:-scale-x-100" />
                 </button>
+              </li>
+            ))}
+            {pageLinks.map((link) => (
+              <li key={link.href} className="border-b border-[var(--border-subtle)] last:border-b-0">
+                <Link
+                  href={link.href}
+                  className="flex w-full items-center gap-4 px-4 py-4 text-start no-underline transition-colors hover:bg-[var(--bg-secondary)] focus-visible:bg-[var(--bg-secondary)] sm:px-6"
+                >
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
+                    <link.icon size={18} aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-[var(--text-primary)]">{link.label}</span>
+                    <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">{link.description}</span>
+                  </span>
+                  <ChevronRight size={18} aria-hidden className="shrink-0 text-[var(--text-muted)] rtl:-scale-x-100" />
+                </Link>
               </li>
             ))}
           </ul>

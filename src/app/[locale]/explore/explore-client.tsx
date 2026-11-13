@@ -23,6 +23,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
 import { coverForShop, shopInitials, summarizeRatings } from "../shop/shop-utils";
 import { filterShops, type ExploreShop } from "./explore-utils";
+import { shopPath } from "@/components/shop/lib/slug";
+import { ShopImage } from "@/components/shop/shop-image";
 
 function ShopCardSkeleton() {
   return (
@@ -38,7 +40,7 @@ function ShopCardSkeleton() {
 }
 
 export default function ExploreClient() {
-  const { FF, FFD, dir, t, isRTL, href, formatCurrency, formatDuration, formatNumber } = useTranslation();
+  const { FF, FFD, dir, t, isRTL, href, locale, formatCurrency, formatDuration, formatNumber } = useTranslation();
   const pathname = usePathname() || "";
   const [shops, setShops] = useState<ExploreShop[]>([]);
   const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
@@ -53,14 +55,27 @@ export default function ExploreClient() {
       const supabase = createClient();
       const [{ data: auth }, shopsRes] = await Promise.all([
         supabase.auth.getUser(),
-        supabase.from("shops").select("id, name, address, currency").order("name"),
+        supabase
+          .from("shops")
+          .select("id, name, address, currency, slug, slug_ar, cover_url")
+          .eq("is_published", true)
+          .eq("marketplace_visible", true)
+          .order("name"),
       ]);
       setIsLoggedIn(!!auth?.user);
       if (shopsRes.error) {
         setStatus("error");
         return;
       }
-      const rows = (shopsRes.data ?? []) as { id: string; name: string; address: string | null; currency: string | null }[];
+      const rows = (shopsRes.data ?? []) as {
+        id: string;
+        name: string;
+        address: string | null;
+        currency: string | null;
+        slug?: string | null;
+        slug_ar?: string | null;
+        cover_url?: string | null;
+      }[];
       const ids = rows.map((s) => s.id);
 
       let reviewRows: { shop_id: string; rating: number }[] = [];
@@ -92,6 +107,9 @@ export default function ExploreClient() {
             rating: ratings.count > 0 ? { avg: ratings.average, count: ratings.count } : null,
             cheapest: cheapest ? { price: Number(cheapest.price) || 0, duration: cheapest.duration } : null,
             serviceNames: shopServices.flatMap((r) => [r.name, r.name_ar ?? ""]).filter(Boolean),
+            slug: s.slug ?? null,
+            slug_ar: s.slug_ar ?? null,
+            coverUrl: s.cover_url ?? null,
           };
         }),
       );
@@ -288,7 +306,7 @@ export default function ExploreClient() {
             <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {filtered.map((shop, idx) => {
                 const cover = coverForShop(shop.id);
-                const shopHref = href(`/shop/${shop.id}`);
+                const shopHref = shopPath(shop, locale);
                 return (
                   <motion.li
                     key={shop.id}
@@ -303,9 +321,19 @@ export default function ExploreClient() {
                       className="relative aspect-[4/3] flex items-center justify-center overflow-hidden"
                       style={{ background: cover.bg }}
                     >
-                      <span className="text-[40px] font-black" style={{ color: cover.fg, fontFamily: FFD }}>
-                        {shopInitials(shop.name)}
-                      </span>
+                      {shop.coverUrl ? (
+                        <ShopImage
+                          src={shop.coverUrl}
+                          alt=""
+                          fill
+                          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <span className="text-[40px] font-black" style={{ color: cover.fg, fontFamily: FFD }}>
+                          {shopInitials(shop.name)}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex flex-col flex-1 p-5">

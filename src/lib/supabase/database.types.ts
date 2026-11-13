@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════
 // Database schema types — GENERATED from the local stack after
-// 20250101002000_gate0_booking_engine.sql:
+// 20250101002600_onboarding.sql:
 //   npx supabase gen types typescript --local > src/lib/supabase/database.types.ts
 // then re-append the "Convenience aliases" block at the bottom (hand-written).
 // ═══════════════════════════════════════════════════════
@@ -42,6 +42,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      amenities: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          name_ar: string
+          name_en: string
+          slug: string
+          sort: number
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar: string
+          name_en: string
+          slug: string
+          sort?: number
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string
+          name_en?: string
+          slug?: string
+          sort?: number
+        }
+        Relationships: []
+      }
+      appointment_services: {
+        Row: {
+          appointment_id: string
+          barber_id: string | null
+          client_note: string | null
+          created_at: string
+          duration: number
+          id: string
+          name: string | null
+          name_ar: string | null
+          price: number
+          service_id: string | null
+          shop_id: string
+          sort: number
+          variant_id: string | null
+        }
+        Insert: {
+          appointment_id: string
+          barber_id?: string | null
+          client_note?: string | null
+          created_at?: string
+          duration?: number
+          id?: string
+          name?: string | null
+          name_ar?: string | null
+          price?: number
+          service_id?: string | null
+          shop_id: string
+          sort?: number
+          variant_id?: string | null
+        }
+        Update: {
+          appointment_id?: string
+          barber_id?: string | null
+          client_note?: string | null
+          created_at?: string
+          duration?: number
+          id?: string
+          name?: string | null
+          name_ar?: string | null
+          price?: number
+          service_id?: string | null
+          shop_id?: string
+          sort?: number
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_services_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_services_barber_id_fkey"
+            columns: ["barber_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_services_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_services_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "service_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           amount_deposit: number | null
@@ -202,6 +319,7 @@ export type Database = {
           duration_override: number | null
           id: string
           is_active: boolean | null
+          price_override: number | null
           service_id: string
           updated_at: string | null
         }
@@ -211,6 +329,7 @@ export type Database = {
           duration_override?: number | null
           id?: string
           is_active?: boolean | null
+          price_override?: number | null
           service_id: string
           updated_at?: string | null
         }
@@ -220,6 +339,7 @@ export type Database = {
           duration_override?: number | null
           id?: string
           is_active?: boolean | null
+          price_override?: number | null
           service_id?: string
           updated_at?: string | null
         }
@@ -412,6 +532,51 @@ export type Database = {
           },
         ]
       }
+      booking_attribution: {
+        Row: {
+          appointment_id: string
+          barber_preselected: boolean
+          created_at: string
+          entry: string | null
+          phone_verified: boolean
+          shop_id: string
+          src: string | null
+        }
+        Insert: {
+          appointment_id: string
+          barber_preselected?: boolean
+          created_at?: string
+          entry?: string | null
+          phone_verified?: boolean
+          shop_id: string
+          src?: string | null
+        }
+        Update: {
+          appointment_id?: string
+          barber_preselected?: boolean
+          created_at?: string
+          entry?: string | null
+          phone_verified?: boolean
+          shop_id?: string
+          src?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_attribution_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_attribution_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cities: {
         Row: {
           created_at: string
@@ -548,7 +713,7 @@ export type Database = {
           },
         ]
       }
-      daily_sales: {
+      daily_sales_legacy: {
         Row: {
           amount: number
           appointment_id: string | null
@@ -759,6 +924,51 @@ export type Database = {
           },
         ]
       }
+      onboarding_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          data: Json
+          shop_id: string
+          started_by: string | null
+          step: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          data?: Json
+          shop_id: string
+          started_by?: string | null
+          step?: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          data?: Json
+          shop_id?: string
+          started_by?: string | null
+          step?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_progress_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_progress_started_by_fkey"
+            columns: ["started_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -779,6 +989,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          cliq_alias: string | null
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_system: boolean
+          kind: string
+          name_ar: string
+          name_en: string
+          qr_url: string | null
+          shop_id: string
+          sort: number
+          updated_at: string
+        }
+        Insert: {
+          cliq_alias?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          kind?: string
+          name_ar: string
+          name_en: string
+          qr_url?: string | null
+          shop_id: string
+          sort?: number
+          updated_at?: string
+        }
+        Update: {
+          cliq_alias?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          kind?: string
+          name_ar?: string
+          name_en?: string
+          qr_url?: string | null
+          shop_id?: string
+          sort?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -850,48 +1116,235 @@ export type Database = {
           },
         ]
       }
+      phone_verifications: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone_key: string
+          token_hash: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone_key: string
+          token_hash?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone_key?: string
+          token_hash?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      portfolio_items: {
+        Row: {
+          barber_id: string | null
+          blur_data: string | null
+          caption: string | null
+          caption_ar: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_featured: boolean
+          path: string
+          service_id: string | null
+          shop_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          barber_id?: string | null
+          blur_data?: string | null
+          caption?: string | null
+          caption_ar?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_featured?: boolean
+          path: string
+          service_id?: string | null
+          shop_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          barber_id?: string | null
+          blur_data?: string | null
+          caption?: string | null
+          caption_ar?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_featured?: boolean
+          path?: string
+          service_id?: string | null
+          shop_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_items_barber_id_fkey"
+            columns: ["barber_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_items_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          price: number
+          shop_id: string
+          sku: string | null
+          sort: number
+          track_stock: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          price?: number
+          shop_id: string
+          sku?: string | null
+          sort?: number
+          track_stock?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          price?: number
+          shop_id?: string
+          sku?: string | null
+          sort?: number
+          track_stock?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           auto_assignable: boolean
           avatar_url: string | null
+          bio_ar: string | null
+          bio_en: string | null
           created_at: string | null
           digit_preference: string
           full_name: string
+          handle: string | null
           id: string
+          is_public: boolean
+          languages: string[]
           online_bookable: boolean
           phone: string | null
           platform_role: string | null
           role: string
           shop_id: string | null
+          title_ar: string | null
+          title_en: string | null
           updated_at: string | null
+          years_experience: number | null
         }
         Insert: {
           auto_assignable?: boolean
           avatar_url?: string | null
+          bio_ar?: string | null
+          bio_en?: string | null
           created_at?: string | null
           digit_preference?: string
           full_name: string
+          handle?: string | null
           id: string
+          is_public?: boolean
+          languages?: string[]
           online_bookable?: boolean
           phone?: string | null
           platform_role?: string | null
           role?: string
           shop_id?: string | null
+          title_ar?: string | null
+          title_en?: string | null
           updated_at?: string | null
+          years_experience?: number | null
         }
         Update: {
           auto_assignable?: boolean
           avatar_url?: string | null
+          bio_ar?: string | null
+          bio_en?: string | null
           created_at?: string | null
           digit_preference?: string
           full_name?: string
+          handle?: string | null
           id?: string
+          is_public?: boolean
+          languages?: string[]
           online_bookable?: boolean
           phone?: string | null
           platform_role?: string | null
           role?: string
           shop_id?: string | null
+          title_ar?: string | null
+          title_en?: string | null
           updated_at?: string | null
+          years_experience?: number | null
         }
         Relationships: [
           {
@@ -920,6 +1373,32 @@ export type Database = {
           window_start?: string
         }
         Relationships: []
+      }
+      receipt_sequences: {
+        Row: {
+          last_no: number
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          last_no?: number
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          last_no?: number
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_sequences_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -976,6 +1455,384 @@ export type Database = {
           },
         ]
       }
+      sale_items: {
+        Row: {
+          barber_id: string | null
+          cart_discount: number
+          created_at: string
+          discount_amount: number
+          discount_reason: string | null
+          id: string
+          kind: string
+          line_total: number
+          name: string
+          name_ar: string | null
+          product_id: string | null
+          quantity: number
+          sale_id: string
+          service_id: string | null
+          shop_id: string
+          sort: number
+          tax_amount: number
+          tax_rate: number
+          unit_price: number
+          variant_id: string | null
+        }
+        Insert: {
+          barber_id?: string | null
+          cart_discount?: number
+          created_at?: string
+          discount_amount?: number
+          discount_reason?: string | null
+          id?: string
+          kind: string
+          line_total: number
+          name: string
+          name_ar?: string | null
+          product_id?: string | null
+          quantity?: number
+          sale_id: string
+          service_id?: string | null
+          shop_id: string
+          sort?: number
+          tax_amount?: number
+          tax_rate?: number
+          unit_price: number
+          variant_id?: string | null
+        }
+        Update: {
+          barber_id?: string | null
+          cart_discount?: number
+          created_at?: string
+          discount_amount?: number
+          discount_reason?: string | null
+          id?: string
+          kind?: string
+          line_total?: number
+          name?: string
+          name_ar?: string | null
+          product_id?: string | null
+          quantity?: number
+          sale_id?: string
+          service_id?: string | null
+          shop_id?: string
+          sort?: number
+          tax_amount?: number
+          tax_rate?: number
+          unit_price?: number
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_barber_id_fkey"
+            columns: ["barber_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "daily_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          method_code: string
+          method_id: string | null
+          reference: string | null
+          sale_id: string
+          shop_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method_code: string
+          method_id?: string | null
+          reference?: string | null
+          sale_id: string
+          shop_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method_code?: string
+          method_id?: string | null
+          reference?: string | null
+          sale_id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_payments_method_id_fkey"
+            columns: ["method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_payments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "daily_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_payments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_payments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_tips: {
+        Row: {
+          amount: number
+          barber_id: string | null
+          created_at: string
+          id: string
+          sale_id: string
+          shop_id: string
+        }
+        Insert: {
+          amount: number
+          barber_id?: string | null
+          created_at?: string
+          id?: string
+          sale_id: string
+          shop_id: string
+        }
+        Update: {
+          amount?: number
+          barber_id?: string | null
+          created_at?: string
+          id?: string
+          sale_id?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_tips_barber_id_fkey"
+            columns: ["barber_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_tips_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "daily_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_tips_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_tips_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          appointment_id: string | null
+          barber_name: string
+          client_id: string | null
+          client_name: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          discount_reason: string | null
+          discount_total: number
+          id: string
+          is_legacy: boolean
+          note: string | null
+          paid_total: number
+          payment_method: string | null
+          receipt_no: number | null
+          receipt_number: string | null
+          rounding_adjustment: number
+          sale_time: string
+          shop_id: string
+          status: string
+          subtotal: number
+          tax_number: string | null
+          tax_registered: boolean
+          tax_total: number
+          tip_total: number
+          total: number
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          barber_name?: string
+          client_id?: string | null
+          client_name?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount_reason?: string | null
+          discount_total?: number
+          id?: string
+          is_legacy?: boolean
+          note?: string | null
+          paid_total?: number
+          payment_method?: string | null
+          receipt_no?: number | null
+          receipt_number?: string | null
+          rounding_adjustment?: number
+          sale_time?: string
+          shop_id: string
+          status?: string
+          subtotal?: number
+          tax_number?: string | null
+          tax_registered?: boolean
+          tax_total?: number
+          tip_total?: number
+          total?: number
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          barber_name?: string
+          client_id?: string | null
+          client_name?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount_reason?: string | null
+          discount_total?: number
+          id?: string
+          is_legacy?: boolean
+          note?: string | null
+          paid_total?: number
+          payment_method?: string | null
+          receipt_no?: number | null
+          receipt_number?: string | null
+          rounding_adjustment?: number
+          sale_time?: string
+          shop_id?: string
+          status?: string
+          subtotal?: number
+          tax_number?: string | null
+          tax_registered?: boolean
+          tax_total?: number
+          tip_total?: number
+          total?: number
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_voided_by_fkey"
+            columns: ["voided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_categories: {
         Row: {
           created_at: string
@@ -1015,18 +1872,83 @@ export type Database = {
         }
         Relationships: []
       }
+      service_variants: {
+        Row: {
+          created_at: string
+          duration: number
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          price: number
+          service_id: string
+          shop_id: string
+          sort: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration: number
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          price: number
+          service_id: string
+          shop_id: string
+          sort?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration?: number
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          price?: number
+          service_id?: string
+          shop_id?: string
+          sort?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_variants_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_variants_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
+          audience: string
           buffer_minutes: number
           category_id: string | null
+          client_note_ar: string | null
+          client_note_en: string | null
           created_at: string | null
+          description_ar: string | null
+          description_en: string | null
           duration: number
           icon: string | null
           id: string
           is_active: boolean | null
+          location_type: string
           name: string
           name_ar: string | null
+          online_bookable: boolean
           price: number
+          price_type: string
           processing_minutes: number
           processing_offset_minutes: number
           shop_id: string
@@ -1034,16 +1956,24 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          audience?: string
           buffer_minutes?: number
           category_id?: string | null
+          client_note_ar?: string | null
+          client_note_en?: string | null
           created_at?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           duration: number
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          location_type?: string
           name: string
           name_ar?: string | null
+          online_bookable?: boolean
           price: number
+          price_type?: string
           processing_minutes?: number
           processing_offset_minutes?: number
           shop_id: string
@@ -1051,16 +1981,24 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          audience?: string
           buffer_minutes?: number
           category_id?: string | null
+          client_note_ar?: string | null
+          client_note_en?: string | null
           created_at?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           duration?: number
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          location_type?: string
           name?: string
           name_ar?: string | null
+          online_bookable?: boolean
           price?: number
+          price_type?: string
           processing_minutes?: number
           processing_offset_minutes?: number
           shop_id?: string
@@ -1142,6 +2080,99 @@ export type Database = {
           },
         ]
       }
+      shop_amenities: {
+        Row: {
+          amenity_id: string
+          created_at: string
+          shop_id: string
+        }
+        Insert: {
+          amenity_id: string
+          created_at?: string
+          shop_id: string
+        }
+        Update: {
+          amenity_id?: string
+          created_at?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_amenities_amenity_id_fkey"
+            columns: ["amenity_id"]
+            isOneToOne: false
+            referencedRelation: "amenities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_amenities_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_photos: {
+        Row: {
+          alt_ar: string | null
+          alt_en: string | null
+          blur_data: string | null
+          created_at: string
+          created_by: string | null
+          height: number | null
+          id: string
+          path: string
+          shop_id: string
+          sort_order: number
+          updated_at: string
+          width: number | null
+        }
+        Insert: {
+          alt_ar?: string | null
+          alt_en?: string | null
+          blur_data?: string | null
+          created_at?: string
+          created_by?: string | null
+          height?: number | null
+          id?: string
+          path: string
+          shop_id: string
+          sort_order?: number
+          updated_at?: string
+          width?: number | null
+        }
+        Update: {
+          alt_ar?: string | null
+          alt_en?: string | null
+          blur_data?: string | null
+          created_at?: string
+          created_by?: string | null
+          height?: number | null
+          id?: string
+          path?: string
+          shop_id?: string
+          sort_order?: number
+          updated_at?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_photos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_photos_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shops: {
         Row: {
           address: string | null
@@ -1149,6 +2180,7 @@ export type Database = {
           booking_window_days: number
           cancellation_fee_percent: number | null
           cancellation_policy_hours: number | null
+          cash_rounding: number
           city_id: string | null
           cover_url: string | null
           created_at: string | null
@@ -1161,6 +2193,8 @@ export type Database = {
           email: string | null
           google_maps_url: string | null
           id: string
+          important_info_ar: string | null
+          important_info_en: string | null
           instagram: string | null
           is_published: boolean
           is_tax_registered: boolean
@@ -1177,12 +2211,16 @@ export type Database = {
           organization_id: string
           phone: string | null
           published_at: string | null
+          receipt_footer_ar: string | null
+          receipt_footer_en: string | null
+          receipt_prefix: string | null
           require_deposit: boolean | null
           settings: Json | null
           slot_interval_minutes: number
           slug: string
           slug_ar: string | null
           tax_number: string | null
+          tax_rate: number
           timezone: string
           updated_at: string | null
           whatsapp: string | null
@@ -1193,6 +2231,7 @@ export type Database = {
           booking_window_days?: number
           cancellation_fee_percent?: number | null
           cancellation_policy_hours?: number | null
+          cash_rounding?: number
           city_id?: string | null
           cover_url?: string | null
           created_at?: string | null
@@ -1205,6 +2244,8 @@ export type Database = {
           email?: string | null
           google_maps_url?: string | null
           id?: string
+          important_info_ar?: string | null
+          important_info_en?: string | null
           instagram?: string | null
           is_published?: boolean
           is_tax_registered?: boolean
@@ -1221,12 +2262,16 @@ export type Database = {
           organization_id: string
           phone?: string | null
           published_at?: string | null
+          receipt_footer_ar?: string | null
+          receipt_footer_en?: string | null
+          receipt_prefix?: string | null
           require_deposit?: boolean | null
           settings?: Json | null
           slot_interval_minutes?: number
           slug: string
           slug_ar?: string | null
           tax_number?: string | null
+          tax_rate?: number
           timezone?: string
           updated_at?: string | null
           whatsapp?: string | null
@@ -1237,6 +2282,7 @@ export type Database = {
           booking_window_days?: number
           cancellation_fee_percent?: number | null
           cancellation_policy_hours?: number | null
+          cash_rounding?: number
           city_id?: string | null
           cover_url?: string | null
           created_at?: string | null
@@ -1249,6 +2295,8 @@ export type Database = {
           email?: string | null
           google_maps_url?: string | null
           id?: string
+          important_info_ar?: string | null
+          important_info_en?: string | null
           instagram?: string | null
           is_published?: boolean
           is_tax_registered?: boolean
@@ -1265,12 +2313,16 @@ export type Database = {
           organization_id?: string
           phone?: string | null
           published_at?: string | null
+          receipt_footer_ar?: string | null
+          receipt_footer_en?: string | null
+          receipt_prefix?: string | null
           require_deposit?: boolean | null
           settings?: Json | null
           slot_interval_minutes?: number
           slug?: string
           slug_ar?: string | null
           tax_number?: string | null
+          tax_rate?: number
           timezone?: string
           updated_at?: string | null
           whatsapp?: string | null
@@ -1504,7 +2556,84 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      barber_rating_view: {
+        Row: {
+          barber_id: string | null
+          rating_avg: number | null
+          rating_count: number | null
+          shop_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_barber_id_fkey"
+            columns: ["barber_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_sales: {
+        Row: {
+          amount: number | null
+          appointment_id: string | null
+          barber_name: string | null
+          client_name: string | null
+          created_at: string | null
+          id: string | null
+          payment_method: string | null
+          sale_time: string | null
+          service_name: string | null
+          shop_id: string | null
+        }
+        Insert: {
+          amount?: never
+          appointment_id?: string | null
+          barber_name?: string | null
+          client_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          payment_method?: never
+          sale_time?: string | null
+          service_name?: never
+          shop_id?: string | null
+        }
+        Update: {
+          amount?: never
+          appointment_id?: string | null
+          barber_name?: string | null
+          client_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          payment_method?: never
+          sale_time?: string | null
+          service_name?: never
+          shop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invite: {
@@ -1513,6 +2642,18 @@ export type Database = {
           role: string
           shop_id: string
         }[]
+      }
+      add_sale_payments: {
+        Args: { p_payments: Json; p_sale_id: string }
+        Returns: Json
+      }
+      appointment_cart_lines: {
+        Args: { p_appointment_id: string }
+        Returns: Json
+      }
+      appointment_services_rebuild: {
+        Args: { p_appointment_id: string }
+        Returns: undefined
       }
       availability_allowed_ignore: {
         Args: { p_appointment_id: string; p_shop_id: string }
@@ -1563,6 +2704,7 @@ export type Database = {
         }
         Returns: unknown
       }
+      barber_is_public: { Args: { p_barber_id: string }; Returns: boolean }
       barber_is_working: {
         Args: {
           p_barber_id: string
@@ -1576,6 +2718,8 @@ export type Database = {
         Args: { p_barber_id: string; p_service_ids: string[] }
         Returns: boolean
       }
+      booking_source_category: { Args: { p_src: string }; Returns: string }
+      can_write_shop_media: { Args: { p_name: string }; Returns: boolean }
       cancel_customer_booking: {
         Args: { p_appointment_id: string; p_reason?: string }
         Returns: Json
@@ -1593,6 +2737,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      checkout_sale: { Args: { p_payload: Json }; Returns: Json }
       complete_appointment_sale: {
         Args: {
           p_amount?: number
@@ -1604,9 +2749,13 @@ export type Database = {
       create_public_booking: {
         Args: {
           p_barber_id: string
+          p_captcha_token?: string
           p_client_name: string
           p_client_phone: string
+          p_entry?: string
+          p_items?: Json
           p_notes?: string
+          p_otp_token?: string
           p_service_ids: string[]
           p_shop_id: string
           p_source?: string
@@ -1614,6 +2763,7 @@ export type Database = {
         }
         Returns: Json
       }
+      create_shop_from_wizard: { Args: { payload: Json }; Returns: Json }
       current_platform_role: { Args: never; Returns: string }
       current_profile_shop_and_role: {
         Args: never
@@ -1639,6 +2789,18 @@ export type Database = {
           local_date: string
           local_time: string
           start_time: string
+        }[]
+      }
+      get_barber_reviews: {
+        Args: { p_barber_id: string; p_limit?: number }
+        Returns: {
+          comment: string
+          created_at: string
+          id: string
+          rating: number
+          reviewer_name: string
+          service_name: string
+          service_name_ar: string
         }[]
       }
       get_busy_slots: {
@@ -1701,6 +2863,7 @@ export type Database = {
           tax_number: string
         }[]
       }
+      get_onboarding_state: { Args: never; Returns: Json }
       get_profile_phones: {
         Args: never
         Returns: {
@@ -1708,12 +2871,15 @@ export type Database = {
           phone: string
         }[]
       }
+      get_sale_receipt: { Args: { p_sale_id: string }; Returns: Json }
+      get_shop_publish_checklist: { Args: { p_shop_id: string }; Returns: Json }
       get_user_shop_id: { Args: never; Returns: string }
       guess_service_category: {
         Args: { p_name: string; p_name_ar?: string }
         Returns: string
       }
       is_admin_of_profile: { Args: { p_profile_id: string }; Returns: boolean }
+      is_admin_of_shop: { Args: { p_shop_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
       is_platform_staff: { Args: never; Returns: boolean }
       is_shop_admin: { Args: never; Returns: boolean }
@@ -1729,6 +2895,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_staff_of_shop: { Args: { p_shop_id: string }; Returns: boolean }
       link_customer_client: { Args: never; Returns: string }
       mask_phone: { Args: { p: string }; Returns: string }
       my_client_ids: { Args: never; Returns: string[] }
@@ -1748,6 +2915,25 @@ export type Database = {
         }[]
       }
       normalize_ar: { Args: { p: string }; Returns: string }
+      onboarding_avatar: { Args: { p_value: string }; Returns: string }
+      onboarding_parse_time: {
+        Args: { p_field: string; p_value: string }
+        Returns: string
+      }
+      onboarding_shop_eligible: {
+        Args: { p_shop_id: string }
+        Returns: boolean
+      }
+      onboarding_text: {
+        Args: { p_max: number; p_value: string }
+        Returns: string
+      }
+      otp_issue: {
+        Args: { p_phone: string; p_ttl_seconds?: number }
+        Returns: Json
+      }
+      otp_phone_key: { Args: { p_phone: string }; Returns: string }
+      otp_verify: { Args: { p_code: string; p_phone: string }; Returns: Json }
       pick_any_barber: {
         Args: {
           p_ignore_appointment_id?: string
@@ -1758,12 +2944,79 @@ export type Database = {
         }
         Returns: string
       }
+      pos_checkout: {
+        Args: { p_internal?: boolean; p_payload: Json }
+        Returns: Json
+      }
+      pos_discount_amount: {
+        Args: { p_base: number; p_spec: Json }
+        Returns: number
+      }
+      pos_require_staff: {
+        Args: { p_shop_id: string }
+        Returns: {
+          auto_assignable: boolean
+          avatar_url: string | null
+          bio_ar: string | null
+          bio_en: string | null
+          created_at: string | null
+          digit_preference: string
+          full_name: string
+          handle: string | null
+          id: string
+          is_public: boolean
+          languages: string[]
+          online_bookable: boolean
+          phone: string | null
+          platform_role: string | null
+          role: string
+          shop_id: string | null
+          title_ar: string | null
+          title_en: string | null
+          updated_at: string | null
+          years_experience: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      profile_unique_handle: {
+        Args: { p_base: string; p_profile_id: string }
+        Returns: string
+      }
       request_ip: { Args: never; Returns: string }
+      reschedule_booking: {
+        Args: {
+          p_barber_id?: string
+          p_date: string
+          p_id: string
+          p_start: string
+        }
+        Returns: Json
+      }
+      sale_receipt_json: { Args: { p_sale_id: string }; Returns: Json }
+      save_onboarding_progress: {
+        Args: { p_data: Json; p_step: string }
+        Returns: string
+      }
+      seed_default_payment_methods: {
+        Args: { p_shop_id: string }
+        Returns: undefined
+      }
       seed_staff_defaults: {
         Args: { p_profile_id: string; p_shop_id: string }
         Returns: undefined
       }
       shop_daily_goal: { Args: { p_shop_id: string }; Returns: number }
+      shop_is_public: { Args: { p_shop_id: string }; Returns: boolean }
+      shop_publish_checklist_internal: {
+        Args: { p_shop_id: string }
+        Returns: Json
+      }
+      shop_publish_missing: { Args: { p_shop_id: string }; Returns: string[] }
       shop_unique_slug: {
         Args: { p_arabic?: boolean; p_base: string; p_shop_id: string }
         Returns: string
@@ -1780,6 +3033,10 @@ export type Database = {
           email: string
           phone_digits: string
         }[]
+      }
+      void_sale: {
+        Args: { p_reason: string; p_refund?: boolean; p_sale_id: string }
+        Returns: Json
       }
     }
     Enums: {
@@ -1916,6 +3173,8 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+
 
 
 // ─── Convenience aliases (hand-written; keep when regenerating) ───

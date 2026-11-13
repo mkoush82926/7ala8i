@@ -6,9 +6,12 @@ import { X } from "lucide-react";
 import { BookingEngine } from "@/components/booking/booking-engine";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/hooks/use-translation";
+import type { PublicBookingSecurity } from "@/lib/otp/config";
 
 /** Page chrome for /[locale]/book/[shop_id]: one header, one exit, the engine. */
-export function BookingShell({ shopId, shopName }: { shopId: string; shopName: string | null }) {
+export function BookingShell({
+  shopId, shopName, security,
+}: { shopId: string; shopName: string | null; security?: PublicBookingSecurity }) {
   const { t, FF, dir, href } = useTranslation();
   const shopHref = href(`/shop/${shopId}`);
 
@@ -67,7 +70,7 @@ export function BookingShell({ shopId, shopName }: { shopId: string; shopName: s
 
       <main id="booking-main" style={{ paddingTop: 20, paddingBottom: 32 }}>
         <div style={{ maxWidth: 760, width: "100%", margin: "0 auto", padding: "0 16px" }}>
-          {/* BookingEngine reads ?service= and ?reschedule= via useSearchParams. */}
+          {/* BookingEngine reads ?service(s)= ?staff= ?src= ?entry= ?reschedule= via useSearchParams. */}
           <Suspense
             fallback={
               <div role="status" aria-busy="true" aria-label={t.common.loading}>
@@ -77,7 +80,7 @@ export function BookingShell({ shopId, shopName }: { shopId: string; shopName: s
               </div>
             }
           >
-            <BookingEngine shopId={shopId} />
+            <BookingEngine shopId={shopId} security={security} />
           </Suspense>
         </div>
       </main>

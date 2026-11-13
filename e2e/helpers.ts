@@ -48,18 +48,34 @@ export async function completeBooking(page: Page, shopId: string, serviceName: s
   await page.getByRole("button", { name: new RegExp(escapeRegExp(serviceName)) }).first().click();
   await page.getByRole("button", { name: en.common.next, exact: false }).click();
 
-  // With a single barber the wizard pre-selects them and hides "Any barber".
-  const anyBarber = page.getByRole("button", { name: new RegExp(escapeRegExp(en.booking.anyBarber)) });
-  if (await anyBarber.isVisible({ timeout: 1500 }).catch(() => false)) await anyBarber.click();
-  await page.getByRole("button", { name: en.common.next, exact: false }).click();
-
   // Specs book in parallel: take a random enabled slot so they don't race
   // for the same one.
   const slots = page.getByRole("button", { name: /\d{1,2}:\d{2}\s?(AM|PM)/i, disabled: false });
+
+  // With a single barber the wizard pre-selects them and goes straight to
+  // the time step; with several it shows the barber step ("Any barber").
+  const anyBarber = page.getByRole("button", { name: new RegExp(escapeRegExp(en.booking.anyBarber)) });
+  await slots.first().or(anyBarber.first()).waitFor();
+  if (await anyBarber.first().isVisible().catch(() => false)) {
+    await anyBarber.first().click();
+    const next = page.getByRole("button", { name: en.common.next, exact: false });
+    if (await next.isEnabled({ timeout: 1500 }).catch(() => false)) await next.click();
+  }
+
   await slots.first().waitFor();
   const count = await slots.count();
   await slots.nth(Math.floor(Math.random() * Math.min(count, 8))).click();
-  await page.getByRole("button", { name: en.common.next, exact: false }).click();
+  // Picking a time now advances to the review step on its own; older builds
+  // needed an explicit "Next".
+  const nameField = page.getByLabel(en.booking.yourName);
+  const onReview = await nameField
+    .first()
+    .waitFor({ state: "visible", timeout: 5000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!onReview) {
+    await page.getByRole("button", { name: en.common.next, exact: false }).click();
+  }
 
   // Prefer the accessible label; fall back to the field type so a copy or
   // placeholder change in the wizard doesn't break the flow.

@@ -78,4 +78,18 @@ describe("roleRedirect", () => {
       expect(roleRedirect(p, "shop_admin")).toBeNull();
     }
   });
+
+  it("lets barbers edit their public card under settings", () => {
+    expect(roleRedirect("/settings/profile", "barber")).toBeNull();
+    expect(roleRedirect("/settings/profile", null)).toBeNull();
+    expect(roleRedirect("/settings/payments", "barber")).toBe("/my-day");
+    expect(roleRedirect("/settings/profilex", "barber")).toBe("/my-day");
+  });
+
+  it("lets customers open public barber pages and the owner wizard", () => {
+    for (const p of ["/barber/sami", "/b/my-shop", "/start"]) {
+      expect(roleRedirect(p, "customer")).toBeNull();
+      expect(isPublicPath(p)).toBe(true);
+    }
+  });
 });

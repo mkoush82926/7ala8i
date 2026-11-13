@@ -33,7 +33,7 @@ export const TIMEZONES = [
  * (no column SELECT grant), so it comes from the get_my_shop_private RPC.
  */
 export const SHOP_SETTINGS_COLUMNS =
-  "name, description, email, phone, whatsapp, instagram, address, google_maps_url, currency, timezone, cancellation_policy_hours, cancellation_fee_percent, require_deposit, deposit_type, deposit_value";
+  "name, description, email, phone, whatsapp, instagram, address, google_maps_url, currency, timezone, cancellation_policy_hours, cancellation_fee_percent, require_deposit, deposit_type, deposit_value, slug, slug_ar";
 
 export interface ShopForm {
   name: string;

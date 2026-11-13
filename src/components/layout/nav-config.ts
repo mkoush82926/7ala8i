@@ -70,6 +70,9 @@ export interface RailGroup {
   items: readonly NavItem[];
 }
 
+/** Sub-pages of an admin-only item that every staff role may open. */
+export const STAFF_PATHS: readonly string[] = ["/settings/profile"];
+
 const byId = (id: NavId) => NAV_ITEMS.find((i) => i.id === id)!;
 
 export const RAIL_GROUPS: readonly RailGroup[] = [
@@ -121,6 +124,9 @@ export function visibleNavItems(role: ShellRole | null): NavItem[] {
  * the config does not know at all are allowed (the page/RLS decides).
  */
 export function canAccessPath(role: ShellRole | null, path: string): boolean {
+  // Barbers edit their own public card and portfolio here (WS-1A); keep in
+  // sync with STAFF_ALLOWED_ROUTES in src/middleware.ts.
+  if (role && STAFF_PATHS.some((p) => isNavActive(p, path))) return true;
   const item = findNavItem(path);
   if (!item) return true;
   if (!role) return false;

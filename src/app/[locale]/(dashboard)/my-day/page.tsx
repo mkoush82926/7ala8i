@@ -221,6 +221,7 @@ export default function MyDayPage() {
                         amount: appt.price,
                         currency,
                         whenLabel: time,
+                        barberId: appt.barber_id ?? null,
                       })
                     }
                     className="btn flex-1 min-h-[52px] rounded-xl border-0 bg-[var(--accent-mint)] text-[14px] font-bold text-[var(--on-accent)] hover:opacity-90 disabled:opacity-60"

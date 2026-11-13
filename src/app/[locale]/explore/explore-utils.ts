@@ -7,6 +7,10 @@ export interface ExploreShop {
   cheapest: { price: number; duration: number } | null;
   /** Active service names (English + Arabic) for search. */
   serviceNames: string[];
+  slug?: string | null;
+  slug_ar?: string | null;
+  /** First shop photo (shops.cover_url), shown on the card when set. */
+  coverUrl?: string | null;
 }
 
 /** Lower-cases, strips Arabic diacritics/tatweel and unifies alef/ya/ta-marbuta forms. */

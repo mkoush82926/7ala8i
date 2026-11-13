@@ -18,3 +18,19 @@ export async function callRpc<F extends FunctionName>(
   const { data, error } = await c.rpc(fn, args);
   return { data: (data ?? null) as RpcReturns<F> | null, error: error ?? null };
 }
+
+/**
+ * Untyped RPC call for functions or arguments newer than database.types.ts
+ * (booking v2: p_items, reschedule_booking, …). Same result shape.
+ */
+export async function callRpcLoose<T = unknown>(
+  client: unknown,
+  fn: string,
+  args: Record<string, unknown>,
+): Promise<{ data: T | null; error: unknown }> {
+  const c = client as {
+    rpc: (fn: string, args: unknown) => PromiseLike<{ data: unknown; error: unknown }>;
+  };
+  const { data, error } = await c.rpc(fn, args);
+  return { data: (data ?? null) as T | null, error: error ?? null };
+}

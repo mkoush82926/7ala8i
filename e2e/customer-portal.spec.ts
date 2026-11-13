@@ -8,5 +8,6 @@ test("a completed booking appears in the customer's bookings list", async ({ pag
   await completeBooking(page, shopId, serviceName);
 
   await page.goto("/en/customer/bookings");
-  await expect(page.getByText(new RegExp(serviceName))).toBeVisible({ timeout: 15_000 });
+  // booking.spec books in parallel as the same customer, so there can be two rows.
+  await expect(page.getByText(new RegExp(serviceName)).first()).toBeVisible({ timeout: 15_000 });
 });

@@ -71,6 +71,15 @@ export async function seedE2E({
     await supabase.from("rate_limits").delete().neq("key", "");
   }
 
+  // New shops start as drafts (marketplace spine); the public pages under
+  // test need a published shop. The service role bypasses the publish guard.
+  const { error: publishErr } = await supabase
+    .from("shops")
+    .update({ is_published: true })
+    .eq("id", profile.shop_id)
+    .eq("is_published", false);
+  if (publishErr) throw new Error(`Could not publish the seeded shop: ${publishErr.message}`);
+
   const { data: service, error: serviceErr } = await supabase
     .from("services")
     .select("id, name")

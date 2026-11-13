@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useId, useMemo, useRef, useState } from "react";
+import React, { useId, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   DndContext,
@@ -21,31 +21,28 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Plus, Search, Clock, GripVertical, Pencil, Trash2, Loader2, Sparkles } from "lucide-react";
+import { Plus, Search, Clock, GripVertical, Pencil, Trash2, Sparkles, SlidersHorizontal, Home, EyeOff, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
-import { useServices, type ServiceItem, type ServiceInputData } from "@/hooks/use-services";
+import { useServices, type ServiceItem } from "@/hooks/use-services";
 import { useWorkspaceStore } from "@/store/workspace-store";
-import { ServiceSchema } from "@/lib/validations";
-import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ListSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-
-const ICONS = ["✂️", "💈", "🧔", "💇", "🪒", "🧴", "💆", "🎨", "✨", "👑", "🧖", "💅"];
-
-type FormField = "name" | "name_ar" | "duration" | "price";
-type FormErrors = Partial<Record<FormField, string>>;
+import { joinMeta, formatJOD, formatMinutesRange } from "@/lib/format";
+import type { ServiceWrite, VariantDraft } from "@/lib/queries/services";
+import { ServiceEditor } from "./service-editor";
+import { BookingRulesDialog } from "./booking-rules-dialog";
 
 const iconBtn =
   "inline-flex size-11 lg:size-9 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-brass)] cursor-pointer";
 
 export default function ServicesPage() {
-  const { t, isRTL, FF, formatCurrency, formatDuration } = useTranslation();
+  const { t, isRTL, FF, locale, formatCurrency } = useTranslation();
   const svc = t.services;
   const {
-    services, loading, error, currency, refetch,
-    addService, updateService, removeService, toggleActive, reorderServices,
+    services, categories, rules, legacy, loading, error, currency, refetch,
+    addService, updateService, removeService, toggleActive, reorderServices, saveRules,
   } = useServices();
   const role = useWorkspaceStore((s) => s.role);
   const hydrated = useWorkspaceStore((s) => s.hydrated);
@@ -53,19 +50,9 @@ export default function ServicesPage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
   const [pendingDelete, setPendingDelete] = useState<ServiceItem | null>(null);
-
-  // Form state
-  const [name, setName] = useState("");
-  const [nameAr, setNameAr] = useState("");
-  const [duration, setDuration] = useState("30");
-  const [price, setPrice] = useState("");
-  const [icon, setIcon] = useState("✂️");
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [saving, setSaving] = useState(false);
-  const nameRef = useRef<HTMLInputElement>(null);
-  const formId = useId();
   const searchId = useId();
 
   const query = searchTerm.trim().toLowerCase();
@@ -83,78 +70,39 @@ export default function ServicesPage() {
 
   const displayName = (s: ServiceItem) => (isRTL && s.name_ar ? s.name_ar : s.name);
 
-  function resetForm(s: ServiceItem | null) {
-    setEditingService(s);
-    setName(s?.name ?? "");
-    setNameAr(s?.name_ar ?? "");
-    setDuration(String(s?.duration ?? 30));
-    setPrice(s ? String(s.price) : "");
-    setIcon(s?.icon || "✂️");
-    setErrors({});
-  }
+  const money = (n: number) =>
+    (currency || "JOD").toUpperCase() === "JOD" ? formatJOD(n, { locale, trimZeros: true }) : formatCurrency(n, currency);
+
+  /** "30–45 min · from 5 JD · 3 options" */
+  const metaFor = (s: ServiceItem) => {
+    const durations = s.variants.length ? s.variants.map((v) => v.duration) : [s.duration];
+    const prices = s.variants.length ? s.variants.map((v) => v.price) : [s.price];
+    const min = Math.min(...prices);
+    const priceLabel =
+      s.price_type === "free" ? svc.priceFree
+      : s.price_type === "from" || min !== Math.max(...prices) ? interpolate(svc.fromPriceShort, { price: money(min) })
+      : money(min);
+    return joinMeta([
+      formatMinutesRange(Math.min(...durations), Math.max(...durations), locale),
+      priceLabel,
+      s.variants.length ? interpolate(svc.optionsCount, { count: s.variants.length }) : null,
+    ]);
+  };
 
   function openAdd() {
-    resetForm(null);
+    setEditingService(null);
     setShowForm(true);
   }
 
   function openEdit(s: ServiceItem) {
-    resetForm(s);
+    setEditingService(s);
     setShowForm(true);
   }
 
-  function closeForm() {
-    if (saving) return;
-    setShowForm(false);
-  }
-
-  function validate(): ServiceInputData | null {
-    const parsed = ServiceSchema.safeParse({
-      name,
-      name_ar: nameAr.trim() || null,
-      duration: duration.trim() === "" ? Number.NaN : Number(duration),
-      price: price.trim() === "" ? Number.NaN : Number(price),
-    });
-    if (parsed.success) {
-      setErrors({});
-      return {
-        name: parsed.data.name,
-        name_ar: parsed.data.name_ar ?? null,
-        duration: parsed.data.duration,
-        price: parsed.data.price,
-        icon,
-      };
-    }
-    const next: FormErrors = {};
-    for (const issue of parsed.error.issues) {
-      const field = issue.path[0] as FormField;
-      if (next[field]) continue;
-      next[field] =
-        field === "name" ? svc.errName
-        : field === "name_ar" ? svc.errNameAr
-        : field === "duration" ? svc.errDuration
-        : svc.errPrice;
-    }
-    setErrors(next);
-    // Move focus to the first invalid field.
-    const first = (["name", "name_ar", "duration", "price"] as FormField[]).find((f) => next[f]);
-    if (first) document.getElementById(`${formId}-${first}`)?.focus();
-    return null;
-  }
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (saving) return;
-    const data = validate();
-    if (!data) return;
-    setSaving(true);
-    const ok = editingService ? await updateService(editingService.id, data) : await addService(data);
-    setSaving(false);
-    // Keep the dialog (and the typed values) open when the save failed.
-    if (ok) {
-      setShowForm(false);
-      setEditingService(null);
-    }
+  async function handleSave(write: ServiceWrite, variants: VariantDraft[]) {
+    return editingService
+      ? updateService(editingService.id, write, legacy ? undefined : variants)
+      : addService(write, variants);
   }
 
   async function confirmDelete() {
@@ -196,18 +144,6 @@ export default function ServicesPage() {
     void reorderServices(arrayMove(ids, from, to));
   }
 
-  const fieldError = (f: FormField) =>
-    errors[f] ? (
-      <p id={`${formId}-${f}-error`} className="field-error" role="alert">
-        {errors[f]}
-      </p>
-    ) : null;
-  const fieldA11y = (f: FormField) => ({
-    id: `${formId}-${f}`,
-    "aria-invalid": errors[f] ? true : undefined,
-    "aria-describedby": errors[f] ? `${formId}-${f}-error` : undefined,
-  });
-
   const rows = filtered.map((service) => (
     <ServiceRow
       key={service.id}
@@ -216,7 +152,11 @@ export default function ServicesPage() {
       isAdmin={isAdmin}
       title={displayName(service)}
       subtitle={service.name_ar ? (isRTL ? service.name : service.name_ar) : null}
-      meta={`${formatDuration(service.duration)} · ${formatCurrency(service.price, currency)}`}
+      meta={metaFor(service)}
+      badges={{
+        home: service.location_type === "home" ? svc.locationHome : null,
+        hidden: service.is_active && !service.online_bookable ? svc.hiddenOnline : null,
+      }}
       fontFamily={FF}
       labels={{
         reorder: interpolate(svc.reorderHandle, { name: displayName(service) }),
@@ -225,6 +165,7 @@ export default function ServicesPage() {
         toggle: `${svc.active}: ${displayName(service)}`,
         inactive: svc.inactive,
         durationLabel: svc.duration,
+        variants: svc.sectionVariants,
       }}
       onEdit={() => openEdit(service)}
       onDelete={() => setPendingDelete(service)}
@@ -269,6 +210,18 @@ export default function ServicesPage() {
               className="h-11 w-full rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] ps-10 pe-4 text-base font-medium text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all focus:outline-none focus:shadow-[var(--shadow-focus)] sm:text-sm"
             />
           </div>
+          {isAdmin && !legacy && (
+            <button
+              type="button"
+              onClick={() => setShowRules(true)}
+              aria-label={svc.bookingRules}
+              title={svc.bookingRules}
+              className="btn btn-secondary shrink-0 px-3 sm:px-4 text-[14px] font-bold"
+            >
+              <SlidersHorizontal size={16} aria-hidden />
+              <span className="hidden md:inline">{svc.bookingRules}</span>
+            </button>
+          )}
           {isAdmin && (
             <button
               type="button"
@@ -313,7 +266,6 @@ export default function ServicesPage() {
       ) : (
         <div
           className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]"
-          aria-busy={saving || undefined}
         >
           {canReorder ? (
             <DndContext
@@ -332,127 +284,17 @@ export default function ServicesPage() {
         </div>
       )}
 
-      {/* Add / Edit dialog */}
-      <Dialog
+      <ServiceEditor
         open={showForm}
-        onClose={closeForm}
-        title={editingService ? svc.editService : svc.addService}
-        initialFocusRef={nameRef}
-        closeOnBackdrop={!saving}
-        closeOnEscape={!saving}
-        footer={
-          <DialogFooter>
-            <button type="button" className="btn btn-secondary" onClick={closeForm} disabled={saving}>
-              {t.common.cancel}
-            </button>
-            <button type="submit" form={formId} className="btn btn-primary font-bold" disabled={saving} aria-busy={saving || undefined}>
-              {saving ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
-              {editingService ? svc.saveChanges : svc.addService}
-            </button>
-          </DialogFooter>
-        }
-      >
-        <form id={formId} onSubmit={handleSave} noValidate className="flex flex-col gap-5">
-          {/* Icon picker */}
-          <fieldset>
-            <legend className="field-label">{svc.icon}</legend>
-            <div className="flex flex-wrap gap-2">
-              {ICONS.map((ic) => (
-                <button
-                  key={ic}
-                  type="button"
-                  onClick={() => setIcon(ic)}
-                  aria-pressed={icon === ic}
-                  className={cn(
-                    "flex size-11 cursor-pointer items-center justify-center rounded-[var(--radius-buttons)] border text-lg transition-all",
-                    icon === ic
-                      ? "border-[var(--accent-brass)] bg-[var(--bg-secondary)]"
-                      : "border-transparent bg-[var(--bg-secondary)]/60 hover:border-[var(--border-primary)]",
-                  )}
-                >
-                  <span aria-hidden>{ic}</span>
-                  <span className="sr-only">{`${svc.icon} ${ICONS.indexOf(ic) + 1}`}</span>
-                </button>
-              ))}
-            </div>
-          </fieldset>
+        service={editingService}
+        categories={categories}
+        currency={currency}
+        legacy={legacy}
+        onClose={() => setShowForm(false)}
+        onSave={handleSave}
+      />
 
-          <div>
-            <label htmlFor={`${formId}-name`} className="field-label">
-              {svc.serviceName} <span aria-hidden>*</span>
-            </label>
-            <input
-              ref={nameRef}
-              {...fieldA11y("name")}
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              maxLength={100}
-              autoComplete="off"
-              className="field-input"
-              placeholder={svc.namePlaceholder}
-            />
-            {fieldError("name")}
-          </div>
-
-          <div>
-            <label htmlFor={`${formId}-name_ar`} className="field-label">
-              {svc.serviceNameAr}
-            </label>
-            <input
-              {...fieldA11y("name_ar")}
-              type="text"
-              value={nameAr}
-              onChange={(e) => setNameAr(e.target.value)}
-              dir="rtl"
-              lang="ar"
-              maxLength={100}
-              autoComplete="off"
-              className="field-input"
-              placeholder={svc.nameArPlaceholder}
-            />
-            {fieldError("name_ar")}
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2">
-            <div>
-              <label htmlFor={`${formId}-duration`} className="field-label">
-                {svc.duration} ({svc.minutes})
-              </label>
-              <input
-                {...fieldA11y("duration")}
-                type="number"
-                inputMode="numeric"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                min={5}
-                max={480}
-                step={5}
-                className="field-input"
-              />
-              {fieldError("duration")}
-            </div>
-            <div>
-              <label htmlFor={`${formId}-price`} className="field-label">
-                {svc.price} ({currency}) <span aria-hidden>*</span>
-              </label>
-              <input
-                {...fieldA11y("price")}
-                type="number"
-                inputMode="decimal"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                required
-                min={0}
-                step="0.5"
-                className="field-input"
-              />
-              {fieldError("price")}
-            </div>
-          </div>
-        </form>
-      </Dialog>
+      <BookingRulesDialog open={showRules} rules={rules} onClose={() => setShowRules(false)} onSave={saveRules} />
 
       {/* Delete / archive confirmation */}
       <ConfirmDialog
@@ -478,6 +320,7 @@ interface ServiceRowProps {
   title: string;
   subtitle: string | null;
   meta: string;
+  badges: { home: string | null; hidden: string | null };
   fontFamily: string;
   labels: {
     reorder: string;
@@ -486,6 +329,7 @@ interface ServiceRowProps {
     toggle: string;
     inactive: string;
     durationLabel: string;
+    variants: string;
   };
   onEdit: () => void;
   onDelete: () => void;
@@ -525,7 +369,7 @@ function SortableServiceRow(props: ServiceRowProps) {
 }
 
 function ServiceRowBody({
-  service, isAdmin, title, subtitle, meta, fontFamily, labels,
+  service, isAdmin, title, subtitle, meta, badges, fontFamily, labels,
   onEdit, onDelete, onToggle, rowRef, style, dragging, handle,
 }: ServiceRowProps & {
   rowRef?: (el: HTMLElement | null) => void;
@@ -564,12 +408,22 @@ function ServiceRowBody({
               {labels.inactive}
             </span>
           )}
+          {badges.hidden && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--bg-secondary)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
+              <EyeOff size={11} aria-hidden /> {badges.hidden}
+            </span>
+          )}
+          {badges.home && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--bg-secondary)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
+              <Home size={11} aria-hidden /> {badges.home}
+            </span>
+          )}
         </div>
         {subtitle && <p className="mt-0.5 truncate text-xs text-[var(--text-muted)]">{subtitle}</p>}
         <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] tabular-nums">
-          <Clock size={12} aria-hidden />
+          {service.variants.length ? <Layers size={12} aria-hidden /> : <Clock size={12} aria-hidden />}
           <span className="sr-only">{labels.durationLabel}:</span>
-          {meta}
+          <span className="truncate">{meta}</span>
         </p>
       </div>
 

@@ -47,6 +47,12 @@ export interface MockShop {
   timezone: string;
   cancellation_policy_hours: number;
   cancellation_fee_percent: number;
+  /** Marketplace spine columns (explore filters on these). */
+  is_published: boolean;
+  marketplace_visible: boolean;
+  slug: string | null;
+  slug_ar: string | null;
+  cover_url: string | null;
 }
 
 const SHOP_DEFAULTS = {
@@ -55,6 +61,12 @@ const SHOP_DEFAULTS = {
   timezone: "Asia/Amman",
   cancellation_policy_hours: 12,
   cancellation_fee_percent: 0,
+  is_published: true,
+  marketplace_visible: true,
+  // UUID URLs in mock mode (no slug route resolution without a database).
+  slug: null,
+  slug_ar: null,
+  cover_url: null,
 } as const;
 
 export const MOCK_SHOPS: MockShop[] = [

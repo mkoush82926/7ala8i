@@ -165,7 +165,8 @@ export default async function LandingPage({ params }: Props) {
   const Forward = isRTL ? ArrowLeft : ArrowRight;
   const year = new Date().getFullYear();
   const href = (path: string) => (path === "/" ? `/${locale}` : `/${locale}${path}`);
-  const ownerSignup = `${href("/auth/signup")}?role=shop_admin`;
+  // Owners go straight to the shop setup wizard (WS-1G).
+  const ownerSignup = href("/start");
 
   const pillars: { icon: LucideIcon; title: string; desc: string }[] = [
     { icon: CalendarDays, title: L.pillarManage, desc: L.pillarManageDesc },

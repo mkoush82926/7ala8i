@@ -32,15 +32,23 @@ export const PUBLIC_ROUTES = [
   "/terms",
   "/privacy",
   "/policy",
+  // Barber booking pages (WS-1A) and the shop-owner signup wizard (WS-1G).
+  "/barber",
+  "/b",
+  "/start",
 ] as const;
 
 /** Where a signed-in customer may go (everything else sends them to /customer). */
-export const CUSTOMER_ROUTES = ["/customer", "/explore", "/book", "/shop", "/auth", "/join"] as const;
+// "/start" lets a signed-in customer see the wizard's "use an owner account" screen.
+export const CUSTOMER_ROUTES = ["/customer", "/explore", "/book", "/shop", "/barber", "/b", "/auth", "/join", "/start"] as const;
 
 /** Staff pages only a shop_admin may open; barbers are sent to their day view. */
 // Keep in sync with the ADMIN entries in src/components/layout/nav-config.ts.
 // RLS remains the real boundary; this only spares barbers dead-end pages.
 export const ADMIN_ONLY_ROUTES = ["/settings", "/services", "/team", "/analytics", "/leads"] as const;
+
+/** Pages below an admin-only route that barbers may still open (they edit their own card there). */
+export const STAFF_ALLOWED_ROUTES = ["/settings/profile"] as const;
 
 type AppRole = "shop_admin" | "barber" | "customer";
 
@@ -71,7 +79,13 @@ export function roleRedirect(path: string, role: AppRole | null): string | null 
   }
   // Staff (or an unknown role) never see the customer portal.
   if (matchesRoute(path, "/customer")) return "/";
-  if (role !== "shop_admin" && ADMIN_ONLY_ROUTES.some((r) => matchesRoute(path, r))) return "/my-day";
+  if (
+    role !== "shop_admin" &&
+    ADMIN_ONLY_ROUTES.some((r) => matchesRoute(path, r)) &&
+    !STAFF_ALLOWED_ROUTES.some((r) => matchesRoute(path, r))
+  ) {
+    return "/my-day";
+  }
   return null;
 }
 

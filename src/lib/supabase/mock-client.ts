@@ -339,6 +339,30 @@ function mockRpc(fn: string, args: Record<string, unknown>): RpcResult {
       const rows = (MOCK_PROFILES as unknown as Row[]).filter((p) => p.shop_id === MOCK_ADMIN_PROFILE.shop_id);
       return { data: rows.map((p) => ({ id: p.id, phone: (p.phone as string | null | undefined) ?? null })), error: null };
     }
+    case "get_shop_publish_checklist": {
+      // Mirrors shop_publish_checklist_internal() for the mock seed: the
+      // essentials are there, the WS-1A media items are not.
+      const shop = MOCK_SHOPS.find((s) => s.id === args.p_shop_id);
+      if (!shop) return rpcError("SHOP_NOT_FOUND");
+      const items = {
+        name: !!shop.name.trim(),
+        services: MOCK_SERVICES.some((sv) => (sv as { shop_id?: string }).shop_id === shop.id),
+        hours: true,
+        location: !!shop.address.trim(),
+        contact: !!(shop.phone || shop.whatsapp),
+        photos: false,
+        description: !!shop.description,
+        bilingual: false,
+        pin: false,
+        team: false,
+        amenities: false,
+        portfolio: false,
+      };
+      return {
+        data: { items, is_published: shop.is_published, marketplace_visible: shop.marketplace_visible, published_at: null, slug: shop.slug },
+        error: null,
+      };
+    }
     case "get_invite_by_token":
       return { data: [], error: null };
     case "accept_invite":

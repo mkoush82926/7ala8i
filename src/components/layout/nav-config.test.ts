@@ -48,6 +48,9 @@ describe("nav-config", () => {
     expect(canAccessPath("shop_admin", "/settings")).toBe(true);
     expect(canAccessPath(null, "/calendar")).toBe(false);
     expect(canAccessPath(null, "/unknown-page")).toBe(true);
+    expect(canAccessPath("barber", "/settings/profile")).toBe(true);
+    expect(canAccessPath("barber", "/settings/payments")).toBe(false);
+    expect(canAccessPath(null, "/settings/profile")).toBe(false);
     expect(homePathFor("barber")).toBe("/my-day");
     expect(homePathFor("shop_admin")).toBe("/");
   });

@@ -114,9 +114,23 @@ BEGIN
             ((v_today - 7) + time '11:00') AT TIME ZONE v_tz, ((v_today - 7) + time '11:45') AT TIME ZONE v_tz,
             'completed', 12, 'JOD', 'paid', 'cash', 12, 12, 'online')
     RETURNING id INTO v_past;
-    INSERT INTO public.daily_sales (shop_id, appointment_id, client_name, service_name, barber_name, amount, payment_method, sale_time, created_at)
-    VALUES (v_shop1, v_past, 'Yousef Rami', 'Premium Haircut', 'Sami Haddad', 12, 'cash', '11:45',
-            ((v_today - 7) + time '11:45') AT TIME ZONE v_tz);
+    -- daily_sales is a read-only view over sales since 20250101002500 (WS-1F).
+    WITH sale AS (
+      INSERT INTO public.sales (shop_id, client_id, appointment_id, status, currency, subtotal, discount_total,
+                                tax_total, tip_total, total, paid_total, payment_method, client_name, barber_name,
+                                sale_time, completed_at, created_at, updated_at)
+      VALUES (v_shop1, v_client_me, v_past, 'paid', 'JOD', 12, 0, 0, 0, 12, 12, 'cash', 'Yousef Rami', 'Sami Haddad',
+              '11:45', ((v_today - 7) + time '11:45') AT TIME ZONE v_tz,
+              ((v_today - 7) + time '11:45') AT TIME ZONE v_tz, ((v_today - 7) + time '11:45') AT TIME ZONE v_tz)
+      RETURNING id
+    ), item AS (
+      INSERT INTO public.sale_items (sale_id, shop_id, kind, service_id, barber_id, name, quantity, unit_price, line_total, tax_rate, tax_amount)
+      SELECT sale.id, v_shop1, 'service', v_svc_cut, u_sami, 'Premium Haircut', 1, 12, 12, 0, 0 FROM sale
+      RETURNING sale_id
+    )
+    INSERT INTO public.sale_payments (sale_id, shop_id, method_id, method_code, amount)
+    SELECT sale.id, v_shop1, (SELECT pm.id FROM public.payment_methods pm WHERE pm.shop_id = v_shop1 AND pm.code = 'cash' LIMIT 1), 'cash', 12
+    FROM sale;
     INSERT INTO public.reviews (shop_id, client_id, appointment_id, rating, comment, reviewer_name)
     VALUES (v_shop1, v_client_me, v_past, 5, 'Sharp fade and a friendly team.', 'Yousef R.');
 
@@ -145,4 +159,7 @@ BEGIN
     VALUES (v_shop1, 'Basel Nour', '+962790001122', 'new', 15, 0),
            (v_shop1, 'Fadi Karam', '@fadi.k', 'contacted', 20, 0);
   END IF;
+
+  -- ── Demo shops are public (new shops start as drafts since the marketplace spine) ──
+  UPDATE public.shops SET is_published = true WHERE NOT is_published;
 END $$;
