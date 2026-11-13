@@ -1,7 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type Theme = "dark" | "light";
+export type Theme = "dark" | "light";
+
+/** localStorage key used by the persist middleware (and the no-flash init script). */
+export const THEME_STORAGE_KEY = "halaqy-theme-v2";
 
 interface ThemeState {
   theme: Theme;
@@ -13,10 +16,10 @@ export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
       theme: "light",
-      setTheme: (theme) => set({ theme }),
+      setTheme: (theme) => set({ theme: theme === "dark" ? "dark" : "light" }),
       toggleTheme: () =>
         set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
     }),
-    { name: "halaqy-theme-v2" },
+    { name: THEME_STORAGE_KEY },
   ),
 );

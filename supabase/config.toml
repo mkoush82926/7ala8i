@@ -68,6 +68,8 @@ schema_paths = []
 enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
+# Resolves to supabase/seed.sql (self-contained local demo data). The root-level
+# /seed.sql is a legacy, project-specific script and is not loaded.
 sql_paths = ["./seed.sql"]
 
 [db.network_restrictions]
@@ -223,6 +225,9 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
+# Local dev keeps this off (GoTrue auto-confirms, so email_confirmed_at is set).
+# PRODUCTION MUST HAVE IT ON: link_customer_client() and the one-time link
+# cleanup trust only confirmed emails/phones (Dashboard → Auth → Providers → Email).
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false

@@ -1,139 +1,139 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback } from "react";
+import { useSupabase } from "@/hooks/use-supabase";
+import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { useWorkspaceStore } from "@/store/workspace-store";
+import {
+  getClients,
+  createClientRecord,
+  updateClientRecord,
+  softDeleteClient,
+  restoreClient,
+  type ClientInput,
+  type ClientRow,
+} from "@/lib/queries/clients";
 
-export interface ClientData {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  notes: string;
-  source: string;
-  visits: number;
-  totalSpend: number;
-  lastVisit: string;
-  avatar: string;
+/** Stable, UI-mappable reasons a client mutation failed. */
+export type ClientMutationErrorCode =
+  | "DUPLICATE"
+  | "FORBIDDEN"
+  | "NOT_FOUND"
+  | "NO_SHOP"
+  | "UNKNOWN";
+
+export class ClientMutationError extends Error {
+  code: ClientMutationErrorCode;
+  constructor(code: ClientMutationErrorCode, message?: string) {
+    super(message ?? code);
+    this.name = "ClientMutationError";
+    this.code = code;
+  }
 }
 
-const MOCK_CLIENTS: ClientData[] = [
-  { id: "1", name: "Tariq Mansour", phone: "+962791234567", email: "tariq@email.com", notes: "", source: "", visits: 24, totalSpend: 312, lastVisit: "2 days ago", avatar: "TM" },
-  { id: "2", name: "Sami Khalil", phone: "+962791234568", email: "sami@email.com", notes: "", source: "", visits: 18, totalSpend: 245, lastVisit: "5 days ago", avatar: "SK" },
-  { id: "3", name: "Rami Abu-Said", phone: "+962791234569", email: "rami@email.com", notes: "", source: "", visits: 31, totalSpend: 420, lastVisit: "1 day ago", avatar: "RA" },
-  { id: "4", name: "Nabil Darwish", phone: "+962791234570", email: "nabil@email.com", notes: "", source: "", visits: 12, totalSpend: 168, lastVisit: "1 week ago", avatar: "ND" },
-  { id: "5", name: "Walid Khoury", phone: "+962791234571", email: "walid@email.com", notes: "", source: "", visits: 8, totalSpend: 96, lastVisit: "3 days ago", avatar: "WK" },
-  { id: "6", name: "Bassem Hani", phone: "+962791234572", email: "bassem@email.com", notes: "", source: "", visits: 15, totalSpend: 198, lastVisit: "4 days ago", avatar: "BH" },
-  { id: "7", name: "Mazen Sabbagh", phone: "+962791234573", email: "mazen@email.com", notes: "", source: "", visits: 42, totalSpend: 580, lastVisit: "Today", avatar: "MS" },
-  { id: "8", name: "Fadi Nassar", phone: "+962791234574", email: "fadi@email.com", notes: "", source: "", visits: 6, totalSpend: 78, lastVisit: "2 weeks ago", avatar: "FN" },
-];
-
-function getInitials(name: string) {
-  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+/** Maps a PostgREST / Postgres error to a ClientMutationErrorCode. */
+export function toClientMutationError(err: unknown): ClientMutationError {
+  if (err instanceof ClientMutationError) return err;
+  const e = (err ?? {}) as { code?: string; message?: string };
+  switch (e.code) {
+    case "23505":
+      return new ClientMutationError("DUPLICATE", e.message);
+    case "42501":
+      return new ClientMutationError("FORBIDDEN", e.message);
+    case "PGRST116":
+      // .single() found no row: RLS hid it or it was already removed.
+      return new ClientMutationError("NOT_FOUND", e.message);
+    default:
+      return new ClientMutationError("UNKNOWN", e.message);
+  }
 }
 
-function timeAgo(dateStr: string): string {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const days = Math.floor(diffMs / 86400000);
-  if (days === 0) return "Today";
-  if (days === 1) return "1 day ago";
-  if (days < 7) return `${days} days ago`;
-  if (days < 14) return "1 week ago";
-  return `${Math.floor(days / 7)} weeks ago`;
+export interface ClientsPage {
+  rows: ClientRow[];
+  count: number;
 }
 
-export function useClients() {
-  const [clients, setClients] = useState<ClientData[]>([]);
-  const [loading, setLoading] = useState(true);
+/**
+ * Paginated, searchable client list for the current shop, plus mutations.
+ * Mutations throw a ClientMutationError on failure and refetch on success.
+ * Soft-deleted clients are excluded everywhere.
+ */
+export function useClients({ page = 1, search = "" }: { page?: number; search?: string } = {}) {
   const shopId = useWorkspaceStore((s) => s.shopId);
-  const supabase = useRef(createClient()).current;
+  const supabase = useSupabase();
 
-  const fetchClients = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("shop_id", shopId)
-        .order("updated_at", { ascending: false });
+  const query = useSupabaseQuery<ClientsPage>(
+    async () => {
+      const { data, error, count } = await getClients(supabase, shopId, page, search);
+      return {
+        data: { rows: (data ?? []) as ClientRow[], count: count ?? 0 },
+        error,
+      };
+    },
+    [supabase, shopId, page, search],
+    { enabled: !!shopId },
+  );
 
-      if (error || !data || data.length === 0) {
-        setClients([]);
-        setLoading(false);
-        return;
-      }
+  const { refetch } = query;
 
-      setClients(data.map((c) => ({
-        id: c.id,
-        name: c.name,
-        phone: c.phone || "",
-        email: c.email || "",
-        notes: c.notes || "",
-        source: c.source || "",
-        visits: 0,
-        totalSpend: Number(c.total_spend) || 0,
-        lastVisit: c.updated_at ? timeAgo(c.updated_at) : "Unknown",
-        avatar: getInitials(c.name),
-      })));
-    } catch {
-      setClients([]);
-    }
-    setLoading(false);
-  }, [supabase, shopId]);
+  const requireShop = useCallback(() => {
+    if (!shopId) throw new ClientMutationError("NO_SHOP");
+    return shopId;
+  }, [shopId]);
 
-  useEffect(() => { fetchClients(); }, [fetchClients]);
+  const addClient = useCallback(
+    async (input: ClientInput): Promise<ClientRow> => {
+      const sid = requireShop();
+      const { data, error } = await createClientRecord(supabase, sid, input);
+      if (error || !data) throw toClientMutationError(error);
+      refetch();
+      return data as ClientRow;
+    },
+    [supabase, requireShop, refetch],
+  );
 
-  const addClient = useCallback(async (client: { name: string; phone: string; email: string; notes: string }) => {
-    const tempId = `temp-${Date.now()}`;
-    const newClient: ClientData = {
-      id: tempId,
-      name: client.name,
-      phone: client.phone,
-      email: client.email,
-      notes: client.notes,
-      source: "",
-      visits: 0,
-      totalSpend: 0,
-      lastVisit: "Just now",
-      avatar: getInitials(client.name),
-    };
+  const updateClient = useCallback(
+    async (id: string, input: ClientInput): Promise<ClientRow> => {
+      const sid = requireShop();
+      const { data, error } = await updateClientRecord(supabase, sid, id, input);
+      if (error || !data) throw toClientMutationError(error);
+      refetch();
+      return data as ClientRow;
+    },
+    [supabase, requireShop, refetch],
+  );
 
-    setClients((prev) => [newClient, ...prev]);
+  const deleteClient = useCallback(
+    async (id: string): Promise<void> => {
+      const sid = requireShop();
+      const { error } = await softDeleteClient(supabase, sid, id);
+      if (error) throw toClientMutationError(error);
+      refetch();
+    },
+    [supabase, requireShop, refetch],
+  );
 
-    try {
-      const { data } = await supabase
-        .from("clients")
-        .insert({ shop_id: shopId, name: client.name, phone: client.phone, email: client.email, notes: client.notes })
-        .select()
-        .single();
+  const restore = useCallback(
+    async (id: string): Promise<void> => {
+      const sid = requireShop();
+      const { error } = await restoreClient(supabase, sid, id);
+      if (error) throw toClientMutationError(error);
+      refetch();
+    },
+    [supabase, requireShop, refetch],
+  );
 
-      if (data) {
-        setClients((prev) => prev.map((c) => c.id === tempId ? { ...c, id: data.id } : c));
-      }
-    } catch { /* optimistic stays */ }
-  }, [supabase, shopId]);
-
-  const updateClient = useCallback(async (id: string, updates: Partial<ClientData>) => {
-    setClients((prev) => prev.map((c) => c.id === id ? { ...c, ...updates, avatar: updates.name ? getInitials(updates.name) : c.avatar } : c));
-
-    try {
-      const dbUpdates: Record<string, unknown> = {};
-      if (updates.name !== undefined) dbUpdates.name = updates.name;
-      if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
-      if (updates.email !== undefined) dbUpdates.email = updates.email;
-      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
-      await supabase.from("clients").update(dbUpdates).eq("id", id);
-    } catch { /* optimistic stays */ }
-  }, [supabase]);
-
-  const deleteClient = useCallback(async (id: string) => {
-    setClients((prev) => prev.filter((c) => c.id !== id));
-    try {
-      await supabase.from("clients").delete().eq("id", id);
-    } catch { /* optimistic stays */ }
-  }, [supabase]);
-
-  return { clients, loading, addClient, updateClient, deleteClient, refetch: fetchClients };
+  return {
+    clients: query.data?.rows ?? [],
+    totalCount: query.data?.count ?? 0,
+    loading: query.loading,
+    initialLoading: query.initialLoading,
+    refreshing: query.refreshing,
+    error: query.error,
+    refetch,
+    addClient,
+    updateClient,
+    deleteClient,
+    restoreClient: restore,
+  };
 }

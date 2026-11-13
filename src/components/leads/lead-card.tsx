@@ -4,177 +4,99 @@ import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "framer-motion";
-import { GripVertical, Phone, DollarSign, ChevronRight } from "lucide-react";
+import { GripVertical, Phone, Wallet } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { Lead } from "@/lib/types";
 import { useTranslation } from "@/hooks/use-translation";
+import { initialsOf } from "@/components/calendar/calendar-utils";
 
 interface LeadCardProps {
   lead: Lead;
   onClick: () => void;
+  /** Drag is disabled for read-only viewers (barbers). */
+  draggable?: boolean;
 }
 
-/* ─────────────────────────────────────────────────────────────────
-   Best Practices Applied:
-   1. Good contrast — white card on #f7f9fb bg + border + hover-shadow
-   2. Font sizes — 14px name (bold), 12px notes, 11px meta
-   3. Spacing system — 4px base unit: 16px padding, 12px gap, 12px meta
-   4. Fixed height — min-h defined so empty-content cards stay consistent
-   5. Card interactions — default / hover / active / dragging states
-   6. Content variation — graceful fallback when phone/value absent
-───────────────────────────────────────────────────────────────── */
-export function LeadCard({ lead, onClick }: LeadCardProps) {
-  const { t } = useTranslation();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: lead.id });
+/**
+ * Pipeline card. The whole card is the drag source (pointer: 5px move,
+ * touch: long-press, keyboard: Space) and Enter opens the lead.
+ */
+export function LeadCard({ lead, onClick, draggable = true }: LeadCardProps) {
+  const { t, formatCurrency, formatDate } = useTranslation();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: lead.id,
+    disabled: !draggable,
+  });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" && !isDragging) {
+      e.preventDefault();
+      onClick();
+      return;
+    }
+    listeners?.onKeyDown?.(e);
   };
 
   return (
     <div
       ref={setNodeRef}
-      style={{
-        ...style,
-        // Practice #1 — contrast card from background
-        background: "#ffffff",
-        border: "1px solid #ede3cd",
-        borderRadius: 12,
-        padding: "16px",          // Practice #3 — 16px = 4×4 base unit
-        cursor: "pointer",
-        position: "relative",
-        minHeight: 72,             // Practice #5 — fixed min-height
-        // Practice #8 — card states
-        opacity: isDragging ? 0.35 : 1,
-        transform: isDragging
-          ? `${style.transform} scale(0.98)`
-          : style.transform,
-        boxShadow: "none",
-        transition: "border-color 0.18s ease, transform 0.15s ease",
-      }}
-      // Hover handled via onMouseEnter/Leave for inline-style compat
-      onMouseEnter={(e) => {
-        if (!isDragging) {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "#ede3cd";
-          (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isDragging) {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "#ede3cd";
-          (e.currentTarget as HTMLDivElement).style.transform = "";
-        }
-      }}
-      onMouseDown={(e) => {
-        (e.currentTarget as HTMLDivElement).style.transform = "scale(0.99)";
-      }}
-      onMouseUp={(e) => {
-        (e.currentTarget as HTMLDivElement).style.transform = "";
-      }}
+      {...attributes}
+      {...listeners}
+      onKeyDown={onKeyDown}
       onClick={onClick}
+      aria-label={lead.name}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(
+        "group relative min-h-[72px] cursor-pointer select-none rounded-[12px] border p-4 text-start",
+        "border-[var(--border-subtle)] bg-[var(--bg-primary)] transition-[border-color,box-shadow] duration-150",
+        "hover:border-[var(--border-primary)] hover:shadow-sm focus-ring",
+        draggable && "touch-manipulation",
+        isDragging && "opacity-40",
+      )}
     >
-      {/* Drag Handle — revealed on hover (opacity toggled via mouse handlers below;
-          inline style always wins over a Tailwind class here, so no className needed) */}
-      <div
-        {...attributes}
-        {...listeners}
-        style={{
-          position: "absolute", top: 12, insetInlineEnd: 12,
-          opacity: 0, transition: "opacity 0.2s",
-          cursor: "grab",
-        }}
-        aria-label="Drag to reorder"
-        onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.opacity = "1"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.opacity = "0"; }}
-      >
-        <GripVertical size={14} style={{ color: "#5a5147" }} />
-      </div>
-
-      {/* Lead Info */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {/* Avatar */}
-        <div
-          style={{
-            width: 36, height: 36, borderRadius: "50%",
-            background: "#f7f1e4", color: "#1c1611",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "var(--font-intervar), sans-serif",
-            // Practice #2 — font size ≥ 12px for avatars
-            fontSize: 12, fontWeight: 700,
-            flexShrink: 0,
-          }}
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[12px] font-bold text-[var(--text-primary)]"
         >
-          {lead.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-        </div>
-
-        {/* Text */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{
-            // Practice #2 — 14px name with bold weight
-            fontSize: 14, fontWeight: 700, color: "#1c1611",
-            fontFamily: "var(--font-intervar), sans-serif",
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            margin: 0, lineHeight: 1.4,
-          }}>
+          {initialsOf(lead.name)}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[14px] font-bold leading-snug text-[var(--text-primary)]">
             {lead.name}
-          </p>
+          </span>
           {lead.notes && (
-            <p style={{
-              // Practice #2 — notes 2px less than name
-              fontSize: 12, color: "#5a5147", marginTop: 2,
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-              lineHeight: 1.5,
-            }}>
-              {lead.notes}
-            </p>
+            <span className="mt-0.5 block truncate text-[12px] text-[var(--text-secondary)]">{lead.notes}</span>
           )}
-        </div>
-
-        <ChevronRight size={15} style={{ color: "#ede3cd", flexShrink: 0 }} />
+        </span>
+        {draggable && (
+          <GripVertical
+            size={16}
+            aria-hidden="true"
+            className="shrink-0 text-[var(--text-muted)] opacity-60 transition-opacity group-hover:opacity-100"
+          />
+        )}
       </div>
 
-      {/* Meta Row — Practice #6: content variation handled gracefully */}
       {(lead.phone || lead.value) && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 12,
-          marginTop: 12, paddingTop: 12,
-          borderTop: "1px solid #ede3cd",  // subtle separator
-        }}>
+        <div className="mt-3 flex items-center gap-3 border-t border-[var(--border-subtle)] pt-3 text-[12px]">
           {lead.phone && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 4,
-              // Practice #2 — meta 11px
-              fontSize: 11, color: "#5a5147", fontWeight: 500,
-            }}>
-              <Phone size={10} />
-              <span style={{ fontVariantNumeric: "tabular-nums" }}>
+            <span className="flex items-center gap-1 font-medium text-[var(--text-secondary)]">
+              <Phone size={11} aria-hidden="true" />
+              <span className="sr-only">{t.leads.phone}</span>
+              <span dir="ltr" className="tabular-nums">
                 ···{lead.phone.slice(-4)}
               </span>
-            </div>
+            </span>
           )}
-          {lead.value && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 4,
-              fontSize: 11, fontWeight: 700, color: "#1c1611",
-            }}>
-              <DollarSign size={10} />
-              <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                {lead.value} {t.common.jod}
-              </span>
-            </div>
+          {!!lead.value && (
+            <span className="flex items-center gap-1 font-bold text-[var(--text-primary)]">
+              <Wallet size={11} aria-hidden="true" />
+              <span className="tabular-nums">{formatCurrency(lead.value)}</span>
+            </span>
           )}
-          <span style={{
-            fontSize: 10, color: "#5a5147",
-            marginInlineStart: "auto",
-          }}>
-            {lead.createdAt}
+          <span className="ms-auto text-[11px] text-[var(--text-muted)]">
+            {formatDate(lead.createdAt, "dayMonth")}
           </span>
         </div>
       )}
@@ -188,36 +110,21 @@ export function LeadCardOverlay({ lead }: { lead: Lead }) {
     <motion.div
       initial={{ scale: 1, rotate: 0 }}
       animate={{ scale: 0.97, rotate: 1.5 }}
-      style={{
-        borderRadius: 12, padding: 16,
-        background: "#ffffff",
-        border: "1px solid rgba(28,22,17,0.15)",
-        boxShadow: "none",
-        width: 284,
-      }}
+      className="w-[min(284px,82vw)] rounded-[12px] border border-[var(--border-primary)] bg-[var(--bg-primary)] p-4 shadow-lg"
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div
-          style={{
-            width: 36, height: 36, borderRadius: "50%",
-            background: "#1c1611", color: "#ffffff",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "var(--font-intervar), sans-serif", fontSize: 12, fontWeight: 700,
-            flexShrink: 0,
-          }}
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--text-primary)] text-[12px] font-bold text-[var(--bg-primary)]"
         >
-          {lead.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: "#1c1611", margin: 0 }}>
-            {lead.name}
-          </p>
+          {initialsOf(lead.name)}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[14px] font-bold text-[var(--text-primary)]">{lead.name}</span>
           {lead.notes && (
-            <p style={{ fontSize: 12, color: "#5a5147", marginTop: 2 }}>
-              {lead.notes}
-            </p>
+            <span className="mt-0.5 block truncate text-[12px] text-[var(--text-secondary)]">{lead.notes}</span>
           )}
-        </div>
+        </span>
       </div>
     </motion.div>
   );

@@ -1,83 +1,56 @@
-"use client";
+import type { Metadata } from "next";
+import { cache } from "react";
+import { notFound } from "next/navigation";
+import en from "@/i18n/en";
+import ar from "@/i18n/ar";
+import { MOCK_DATA_ENABLED } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/server";
+import { BookingShell } from "./booking-shell";
 
-import React, { useEffect, useState } from "react";
-import { BookingEngine } from "@/components/booking/booking-engine";
-import { useTranslation } from "@/hooks/use-translation";
-import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+type Params = Promise<{ locale: string; shop_id: string }>;
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export default function BookingShopPage() {
-  const params = useParams();
-  const shopId = params.shop_id as string;
-  const { FF, dir, isRTL } = useTranslation();
-  const supabase = createClient();
-  const router   = useRouter();
-  const [shopName, setShopName] = useState("");
+/**
+ * Shop name for the header and metadata. `undefined` = the server could not
+ * tell (mock mode, transient error): the client engine still loads the shop
+ * itself and renders its own not-found state.
+ */
+const getShopName = cache(async (shopId: string): Promise<string | null | undefined> => {
+  if (MOCK_DATA_ENABLED) return undefined;
+  if (!UUID_RE.test(shopId)) return null;
+  try {
+    const supabase = await createClient();
+    // Public column subset only (anon has column grants on shops).
+    const { data, error } = (await supabase.from("shops").select("id, name").eq("id", shopId).maybeSingle()) as {
+      data: { id: string; name: string } | null;
+      error: unknown;
+    };
+    if (error) return undefined;
+    return data?.name ?? null;
+  } catch {
+    return undefined;
+  }
+});
 
-  useEffect(() => {
-    if (!shopId) return;
-    supabase.from("shops").select("name").eq("id", shopId).single()
-      .then(({ data }) => setShopName(data?.name || "Halaqy"));
-  }, [shopId, supabase]);
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { locale, shop_id } = await params;
+  const t = locale === "ar" ? ar : en;
+  const name = await getShopName(shop_id);
+  if (name === null) return { title: t.booking.shopNotFound, robots: { index: false } };
+  const title = name ? `${t.booking.bookAppointment} · ${name}` : t.booking.bookAppointment;
+  return {
+    title,
+    description: t.booking.metaDescription,
+    // A step-by-step flow; the shop page is the canonical, indexable surface.
+    robots: { index: false, follow: true },
+    openGraph: { title, description: t.booking.metaDescription, type: "website" },
+  };
+}
 
-  return (
-    <div style={{ minHeight: "100vh", background: "#f7f1e4", fontFamily: FF, color: "#1c1611", direction: dir }}>
-
-      {/* ── Fixed minimal header ── */}
-      <header style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        background: "#ffffff",
-        borderBottom: "1px solid #ede3cd",
-        height: 60,
-        display: "flex", alignItems: "center",
-      }}>
-        <div style={{
-          maxWidth: 760, width: "100%", margin: "0 auto",
-          padding: "0 24px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          <button
-            onClick={() => router.back()}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              background: "none", border: "none", cursor: "pointer",
-              fontWeight: 700, fontSize: 14, color: "#5a5147", fontFamily: FF,
-              padding: 0,
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              {isRTL ? "arrow_forward" : "arrow_back"}
-            </span>
-            {isRTL ? "رجوع" : "Back"}
-          </button>
-
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: "0.008em" }}>
-              {shopName || "Halaqy"}
-            </span>
-            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#5a5147" }}>
-              Book Appointment
-            </span>
-          </div>
-
-          {/* symmetry spacer */}
-          <div style={{ width: 64 }} />
-        </div>
-      </header>
-
-      {/* ── Page body ── */}
-      <main style={{ paddingTop: 80, paddingBottom: 64, minHeight: "100vh" }}>
-        {/* Centered container — inline styles only, no Tailwind */}
-        <div style={{
-          maxWidth: 760,
-          width: "100%",
-          margin: "0 auto",
-          padding: "0 24px",
-        }}>
-          <BookingEngine shopId={shopId} />
-        </div>
-      </main>
-    </div>
-  );
+export default async function BookingShopPage({ params }: { params: Params }) {
+  const { shop_id } = await params;
+  const name = await getShopName(shop_id);
+  if (name === null) notFound();
+  return <BookingShell shopId={shop_id} shopName={name ?? null} />;
 }

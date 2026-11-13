@@ -1,1141 +1,963 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter, usePathname } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { format, isAfter, startOfDay } from "date-fns";
-import { motion, AnimatePresence } from "framer-motion";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  CalendarCheck,
+  CalendarClock,
+  CalendarDays,
+  CalendarX,
+  CheckCircle2,
+  Compass,
+  History,
+  LogOut,
+  Repeat,
+  Star,
+  UserRound,
+  Info,
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import type { MyAppointment } from "@/lib/supabase/database.types";
+import { toast } from "@/components/ui/toast";
+import { Dialog, DialogFooter } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
+import { coverForShop, shopInitials } from "../shop/shop-utils";
+import {
+  cancellationState,
+  classifyAppointment,
+  errorMessageFor,
+  isValidOptionalPhone,
+  rebookingNudge,
+  rpcErrorCode,
+  statusOf,
+  type AppointmentTab,
+} from "./customer-utils";
 
-function useWindowWidth() {
-  const [w, setW] = useState(1280);
-  useEffect(() => {
-    const update = () => setW(window.innerWidth);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-  return w;
-}
-
-interface CustomerAppointment {
+interface PortalUser {
   id: string;
-  shop_id: string;
-  shop_name: string;
-  shop_address: string | null;
-  client_name: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  price: number;
-  barber_id: string | null;
-  barber_name: string | null;
-  service_name: string | null;
+  full_name: string;
+  email: string;
+  phone: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; bgColor: string; textColor: string }> = {
-  confirmed:  { label: "Upcoming",  bgColor: "#f7f1e4", textColor: "#a67c3d" },
-  pending:    { label: "Pending",   bgColor: "#f7f1e4", textColor: "#5a5147" },
-  cancelled:  { label: "Cancelled", bgColor: "#f7f1e4", textColor: "#ba1a1a" },
-  completed:  { label: "Completed", bgColor: "#f7f1e4", textColor: "#a67c3d" },
-  no_show:    { label: "No-show",   bgColor: "#f7f1e4", textColor: "#5a5147" },
-};
+const REVIEW_MAX = 500;
+const REASON_MAX = 200;
 
-// Deterministic per-shop initials + accent color for the appointment thumbnail
-// (no shop photo is fetched from the DB, so a repeating stock photo would lie
-// about being shop-specific — an initials tile is an honest per-item stand-in).
-function shopInitials(name: string) {
+function AppointmentSkeleton() {
   return (
-    name
-      .split(" ")
-      .filter(Boolean)
-      .map(w => w[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "?"
-  );
-}
-const SHOP_TILE_COLORS = ["#1c1611", "#a67c3d"];
-
-type Tab = "upcoming" | "past" | "cancelled";
-
-function SkeletonCard() {
-  return (
-    <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #ede3cd", padding: 20 }}>
+    <div className="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
       <div className="flex items-start gap-4">
-        <div className="shimmer-card rounded-xl shrink-0" style={{ width: 56, height: 56 }} />
+        <Skeleton className="w-[52px] h-[52px] rounded-[12px] shrink-0" />
         <div className="flex-1 space-y-2">
-          <div className="shimmer-card rounded-full" style={{ height: 14, width: "33%" }} />
-          <div className="shimmer-card rounded-lg" style={{ height: 20, width: "65%" }} />
-          <div className="shimmer-card rounded-lg" style={{ height: 14, width: "50%" }} />
+          <Skeleton className="h-3.5 w-1/3" />
+          <Skeleton className="h-5 w-2/3" />
+          <Skeleton className="h-3.5 w-1/2" />
         </div>
-        <div className="space-y-2 shrink-0" style={{ textAlign: "end" }}>
-          <div className="shimmer-card rounded-lg" style={{ height: 14, width: 48 }} />
-          <div className="shimmer-card rounded-lg" style={{ height: 18, width: 60 }} />
+        <div className="space-y-2 shrink-0">
+          <Skeleton className="h-3.5 w-12" />
+          <Skeleton className="h-4 w-16" />
         </div>
       </div>
     </div>
   );
 }
 
-function NavItem({ icon, label, href, exact = false }: { icon: string; label: string; href: string; exact?: boolean }) {
-  const pathname = usePathname();
-  const isActive = exact ? pathname === href : pathname.startsWith(href);
-  return (
-    <Link
-      href={href}
-      className={`portal-nav-item${isActive ? " active" : ""}`}
-      style={{ textDecoration: "none" }}
-    >
-      <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icon}</span>
-      {label}
-    </Link>
-  );
-}
-
 export default function CustomerDashboard() {
-  const [user, setUser] = useState<{ id: string; full_name: string; email: string; phone: string } | null>(null);
-  const [appointments, setAppointments] = useState<CustomerAppointment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const { t, dir, isRTL, FF, FFD, href, formatCurrency, formatDate, formatTime, formatNumber } = useTranslation();
+  const [supabase] = useState(() => createClient());
+
+  const [user, setUser] = useState<PortalUser | null>(null);
+  const [appointments, setAppointments] = useState<MyAppointment[]>([]);
+  const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
+  const [activeTab, setActiveTab] = useState<AppointmentTab>("upcoming");
+  const [now, setNow] = useState(() => new Date());
+
+  // Profile dialog
   const [editProfile, setEditProfile] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [profileErrors, setProfileErrors] = useState<{ name?: string; phone?: string }>({});
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("upcoming");
-  const [reviewAppt, setReviewAppt] = useState<CustomerAppointment | null>(null);
+
+  // Review dialog
+  const [reviewAppt, setReviewAppt] = useState<MyAppointment | null>(null);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewHover, setReviewHover] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
-  const [userReviewedApptIds, setUserReviewedApptIds] = useState<Set<string>>(new Set());
-  const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
+
+  // Confirmations
+  const [cancelTarget, setCancelTarget] = useState<MyAppointment | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
   const [logoutConfirm, setLogoutConfirm] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
-  const [supabase] = useState(() => createClient());
-  const router = useRouter();
-  const { t, dir, isRTL, FF } = useTranslation();
+  const errorText = useCallback((code: string | null) => errorMessageFor(t.error, code), [t.error]);
 
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  }, []);
-
-  useEffect(() => {
-    async function load() {
-      // 1. Auth check
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+  const load = useCallback(async () => {
+    setStatus("loading");
+    try {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
       if (!authUser) {
-        router.push("/auth/login");
+        router.replace(href("/auth/login"));
         return;
       }
 
-      // 2. Profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, role")
-        .eq("id", authUser.id)
-        .single();
+      // profiles.phone is private: the own-row phone comes from get_profile_phones.
+      const [{ data: profile }, phonesRes] = await Promise.all([
+        supabase.from("profiles").select("full_name, role").eq("id", authUser.id).maybeSingle(),
+        supabase.rpc("get_profile_phones"),
+      ]);
+      const ownPhone = ((phonesRes.data ?? []) as { id: string; phone: string | null }[]).find(
+        (r) => r.id === authUser.id,
+      )?.phone;
 
       if (profile?.role && profile.role !== "customer") {
-        router.push("/");
+        router.replace(href("/"));
         return;
       }
 
-      const phone = authUser.user_metadata?.phone || "";
-      setUser({
-        id: authUser.id,
-        full_name: profile?.full_name || authUser.user_metadata?.full_name || "",
-        email: authUser.email || "",
-        phone,
-      });
-      setEditName(profile?.full_name || "");
-      setEditPhone(phone);
+      const fullName = profile?.full_name || (authUser.user_metadata?.full_name as string | undefined) || "";
+      const phone = ownPhone || "";
+      setUser({ id: authUser.id, full_name: fullName, email: authUser.email || "", phone });
 
-      // 2.5. Establish a durable client<->auth link for future reliability.
-      // Idempotent (returns the existing link if already linked, does nothing
-      // destructive if no match found) — safe to call on every load. Does not
-      // replace the fuzzy matching below in this pass.
+      // Links client rows matching the account's CONFIRMED email/phone. Ownership
+      // is clients.auth_user_id only; failures here are not fatal.
       await supabase.rpc("link_customer_client");
 
-      // 3. Find customer's appointments via multiple strategies
-      const email = authUser.email || "";
-      let allAppts: CustomerAppointment[] = [];
-
-      // Strategy A: Look up by client records linked to email or phone
-      const { data: clientRecords } = await supabase
-        .from("clients")
-        .select("id")
-        .or(
-          [
-            `email.eq.${email}`,
-            phone ? `phone.eq.${phone}` : null,
-          ]
-            .filter(Boolean)
-            .join(",")
-        );
-
-      if (clientRecords && clientRecords.length > 0) {
-        const clientIds = clientRecords.map((c: { id: string }) => c.id);
-
-        const { data: appts } = await supabase
-          .from("appointments")
-          .select("id, client_name, start_time, end_time, status, price, shop_id, barber_id, service_name, source")
-          .in("client_id", clientIds)
-          .order("start_time", { ascending: false });
-
-        if (appts && appts.length > 0) {
-          const shopIds = [...new Set(appts.map((a: { shop_id: string }) => a.shop_id))];
-          const barberIds = [...new Set(appts.map((a: { barber_id: string | null }) => a.barber_id).filter(Boolean))] as string[];
-
-          const [shopsRes, barbersRes] = await Promise.all([
-            supabase.from("shops").select("id, name, address").in("id", shopIds),
-            barberIds.length > 0
-              ? supabase.from("profiles").select("id, full_name").in("id", barberIds)
-              : Promise.resolve({ data: [] }),
-          ]);
-
-          const shopMap = new Map(
-            (shopsRes.data || []).map((s: { id: string; name: string; address: string }) => [s.id, s])
-          );
-          const barberMap = new Map(
-            (barbersRes.data || []).map((b: { id: string; full_name: string }) => [b.id, b.full_name])
-          );
-
-          allAppts = appts.map((a: {
-            id: string; shop_id: string; client_name: string;
-            start_time: string; end_time: string; status: string; price: number;
-            barber_id: string | null; service_name: string | null;
-          }) => {
-            const shopInfo = shopMap.get(a.shop_id) as { id: string; name: string; address: string } | undefined;
-            return {
-              id: a.id,
-              shop_id: a.shop_id,
-              shop_name: shopInfo?.name || "Barbershop",
-              shop_address: shopInfo?.address || null,
-              client_name: a.client_name,
-              start_time: a.start_time,
-              end_time: a.end_time,
-              status: a.status,
-              price: a.price || 0,
-              barber_id: a.barber_id,
-              barber_name: a.barber_id ? (barberMap.get(a.barber_id) || null) : null,
-              service_name: a.service_name || null,
-            };
-          });
-        }
+      const { data, error } = await supabase.rpc("get_my_appointments");
+      if (error) {
+        setStatus("error");
+        return;
       }
-
-      // Strategy B: Try looking up by client_name matching user's full name
-      if (allAppts.length === 0 && profile?.full_name) {
-        const { data: apptsByName } = await supabase
-          .from("appointments")
-          .select("id, client_name, start_time, end_time, status, price, shop_id, barber_id, service_name")
-          .ilike("client_name", `%${profile.full_name}%`)
-          .order("start_time", { ascending: false });
-
-        if (apptsByName && apptsByName.length > 0) {
-          const shopIds = [...new Set(apptsByName.map((a: { shop_id: string }) => a.shop_id))];
-          const { data: shopsData } = await supabase
-            .from("shops")
-            .select("id, name, address")
-            .in("id", shopIds);
-
-          const shopMap = new Map(
-            (shopsData || []).map((s: { id: string; name: string; address: string }) => [s.id, s])
-          );
-
-          allAppts = apptsByName.map((a: {
-            id: string; shop_id: string; client_name: string;
-            start_time: string; end_time: string; status: string; price: number;
-            barber_id: string | null; service_name: string | null;
-          }) => {
-            const shopInfo = shopMap.get(a.shop_id) as { id: string; name: string; address: string } | undefined;
-            return {
-              id: a.id,
-              shop_id: a.shop_id,
-              shop_name: shopInfo?.name || "Barbershop",
-              shop_address: shopInfo?.address || null,
-              client_name: a.client_name,
-              start_time: a.start_time,
-              end_time: a.end_time,
-              status: a.status,
-              price: a.price || 0,
-              barber_id: a.barber_id,
-              barber_name: null,
-              service_name: a.service_name || null,
-            };
-          });
-        }
-      }
-
-      setAppointments(allAppts);
-
-      // 4. Load reviewed appt IDs
-      if (allAppts.length > 0) {
-        const { data: reviews } = await supabase
-          .from("reviews")
-          .select("appointment_id")
-          .in("appointment_id", allAppts.map(a => a.id));
-        setUserReviewedApptIds(new Set(reviews?.map((r: { appointment_id: string }) => r.appointment_id) || []));
-      }
-
-      setLoading(false);
+      setAppointments((data ?? []) as MyAppointment[]);
+      setNow(new Date());
+      setStatus("ok");
+    } catch {
+      setStatus("error");
     }
+  }, [supabase, router, href]);
+
+  useEffect(() => {
     load();
-  }, [supabase, router]);
+  }, [load]);
 
-  async function handleSaveProfile() {
-    if (!user) return;
-    setSaving(true);
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({ full_name: editName } as Record<string, unknown>)
-      .eq("id", user.id);
-    const { error: authError } = await supabase.auth.updateUser({ data: { phone: editPhone } });
-    setSaving(false);
-    if (profileError || authError) {
-      alert("Failed to save profile: " + (profileError?.message || authError?.message));
-      return;
-    }
-    setUser({ ...user, full_name: editName, phone: editPhone });
-    setEditProfile(false);
-    showToast("Profile saved!");
-  }
+  // Keep "upcoming" honest while the page stays open.
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
 
-  async function handleSubmitReview() {
-    if (!user || !reviewAppt || reviewRating === 0) return;
-    setSubmittingReview(true);
+  // /customer/profile redirects here with ?edit=profile.
+  useEffect(() => {
+    if (status !== "ok" || !user) return;
     try {
-      const { data: clients } = await supabase
-        .from("clients")
-        .select("id")
-        .or(`email.eq.${user.email},phone.eq.${user.phone || "NONE"}`)
-        .limit(1);
-      const clientId = clients?.[0]?.id;
-      if (!clientId) throw new Error("No client profile found.");
-      const { error } = await supabase.from("reviews").insert({
-        shop_id: reviewAppt.shop_id,
-        client_id: clientId,
-        appointment_id: reviewAppt.id,
-        rating: reviewRating,
-        comment: reviewComment,
-      });
-      if (error) throw error;
-      setUserReviewedApptIds(prev => new Set(prev).add(reviewAppt.id));
-      setReviewAppt(null);
-      setReviewRating(0);
-      setReviewHover(0);
-      setReviewComment("");
-      showToast("Review submitted — thank you!");
-    } catch (err: unknown) {
-      alert("Error: " + (err instanceof Error ? err.message : "Unknown error"));
-    } finally {
-      setSubmittingReview(false);
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("edit") === "profile") {
+        openEditProfile();
+        params.delete("edit");
+        const qs = params.toString();
+        window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));
+      }
+    } catch {
+      /* ignore */
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, user]);
+
+  const grouped = useMemo(() => {
+    const upcoming: MyAppointment[] = [];
+    const past: MyAppointment[] = [];
+    const cancelled: MyAppointment[] = [];
+    for (const a of appointments) {
+      const tab = classifyAppointment(a, now);
+      (tab === "upcoming" ? upcoming : tab === "past" ? past : cancelled).push(a);
+    }
+    // Soonest first for upcoming; newest first otherwise.
+    upcoming.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+    return { upcoming, past, cancelled };
+  }, [appointments, now]);
+
+  const displayList = grouped[activeTab];
+  const completedCount = appointments.filter((a) => statusOf(a) === "completed").length;
+  const thisMonthCount = appointments.filter((a) => {
+    const d = new Date(a.start_time);
+    return statusOf(a) !== "cancelled" && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+  const nudge = useMemo(
+    () => (status === "ok" && grouped.upcoming.length === 0 ? rebookingNudge(appointments, now) : null),
+    [status, grouped.upcoming.length, appointments, now],
+  );
+  const loading = status === "loading";
+  const initials = shopInitials(user?.full_name || user?.email || "U");
+  const firstName = user?.full_name?.trim().split(/\s+/)[0] || "";
+
+  // ─── Profile ───
+  function openEditProfile() {
+    setEditName(user?.full_name || "");
+    setEditPhone(user?.phone || "");
+    setProfileErrors({});
+    setEditProfile(true);
   }
 
-  async function handleCancel(apptId: string) {
-    const { error: rpcError } = await supabase.rpc("cancel_customer_booking", { p_appointment_id: apptId });
-    if (rpcError) {
-      alert("Failed to cancel: " + rpcError.message);
+  async function handleSaveProfile(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!user) return;
+    const name = editName.trim().replace(/\s+/g, " ");
+    const phone = editPhone.trim();
+    const errors: { name?: string; phone?: string } = {};
+    if (name.length < 2 || name.length > 80) errors.name = t.customer.nameRequired;
+    if (!isValidOptionalPhone(phone)) errors.phone = t.customer.phoneInvalid;
+    setProfileErrors(errors);
+    if (errors.name || errors.phone) return;
+
+    setSaving(true);
+    // Phone lives on profiles (contact only) — never in auth metadata, and it
+    // is never used to match bookings.
+    const { error } = await supabase
+      .from("profiles")
+      .update({ full_name: name, phone: phone || null })
+      .eq("id", user.id);
+    setSaving(false);
+    if (error) {
+      toast.error(errorText(rpcErrorCode(error)) || t.customer.profileSaveFailed);
       return;
     }
-    setAppointments(prev => prev.map(a => a.id === apptId ? { ...a, status: "cancelled" } : a));
-    setCancelConfirm(null);
-    showToast("Appointment cancelled.");
+    setUser({ ...user, full_name: name, phone });
+    setEditProfile(false);
+    toast.success(t.customer.profileSaved);
+  }
+
+  // ─── Reviews ───
+  function openReview(appt: MyAppointment) {
+    setReviewAppt(appt);
+    setReviewRating(0);
+    setReviewHover(0);
+    setReviewComment("");
+    setReviewError(null);
+  }
+
+  function closeReview() {
+    if (submittingReview) return;
+    setReviewAppt(null);
+  }
+
+  async function handleSubmitReview(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!reviewAppt) return;
+    if (reviewRating < 1 || reviewRating > 5) {
+      setReviewError(t.customer.ratingRequired);
+      return;
+    }
+    setSubmittingReview(true);
+    setReviewError(null);
+    const target = reviewAppt;
+    const { error } = await supabase.rpc("submit_review", {
+      p_appointment_id: target.id,
+      p_rating: reviewRating,
+      p_comment: reviewComment.trim() ? reviewComment.trim().slice(0, REVIEW_MAX) : null,
+    });
+    setSubmittingReview(false);
+    const code = rpcErrorCode(error);
+    if (error && code !== "ALREADY_REVIEWED") {
+      setReviewError(errorText(code));
+      return;
+    }
+    setAppointments((prev) => prev.map((a) => (a.id === target.id ? { ...a, has_review: true } : a)));
+    setReviewAppt(null);
+    toast.success(t.customer.reviewThanks);
+  }
+
+  // ─── Cancel ───
+  async function confirmCancel() {
+    if (!cancelTarget) return;
+    const target = cancelTarget;
+    const { data, error } = await supabase.rpc("cancel_customer_booking", {
+      p_appointment_id: target.id,
+      p_reason: cancelReason.trim() ? cancelReason.trim().slice(0, REASON_MAX) : null,
+    });
+    if (error) {
+      const code = rpcErrorCode(error);
+      if (code === "INSIDE_CANCELLATION_WINDOW") {
+        const hours = Number((error as { details?: string }).details) || target.cancellation_policy_hours || 0;
+        throw new Error(interpolate(t.customer.cancelWindowClosed, { hours }));
+      }
+      throw new Error(errorText(code));
+    }
+    const cancelledAt = (data as { cancelled_at?: string } | null)?.cancelled_at ?? new Date().toISOString();
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === target.id ? { ...a, status: "cancelled", cancelled_at: cancelledAt } : a)),
+    );
+    setCancelTarget(null);
+    setCancelReason("");
+    toast.success(t.customer.appointmentCancelled);
   }
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.push("/auth/login");
+    const { error } = await supabase.auth.signOut();
+    if (error) throw new Error(t.error.message);
+    toast.success(t.customer.signedOut);
+    router.replace(href("/auth/login"));
   }
 
-  // Tab filtering
-  const today = startOfDay(new Date());
-  const upcoming = appointments.filter(a =>
-    a.status !== "cancelled" &&
-    a.status !== "completed" &&
-    a.status !== "no_show" &&
-    isAfter(new Date(a.start_time), today)
-  );
-  const past = appointments.filter(a =>
-    a.status !== "cancelled" &&
-    (a.status === "completed" || a.status === "no_show" || !isAfter(new Date(a.start_time), today))
-  );
-  const cancelled = appointments.filter(a => a.status === "cancelled");
+  // ─── Rendering helpers ───
+  const statusBadge = (appt: MyAppointment) => {
+    const s = statusOf(appt);
+    const map: Record<string, { label: string; color: string }> = {
+      confirmed: { label: t.customer.statusConfirmed, color: "var(--accent-text)" },
+      pending: { label: t.customer.statusPending, color: "var(--text-secondary)" },
+      completed: { label: t.customer.completed, color: "var(--accent-text)" },
+      no_show: { label: t.customer.statusNoShow, color: "var(--text-secondary)" },
+      cancelled: { label: t.customer.cancelled, color: "var(--accent-rose)" },
+    };
+    return map[s] ?? map.pending;
+  };
 
-  const displayList = activeTab === "upcoming" ? upcoming : activeTab === "past" ? past : cancelled;
+  const zoned = (appt: MyAppointment): Intl.DateTimeFormatOptions => ({ timeZone: appt.shop_timezone || undefined });
 
-  const thisMonthCount = appointments.filter(a => {
-    const d = new Date(a.start_time);
-    const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).length;
+  const tabs: { key: AppointmentTab; label: string; count: number; icon: typeof CalendarDays }[] = [
+    { key: "upcoming", label: t.customer.upcoming, count: grouped.upcoming.length, icon: CalendarDays },
+    { key: "past", label: t.customer.past, count: grouped.past.length, icon: History },
+    { key: "cancelled", label: t.customer.cancelled, count: grouped.cancelled.length, icon: CalendarX },
+  ];
 
-  const completedCount = appointments.filter(a => a.status === "completed").length;
-  const initials = user?.full_name?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "U";
+  const onTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const forward = isRTL ? "ArrowLeft" : "ArrowRight";
+    const backward = isRTL ? "ArrowRight" : "ArrowLeft";
+    let next = -1;
+    if (e.key === forward) next = (index + 1) % tabs.length;
+    else if (e.key === backward) next = (index - 1 + tabs.length) % tabs.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = tabs.length - 1;
+    if (next < 0) return;
+    e.preventDefault();
+    setActiveTab(tabs[next].key);
+    document.getElementById(`tab-${tabs[next].key}`)?.focus();
+  };
 
-  const windowW = useWindowWidth();
-
-  // ─── Loyalty / rebooking nudge ───
-  // For a client with 2+ completed visits with the same barber, work out their average
-  // visit cadence and flag when they're overdue for the next one. Suppressed entirely if
-  // there's already an upcoming booking, or if there isn't enough history to compute a cadence.
-  const rebookingNudge = useMemo(() => {
-    if (loading || upcoming.length > 0) return null;
-
-    const completedByBarber = new Map<string, CustomerAppointment[]>();
-    for (const a of appointments) {
-      if (a.status === "completed" && a.barber_id) {
-        const list = completedByBarber.get(a.barber_id) || [];
-        list.push(a);
-        completedByBarber.set(a.barber_id, list);
-      }
-    }
-
-    for (const [, visits] of completedByBarber) {
-      if (visits.length < 2) continue;
-      const sorted = [...visits].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-      const gaps: number[] = [];
-      for (let i = 1; i < sorted.length; i++) {
-        gaps.push((new Date(sorted[i].start_time).getTime() - new Date(sorted[i - 1].start_time).getTime()) / 86400000);
-      }
-      const avgGapDays = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-      const mostRecent = sorted[sorted.length - 1];
-      const daysSinceLast = (Date.now() - new Date(mostRecent.start_time).getTime()) / 86400000;
-      if (daysSinceLast > avgGapDays) {
-        return {
-          shopId: mostRecent.shop_id,
-          barberName: mostRecent.barber_name || (isRTL ? "حلاقك" : "your barber"),
-        };
-      }
-    }
-    return null;
-  }, [appointments, loading, upcoming.length, isRTL]);
+  const cancelInfo = cancelTarget ? cancellationState(cancelTarget, now) : null;
 
   return (
-    <div style={{ background: "#ffffff", minHeight: "100vh", fontFamily: FF, direction: dir }}>
-
-      {/* ── Toast notification ── */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            style={{
-              position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
-              zIndex: 200, background: "#1c1611", color: "#fff",
-              padding: "12px 20px", borderRadius: 12, fontSize: 13, fontWeight: 600,
-              display: "flex", alignItems: "center", gap: 8,
-              whiteSpace: "nowrap",
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 16, fontVariationSettings: "'FILL' 1", color: "#a67c3d" }}>check_circle</span>
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Desktop Sidebar ── */}
-      <aside
-        style={{
-          display: windowW >= 1024 ? "flex" : "none",
-          flexDirection: "column",
-          position: "fixed", insetInlineStart: 0, top: 0, height: "100%",
-          width: 240, background: "#fff", borderInlineEnd: "1px solid #ede3cd", zIndex: 40
-        }}
-      >
-        {/* Logo */}
-        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #ede3cd" }}>
-          <Link href="/landing" style={{ fontSize: 18, fontWeight: 900, color: "#1c1611", textDecoration: "none", letterSpacing: "0.015em", fontFamily: "var(--font-intervar),sans-serif" }}>
+    <div className="min-h-dvh bg-[var(--bg-primary)] text-[var(--text-primary)]" style={{ fontFamily: FF }} dir={dir}>
+      {/* ── Desktop sidebar ── */}
+      <aside className="hidden lg:flex flex-col fixed top-0 start-0 h-full w-[240px] bg-[var(--bg-primary)] border-e border-[var(--border-subtle)] z-40">
+        <div className="px-5 pt-5 pb-4 border-b border-[var(--border-subtle)]">
+          <Link href={href("/landing")} className="text-lg font-black text-[var(--text-primary)] rounded-sm" style={{ fontFamily: FFD }}>
             Halaqy.
           </Link>
         </div>
 
-        {/* User avatar */}
-        <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid #ede3cd" }}>
-          {loading ? (
-            <div className="flex items-center gap-3">
-              <div className="shimmer-card rounded-full shrink-0" style={{ width: 40, height: 40 }} />
+        <div className="px-4 py-4 border-b border-[var(--border-subtle)]">
+          {loading && !user ? (
+            <SkeletonGroup className="flex items-center gap-3">
+              <Skeleton variant="avatar" />
               <div className="flex-1 space-y-1.5">
-                <div className="shimmer-card rounded" style={{ height: 12, width: "65%" }} />
-                <div className="shimmer-card rounded" style={{ height: 10, width: "50%" }} />
+                <Skeleton className="h-3 w-2/3" />
+                <Skeleton className="h-2.5 w-1/2" />
               </div>
-            </div>
+            </SkeletonGroup>
           ) : (
             <div className="flex items-center gap-3">
               <div
-                className="shrink-0 flex items-center justify-center font-bold text-sm"
-                style={{ width: 40, height: 40, borderRadius: "50%", background: "#1c1611", color: "#fff" }}
+                aria-hidden="true"
+                className="w-10 h-10 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] flex items-center justify-center font-bold text-sm shrink-0"
               >
                 {initials}
               </div>
               <div className="min-w-0">
-                <p style={{ fontSize: 13, fontWeight: 700, color: "#1c1611", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {user?.full_name || "Customer"}
-                </p>
-                <p style={{ fontSize: 11, color: "#5a5147", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {user?.email}
-                </p>
+                <p className="text-[13px] font-bold text-[var(--text-primary)] truncate">{user?.full_name || user?.email}</p>
+                {user?.full_name && <p className="text-[11px] text-[var(--text-secondary)] truncate">{user.email}</p>}
               </div>
             </div>
           )}
         </div>
 
-        {/* Nav items */}
-        <nav style={{ padding: "12px 10px", flex: 1, overflowY: "auto" }}>
-          <NavItem icon="calendar_today" label={t.customer.myAppointments} href="/customer" exact />
-          <NavItem icon="explore" label={t.customer.discoverShops} href="/customer/explore" />
-          <NavItem icon="add_circle" label={t.customer.bookAppointment} href="/customer/explore" />
-          <NavItem icon="settings" label={t.customer.settings} href="/customer" />
+        <nav aria-label={t.customer.accountNav} className="px-2.5 py-3 flex-1 overflow-y-auto space-y-0.5">
+          <Link href={href("/customer")} aria-current="page" className="portal-nav-item active">
+            <CalendarDays size={19} aria-hidden="true" />
+            {t.customer.myAppointments}
+          </Link>
+          <Link href={href("/explore")} className="portal-nav-item">
+            <Compass size={19} aria-hidden="true" />
+            {t.customer.discoverShops}
+          </Link>
+          <button type="button" onClick={openEditProfile} disabled={!user} className="portal-nav-item">
+            <UserRound size={19} aria-hidden="true" />
+            {t.customer.editProfile}
+          </button>
         </nav>
 
-        <div style={{ padding: "12px 10px 20px" }}>
-          <button
-            onClick={() => setLogoutConfirm(true)}
-            className="portal-nav-item w-full"
-            style={{ color: "#ba1a1a" }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>logout</span>
+        <div className="px-2.5 pt-3 pb-5">
+          <button type="button" onClick={() => setLogoutConfirm(true)} className="portal-nav-item" style={{ color: "var(--accent-rose)" }}>
+            <LogOut size={19} aria-hidden="true" />
             {t.customer.signOut}
           </button>
         </div>
       </aside>
 
-      {/* ── Mobile Top Navbar ── */}
-      <header
-        style={{
-          display: windowW < 1024 ? "flex" : "none",
-          alignItems: "center", justifyContent: "space-between",
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-          height: 64, padding: "0 20px",
-          background: "#fff", borderBottom: "1px solid #ede3cd"
-        }}
-      >
-        <Link href="/landing" style={{ fontSize: 17, fontWeight: 900, color: "#1c1611", textDecoration: "none", letterSpacing: "0.015em", fontFamily: "var(--font-intervar),sans-serif" }}>
+      {/* ── Mobile top bar ── */}
+      <header className="lg:hidden fixed top-0 inset-x-0 z-50 h-16 px-4 flex items-center justify-between bg-[var(--bg-primary)] border-b border-[var(--border-subtle)]">
+        <Link href={href("/landing")} className="text-[17px] font-black text-[var(--text-primary)] rounded-sm" style={{ fontFamily: FFD }}>
           Halaqy.
         </Link>
         <div className="flex items-center gap-2">
-          <Link
-            href="/customer/explore"
-            style={{ background: "#1c1611", color: "#fff", padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: "none" }}
-          >
+          <Link href={href("/explore")} className="btn btn-primary text-[13px]" style={{ minHeight: 38, padding: "0 14px" }}>
             {t.customer.bookNow}
           </Link>
           <button
+            type="button"
             onClick={() => setLogoutConfirm(true)}
             aria-label={t.customer.signOut}
-            style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#f7f1e4", border: "none", cursor: "pointer", color: "#5a5147" }}
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--bg-secondary)] text-[var(--text-secondary)]"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
+            <LogOut size={18} aria-hidden="true" />
           </button>
         </div>
       </header>
 
-      {/* ── Main Content ── */}
-      <div style={{ paddingInlineStart: windowW >= 1024 ? 240 : 0 }}>
-        <main style={{ paddingTop: windowW >= 1024 ? 0 : 64, paddingBottom: windowW >= 1024 ? 48 : 112 }}>
-          {/* Inner container */}
-          <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 20px" }}>
-
-            {/* Page header */}
-            <div style={{ paddingTop: 32, paddingBottom: 24 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.1em"), color: "#5a5147", marginBottom: 4 }}>
-                {t.customer.welcomeBack}
+      {/* ── Main ── */}
+      <div className="lg:ps-[240px]">
+        <main id="main" className="pt-16 lg:pt-0 pb-28 lg:pb-12">
+          <div className="max-w-[760px] mx-auto px-4 sm:px-5">
+            {/* Header */}
+            <div className="pt-8 pb-6">
+              <p
+                className="text-[11px] font-bold text-[var(--text-secondary)] mb-1"
+                style={{ letterSpacing: headingTracking(isRTL, "0.08em") }}
+              >
+                {firstName ? interpolate(t.customer.welcomeName, { name: firstName }) : t.customer.welcomeBack}
               </p>
-              {loading ? (
-                <div className="shimmer-card rounded-xl" style={{ height: 40, width: 220, marginTop: 8 }} />
-              ) : (
-                <h1
-                  style={{
-                    fontSize: "clamp(24px, 4vw, 36px)",
-                    fontWeight: 900,
-                    color: "#1c1611",
-                    letterSpacing: "0.015em",
-                    fontFamily: "var(--font-intervar),sans-serif",
-                    margin: 0,
-                  }}
-                >
-                  {user?.full_name?.split(" ")[0] || "Hello"}&apos;s Portal
-                </h1>
-              )}
+              <h1 className="font-black text-[var(--text-primary)] m-0" style={{ fontSize: "clamp(24px, 4vw, 34px)", fontFamily: FFD }}>
+                {t.customer.myAppointments}
+              </h1>
             </div>
 
-            {/* Stats row */}
-            <div className="grid grid-cols-3 gap-3 mb-8">
+            {/* Stats */}
+            <dl className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-8">
               {[
-                { label: t.customer.completed, value: loading ? "—" : completedCount, icon: "check_circle", color: "#a67c3d" },
-                { label: t.customer.upcoming,  value: loading ? "—" : upcoming.length,  icon: "schedule",      color: "#a67c3d" },
-                { label: t.customer.thisMonth, value: loading ? "—" : thisMonthCount,   icon: "calendar_month",color: "#5a5147" },
-              ].map(stat => (
-                <div
-                  key={stat.label}
-                  style={{ background: "#fff", borderRadius: 12, padding: "14px 16px", border: "1px solid #ede3cd" }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 16, color: stat.color, fontVariationSettings: "'FILL' 1" }}>
-                    {stat.icon}
-                  </span>
-                  <p style={{ fontSize: 26, fontWeight: 900, color: "#1c1611", margin: "4px 0 2px", fontFamily: "var(--font-intervar),sans-serif" }}>
-                    {stat.value}
-                  </p>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: "#5a5147" }}>{stat.label}</p>
+                { label: t.customer.completed, value: completedCount, icon: CheckCircle2 },
+                { label: t.customer.upcoming, value: grouped.upcoming.length, icon: CalendarClock },
+                { label: t.customer.thisMonth, value: thisMonthCount, icon: CalendarDays },
+              ].map(({ label, value, icon: Icon }) => (
+                <div key={label} className="flex flex-col rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-3 sm:px-4 sm:py-3.5 min-w-0">
+                  <Icon size={16} aria-hidden="true" className="text-[var(--accent-brass)]" />
+                  {/* dt first for screen readers; shown under the number. */}
+                  <dt className="order-last text-[11px] font-semibold text-[var(--text-secondary)] truncate">{label}</dt>
+                  <dd className="text-2xl font-black text-[var(--text-primary)] mt-1 mb-0.5 ms-0 tabular-nums" style={{ fontFamily: FFD }}>
+                    {loading ? <Skeleton className="h-7 w-8" /> : formatNumber(value)}
+                  </dd>
                 </div>
               ))}
-            </div>
+            </dl>
 
-            {/* CTA Banner */}
-            <div
-              style={{
-                borderRadius: 12,
-                padding: "24px 28px",
-                marginBottom: 28,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 16,
-                overflow: "hidden",
-                position: "relative",
-                background: "#f7f1e4",
-              }}
-            >
-              <div style={{ position: "absolute", inset: 0, opacity: 0.06 }} />
-              <div style={{ position: "relative", zIndex: 1 }}>
-                <h2 style={{ color: "#1c1611", fontWeight: 900, fontSize: 17, fontFamily: FF, margin: "0 0 4px" }}>
-                  {t.customer.readyForNext}
-                </h2>
-                <p style={{ color: "#5a5147", fontSize: 13, margin: 0 }}>
-                  {t.customer.browseShops}
-                </p>
+            {/* CTA */}
+            <div className="rounded-[12px] bg-[var(--bg-secondary)] px-5 py-5 sm:px-7 sm:py-6 mb-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-[17px] font-black text-[var(--text-primary)] mb-1">{t.customer.readyForNext}</h2>
+                <p className="text-[13px] text-[var(--text-secondary)] m-0">{t.customer.browseShops}</p>
               </div>
-              <Link
-                href="/customer/explore"
-                style={{
-                  position: "relative", zIndex: 1, flexShrink: 0,
-                  background: "#7c4a1e", color: "#fff",
-                  padding: "10px 20px", borderRadius: 8,
-                  fontWeight: 700, fontSize: 13, textDecoration: "none", whiteSpace: "nowrap",
-                }}
-              >
-                {t.customer.explore} →
+              <Link href={href("/explore")} className="btn btn-primary text-[13px] shrink-0 self-start sm:self-auto" style={{ minHeight: 40 }}>
+                {t.customer.exploreShops}
               </Link>
             </div>
 
-            {/* Tab Bar */}
-            <div style={{ borderBottom: "1px solid #ede3cd", marginBottom: 0, display: "flex", gap: 0 }}>
-              {([
-                { key: "upcoming",  label: t.customer.upcoming,  count: upcoming.length  },
-                { key: "past",      label: t.customer.past,      count: past.length      },
-                { key: "cancelled", label: t.customer.cancelled, count: cancelled.length },
-              ] as const).map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`portal-tab-btn${activeTab === tab.key ? " active" : ""}`}
-                >
-                  {tab.label}
-                  {tab.count > 0 && (
-                    <span
-                      style={{
-                        marginInlineStart: 5, fontSize: 11, fontWeight: 700,
-                        padding: "1px 6px", borderRadius: 9999,
-                        background: activeTab === tab.key ? "#f7f1e4" : "#ffffff",
-                        color: activeTab === tab.key ? "#1c1611" : "#5a5147",
-                      }}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
+            {/* Tabs */}
+            <div role="tablist" aria-label={t.customer.appointmentsTabs} className="flex border-b border-[var(--border-subtle)] overflow-x-auto no-scrollbar">
+              {tabs.map((tab, i) => {
+                const selected = activeTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    id={`tab-${tab.key}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    aria-controls="appointments-panel"
+                    tabIndex={selected ? 0 : -1}
+                    onClick={() => setActiveTab(tab.key)}
+                    onKeyDown={(e) => onTabKeyDown(e, i)}
+                    className={`portal-tab-btn${selected ? " active" : ""}`}
+                  >
+                    {tab.label}
+                    {tab.count > 0 && (
+                      <span
+                        className="ms-1.5 text-[11px] font-bold px-1.5 py-px rounded-full tabular-nums"
+                        style={{
+                          background: selected ? "var(--bg-secondary)" : "transparent",
+                          color: selected ? "var(--text-primary)" : "var(--text-secondary)",
+                        }}
+                      >
+                        {formatNumber(tab.count)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Loyalty / rebooking nudge */}
-            {activeTab === "upcoming" && rebookingNudge && (
-              <div
-                style={{
-                  display: "flex", alignItems: "center", gap: 14,
-                  background: "#f7f1e4", border: "1px solid #ede3cd", borderRadius: 12,
-                  padding: "16px 20px", marginTop: 16,
-                }}
-              >
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#1c1611", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18, color: "#fff" }}>event_repeat</span>
-                </div>
-                <p style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: "#1c1611", margin: 0 }}>
-                  {isRTL
-                    ? `عادة ما تكون بحاجة لزيارة ${rebookingNudge.barberName} في مثل هذا الوقت — هل تحجز مرة أخرى؟`
-                    : `You're usually due for a visit with ${rebookingNudge.barberName} around now — book again?`}
-                </p>
-                <Link
-                  href={`/book/${rebookingNudge.shopId}`}
-                  style={{ flexShrink: 0, background: "#7c4a1e", color: "#fff", padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: "none" }}
-                >
-                  {isRTL ? "احجز" : "Book"}
-                </Link>
-              </div>
-            )}
-
-            {/* Appointment list */}
-            <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-              {loading ? (
-                Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
-              ) : displayList.length === 0 ? (
-                <div
-                  style={{
-                    background: "#fff", borderRadius: 12, border: "1px solid #ede3cd",
-                    padding: "48px 24px", display: "flex", flexDirection: "column",
-                    alignItems: "center", textAlign: "center",
-                  }}
-                >
-                  <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#f7f1e4", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-                    <span className="material-symbols-outlined text-[#5a5147]" style={{ fontSize: 28 }}>
-                      {activeTab === "upcoming" ? "calendar_today" : activeTab === "past" ? "history" : "cancel"}
-                    </span>
-                  </div>
-                  <h3 style={{ fontWeight: 700, color: "#1c1611", fontSize: 16, marginBottom: 6 }}>
-                    {activeTab === "upcoming" ? t.customer.noUpcoming : activeTab === "past" ? t.customer.noPast : t.customer.noCancelled}
-                  </h3>
-                  <p style={{ fontSize: 13, color: "#5a5147", marginBottom: 20 }}>
-                    {activeTab === "upcoming" ? t.customer.noUpcomingDesc : t.customer.noPastDesc}
+            <div id="appointments-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="mt-4">
+              {/* Rebooking nudge */}
+              {activeTab === "upcoming" && nudge && (
+                <div className="flex items-center gap-3.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-4 py-4 sm:px-5 mb-4">
+                  <span aria-hidden="true" className="w-10 h-10 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] flex items-center justify-center shrink-0">
+                    <Repeat size={18} />
+                  </span>
+                  <p className="flex-1 min-w-0 text-[13px] font-bold text-[var(--text-primary)] m-0">
+                    {interpolate(t.customer.rebookNudge, { barber: nudge.barberName || t.customer.yourBarber })}
                   </p>
-                  {activeTab === "upcoming" && (
-                    <Link
-                      href="/customer/explore"
-                      style={{
-                        background: "#1c1611", color: "#fff", padding: "10px 24px",
-                        borderRadius: 8, fontWeight: 700, fontSize: 13, textDecoration: "none",
-                      }}
-                    >
-                      {t.customer.exploreShops}
-                    </Link>
-                  )}
+                  <Link href={href(`/book/${nudge.shopId}`)} className="btn btn-primary text-[12px] shrink-0" style={{ minHeight: 36, padding: "0 14px" }}>
+                    {t.customer.bookAgain}
+                  </Link>
                 </div>
-              ) : (
-                <AnimatePresence>
-                  {displayList.map((appt, i) => {
-                    // A lapsed (past-dated) appointment that was never explicitly
-                    // marked completed/no-show/cancelled must not still read as
-                    // "Upcoming" just because its raw status is still "confirmed" —
-                    // the badge must match the tab it's actually rendered in.
-                    const sc = (activeTab === "past" && appt.status === "confirmed")
-                      ? STATUS_CONFIG.completed
-                      : (STATUS_CONFIG[appt.status] || STATUS_CONFIG.pending);
-                    const date = new Date(appt.start_time);
-                    const isUpcoming = activeTab === "upcoming";
+              )}
 
+              {loading ? (
+                <SkeletonGroup className="flex flex-col gap-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <AppointmentSkeleton key={i} />
+                  ))}
+                </SkeletonGroup>
+              ) : status === "error" ? (
+                <EmptyState
+                  icon={CalendarX}
+                  tone="error"
+                  title={t.customer.loadErrorTitle}
+                  description={t.customer.loadErrorDesc}
+                  action={{ label: t.common.retry, onClick: load }}
+                />
+              ) : displayList.length === 0 ? (
+                <EmptyState
+                  icon={activeTab === "upcoming" ? CalendarDays : activeTab === "past" ? History : CalendarX}
+                  title={activeTab === "upcoming" ? t.customer.noUpcoming : activeTab === "past" ? t.customer.noPast : t.customer.noCancelled}
+                  description={activeTab === "upcoming" ? t.customer.noUpcomingDesc : activeTab === "past" ? t.customer.noPastDesc : undefined}
+                  action={activeTab === "upcoming" ? { label: t.customer.exploreShops, href: href("/explore") } : undefined}
+                />
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {displayList.map((appt, i) => {
+                    const badge = statusBadge(appt);
+                    const cancelState = cancellationState(appt, now);
+                    const isUpcoming = activeTab === "upcoming";
+                    const cover = coverForShop(appt.shop_id);
+                    const detailHref = href(`/customer/${appt.id}`);
+                    const subtitle = [appt.service_name, appt.barber_name].filter(Boolean).join(" · ");
                     return (
-                      <motion.div
+                      <motion.li
                         key={appt.id}
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.28, delay: i * 0.04 }}
-                        style={{
-                          background: "#fff", borderRadius: 12, border: "1px solid #ede3cd",
-                          transition: "transform 150ms ease",
-                        }}
-                        whileHover={{ y: -2 }}
+                        transition={{ duration: 0.25, delay: Math.min(i, 6) * 0.04 }}
+                        className="relative rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] hover:border-[var(--accent-brass)] focus-within:border-[var(--accent-brass)] transition-colors"
                       >
-                        <div style={{ padding: 20 }}>
-                          <div className="flex items-start gap-4">
-                            {/* Shop thumbnail */}
+                        <div className="p-4 sm:p-5">
+                          <div className="flex items-start gap-3.5 sm:gap-4">
                             <div
-                              className="flex items-center justify-center"
-                              style={{
-                                width: 52, height: 52, borderRadius: 12, flexShrink: 0,
-                                background: SHOP_TILE_COLORS[i % SHOP_TILE_COLORS.length],
-                              }}
                               aria-hidden="true"
+                              className="w-[52px] h-[52px] rounded-[12px] shrink-0 flex items-center justify-center font-extrabold"
+                              style={{ background: cover.bg, color: cover.fg, fontFamily: FFD }}
                             >
-                              <span style={{ color: "#fff", fontWeight: 800, fontSize: 16, fontFamily: "var(--font-intervar),sans-serif" }}>
-                                {shopInitials(appt.shop_name)}
-                              </span>
+                              {shopInitials(appt.shop_name)}
                             </div>
 
-                            {/* Main info */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div className="flex items-center gap-2" style={{ marginBottom: 6 }}>
-                                <span
-                                  style={{
-                                    display: "inline-flex", alignItems: "center", gap: 4,
-                                    padding: "2px 8px", borderRadius: 9999,
-                                    fontSize: 11, fontWeight: 700,
-                                    background: sc.bgColor, color: sc.textColor,
-                                  }}
-                                >
-                                  {sc.label}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--bg-secondary)]" style={{ color: badge.color }}>
+                                  {badge.label}
                                 </span>
-                                <span style={{ fontSize: 11, color: "#a89e8c" }}>#{appt.id.slice(0, 7).toUpperCase()}</span>
+                                <span className="text-[11px] text-[var(--text-muted)]">
+                                  {interpolate(t.customer.reference, { ref: appt.id.slice(0, 7).toUpperCase() })}
+                                </span>
                               </div>
-                              <h3
-                                style={{
-                                  fontWeight: 800, color: "#1c1611", fontSize: 15,
-                                  lineHeight: 1.3, margin: 0, overflow: "hidden",
-                                  textOverflow: "ellipsis", whiteSpace: "nowrap",
-                                  fontFamily: "var(--font-intervar),sans-serif",
-                                }}
-                              >
-                                {appt.shop_name}
+                              <h3 className="font-extrabold text-[15px] leading-snug text-[var(--text-primary)] m-0 truncate" style={{ fontFamily: FFD }}>
+                                {/* Stretched link → appointment details; action buttons sit above it. */}
+                                <Link
+                                  href={detailHref}
+                                  aria-label={interpolate(t.customer.viewDetailsFor, { shop: appt.shop_name })}
+                                  className="after:absolute after:inset-0 after:rounded-[12px] after:content-[''] focus-visible:outline-none"
+                                >
+                                  {appt.shop_name}
+                                </Link>
                               </h3>
-                              {appt.service_name && (
-                                <p style={{ fontSize: 13, color: "#5a5147", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {appt.service_name}{appt.barber_name ? ` · ${appt.barber_name}` : ""}
-                                </p>
-                              )}
+                              {subtitle && <p className="text-[13px] text-[var(--text-secondary)] mt-0.5 mb-0 truncate">{subtitle}</p>}
                             </div>
 
-                            {/* Date + price */}
-                            <div style={{ textAlign: "end", flexShrink: 0 }}>
-                              <p style={{ fontWeight: 700, color: "#1c1611", fontSize: 14, margin: 0 }}>{format(date, "MMM d")}</p>
-                              <p style={{ fontSize: 12, color: "#5a5147", margin: "1px 0" }}>{format(date, "h:mm a")}</p>
-                              <p style={{ fontWeight: 800, color: "#1c1611", fontSize: 14, margin: 0 }}>{appt.price} JOD</p>
+                            <div className="text-end shrink-0">
+                              <p className="font-bold text-sm text-[var(--text-primary)] m-0">
+                                <time dateTime={appt.start_time}>{formatDate(appt.start_time, { day: "numeric", month: "short", ...zoned(appt) })}</time>
+                              </p>
+                              <p className="text-xs text-[var(--text-secondary)] my-px">{formatTime(appt.start_time, zoned(appt))}</p>
+                              <p className="font-extrabold text-sm text-[var(--text-primary)] m-0 whitespace-nowrap">
+                                {formatCurrency(Number(appt.price) || 0, appt.currency || "JOD")}
+                              </p>
                             </div>
                           </div>
 
-                          {/* Actions */}
-                          <div
-                            className="flex gap-2 mt-4 pt-3"
-                            style={{ borderTop: "1px solid #ede3cd" }}
-                          >
+                          {isUpcoming && cancelState.deadline && (
+                            <p className="relative flex items-start gap-1.5 mt-3 mb-0 text-xs text-[var(--text-secondary)]">
+                              <Info size={13} aria-hidden="true" className="shrink-0 mt-px" />
+                              {cancelState.canCancel
+                                ? interpolate(t.customer.freeCancelUntil, {
+                                    date: formatDate(cancelState.deadline, {
+                                      weekday: "short",
+                                      day: "numeric",
+                                      month: "short",
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                      ...zoned(appt),
+                                    }),
+                                  })
+                                : interpolate(t.customer.cancelWindowClosed, { hours: cancelState.policyHours })}
+                            </p>
+                          )}
+
+                          {/* Actions (z-10 keeps them above the stretched link) */}
+                          <div className="relative z-10 flex gap-2 mt-4 pt-3 border-t border-[var(--border-subtle)]">
                             {isUpcoming ? (
-                              <>
-                                <Link
-                                  href={`/book/${appt.shop_id}?reschedule=${appt.id}`}
-                                  style={{
-                                    flex: 1, textAlign: "center", padding: "8px",
-                                    borderRadius: 8, background: "#f7f1e4",
-                                    color: "#5a5147", fontSize: 12, fontWeight: 700,
-                                    textDecoration: "none",
-                                  }}
-                                >
-                                  {t.customer.reschedule}
-                                </Link>
-                                <button
-                                  onClick={() => setCancelConfirm(appt.id)}
-                                  style={{
-                                    flex: 1, textAlign: "center", padding: "8px",
-                                    borderRadius: 8, background: "rgba(186,26,26,0.06)",
-                                    color: "#ba1a1a", fontSize: 12, fontWeight: 700,
-                                    border: "1px solid rgba(186,26,26,0.2)", cursor: "pointer",
-                                  }}
-                                >
-                                  {t.customer.cancel}
-                                </button>
-                              </>
+                              cancelState.canCancel ? (
+                                <>
+                                  <Link
+                                    href={href(`/book/${appt.shop_id}?reschedule=${appt.id}`)}
+                                    className="flex-1 inline-flex items-center justify-center min-h-[40px] rounded-[8px] bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs font-bold hover:text-[var(--text-primary)] transition-colors"
+                                  >
+                                    {t.customer.reschedule}
+                                  </Link>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCancelReason("");
+                                      setCancelTarget(appt);
+                                    }}
+                                    className="flex-1 inline-flex items-center justify-center min-h-[40px] rounded-[8px] text-xs font-bold border transition-colors"
+                                    style={{ background: "var(--accent-rose-muted)", color: "var(--accent-rose)", borderColor: "var(--accent-rose-muted)" }}
+                                  >
+                                    {t.customer.cancel}
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <Link
+                                    href={detailHref}
+                                    className="flex-1 inline-flex items-center justify-center min-h-[40px] rounded-[8px] bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs font-bold"
+                                  >
+                                    {t.customer.details}
+                                  </Link>
+                                  {appt.shop_phone && (
+                                    <a
+                                      href={`tel:${appt.shop_phone.replace(/[^\d+]/g, "")}`}
+                                      className="flex-1 inline-flex items-center justify-center min-h-[40px] rounded-[8px] bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold"
+                                    >
+                                      {t.customer.callShop}
+                                    </a>
+                                  )}
+                                </>
+                              )
                             ) : (
                               <>
                                 <Link
-                                  href={`/book/${appt.shop_id}`}
-                                  style={{
-                                    flex: 1, textAlign: "center", padding: "8px",
-                                    borderRadius: 8, background: "#1c1611",
-                                    color: "#fff", fontSize: 12, fontWeight: 700,
-                                    textDecoration: "none",
-                                  }}
+                                  href={href(`/book/${appt.shop_id}`)}
+                                  className="flex-1 inline-flex items-center justify-center min-h-[40px] rounded-[8px] bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold hover:opacity-90 transition-opacity"
                                 >
                                   {t.customer.bookAgain}
                                 </Link>
-                                {appt.status === "completed" && !userReviewedApptIds.has(appt.id) && (
+                                {statusOf(appt) === "completed" && !appt.has_review && (
                                   <button
-                                    onClick={() => setReviewAppt(appt)}
-                                    style={{
-                                      flex: 1, textAlign: "center", padding: "8px",
-                                      borderRadius: 8, background: "#f7f1e4",
-                                      color: "#1c1611", fontSize: 12, fontWeight: 700,
-                                      border: "none", cursor: "pointer",
-                                    }}
+                                    type="button"
+                                    onClick={() => openReview(appt)}
+                                    className="flex-1 inline-flex items-center justify-center gap-1.5 min-h-[40px] rounded-[8px] bg-[var(--bg-secondary)] text-[var(--text-primary)] text-xs font-bold"
                                   >
-                                    ★ {t.customer.review}
+                                    <Star size={14} aria-hidden="true" className="text-[var(--accent-brass)]" />
+                                    {t.customer.review}
                                   </button>
                                 )}
-                                {userReviewedApptIds.has(appt.id) && (
-                                  <div style={{ display: "flex", alignItems: "center", gap: 2, padding: "8px 12px", background: "#f7f1e4", borderRadius: 9999 }}>
-                                    {[1,2,3,4,5].map(s => (
-                                      <span key={s} className="material-symbols-outlined" style={{ fontSize: 13, color: "#a67c3d", fontVariationSettings: "'FILL' 1" }}>star</span>
-                                    ))}
-                                  </div>
+                                {appt.has_review && (
+                                  <span className="inline-flex items-center gap-1.5 px-3 min-h-[40px] rounded-full bg-[var(--bg-secondary)] text-xs font-bold text-[var(--accent-text)]">
+                                    <CheckCircle2 size={14} aria-hidden="true" />
+                                    {t.customer.reviewed}
+                                  </span>
                                 )}
                               </>
                             )}
                           </div>
                         </div>
-                      </motion.div>
+                      </motion.li>
                     );
                   })}
-                </AnimatePresence>
+                </ul>
               )}
             </div>
           </div>
         </main>
       </div>
 
-      {/* ── Mobile Bottom Nav ── */}
+      {/* ── Mobile bottom nav ── */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center px-4 pt-2.5"
-        style={{
-          background: "#ffffff",
-          borderTop: "1px solid #ede3cd",
-          paddingBottom: "max(20px, env(safe-area-inset-bottom))",
-        }}
+        aria-label={t.customer.accountNav}
+        className="lg:hidden fixed bottom-0 inset-x-0 z-50 flex justify-around items-center px-4 pt-2.5 bg-[var(--bg-primary)] border-t border-[var(--border-subtle)]"
+        style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
       >
-        <Link href="/customer/explore" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textDecoration: "none", color: "#5a5147" }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 22 }}>explore</span>
-          <span style={{ fontSize: 10, fontWeight: 700 }}>{t.customer.explore}</span>
+        <Link href={href("/explore")} className="flex flex-col items-center gap-1 min-w-[64px] py-1 text-[11px] font-bold text-[var(--text-secondary)] rounded-[8px]">
+          <Compass size={21} aria-hidden="true" />
+          {t.customer.explore}
         </Link>
-        <Link href="/customer" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, textDecoration: "none" }}>
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#1c1611", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>event_note</span>
-          </div>
+        <Link
+          href={href("/customer")}
+          aria-current="page"
+          className="flex flex-col items-center gap-1 min-w-[64px] py-1 text-[11px] font-bold text-[var(--text-primary)] rounded-[8px]"
+        >
+          <span aria-hidden="true" className="w-10 h-7 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center">
+            <CalendarCheck size={19} />
+          </span>
+          {t.explore.navBookings}
         </Link>
         <button
-          onClick={() => setEditProfile(true)}
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer", color: "#5a5147" }}
+          type="button"
+          onClick={openEditProfile}
+          disabled={!user}
+          className="flex flex-col items-center gap-1 min-w-[64px] py-1 text-[11px] font-bold text-[var(--text-secondary)] rounded-[8px] disabled:opacity-50"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 22 }}>person</span>
-          <span style={{ fontSize: 10, fontWeight: 700 }}>{t.customer.settings}</span>
+          <UserRound size={21} aria-hidden="true" />
+          {t.explore.navAccount}
         </button>
       </nav>
 
-      {/* ── Edit Profile Modal ── */}
-      <AnimatePresence>
-        {editProfile && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setEditProfile(false)}
-              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }}
+      {/* ── Edit profile ── */}
+      <Dialog
+        open={editProfile}
+        onClose={() => !saving && setEditProfile(false)}
+        title={t.customer.editProfile}
+        description={t.customer.editProfileDesc}
+        size="sm"
+        closeOnBackdrop={!saving}
+        closeOnEscape={!saving}
+        footer={
+          <DialogFooter>
+            <button type="button" className="btn btn-ghost" onClick={() => setEditProfile(false)} disabled={saving}>
+              {t.common.cancel}
+            </button>
+            <button type="submit" form="customer-profile-form" className="btn btn-primary" disabled={saving} aria-busy={saving}>
+              {saving ? t.customer.saving : t.common.save}
+            </button>
+          </DialogFooter>
+        }
+      >
+        <form id="customer-profile-form" onSubmit={handleSaveProfile} noValidate className="flex flex-col gap-4">
+          <div>
+            <label htmlFor="profile-name" className="field-label">
+              {t.customer.fullName}
+            </label>
+            <input
+              id="profile-name"
+              data-autofocus
+              type="text"
+              className="field-input w-full"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              autoComplete="name"
+              maxLength={80}
+              required
+              aria-invalid={!!profileErrors.name}
+              aria-describedby={profileErrors.name ? "profile-name-error" : undefined}
             />
-            <motion.div
-              initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
-              transition={{ duration: 0.28, ease: [0.25,1,0.5,1] }}
-              style={{
-                position: "relative", width: "100%", maxWidth: 480,
-                background: "#fff", borderRadius: "12px 12px 0 0",
-                padding: "32px 28px",
-              }}
-              className="sm:rounded-xl sm:mb-4"
-            >
-              <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
-                <h3 style={{ fontSize: 20, fontWeight: 900, color: "#1c1611", fontFamily: FF }}>{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h3>
-                <button
-                  onClick={() => setEditProfile(false)}
-                  aria-label={t.common.close}
-                  style={{ width: 32, height: 32, borderRadius: "50%", background: "#f7f1e4", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
-                </button>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {[
-                  { label: isRTL ? "الاسم الكامل" : "Full Name", value: editName, setter: setEditName, type: "text", readOnly: false },
-                  { label: isRTL ? "البريد الإلكتروني" : "Email", value: user?.email || "", setter: () => {}, type: "email", readOnly: true },
-                  { label: isRTL ? "الهاتف" : "Phone", value: editPhone, setter: setEditPhone, type: "tel", readOnly: false },
-                ].map(field => (
-                  <div key={field.label}>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.08em"), color: "#5a5147", marginBottom: 6 }}>
-                      {field.label}
-                    </label>
-                    <input
-                      type={field.type}
-                      value={field.value}
-                      onChange={e => field.setter(e.target.value)}
-                      readOnly={field.readOnly}
-                      style={{
-                        width: "100%", height: 48, padding: "0 16px", borderRadius: 8,
-                        background: field.readOnly ? "#ffffff" : "#f7f1e4",
-                        border: "1.5px solid #ede3cd", outline: "none",
-                        fontSize: 14, fontWeight: 500, color: field.readOnly ? "#5a5147" : "#1c1611",
-                        fontFamily: FF, boxSizing: "border-box",
-                        opacity: field.readOnly ? 0.7 : 1,
-                      }}
-                      onFocus={e => { if (!field.readOnly) { e.target.style.borderColor = "#a67c3d"; e.target.style.background = "#fff"; e.target.style.boxShadow = "var(--shadow-focus)"; } }}
-                      onBlur={e => { if (!field.readOnly) { e.target.style.borderColor = "#ede3cd"; e.target.style.background = "#f7f1e4"; e.target.style.boxShadow = "none"; } }}
-                    />
-                  </div>
-                ))}
-                <button
-                  onClick={handleSaveProfile}
-                  disabled={saving}
-                  style={{
-                    width: "100%", height: 48, background: saving ? "#a67c3d" : "#7c4a1e",
-                    color: "#fff", borderRadius: 8, border: "none", fontWeight: 700,
-                    fontSize: 14, cursor: saving ? "not-allowed" : "pointer",
-                    marginTop: 4, fontFamily: FF,
-                  }}
-                >
-                  {saving ? (isRTL ? "جارٍ الحفظ…" : "Saving…") : (isRTL ? "حفظ التغييرات" : "Save Changes")}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Cancel Confirm Modal ── */}
-      <AnimatePresence>
-        {cancelConfirm && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setCancelConfirm(null)}
-              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }}
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.22 }}
-              style={{
-                position: "relative", width: "100%", maxWidth: 360,
-                background: "#fff", borderRadius: 12, padding: "32px 28px",
-                textAlign: "center",
-              }}
-            >
-              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(186,26,26,0.08)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#ba1a1a" }}>event_busy</span>
-              </div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1c1611", marginBottom: 8 }}>{isRTL ? "إلغاء هذا الموعد؟" : "Cancel this appointment?"}</h3>
-              <p style={{ fontSize: 13, color: "#5a5147", marginBottom: 24 }}>{isRTL ? "لا يمكن التراجع عن هذا. سيتم تحرير الموعد." : "This cannot be undone. The slot will be released."}</p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setCancelConfirm(null)}
-                  style={{ height: 44, borderRadius: 8, background: "#f7f1e4", color: "#5a5147", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
-                >{isRTL ? "الاحتفاظ به" : "Keep It"}</button>
-                <button
-                  onClick={() => handleCancel(cancelConfirm)}
-                  style={{ height: 44, borderRadius: 8, background: "#ba1a1a", color: "#fff", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
-                >{isRTL ? "إلغاء الحجز" : "Cancel Booking"}</button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Logout Confirm Modal ── */}
-      <AnimatePresence>
-        {logoutConfirm && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setLogoutConfirm(false)}
-              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }}
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.22 }}
-              style={{
-                position: "relative", width: "100%", maxWidth: 320,
-                background: "#fff", borderRadius: 12, padding: "28px 24px",
-                textAlign: "center",
-              }}
-            >
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: "#1c1611", marginBottom: 8 }}>{isRTL ? "تسجيل الخروج من حلاقي؟" : "Sign out of Halaqy?"}</h3>
-              <p style={{ fontSize: 13, color: "#5a5147", marginBottom: 24 }}>{isRTL ? "يمكنك تسجيل الدخول مرة أخرى في أي وقت." : "You can always sign back in at any time."}</p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setLogoutConfirm(false)}
-                  style={{ height: 44, borderRadius: 8, background: "#f7f1e4", color: "#5a5147", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
-                >{isRTL ? "البقاء" : "Stay"}</button>
-                <button
-                  onClick={handleSignOut}
-                  style={{ height: 44, borderRadius: 8, background: "#7c4a1e", color: "#fff", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}
-                >{t.customer.signOut}</button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Review Modal ── */}
-      <AnimatePresence>
-        {reviewAppt && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => { setReviewAppt(null); setReviewRating(0); }}
-              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }}
-            />
-            <motion.div
-              initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.25,1,0.5,1] }}
-              style={{
-                position: "relative", width: "100%", maxWidth: 480,
-                background: "#fff", borderRadius: "12px 12px 0 0",
-                padding: "32px 28px",
-              }}
-              className="sm:rounded-xl sm:mb-4"
-            >
-              <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
-                <h3 style={{ fontSize: 20, fontWeight: 900, color: "#1c1611", fontFamily: FF }}>{isRTL ? "أضف تقييماً" : "Leave a Review"}</h3>
-                <button
-                  onClick={() => { setReviewAppt(null); setReviewRating(0); }}
-                  aria-label={t.common.close}
-                  style={{ width: 32, height: 32, borderRadius: "50%", background: "#f7f1e4", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
-                </button>
-              </div>
-              <p style={{ fontSize: 13, color: "#5a5147", marginBottom: 20 }}>
-                {isRTL ? (
-                  <>كيف كانت زيارتك إلى <strong style={{ color: "#1c1611" }}>{reviewAppt.shop_name}</strong>؟</>
-                ) : (
-                  <>How was your visit at <strong style={{ color: "#1c1611" }}>{reviewAppt.shop_name}</strong>?</>
-                )}
+            {profileErrors.name && (
+              <p id="profile-name-error" className="field-error" role="alert">
+                {profileErrors.name}
               </p>
-              {/* Stars */}
-              <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 20 }}>
-                {[1,2,3,4,5].map(star => (
+            )}
+          </div>
+          <div>
+            <label htmlFor="profile-email" className="field-label">
+              {t.customer.email}
+            </label>
+            <input
+              id="profile-email"
+              type="email"
+              className="field-input w-full"
+              value={user?.email || ""}
+              readOnly
+              aria-readonly="true"
+              aria-describedby="profile-email-hint"
+              dir="ltr"
+              style={{ opacity: 0.75 }}
+            />
+            <p id="profile-email-hint" className="text-xs text-[var(--text-muted)] mt-1.5 mb-0">
+              {t.customer.emailReadOnly}
+            </p>
+          </div>
+          <div>
+            <label htmlFor="profile-phone" className="field-label">
+              {t.customer.phone}
+            </label>
+            <input
+              id="profile-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              dir="ltr"
+              className="field-input w-full text-start"
+              value={editPhone}
+              onChange={(e) => setEditPhone(e.target.value)}
+              maxLength={20}
+              aria-invalid={!!profileErrors.phone}
+              aria-describedby={profileErrors.phone ? "profile-phone-error" : undefined}
+            />
+            {profileErrors.phone && (
+              <p id="profile-phone-error" className="field-error" role="alert">
+                {profileErrors.phone}
+              </p>
+            )}
+          </div>
+        </form>
+      </Dialog>
+
+      {/* ── Review ── */}
+      <Dialog
+        open={!!reviewAppt}
+        onClose={closeReview}
+        title={t.customer.reviewTitle}
+        description={reviewAppt ? interpolate(t.customer.reviewPrompt, { shop: reviewAppt.shop_name }) : undefined}
+        size="sm"
+        closeOnBackdrop={!submittingReview}
+        closeOnEscape={!submittingReview}
+        footer={
+          <DialogFooter>
+            <button type="button" className="btn btn-ghost" onClick={closeReview} disabled={submittingReview}>
+              {t.common.cancel}
+            </button>
+            <button
+              type="submit"
+              form="customer-review-form"
+              className="btn btn-primary"
+              disabled={submittingReview || reviewRating === 0}
+              aria-busy={submittingReview}
+            >
+              {submittingReview ? t.customer.submitting : t.customer.submitReview}
+            </button>
+          </DialogFooter>
+        }
+      >
+        <form id="customer-review-form" onSubmit={handleSubmitReview} noValidate>
+          <fieldset className="border-0 p-0 m-0 mb-5">
+            <legend className="field-label">{t.customer.ratingLabel}</legend>
+            <div className="flex justify-center gap-2" onMouseLeave={() => setReviewHover(0)}>
+              {[1, 2, 3, 4, 5].map((star) => {
+                const lit = star <= (reviewHover || reviewRating);
+                return (
                   <button
                     key={star}
-                    onClick={() => setReviewRating(star)}
+                    type="button"
+                    data-autofocus={star === 1 ? true : undefined}
+                    onClick={() => {
+                      setReviewRating(star);
+                      setReviewError(null);
+                    }}
                     onMouseEnter={() => setReviewHover(star)}
-                    onMouseLeave={() => setReviewHover(0)}
-                    aria-label={isRTL ? `تقييم ${star} من 5` : `Rate ${star} star${star > 1 ? "s" : ""}`}
-                    style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "inline-flex", transition: "transform 120ms ease" }}
-                    onMouseDown={e => { e.currentTarget.style.transform = "scale(0.85)"; }}
-                    onMouseUp={e => { e.currentTarget.style.transform = "scale(1)"; }}
+                    aria-label={interpolate(t.customer.starLabel, { count: star })}
+                    aria-pressed={reviewRating === star}
+                    className="p-1.5 rounded-[8px] transition-transform active:scale-90"
                   >
-                    <span
-                      className="material-symbols-outlined"
-                      style={{
-                        fontSize: 40,
-                        color: star <= (reviewHover || reviewRating) ? "#a67c3d" : "#ede3cd",
-                        fontVariationSettings: star <= (reviewHover || reviewRating) ? "'FILL' 1" : "'FILL' 0",
-                        transition: "color 100ms ease",
-                      }}
-                    >star</span>
+                    <Star
+                      size={36}
+                      aria-hidden="true"
+                      strokeWidth={1.5}
+                      style={{ color: lit ? "var(--accent-brass)" : "var(--border-primary)", fill: lit ? "var(--accent-brass)" : "transparent" }}
+                    />
                   </button>
-                ))}
-              </div>
-              <textarea
-                value={reviewComment}
-                onChange={e => setReviewComment(e.target.value.slice(0, 280))}
-                placeholder={isRTL ? "أخبرنا بما أعجبك… (اختياري)" : "Tell us what you loved… (optional)"}
-                style={{
-                  width: "100%", height: 100, padding: 14, borderRadius: 8,
-                  background: "#f7f1e4", border: "none", outline: "none",
-                  fontSize: 14, fontWeight: 500, fontFamily: FF, resize: "none",
-                  marginBottom: 16, boxSizing: "border-box", color: "#1c1611",
-                }}
-                onFocus={e => { e.target.style.background = "#fff"; e.target.style.boxShadow = "var(--shadow-focus)"; }}
-                onBlur={e => { e.target.style.background = "#f7f1e4"; e.target.style.boxShadow = "none"; }}
+                );
+              })}
+            </div>
+          </fieldset>
+          <label htmlFor="review-comment" className="field-label">
+            {t.customer.reviewCommentLabel}
+          </label>
+          <textarea
+            id="review-comment"
+            value={reviewComment}
+            onChange={(e) => setReviewComment(e.target.value.slice(0, REVIEW_MAX))}
+            placeholder={t.customer.reviewPlaceholder}
+            maxLength={REVIEW_MAX}
+            rows={4}
+            aria-describedby="review-comment-count"
+            className="field-input w-full resize-none py-3"
+            style={{ height: "auto" }}
+          />
+          <p id="review-comment-count" className="text-xs text-[var(--text-muted)] text-end mt-1 mb-0 tabular-nums">
+            {formatNumber(reviewComment.length)}/{formatNumber(REVIEW_MAX)}
+          </p>
+          {reviewError && (
+            <p className="field-error" role="alert">
+              {reviewError}
+            </p>
+          )}
+        </form>
+      </Dialog>
+
+      {/* ── Cancel confirmation ── */}
+      <ConfirmDialog
+        open={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={confirmCancel}
+        destructive
+        title={t.customer.cancelTitle}
+        description={t.customer.cancelDesc}
+        confirmLabel={t.customer.cancelConfirm}
+        cancelLabel={t.customer.keepAppointment}
+      >
+        {cancelTarget && (
+          <div className="space-y-3 text-start">
+            <p className="text-sm text-[var(--text-primary)] font-semibold m-0">
+              {cancelTarget.shop_name} ·{" "}
+              {formatDate(cancelTarget.start_time, { weekday: "short", day: "numeric", month: "short", ...zoned(cancelTarget) })}{" "}
+              {formatTime(cancelTarget.start_time, zoned(cancelTarget))}
+            </p>
+            {cancelInfo?.deadline && cancelInfo.canCancel && (
+              <p className="text-xs text-[var(--text-secondary)] m-0">
+                {interpolate(t.customer.freeCancelUntil, {
+                  date: formatDate(cancelInfo.deadline, {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                    hour: "numeric",
+                    minute: "2-digit",
+                    ...zoned(cancelTarget),
+                  }),
+                })}
+              </p>
+            )}
+            <div>
+              <label htmlFor="cancel-reason" className="field-label">
+                {t.customer.cancelReasonLabel}
+              </label>
+              <input
+                id="cancel-reason"
+                type="text"
+                className="field-input w-full"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value.slice(0, REASON_MAX))}
+                placeholder={t.customer.cancelReasonPlaceholder}
+                maxLength={REASON_MAX}
               />
-              <button
-                onClick={handleSubmitReview}
-                disabled={submittingReview || reviewRating === 0}
-                style={{
-                  width: "100%", height: 48, background: submittingReview || reviewRating === 0 ? "#a89e8c" : "#7c4a1e",
-                  color: "#fff", borderRadius: 8, border: "none", fontWeight: 700,
-                  fontSize: 14, cursor: submittingReview || reviewRating === 0 ? "not-allowed" : "pointer",
-                  fontFamily: FF,
-                }}
-              >
-                {submittingReview ? (isRTL ? "جارٍ الإرسال…" : "Submitting…") : (isRTL ? "إرسال التقييم" : "Submit Review")}
-              </button>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
+      </ConfirmDialog>
+
+      {/* ── Sign out confirmation ── */}
+      <ConfirmDialog
+        open={logoutConfirm}
+        onClose={() => setLogoutConfirm(false)}
+        onConfirm={handleSignOut}
+        title={t.customer.signOutTitle}
+        description={t.customer.signOutDesc}
+        confirmLabel={t.customer.signOut}
+      />
     </div>
   );
 }

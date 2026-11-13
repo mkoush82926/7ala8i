@@ -1,7 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { notFound } from "next/navigation";
 import { Cairo } from "next/font/google";
 import localFont from "next/font/local";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/components/theme-provider";
+import en from "@/i18n/en";
+import ar from "@/i18n/ar";
 import "../globals.css";
 
 // ── Arabic font (body + display): Cairo ────────────────────────────────────
@@ -33,37 +37,102 @@ const bdoGrotesk = localFont({
   ],
 });
 
-export const metadata: Metadata = {
-  title: "Halaqy — The Digital Standard for Barbershops",
-  description:
-    "Elevate your atelier with booking, analytics, and CRM reimagined for the modern era.",
-  keywords: ["barbershop", "management", "CRM", "booking", "reservation", "Jordan", "حلاقة", "مواعيد"],
+const SUPPORTED_LOCALES = ["en", "ar"] as const;
+type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+
+function isSupportedLocale(value: string | undefined): value is SupportedLocale {
+  return (SUPPORTED_LOCALES as readonly string[]).includes(value ?? "");
+}
+
+/** Absolute origin used to resolve OG/canonical URLs. */
+function siteUrl(): URL {
+  const candidates = [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL && `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`,
+    process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
+  ];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      return new URL(candidate);
+    } catch {
+      // try the next candidate
+    }
+  }
+  return new URL(`http://localhost:${process.env.PORT ?? 3000}`);
+}
+
+// No-flash theme bootstrap. Mirrors `themeInitScript` in
+// src/components/theme-provider.tsx (kept inline here because that module is a
+// client module, so its string exports are client references on the server).
+// Dark mode only ever applies on the app-shell routes; public pages stay light.
+const THEME_INIT_SCRIPT = `(function(){try{var p=location.pathname.replace(/^\\/(en|ar)(?=\\/|$)/,"");var f=p.split("/").filter(Boolean)[0]||"";var ok=["","analytics","calendar","clients","leads","my-day","services","settings","team"].indexOf(f)>-1;var s=JSON.parse(localStorage.getItem("halaqy-theme-v2")||"{}");var d=ok&&s&&s.state&&s.state.theme==="dark";var r=document.documentElement;r.classList.toggle("dark",!!d);r.setAttribute("data-theme",d?"dark":"light");}catch(e){}})();`;
+
+export function generateStaticParams() {
+  return SUPPORTED_LOCALES.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata(props: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale: rawLocale } = await props.params;
+  const locale: SupportedLocale = rawLocale === "ar" ? "ar" : "en";
+  const t = locale === "ar" ? ar : en;
+  const title = t.landing.metaTitle;
+  const description = t.landing.metaDescription;
+
+  return {
+    metadataBase: siteUrl(),
+    // Child pages set a short title ("Explore barbershops"); the brand is appended.
+    title: { default: title, template: `%s — ${t.sidebar.brand}` },
+    description,
+    applicationName: t.sidebar.brand,
+    keywords: ["barbershop", "barber", "booking", "appointments", "CRM", "Jordan", "Amman", "حلاق", "صالون حلاقة", "حجز موعد"],
+    formatDetection: { telephone: false, email: false, address: false },
+    openGraph: {
+      type: "website",
+      siteName: t.sidebar.brand,
+      title,
+      description,
+      locale: locale === "ar" ? "ar_JO" : "en_US",
+      alternateLocale: locale === "ar" ? ["en_US"] : ["ar_JO"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  colorScheme: "light",
+  themeColor: [{ color: "#ffffff" }],
 };
 
 export default async function RootLayout(props: {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const params = await props.params;
-  const locale = params?.locale || "en";
+  const { locale } = await props.params;
+  if (!isSupportedLocale(locale)) notFound();
   const dir = locale === "ar" ? "rtl" : "ltr";
   const { children } = props;
 
   return (
-    <html lang={locale} dir={dir} suppressHydrationWarning>
+    <html lang={locale} dir={dir} data-lang={locale} suppressHydrationWarning>
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
-        />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body
         className={`${cairo.variable} ${bdoGrotesk.variable} antialiased`}
         suppressHydrationWarning
       >
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+        <ThemeProvider>{children}</ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   );

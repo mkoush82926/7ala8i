@@ -1,3 +1,10 @@
+-- LEGACY / DO NOT RUN ON A FRESH DATABASE.
+-- This script targets one specific hosted project (hard-coded auth user ids)
+-- and predates the 20250101001600 hardening migration (it inserts reviews
+-- without appointments, which the new submit_review() flow never produces).
+-- Local development uses supabase/seed.sql, loaded automatically by
+-- `supabase db reset`. Kept for reference only.
+
 
 -- Fix manager profile and shop
 UPDATE profiles SET role = 'shop_admin' WHERE id = '017ebd83-2992-414f-a28f-82473123930f';

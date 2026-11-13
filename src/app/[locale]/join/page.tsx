@@ -1,14 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Check, AlertCircle, Clock, Loader2 } from "lucide-react";
-import { useTranslation, FONT_EN_DISPLAY } from "@/hooks/use-translation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { AlertCircle, Check, Loader2, LogOut, Users } from "lucide-react";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/components/ui/toast";
+import { AuthCard, AuthHeader, AuthShell } from "../auth/_components/auth-shell";
 
-type JoinStatus = "loading" | "auth_required" | "success" | "already_member" | "error";
+type JoinStatus = "loading" | "auth_required" | "ready" | "accepting" | "success" | "already_member" | "error";
 
 interface InviteLookup {
   shop_id: string;
@@ -17,98 +18,93 @@ interface InviteLookup {
   expires_at: string | null;
 }
 
-function roleLabel(role: string | null, isRTL: boolean) {
-  if (role === "shop_admin") return isRTL ? "مدير المحل" : "Shop Admin";
-  if (role === "barber") return isRTL ? "حلاق" : "Barber";
-  return role || "";
-}
+type ErrorCodeMap = Record<string, string | undefined>;
 
 function JoinContent() {
-  const { isRTL } = useTranslation();
+  const { t, href } = useTranslation();
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const supabase = createClient();
+  const token = searchParams.get("token")?.trim() || null;
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
+  if (!supabaseRef.current) supabaseRef.current = createClient();
+  const supabase = supabaseRef.current;
 
   const [status, setStatus] = useState<JoinStatus>("loading");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [shopName, setShopName] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+
+  const codes = ((t.error as unknown as { codes?: ErrorCodeMap }).codes ?? {}) as ErrorCodeMap;
+  const errorText = (code: string | null) => (code && codes[code]) || t.error.message;
+  const roleLabel = (r: string | null) =>
+    r === "shop_admin" ? t.auth.roleShopAdmin : r === "barber" ? t.auth.roleBarber : r || "";
+
+  const fail = (code: string) => {
+    setErrorCode(code);
+    setStatus("error");
+  };
+
+  const loadShopName = useCallback(
+    async (shopId: string, isCancelled: () => boolean) => {
+      const { data: shop } = await supabase.from("shops").select("name").eq("id", shopId).maybeSingle();
+      const name = (shop as { name?: string } | null)?.name;
+      if (!isCancelled() && name) setShopName(name);
+    },
+    [supabase],
+  );
 
   useEffect(() => {
     let cancelled = false;
+    const isCancelled = () => cancelled;
 
     async function run() {
-      if (!token) {
-        setStatus("error");
-        setErrorMessage(isRTL ? "رابط الدعوة غير صالح." : "This invite link is missing a token.");
-        return;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (cancelled) return;
-
-      if (!user) {
-        setStatus("auth_required");
-        return;
-      }
-
-      // Safe, token-scoped peek (never a broad table read) — lets us show a
-      // graceful "already a member" state on a re-click without treating a
-      // once-used invite as an error.
-      const { data: lookup } = await supabase.rpc("get_invite_by_token", { p_token: token });
-      if (cancelled) return;
-      const invite = (Array.isArray(lookup) ? lookup[0] : lookup) as InviteLookup | null;
-
-      if (!invite) {
-        setStatus("error");
-        setErrorMessage(isRTL ? "الدعوة غير صالحة أو منتهية الصلاحية." : "This invite is invalid or has expired.");
-        return;
-      }
-
-      const { data: myProfile } = await supabase
-        .from("profiles")
-        .select("shop_id, role")
-        .eq("id", user.id)
-        .single();
-      if (cancelled) return;
-
-      if (myProfile?.shop_id === invite.shop_id) {
-        setRole(myProfile.role);
-        setStatus("already_member");
-        const { data: shop } = await supabase.from("shops").select("name").eq("id", invite.shop_id).single();
-        if (!cancelled && shop?.name) setShopName(shop.name);
-        return;
-      }
+      // Tokens are 16–500 chars (InviteAcceptSchema / get_invite_by_token).
+      if (!token || token.length < 16 || token.length > 500) return fail("INVITE_INVALID");
 
       try {
-        const res = await fetch("/api/invite/accept", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token }),
-        });
-        const body = await res.json();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (cancelled) return;
+        if (!user) {
+          setStatus("auth_required");
+          return;
+        }
+        setEmail(user.email ?? null);
 
-        if (!res.ok) {
-          setStatus("error");
-          setErrorMessage(
-            body?.error ||
-              (isRTL ? "الدعوة غير صالحة أو منتهية الصلاحية." : "This invite is invalid or has expired."),
-          );
+        // Token-scoped peek (never a broad table read).
+        const { data: lookup } = await supabase.rpc("get_invite_by_token", { p_token: token });
+        if (cancelled) return;
+        const invite = (Array.isArray(lookup) ? lookup[0] : lookup) as InviteLookup | null;
+        if (!invite) return fail("INVITE_INVALID");
+
+        setRole(invite.role);
+
+        const { data: myProfile } = await supabase
+          .from("profiles")
+          .select("shop_id, role")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (cancelled) return;
+        const profile = myProfile as { shop_id: string | null; role: string } | null;
+
+        if (profile?.shop_id && profile.shop_id === invite.shop_id) {
+          setRole(profile.role);
+          setStatus("already_member");
+          void loadShopName(invite.shop_id, isCancelled);
           return;
         }
 
-        setRole(body.role);
-        setStatus("success");
+        if (invite.status === "accepted") return fail("INVITE_USED");
+        if (invite.status && invite.status !== "pending") return fail("INVITE_INVALID");
+        if (invite.expires_at && new Date(invite.expires_at).getTime() < Date.now()) return fail("INVITE_EXPIRED");
 
-        // Best-effort — a nicer confirmation, not required for success.
-        const { data: shop } = await supabase.from("shops").select("name").eq("id", body.shopId).single();
-        if (!cancelled && shop?.name) setShopName(shop.name);
+        // Joining changes the account's role, so ask before doing it.
+        setStatus("ready");
+        void loadShopName(invite.shop_id, isCancelled);
       } catch {
-        if (!cancelled) {
-          setStatus("error");
-          setErrorMessage(isRTL ? "حدث خطأ غير متوقع." : "Something went wrong. Please try again.");
-        }
+        if (!cancelled) fail("INTERNAL");
       }
     }
 
@@ -119,119 +115,161 @@ function JoinContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  async function handleAccept() {
+    if (!token) return;
+    setStatus("accepting");
+    try {
+      const res = await fetch("/api/invite/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || !body?.success) {
+        fail(typeof body?.code === "string" ? body.code : "INTERNAL");
+        return;
+      }
+      const result = body.data as { shopId?: string; role?: string } | undefined;
+      if (result?.role) setRole(result.role);
+      setStatus("success");
+      toast.success(t.auth.inviteJoined);
+      router.refresh();
+    } catch {
+      fail("INTERNAL");
+    }
+  }
+
+  async function handleSwitchAccount() {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
+    setEmail(null);
+    setStatus("auth_required");
+  }
+
   const nextPath = token ? `/join?token=${encodeURIComponent(token)}` : "/join";
+  const roleText = roleLabel(role);
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-6"
-      style={{ background: "var(--bg-secondary)" }}
-    >
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link
-            href="/landing"
-            dir="ltr"
-            style={{ fontFamily: FONT_EN_DISPLAY }}
-            className="text-3xl font-black tracking-wide text-[var(--text-primary)] no-underline"
-          >
-            Halaqy.
-          </Link>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
-          className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-[var(--radius-xl)] p-8 text-center"
-        >
+    <AuthShell>
+      <AuthCard>
+        <div aria-live="polite">
           {status === "loading" && (
-            <div className="flex flex-col items-center gap-4 py-6">
-              <Loader2 size={32} className="animate-spin text-[var(--accent-mint)]" />
-              <p className="text-sm font-medium text-[var(--text-secondary)]">
-                {isRTL ? "جارٍ التحقق من رابط الدعوة..." : "Checking your invite..."}
-              </p>
+            <div role="status" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "32px 0" }}>
+              <Loader2 size={28} className="animate-spin" aria-hidden="true" style={{ color: "var(--accent-mint)" }} />
+              <p style={{ fontSize: 14, color: "var(--text-secondary)", margin: 0 }}>{t.auth.inviteChecking}</p>
             </div>
           )}
 
           {status === "auth_required" && (
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-[var(--accent-blue-muted)] flex items-center justify-center">
-                <Clock size={24} className="text-[var(--accent-blue)]" />
-              </div>
-              <h1 className="text-xl font-bold text-[var(--text-primary)]">
-                {isRTL ? "دعوة للانضمام إلى الفريق" : "You've been invited to join a team"}
-              </h1>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                {isRTL
-                  ? "أنشئ حساباً أو سجّل الدخول لإكمال الانضمام."
-                  : "Create an account or log in to finish joining."}
-              </p>
-              <div className="flex flex-col w-full gap-3 mt-2">
+            <>
+              <AuthHeader icon={Users} align="center" title={t.auth.inviteTitle} subtitle={t.auth.inviteSubtitle} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <Link
-                  href={`/auth/signup?next=${encodeURIComponent(nextPath)}`}
-                  className="btn btn-primary w-full justify-center"
+                  href={href(`/auth/signup?next=${encodeURIComponent(nextPath)}`)}
+                  className="btn btn-primary"
+                  style={{ width: "100%", minHeight: 52 }}
                 >
-                  {isRTL ? "إنشاء حساب" : "Create an account"}
+                  {t.auth.createAccount}
                 </Link>
                 <Link
-                  href={`/auth/login?next=${encodeURIComponent(nextPath)}`}
-                  className="w-full text-center text-sm font-semibold py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                  href={href(`/auth/login?next=${encodeURIComponent(nextPath)}`)}
+                  className="btn btn-secondary"
+                  style={{ width: "100%", minHeight: 48 }}
                 >
-                  {isRTL ? "لدي حساب بالفعل — تسجيل الدخول" : "I already have an account — log in"}
+                  {t.auth.inviteHaveAccount}
                 </Link>
               </div>
-            </div>
+            </>
+          )}
+
+          {(status === "ready" || status === "accepting") && (
+            <>
+              <AuthHeader
+                icon={Users}
+                align="center"
+                title={shopName ? interpolate(t.auth.inviteReadyTitle, { shop: shopName }) : t.auth.inviteTitle}
+                subtitle={interpolate(t.auth.inviteReadyBody, { role: roleText })}
+              />
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleAccept}
+                disabled={status === "accepting"}
+                aria-busy={status === "accepting" || undefined}
+                style={{ width: "100%", minHeight: 52 }}
+              >
+                {status === "accepting" ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+                    {t.auth.inviteAccepting}
+                  </>
+                ) : (
+                  t.auth.inviteAccept
+                )}
+              </button>
+              {email && (
+                <p style={{ marginTop: 16, fontSize: 13, textAlign: "center", color: "var(--text-muted)" }}>
+                  {interpolate(t.auth.inviteSignedInAs, { email })}{" "}
+                  <button
+                    type="button"
+                    onClick={handleSwitchAccount}
+                    disabled={status === "accepting"}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      color: "var(--text-secondary)",
+                      fontWeight: 700,
+                      textDecoration: "underline",
+                      textUnderlineOffset: 3,
+                      cursor: "pointer",
+                      fontSize: 13,
+                    }}
+                  >
+                    <LogOut size={13} aria-hidden="true" />
+                    {t.auth.inviteSwitchAccount}
+                  </button>
+                </p>
+              )}
+            </>
           )}
 
           {(status === "success" || status === "already_member") && (
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-[var(--accent-mint-muted)] flex items-center justify-center">
-                <Check size={24} className="text-[var(--accent-mint)]" />
-              </div>
-              <h1 className="text-xl font-bold text-[var(--text-primary)]">
-                {status === "already_member"
-                  ? isRTL
-                    ? "أنت عضو بالفعل"
-                    : "You're already a member"
-                  : isRTL
-                    ? "تم الانضمام بنجاح!"
-                    : "You're in!"}
-              </h1>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                {shopName
-                  ? isRTL
-                    ? `أنت الآن ${roleLabel(role, isRTL)} في ${shopName}.`
-                    : `You're now a ${roleLabel(role, isRTL)} at ${shopName}.`
-                  : isRTL
-                    ? `أنت الآن ${roleLabel(role, isRTL)} في هذا المحل.`
-                    : `You're now a ${roleLabel(role, isRTL)} on this team.`}
-              </p>
-              <Link href="/" className="btn btn-primary w-full justify-center mt-2">
-                {isRTL ? "الذهاب إلى لوحة التحكم" : "Go to dashboard"}
-              </Link>
-            </div>
+            <>
+              <AuthHeader
+                icon={Check}
+                tone="success"
+                align="center"
+                title={status === "already_member" ? t.auth.inviteAlreadyMember : t.auth.inviteJoined}
+                subtitle={
+                  shopName
+                    ? interpolate(t.auth.inviteJoinedAt, { role: roleText, shop: shopName })
+                    : interpolate(t.auth.inviteJoinedTeam, { role: roleText })
+                }
+              />
+              <a href={href("/")} className="btn btn-primary" style={{ width: "100%", minHeight: 52 }}>
+                {t.auth.inviteGoDashboard}
+              </a>
+            </>
           )}
 
           {status === "error" && (
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-[var(--accent-rose-muted)] flex items-center justify-center">
-                <AlertCircle size={24} className="text-[var(--accent-rose)]" />
-              </div>
-              <h1 className="text-xl font-bold text-[var(--text-primary)]">
-                {isRTL ? "تعذر إكمال الدعوة" : "This invite can't be completed"}
-              </h1>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{errorMessage}</p>
-              <Link
-                href="/landing"
-                className="w-full text-center text-sm font-semibold py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mt-2"
-              >
-                {isRTL ? "العودة إلى الصفحة الرئيسية" : "Back to the homepage"}
+            <>
+              <AuthHeader icon={AlertCircle} tone="error" align="center" title={t.auth.inviteErrorTitle} subtitle={errorText(errorCode)} />
+              <Link href={href("/landing")} className="btn btn-secondary" style={{ width: "100%", minHeight: 48 }}>
+                {t.auth.backHome}
               </Link>
-            </div>
+            </>
           )}
-        </motion.div>
-      </div>
-    </div>
+        </div>
+      </AuthCard>
+    </AuthShell>
   );
 }
 

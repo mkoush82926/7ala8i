@@ -1,38 +1,57 @@
 "use client";
 
 import Link from "next/link";
-import { SearchX } from "lucide-react";
+import { Home, Search, SearchX } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 
+/**
+ * 404 for every localized route. Most misses come from stale shop links, so
+ * besides "home" (which middleware routes to the dashboard, the customer
+ * portal or the landing page depending on who is signed in) we offer a direct
+ * way back to browsing barbers.
+ */
 export default function LocaleNotFound() {
-  const { t, dir, locale, FF } = useTranslation();
+  const { t, dir, href } = useTranslation();
 
   return (
-    <div
+    <main
+      id="main"
       dir={dir}
-      style={{ fontFamily: FF }}
-      className="min-h-screen flex items-center justify-center p-8"
+      aria-labelledby="not-found-title"
+      className="min-h-[100dvh] flex items-center justify-center px-4 py-12 bg-[var(--bg-primary)]"
     >
-      <div className="text-center" style={{ maxWidth: 400 }}>
-        <div
-          className="rounded-2xl bg-[var(--accent-mint-muted)] flex items-center justify-center mx-auto"
-          style={{ width: 64, height: 64, marginBottom: 24 }}
+      <div className="w-full max-w-md text-center fade-slide-up">
+        <p
+          aria-hidden="true"
+          dir="ltr"
+          className="mb-4 text-[56px] font-extrabold leading-none tracking-tight text-[var(--border-subtle)] select-none"
         >
-          <SearchX size={28} className="text-[var(--accent-mint)]" />
+          404
+        </p>
+        <div
+          aria-hidden="true"
+          className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bg-secondary)]"
+        >
+          <SearchX size={28} className="text-[var(--accent-brass)]" />
         </div>
-        <h2 className="text-[var(--text-primary)] font-semibold" style={{ fontSize: 20, marginBottom: 8 }}>
+        <h1 id="not-found-title" className="mb-2 text-[22px] font-bold text-[var(--text-primary)]">
           {t.error.notFoundTitle}
-        </h2>
-        <p className="text-[var(--text-tertiary)]" style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+        </h1>
+        <p className="mb-8 text-[15px] leading-relaxed text-[var(--text-secondary)]">
           {t.error.notFoundMessage}
         </p>
-        <Link
-          href={`/${locale}`}
-          className="inline-flex items-center gap-2 h-11 px-6 rounded bg-[var(--accent-mint)] text-white font-semibold text-[14px] hover:opacity-90 transition-opacity"
-        >
-          {t.error.goHome}
-        </Link>
+
+        <div className="flex flex-col-reverse items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+          <Link href={href("/explore")} className="btn btn-secondary">
+            <Search size={16} aria-hidden="true" />
+            {t.error.browseBarbers}
+          </Link>
+          <Link href={href("/")} className="btn btn-primary">
+            <Home size={16} aria-hidden="true" />
+            {t.error.goHome}
+          </Link>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

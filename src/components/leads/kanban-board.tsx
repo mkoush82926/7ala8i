@@ -1,215 +1,173 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
   closestCorners,
-  type DragStartEvent,
-  type DragEndEvent,
-  type DragOverEvent,
-  PointerSensor,
   useSensor,
   useSensors,
+  type Announcements,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  type UniqueIdentifier,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { motion, AnimatePresence } from "framer-motion";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { AlertTriangle, Kanban, List, Loader2, Plus, Trash2, Upload, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { GlassButton } from "@/components/ui/glass-button";
-import { useLeadsStore, type LeadStage } from "@/store/leads-store";
-import { KanbanColumn } from "./kanban-column";
-import { LeadCard, LeadCardOverlay } from "./lead-card";
-import { LeadDrawer } from "./lead-drawer";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
-import { Plus, List, Kanban, Upload } from "lucide-react";
-import type { Lead } from "@/lib/types";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import { useLeadsStore, type LeadDraft, type LeadStage } from "@/store/leads-store";
+import { useWorkspaceStore } from "@/store/workspace-store";
+import { LEAD_STAGES, type Lead } from "@/lib/types";
+import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { errorText } from "@/components/calendar/error-text";
+import { initialsOf } from "@/components/calendar/calendar-utils";
+import { KanbanColumn } from "./kanban-column";
+import { STAGE_PILL, useStages, type StageMeta } from "./stages";
+import { LeadCardOverlay } from "./lead-card";
+import { LeadDrawer } from "./lead-drawer";
+import { parseLeadsCsv, MAX_IMPORT_ROWS, MAX_IMPORT_BYTES } from "./lead-csv";
 
-// ─── CSV parsing for "Import CSV" ───
-// Minimal RFC-4180-ish parser: handles quoted cells and escaped quotes ("").
-function parseCsvLine(line: string): string[] {
-  const cells: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === "," && !inQuotes) {
-      cells.push(current.trim());
-      current = "";
-    } else {
-      current += char;
-    }
-  }
-  cells.push(current.trim());
-  return cells;
-}
+const isStage = (id: UniqueIdentifier | undefined | null): id is LeadStage =>
+  typeof id === "string" && (LEAD_STAGES as readonly string[]).includes(id);
 
-function parseLeadsCsv(text: string): Lead[] {
-  const lines = text.split(/\r\n|\n/).filter((line) => line.trim().length > 0);
-  if (lines.length === 0) return [];
-
-  const header = parseCsvLine(lines[0]).map((h) => h.toLowerCase());
-  const nameIdx = header.indexOf("name");
-  const phoneIdx = header.findIndex((h) => h === "phone" || h === "contact");
-  const valueIdx = header.indexOf("value");
-  const notesIdx = header.indexOf("notes");
-  const hasHeader = nameIdx !== -1 || phoneIdx !== -1;
-  const rows = hasHeader ? lines.slice(1) : lines;
-
-  return rows
-    .map((line, i) => {
-      const cells = parseCsvLine(line);
-      const name = (hasHeader ? cells[nameIdx] : cells[0]) || "";
-      const phone = (hasHeader ? cells[phoneIdx] : cells[1]) || "";
-      const rawValue = hasHeader && valueIdx !== -1 ? parseFloat(cells[valueIdx]) : NaN;
-      const notes = hasHeader && notesIdx !== -1 ? cells[notesIdx] : "";
-
-      return {
-        id: `import-${Date.now()}-${i}`,
-        name,
-        phone,
-        stage: "new" as LeadStage,
-        value: Number.isFinite(rawValue) ? rawValue : null,
-        notes: notes || null,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-    })
-    .filter((lead) => lead.name.trim().length > 0);
-}
-
-function useStages() {
-  const { t } = useTranslation();
-  return [
-    {
-      id: "new" as LeadStage,
-      label: t.leads.newLead,
-      color: "var(--accent-blue)",
-    },
-    {
-      id: "contacted" as LeadStage,
-      label: t.leads.contacted,
-      color: "var(--accent-lavender)",
-    },
-    {
-      id: "booked" as LeadStage,
-      label: t.leads.bookedPackage,
-      color: "var(--accent-amber)",
-    },
-    {
-      id: "completed" as LeadStage,
-      label: t.leads.completedStage,
-      color: "var(--accent-mint)",
-    },
-    {
-      id: "regular" as LeadStage,
-      label: t.leads.loyal,
-      color: "var(--accent-rose)",
-    },
-  ];
-}
+/** Drag preview: where the active card currently sits (local only, never persisted mid-drag). */
+type DragPreview = { id: string; stage: LeadStage; overId: string | null } | null;
 
 export function KanbanBoard() {
-  const { leads, moveLead, selectLead, drawerOpen, setDrawerOpen, addLead, importLeads } =
-    useLeadsStore();
+  const leads = useLeadsStore((s) => s.leads);
+  const loading = useLeadsStore((s) => s.loading);
+  const loaded = useLeadsStore((s) => s.loaded);
+  const error = useLeadsStore((s) => s.error);
+  const fetchLeads = useLeadsStore((s) => s.fetchLeads);
+  const moveLead = useLeadsStore((s) => s.moveLead);
+  const selectLead = useLeadsStore((s) => s.selectLead);
+  const openCreate = useLeadsStore((s) => s.openCreate);
+  const importLeads = useLeadsStore((s) => s.importLeads);
+  const shopId = useWorkspaceStore((s) => s.shopId);
+  const role = useWorkspaceStore((s) => s.role);
+  const canEdit = role === "shop_admin";
 
   const { t, isRTL, FFD } = useTranslation();
   const stages = useStages();
+  const stageLabel = (id: LeadStage) => stages.find((s) => s.id === id)?.label ?? id;
 
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [view, setView] = useState<"kanban" | "list">("kanban");
-  const [showNewLeadForm, setShowNewLeadForm] = useState(false);
+  const [preview, setPreview] = useState<DragPreview>(null);
+  const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-  );
+  // Deep link from the topbar search / notifications: /leads?lead=<id> opens
+  // that lead once loaded. The param is stripped once consumed, so choosing the
+  // same result again changes the URL and re-opens the drawer.
+  const linkedLeadId = useSearchParams().get("lead");
+  const router = useRouter();
+  const pathname = usePathname();
+  useEffect(() => {
+    if (!linkedLeadId || !loaded || loading) return;
+    const lead = leads.find((l) => l.id === linkedLeadId);
+    if (lead) selectLead(lead);
+    else toast.error(t.common.linkNotFound);
+    router.replace(pathname, { scroll: false });
+    // Run once per link; leads/t only matter at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedLeadId, loaded, loading]);
 
-  const activeLead = useMemo(
-    () => leads.find((l) => l.id === activeId) || null,
-    [leads, activeId],
+  // Fallback fetch when the board mounts before (or without) the auth provider's prefetch.
+  useEffect(() => {
+    if (shopId && !loaded && !loading) fetchLeads();
+  }, [shopId, loaded, loading, fetchLeads]);
+
+  // Mouse: 5px move. Touch: long-press so horizontal swipes keep scrolling the board.
+  // Keyboard: Space to pick up, arrows to move, Space to drop, Escape to cancel.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   const leadsByStage = useMemo(() => {
-    const map: Record<LeadStage, Lead[]> = {
-      new: [],
-      contacted: [],
-      booked: [],
-      completed: [],
-      regular: [],
-    };
-    leads.forEach((lead) => {
-      map[lead.stage].push(lead);
-    });
+    const map: Record<LeadStage, Lead[]> = { new: [], contacted: [], booked: [], completed: [], regular: [] };
+    for (const lead of leads) {
+      const stage = preview && lead.id === preview.id ? preview.stage : lead.stage;
+      (map[stage] ?? map.new).push(lead);
+    }
     return map;
-  }, [leads]);
+  }, [leads, preview]);
 
-  function handleDragStart(event: DragStartEvent) {
-    setActiveId(event.active.id as string);
-  }
-
-  function handleDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeLeadId = active.id as string;
-    const overId = over.id as string;
-
-    // Check if hovering over a column
-    const overStage = stages.find((s) => s.id === overId);
-    if (overStage) {
-      const activeLead = leads.find((l) => l.id === activeLeadId);
-      if (activeLead && activeLead.stage !== overStage.id) {
-        moveLead(activeLeadId, overStage.id);
-      }
-      return;
-    }
-
-    // Check if hovering over another lead
+  const activeLead = preview ? leads.find((l) => l.id === preview.id) ?? null : null;
+  const nameOf = (id: UniqueIdentifier) => leads.find((l) => l.id === id)?.name ?? "";
+  const stageOfTarget = (overId: UniqueIdentifier | undefined | null): LeadStage | null => {
+    if (overId == null) return null;
+    if (isStage(overId)) return overId;
     const overLead = leads.find((l) => l.id === overId);
-    if (overLead) {
-      const activeLead = leads.find((l) => l.id === activeLeadId);
-      if (activeLead && activeLead.stage !== overLead.stage) {
-        moveLead(activeLeadId, overLead.stage);
-      }
+    if (!overLead) return null;
+    return preview && overLead.id === preview.id ? preview.stage : overLead.stage;
+  };
+
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => interpolate(t.leads.dragStart, { name: nameOf(active.id) }),
+    onDragOver: ({ active, over }) => {
+      const stage = stageOfTarget(over?.id);
+      return stage ? interpolate(t.leads.dragOver, { name: nameOf(active.id), stage: stageLabel(stage) }) : undefined;
+    },
+    onDragEnd: ({ active, over }) => {
+      const stage = stageOfTarget(over?.id);
+      return stage
+        ? interpolate(t.leads.dragEnd, { name: nameOf(active.id), stage: stageLabel(stage) })
+        : interpolate(t.leads.dragCancel, { name: nameOf(active.id) });
+    },
+    onDragCancel: ({ active }) => interpolate(t.leads.dragCancel, { name: nameOf(active.id) }),
+  };
+
+  function handleDragStart({ active }: DragStartEvent) {
+    const lead = leads.find((l) => l.id === active.id);
+    if (lead) setPreview({ id: lead.id, stage: lead.stage, overId: null });
+  }
+
+  // Only local preview state changes while dragging — no DB writes per column crossed.
+  function handleDragOver({ active, over }: DragOverEvent) {
+    if (!preview || !over) return;
+    const stage = stageOfTarget(over.id);
+    if (!stage) return;
+    if (stage !== preview.stage || over.id !== preview.overId) {
+      setPreview({ id: String(active.id), stage, overId: String(over.id) });
     }
   }
 
-  function handleDragEnd(_event: DragEndEvent) {
-    setActiveId(null);
-  }
+  async function handleDragEnd({ active, over }: DragEndEvent) {
+    const current = preview;
+    setPreview(null);
+    if (!current || !over) return;
+    const original = leads.find((l) => l.id === active.id);
+    const stage = stageOfTarget(over.id);
+    if (!original || !stage) return;
 
-  function handleNewLead() {
-    const id = `l-${Date.now()}`;
-    addLead({
-      id,
-      name: "New Lead",
-      phone: "",
-      stage: "new",
-      createdAt: new Date().toISOString().split("T")[0],
-    });
-    const newLead = {
-      id,
-      name: "New Lead",
-      phone: "",
-      stage: "new" as LeadStage,
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    selectLead(newLead);
+    // Final order of the target column (as rendered), then move the card onto the hovered card.
+    const column = leadsByStage[stage].map((l) => l.id);
+    if (!column.includes(original.id)) column.push(original.id);
+    let ordered = column;
+    if (!isStage(over.id) && over.id !== original.id) {
+      const from = column.indexOf(original.id);
+      const to = column.indexOf(String(over.id));
+      if (from !== -1 && to !== -1) ordered = arrayMove(column, from, to);
+    }
+    const index = ordered.indexOf(original.id);
+    const sameSpot =
+      stage === original.stage &&
+      leads.filter((l) => l.stage === stage).findIndex((l) => l.id === original.id) === index;
+    if (sameSpot) return;
+
+    const result = await moveLead(original.id, stage, index);
+    if (!result.ok) toast.error(errorText(t, result.code));
   }
 
   function handleImportClick() {
@@ -220,311 +178,379 @@ export function KanbanBoard() {
     const file = e.target.files?.[0];
     e.target.value = ""; // allow re-selecting the same file later
     if (!file) return;
+    if (file.size > MAX_IMPORT_BYTES) {
+      toast.error(interpolate(t.leads.importTooLarge, { max: MAX_IMPORT_ROWS }));
+      return;
+    }
 
     const reader = new FileReader();
-    reader.onload = () => {
-      const text = String(reader.result ?? "");
-      const parsed = parseLeadsCsv(text);
+    reader.onload = async () => {
+      const parsed: LeadDraft[] = parseLeadsCsv(String(reader.result ?? ""));
       if (parsed.length === 0) {
-        toast("error", isRTL ? "لم يتم العثور على عملاء محتملين صالحين في هذا الملف" : "No valid leads found in that CSV file.");
+        toast.error(t.leads.importEmpty);
         return;
       }
-      importLeads(parsed);
+      if (parsed.length > MAX_IMPORT_ROWS) {
+        toast.error(interpolate(t.leads.importTooLarge, { max: MAX_IMPORT_ROWS }));
+        return;
+      }
+      setImporting(true);
+      const result = await importLeads(parsed);
+      setImporting(false);
+      if (result.ok) toast.success(interpolate(t.leads.imported, { count: result.count }));
+      else toast.error(errorText(t, result.code));
     };
-    reader.onerror = () => {
-      toast("error", isRTL ? "تعذرت قراءة الملف" : "Could not read that file.");
-    };
+    reader.onerror = () => toast.error(t.leads.importReadError);
     reader.readAsText(file);
   }
 
+  const toggleButton = (active: boolean) =>
+    cn(
+      "flex min-h-[36px] min-w-[44px] cursor-pointer items-center justify-center rounded-[8px] px-4 transition-colors",
+      active
+        ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
+        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+    );
+
+  const showSkeleton = (loading || (!loaded && !error)) && leads.length === 0;
+
   return (
-    <div className="space-y-8 h-full">
+    <div className="h-full space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <h2
-            className="text-4xl font-extrabold text-[#1c1611]"
+          <h1
+            className="text-3xl font-extrabold text-[var(--text-primary)] sm:text-4xl"
             style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.016em") }}
           >
             {t.leads.crmPipeline}
-          </h2>
-          <p className="text-[#5a5147] mt-2 font-medium text-sm">
+          </h1>
+          <p className="mt-2 text-sm font-medium text-[var(--text-secondary)]">
             {leads.length} {leads.length === 1 ? t.leads.leadAcross : t.leads.leadsAcross} {stages.length}{" "}
             {t.leads.stages}
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* View Toggle */}
-          <div className="flex items-center gap-1 p-1 rounded-[12px] bg-[var(--bg-secondary)] border border-[var(--border-primary)]">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div
+            role="group"
+            aria-label={t.calendar.viewMode}
+            className="flex items-center gap-1 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-1"
+          >
             <button
+              type="button"
               onClick={() => setView("kanban")}
-              aria-label={isRTL ? "عرض كانبان" : "Kanban view"}
+              aria-label={t.leads.boardView}
               aria-pressed={view === "kanban"}
-              className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
-                view === "kanban"
-                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
-                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              }`}
+              className={toggleButton(view === "kanban")}
             >
-              <Kanban size={16} />
+              <Kanban size={16} aria-hidden="true" />
             </button>
             <button
+              type="button"
               onClick={() => setView("list")}
-              aria-label={isRTL ? "عرض القائمة" : "List view"}
+              aria-label={t.leads.listView}
               aria-pressed={view === "list"}
-              className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
-                view === "list"
-                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
-                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              }`}
+              className={toggleButton(view === "list")}
             >
-              <List size={16} />
+              <List size={16} aria-hidden="true" />
             </button>
           </div>
 
-          <div className="h-8 w-px bg-[var(--border-primary)] hidden md:block mx-1" />
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,text/csv"
-            onChange={handleImportFileChange}
-            className="hidden"
-          />
-          <button className="btn btn-secondary" onClick={handleImportClick}>
-            <Upload size={15} />
-            {t.leads.importCsv}
-          </button>
-          <button
-            onClick={handleNewLead}
-            className="btn btn-primary"
-          >
-            <Plus size={15} />
-            {t.leads.addNewLead}
-          </button>
+          {canEdit && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                onChange={handleImportFileChange}
+                className="hidden"
+                tabIndex={-1}
+                aria-hidden="true"
+              />
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleImportClick}
+                disabled={importing}
+                aria-busy={importing}
+                aria-label={t.leads.importCsv}
+              >
+                {importing ? (
+                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Upload size={15} aria-hidden="true" />
+                )}
+                <span className="hidden sm:inline">{importing ? t.leads.importing : t.leads.importCsv}</span>
+              </button>
+              <button type="button" onClick={() => openCreate("new")} className="btn btn-primary flex-1 sm:flex-none">
+                <Plus size={15} aria-hidden="true" />
+                {t.leads.addNewLead}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Kanban View */}
-      {view === "kanban" ? (
+      {!canEdit && role !== null && (
+        <p className="rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-4 py-3 text-[13px] text-[var(--text-secondary)]">
+          {t.leads.readOnly}
+        </p>
+      )}
+
+      {showSkeleton ? (
+        <SkeletonGroup className="flex gap-4 overflow-hidden">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="w-[min(284px,82vw)] shrink-0 space-y-2">
+              <Skeleton className="mb-3 h-5 w-24" />
+              <Skeleton variant="card" className="h-[88px] w-full" />
+              <Skeleton variant="card" className="h-[88px] w-full" />
+            </div>
+          ))}
+        </SkeletonGroup>
+      ) : error && leads.length === 0 ? (
+        <EmptyState
+          icon={AlertTriangle}
+          tone="error"
+          title={t.leads.loadError}
+          description={errorText(t, error)}
+          action={{ label: t.common.retry, onClick: () => fetchLeads() }}
+        />
+      ) : view === "kanban" ? (
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
+          onDragCancel={() => setPreview(null)}
+          accessibility={{
+            announcements,
+            screenReaderInstructions: { draggable: t.leads.dragInstructions },
+          }}
         >
-          <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
+          <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-4 pb-4 sm:mx-0 sm:snap-none sm:px-0">
             {stages.map((stage) => (
               <KanbanColumn
                 key={stage.id}
                 stage={stage}
                 leads={leadsByStage[stage.id]}
                 onLeadClick={selectLead}
+                editable={canEdit}
+                onAdd={openCreate}
               />
             ))}
           </div>
 
-          <DragOverlay
-            dropAnimation={{
-              duration: 200,
-              easing: "cubic-bezier(0.25, 1, 0.5, 1)",
-            }}
-          >
+          <DragOverlay dropAnimation={{ duration: 200, easing: "cubic-bezier(0.25, 1, 0.5, 1)" }}>
             {activeLead ? <LeadCardOverlay lead={activeLead} /> : null}
           </DragOverlay>
         </DndContext>
       ) : (
-        /* List View */
-        <LeadListView leads={leads} onLeadClick={selectLead} stages={stages} />
+        <LeadListView
+          leads={leads}
+          stages={stages}
+          canEdit={canEdit}
+          onLeadClick={selectLead}
+          onCreate={() => openCreate("new")}
+        />
       )}
 
-      {/* Lead Detail Drawer */}
       <LeadDrawer />
     </div>
   );
 }
 
-// ─── List View ───
+// ─── List View (table from md, stacked cards on phones) ───
 function LeadListView({
   leads,
-  onLeadClick,
   stages,
+  canEdit,
+  onLeadClick,
+  onCreate,
 }: {
   leads: Lead[];
+  stages: StageMeta[];
+  canEdit: boolean;
   onLeadClick: (lead: Lead) => void;
-  stages: { id: LeadStage; label: string; color: string }[];
+  onCreate: () => void;
 }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const { deleteLeads } = useLeadsStore();
-  const { t, isRTL } = useTranslation();
+  const deleteLeads = useLeadsStore((s) => s.deleteLeads);
+  const { t, formatCurrency } = useTranslation();
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+  // Drop selections for leads that no longer exist (deleted elsewhere / refetched).
+  const visibleSelected = selectedIds.filter((id) => leads.some((l) => l.id === id));
+  const allSelected = leads.length > 0 && visibleSelected.length === leads.length;
+
+  const toggleSelect = (id: string) =>
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  const toggleAll = () => setSelectedIds(allSelected ? [] : leads.map((l) => l.id));
+  const stageLabel = (id: LeadStage) => stages.find((s) => s.id === id)?.label ?? id;
+
+  const confirmBulkDelete = async () => {
+    const ids = visibleSelected;
+    const result = await deleteLeads(ids);
+    if (!result.ok) throw new Error(errorText(t, result.code));
+    setSelectedIds([]);
+    toast.success(interpolate(t.leads.bulkDeleted, { count: ids.length }));
+  };
+
+  if (leads.length === 0) {
+    return (
+      <EmptyState
+        icon={Users}
+        title={t.leads.emptyTitle}
+        description={t.leads.emptyDescription}
+        action={canEdit ? { label: t.leads.addNewLead, onClick: onCreate, icon: Plus } : undefined}
+      />
     );
-  };
+  }
 
-  const toggleAll = () => {
-    setSelectedIds((prev) =>
-      prev.length === leads.length ? [] : leads.map((l) => l.id),
+  const checkbox = (lead: Lead) =>
+    canEdit && (
+      <input
+        type="checkbox"
+        checked={visibleSelected.includes(lead.id)}
+        onChange={() => toggleSelect(lead.id)}
+        aria-label={interpolate(t.leads.selectLead, { name: lead.name })}
+        className="h-4 w-4 shrink-0 cursor-pointer accent-[var(--text-primary)]"
+      />
     );
-  };
-
-  const stageColors: Record<string, string> = {
-    new: "text-[var(--accent-blue)] bg-[var(--accent-blue-muted)]",
-    contacted:
-      "text-[var(--accent-lavender)] bg-[var(--accent-lavender-muted)]",
-    booked: "text-[var(--accent-amber)] bg-[var(--accent-amber-muted)]",
-    completed: "text-[var(--accent-mint)] bg-[var(--accent-mint-muted)]",
-    regular: "text-[var(--accent-rose)] bg-[var(--accent-rose-muted)]",
-  };
 
   return (
-    <div className="rounded-xl border border-[#ede3cd] bg-white overflow-hidden">
-      {/* Bulk actions bar */}
-      <AnimatePresence>
-        {selectedIds.length > 0 && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-b border-[var(--border-primary)] bg-[var(--bg-surface)]"
-          >
-            <div className="flex items-center justify-between px-4 py-2.5">
-              <span className="text-[12px] text-[var(--text-secondary)]">
-                {selectedIds.length} {t.leads.selected}
-              </span>
-              <GlassButton
-                variant="danger"
-                size="sm"
-                onClick={() => setConfirmDeleteOpen(true)}
-              >
-                {t.leads.deleteSelected}
-              </GlassButton>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Table header */}
-      <div className="flex items-center border-b border-[#ede3cd] px-6 py-3 bg-[#f7f1e4]">
-        <div className="w-8 flex-shrink-0">
-          <input
-            type="checkbox"
-            checked={selectedIds.length === leads.length && leads.length > 0}
-            onChange={toggleAll}
-            className="w-3.5 h-3.5 rounded-[8px] cursor-pointer"
-          />
-        </div>
-        <div className="flex-1 text-[11px] text-[#5a5147] font-bold uppercase tracking-wider">
-          {t.leads.name}
-        </div>
-        <div className="w-36 text-[11px] text-[#5a5147] font-bold uppercase tracking-wider">
-          {t.leads.phone}
-        </div>
-        <div className="w-28 text-[11px] text-[#5a5147] font-bold uppercase tracking-wider">
-          {t.leads.stage}
-        </div>
-        <div className="w-24 text-[11px] text-[#5a5147] font-bold uppercase tracking-wider text-end">
-          {t.leads.value}
-        </div>
-      </div>
-
-      {/* Table body */}
-      <div>
-        {leads.length === 0 && (
-          <div className="text-center py-12 text-sm text-[#5a5147]">
-            {t.common.noData}
+    <div className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+      {/* Bulk actions */}
+      {canEdit && visibleSelected.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-4 py-2.5">
+          <span className="text-[13px] text-[var(--text-secondary)]" aria-live="polite">
+            {visibleSelected.length} {t.leads.selected}
+          </span>
+          <div className="flex items-center gap-2">
+            <button type="button" className="btn btn-ghost" onClick={() => setSelectedIds([])}>
+              {t.leads.clearSelection}
+            </button>
+            <button type="button" className="btn btn-destructive" onClick={() => setConfirmDeleteOpen(true)}>
+              <Trash2 size={14} aria-hidden="true" />
+              {t.leads.deleteSelected}
+            </button>
           </div>
-        )}
-        {leads.map((lead, i) => (
-          <motion.div
-            key={lead.id}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ delay: i * 0.02 }}
-            className={cn(
-              "flex items-center px-6 py-4 border-b border-[#ede3cd] last:border-b-0",
-              "hover:bg-[#f7f1e4] transition-colors cursor-pointer",
-              selectedIds.includes(lead.id) && "bg-[#f7f1e4]",
-            )}
-            onClick={() => onLeadClick(lead)}
-          >
-            <div
-              className="w-8 flex-shrink-0"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleSelect(lead.id);
-              }}
+        </div>
+      )}
+
+      {/* Table (md+) */}
+      <table className="hidden w-full md:table">
+        <thead>
+          <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)]">
+            <th scope="col" className="w-12 px-4 py-3 text-start">
+              {canEdit && (
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  aria-label={t.leads.selectAll}
+                  className="h-4 w-4 cursor-pointer accent-[var(--text-primary)]"
+                />
+              )}
+            </th>
+            {[t.leads.name, t.leads.phone, t.leads.stage].map((h) => (
+              <th key={h} scope="col" className="px-4 py-3 text-start text-[12px] font-bold text-[var(--text-secondary)]">
+                {h}
+              </th>
+            ))}
+            <th scope="col" className="px-4 py-3 text-end text-[12px] font-bold text-[var(--text-secondary)]">
+              {t.leads.value}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {leads.map((lead) => (
+            <tr
+              key={lead.id}
+              className={cn(
+                "border-b border-[var(--border-subtle)] transition-colors last:border-b-0 hover:bg-[var(--bg-secondary)]",
+                visibleSelected.includes(lead.id) && "bg-[var(--bg-secondary)]",
+              )}
             >
-              <input
-                type="checkbox"
-                checked={selectedIds.includes(lead.id)}
-                onChange={() => toggleSelect(lead.id)}
-                className="w-3.5 h-3.5 rounded-[8px] cursor-pointer"
-              />
-            </div>
-            <div className="flex-1 flex items-center gap-3 min-w-0">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold"
-                style={{ background: "#f7f1e4", color: "#1c1611", fontFamily: "var(--font-intervar), sans-serif" }}
-              >
-                {lead.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-[#1c1611] truncate">
-                  {lead.name}
-                </p>
-                {lead.notes && (
-                  <p className="text-xs text-[#5a5147] truncate">
-                    {lead.notes}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="w-36 text-sm text-[#5a5147] font-medium tabular-nums">
-              {lead.phone}
-            </div>
-            <div className="w-28">
-              <span
-                className={cn(
-                  "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold capitalize",
-                  stageColors[lead.stage],
-                )}
-              >
-                {stages.find((s) => s.id === lead.stage)?.label || lead.stage}
+              <td className="px-4 py-3">{checkbox(lead)}</td>
+              <td className="px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => onLeadClick(lead)}
+                  aria-haspopup="dialog"
+                  className="flex min-h-[44px] w-full cursor-pointer items-center gap-3 text-start"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[12px] font-bold text-[var(--text-primary)]"
+                  >
+                    {initialsOf(lead.name)}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{lead.name}</span>
+                    {lead.notes && (
+                      <span className="block max-w-[320px] truncate text-xs text-[var(--text-secondary)]">{lead.notes}</span>
+                    )}
+                  </span>
+                </button>
+              </td>
+              <td className="px-4 py-3 text-sm font-medium tabular-nums text-[var(--text-secondary)]">
+                <span dir="ltr">{lead.phone || "—"}</span>
+              </td>
+              <td className="px-4 py-3">
+                <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold", STAGE_PILL[lead.stage])}>
+                  {stageLabel(lead.stage)}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-end text-sm font-bold tabular-nums text-[var(--text-primary)]">
+                {lead.value ? formatCurrency(lead.value) : "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Stacked cards (phones) */}
+      <ul className="divide-y divide-[var(--border-subtle)] md:hidden">
+        {leads.map((lead) => (
+          <li
+            key={lead.id}
+            className={cn("flex items-start gap-3 px-4 py-3", visibleSelected.includes(lead.id) && "bg-[var(--bg-secondary)]")}
+          >
+            {canEdit && <div className="pt-3">{checkbox(lead)}</div>}
+            <button
+              type="button"
+              onClick={() => onLeadClick(lead)}
+              aria-haspopup="dialog"
+              className="min-h-[44px] min-w-0 flex-1 cursor-pointer text-start"
+            >
+              <span className="flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-bold text-[var(--text-primary)]">{lead.name}</span>
+                <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold", STAGE_PILL[lead.stage])}>
+                  {stageLabel(lead.stage)}
+                </span>
               </span>
-            </div>
-            <div className="w-24 text-end text-sm text-[#1c1611] font-bold tabular-nums">
-              {lead.value ? `${lead.value} ${t.common.jod}` : "—"}
-            </div>
-          </motion.div>
+              <span className="mt-1 flex items-center justify-between gap-2 text-[12px] text-[var(--text-secondary)]">
+                <span dir="ltr" className="tabular-nums">
+                  {lead.phone || "—"}
+                </span>
+                {!!lead.value && (
+                  <span className="font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(lead.value)}</span>
+                )}
+              </span>
+            </button>
+          </li>
         ))}
-      </div>
+      </ul>
 
       <ConfirmDialog
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
-        onConfirm={() => {
-          deleteLeads(selectedIds);
-          setSelectedIds([]);
-        }}
-        title={
-          isRTL
-            ? `حذف ${selectedIds.length} من العملاء المحتملين؟`
-            : `Delete ${selectedIds.length} lead${selectedIds.length === 1 ? "" : "s"}?`
-        }
-        description={
-          isRTL
-            ? "لا يمكن التراجع عن هذا الإجراء."
-            : "This action cannot be undone."
-        }
+        onConfirm={confirmBulkDelete}
+        title={interpolate(t.leads.bulkDeleteTitle, { count: visibleSelected.length })}
+        description={t.leads.deleteDescription}
         confirmLabel={t.common.delete}
-        cancelLabel={t.common.cancel}
         destructive
       />
     </div>

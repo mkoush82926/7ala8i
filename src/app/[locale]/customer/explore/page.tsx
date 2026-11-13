@@ -1,3 +1,7 @@
-// /customer/explore → reuses the same explore page component
-// This file just re-exports the explore page with customer-aware navigation
-export { default } from "@/app/[locale]/explore/page";
+import { redirect } from "next/navigation";
+
+// /customer/explore → the public explore directory (one implementation, one URL).
+export default async function CustomerExploreRedirect({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  redirect(`/${locale === "ar" ? "ar" : "en"}/explore`);
+}

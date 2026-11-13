@@ -2,8 +2,8 @@
 // for Playwright E2E tests. Idempotent: safe to run against a DB that
 // already has these users (skips ones that exist and reuses their data).
 //
-// Unlike the root-level seed.sql (written against a pre-existing populated
-// project), this creates its own auth users so it works on a brand new
+// Unlike the legacy root-level seed.sql (written against a pre-existing
+// populated project), this creates its own auth users so it works on a brand new
 // `supabase db reset`. Run via `node scripts/seed-e2e.mjs` after
 // `npm run db:start`, with SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY set
 // (defaults below match the Supabase CLI's local instance).
@@ -49,7 +49,9 @@ export async function seedE2E({
   const customer = await ensureUser(supabase, E2E_CUSTOMER, "customer");
 
   // handle_new_user() auto-creates the shop_admin's shop + profile + 6
-  // default services (see supabase/migrations/003_customer_role.sql).
+  // default services + default working hours/barber_services (see
+  // supabase/migrations/20250101001600_production_hardening.sql). Only the
+  // metadata role "shop_admin" creates a shop; anything else is a customer.
   const { data: profile, error: profileErr } = await supabase
     .from("profiles")
     .select("shop_id")

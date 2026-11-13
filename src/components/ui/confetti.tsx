@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 interface ConfettiPiece {
   id: number;
@@ -40,6 +40,8 @@ interface ConfettiProps {
 export function Confetti({ trigger, onComplete }: ConfettiProps) {
   const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
   const [show, setShow] = useState(false);
+  // Purely decorative burst — skip it entirely for reduced-motion users
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (trigger) {
@@ -56,8 +58,8 @@ export function Confetti({ trigger, onComplete }: ConfettiProps) {
 
   return (
     <AnimatePresence>
-      {show && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
+      {show && !reduceMotion && (
+        <div aria-hidden="true" className="absolute inset-0 pointer-events-none overflow-hidden z-10">
           {pieces.map((piece) => (
             <motion.div
               key={piece.id}

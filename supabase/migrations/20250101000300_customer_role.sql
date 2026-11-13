@@ -4,7 +4,15 @@
 -- ============================================
 
 -- Add 'customer' to user_role enum
-ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'customer';
+-- (Replay guard added 2026-11: on a database built from these migrations the
+-- role column is TEXT + CHECK and no user_role type exists, so the bare
+-- ALTER TYPE aborted `supabase db reset`. The TEXT CHECK is widened to include
+-- 'customer' in 20250101001600_production_hardening.sql.)
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+    EXECUTE 'ALTER TYPE user_role ADD VALUE IF NOT EXISTS ''customer''';
+  END IF;
+END $$;
 
 -- Make shop_id nullable on profiles (customers don't belong to a shop)
 ALTER TABLE public.profiles ALTER COLUMN shop_id DROP NOT NULL;

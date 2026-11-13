@@ -1,147 +1,135 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { z } from "zod";
-import { rateLimit } from "@/lib/rate-limit";
+import { createClient } from "@/lib/supabase/server";
+import { rateLimit, rateLimitKey, getClientIp } from "@/lib/rate-limit";
+import { AvailabilityQuerySchema, CreateBookingSchema } from "@/lib/validations";
+import {
+  apiErrorCode,
+  apiValidationError,
+  dbErrorResponse,
+  serverError,
+} from "@/lib/api-helpers";
+import type { BookingResult } from "@/lib/supabase/database.types";
+import { parseIdempotencyKey, runIdempotent } from "./idempotency";
+import { callRpc } from "./rpc";
 
-const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+// Public columns only: anon may not select("*") on shops/profiles.
+const SHOP_COLUMNS = "id, name, address, currency, timezone, cancellation_policy_hours";
+const SERVICE_COLUMNS = "id, name, name_ar, duration, price, sort_order";
+const BARBER_COLUMNS = "id, full_name, avatar_url";
 
-export const bookingSchema = z.object({
-  shopId: z.string().uuid("Invalid shop ID"),
-  serviceIds: z.array(z.string().uuid("Invalid service ID")).optional(),
-  barberId: z.string().nullable().optional(),
-  clientName: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
-  clientPhone: z.string().trim().regex(phoneRegex, "Invalid phone number format"),
-  startTime: z.string().datetime("Start time must be a valid ISO date string"),
-  endTime: z.string().datetime("End time must be a valid ISO date string"),
-  totalPrice: z.number().nonnegative("Price cannot be negative").max(100000, "Price exceeds maximum allowed limit").optional(),
-  source: z.string().trim().max(50).nullable().optional(),
-}).refine(data => new Date(data.endTime) > new Date(data.startTime), {
-  message: "End time must be after start time",
-  path: ["endTime"],
-});
-
+/**
+ * GET /api/booking?shopId=…&date=YYYY-MM-DD[&barberId=…]
+ * Public booking data for one shop. Availability comes from the
+ * get_busy_slots RPC (times only, no client data).
+ */
 export async function GET(req: NextRequest) {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-      },
-    }
-  );
+  const rl = await rateLimit(rateLimitKey("booking-read", getClientIp(req)), 60, 60);
+  if (!rl.success) return apiErrorCode("RATE_LIMITED", { retryAfter: rl.retryAfter });
 
-  const shopId = req.nextUrl.searchParams.get("shopId");
-  const date = req.nextUrl.searchParams.get("date");
-
-  if (!shopId) {
-    return NextResponse.json({ error: "shopId is required" }, { status: 400 });
-  }
+  const sp = req.nextUrl.searchParams;
+  const parsed = AvailabilityQuerySchema.safeParse({
+    shopId: sp.get("shopId") ?? undefined,
+    date: sp.get("date") ?? undefined,
+    barberId: sp.get("barberId") ?? undefined,
+  });
+  if (!parsed.success) return apiValidationError(parsed.error);
+  const { shopId, date, barberId } = parsed.data;
 
   try {
-    const [shopRes, servicesRes, barbersRes] = await Promise.all([
-      supabase.from("shops").select("id, name, address, currency").eq("id", shopId).single(),
-      supabase.from("services").select("*").eq("shop_id", shopId).eq("is_active", true).order("sort_order"),
-      supabase.from("profiles").select("id, full_name, avatar_url").eq("shop_id", shopId),
+    const supabase = await createClient();
+    const [shopRes, servicesRes, barbersRes, busyRes] = await Promise.all([
+      supabase.from("shops").select(SHOP_COLUMNS).eq("id", shopId).maybeSingle(),
+      supabase
+        .from("services")
+        .select(SERVICE_COLUMNS)
+        .eq("shop_id", shopId)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("profiles")
+        .select(BARBER_COLUMNS)
+        .eq("shop_id", shopId)
+        .in("role", ["barber", "shop_admin"]),
+      date
+        ? callRpc(supabase, "get_busy_slots", { p_shop_id: shopId, p_day: date, p_barber_id: barberId ?? null })
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
-    let appointments: { start_time: string; end_time: string; barber_id: string | null }[] = [];
-    if (date) {
-      const dayStart = `${date}T00:00:00`;
-      const dayEnd = `${date}T23:59:59`;
-      const apptRes = await supabase
-        .from("appointments")
-        .select("start_time, end_time, barber_id")
-        .eq("shop_id", shopId)
-        .gte("start_time", dayStart)
-        .lte("start_time", dayEnd)
-        .neq("status", "cancelled");
-      appointments = apptRes.data || [];
-    }
+    const failed = [shopRes, servicesRes, barbersRes, busyRes].find((r) => r.error);
+    if (failed?.error) return dbErrorResponse("booking.read", failed.error);
+    if (!shopRes.data) return apiErrorCode("SHOP_NOT_FOUND");
 
-    return NextResponse.json({
-      shop: shopRes.data,
-      services: servicesRes.data || [],
-      barbers: barbersRes.data || [],
-      appointments,
-    });
-  } catch {
-    return NextResponse.json({ error: "Failed to fetch shop data" }, { status: 500 });
+    return NextResponse.json(
+      {
+        shop: shopRes.data,
+        services: servicesRes.data ?? [],
+        barbers: barbersRes.data ?? [],
+        appointments: busyRes.data ?? [],
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (err) {
+    return serverError("booking.read", err);
   }
 }
 
+type CreateOutcome =
+  | { ok: true; booking: BookingResult }
+  | { ok: false; error: unknown };
+
+/**
+ * POST /api/booking — create a public booking.
+ * Price, end time, service name and the barber for "any" are decided by the
+ * create_public_booking RPC; the client only sends what the customer chose.
+ * Send an `Idempotency-Key` header (same value on retries) to avoid duplicates.
+ */
 export async function POST(req: NextRequest) {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-      },
-    }
-  );
+  // Rate limit first, before any other network call.
+  const ip = getClientIp(req);
+  const rl = await rateLimit(rateLimitKey("booking", ip), 10, 60);
+  if (!rl.success) return apiErrorCode("RATE_LIMITED", { retryAfter: rl.retryAfter });
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return apiErrorCode("VALIDATION_FAILED");
+  }
+
+  const parsed = CreateBookingSchema.safeParse(body);
+  if (!parsed.success) return apiValidationError(parsed.error);
+  const { shopId, serviceIds, barberId, clientName, clientPhone, startTime, source, notes } = parsed.data;
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const supabase = await createClient();
 
-    const ip = req.headers.get("x-forwarded-for") || "anonymous";
-    const { success } = rateLimit(`booking:${ip}`, 5);
-    if (!success) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-    }
-    const body = await req.json();
+    const create = async (): Promise<CreateOutcome> => {
+      const { data, error } = await callRpc(supabase, "create_public_booking", {
+        p_shop_id: shopId,
+        p_client_name: clientName,
+        p_client_phone: clientPhone,
+        p_service_ids: serviceIds,
+        p_barber_id: barberId,
+        p_start_time: startTime,
+        p_source: source,
+        p_notes: notes ?? null,
+      });
+      if (error || !data) return { ok: false, error: error ?? new Error("create_public_booking returned no data") };
+      return { ok: true, booking: data };
+    };
 
-    const parsed = bookingSchema.safeParse(body);
-    if (!parsed.success) {
-      const errors = parsed.error.flatten().fieldErrors;
-      const firstError = Object.values(errors).flat()[0] || "Invalid input data";
-      console.warn("[Booking API] Validation failed:", errors);
-      return NextResponse.json({ error: firstError, details: errors }, { status: 400 });
-    }
+    const idemKey = parseIdempotencyKey(req.headers.get("idempotency-key"));
+    const { result, replayed } = idemKey
+      ? await runIdempotent(rateLimitKey("booking", ip, shopId, idemKey), create, (r) => r.ok)
+      : { result: await create(), replayed: false };
 
-    const { shopId, serviceIds, barberId, clientName, clientPhone, startTime, endTime, totalPrice, source } = parsed.data;
+    if (!result.ok) return dbErrorResponse("booking.create", result.error);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: appointmentId, error: rpcErr } = await (supabase.rpc as any)("create_public_booking", {
-      p_shop_id: shopId,
-      p_client_name: clientName,
-      p_client_phone: clientPhone,
-      p_service_ids: serviceIds || [],
-      p_barber_id: barberId === "any" ? null : (barberId || null),
-      p_start_time: startTime,
-      p_end_time: endTime,
-      p_total_price: totalPrice || 0,
-      p_source: source || "online",
-    });
-
-    if (rpcErr || !appointmentId) {
-      console.error("[Booking API] RPC failed:", rpcErr);
-      return NextResponse.json({ error: "Failed to schedule appointment", details: rpcErr }, { status: 500 });
-    }
-
-    if (user?.email && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      // Link the client record to the user by setting the email, bypassing RLS using service role
-      const adminSupabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        { cookies: { getAll() { return [] } } }
-      );
-      const { data: appt } = await adminSupabase.from('appointments').select('client_id').eq('id', appointmentId).single();
-      if (appt?.client_id) {
-        await adminSupabase.from('clients').update({ email: user.email }).eq('id', appt.client_id);
-      }
-    }
-
-    return NextResponse.json({ success: true, appointment_id: appointmentId });
+    return NextResponse.json(
+      { success: true, appointment_id: result.booking.appointment_id, booking: result.booking },
+      { status: replayed ? 200 : 201, headers: replayed ? { "Idempotent-Replayed": "true" } : undefined },
+    );
   } catch (err) {
-    console.error("[Booking API] Unexpected error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return serverError("booking.create", err);
   }
 }

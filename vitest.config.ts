@@ -12,11 +12,20 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],
-      include: ["src/lib/**", "src/app/api/**", "src/store/**"],
-      // mock-data.ts is legacy data slated for removal once real queries
-      // replace it everywhere (tracked in the project's own PLAN.md/TODO.md)
-      // — not worth covering before it's deleted.
-      exclude: ["src/lib/mock-data.ts"],
+      include: [
+        "src/lib/**",
+        "src/app/api/**",
+        "src/store/**",
+        "src/hooks/**",
+        "src/components/ui/**",
+        "src/middleware.ts",
+      ],
+      // Dev-only fixtures and generated types: not production logic.
+      exclude: [
+        "src/lib/mock-data.ts",
+        "src/lib/supabase/database.types.ts",
+        "**/*.test.{ts,tsx}",
+      ],
     },
   },
 });

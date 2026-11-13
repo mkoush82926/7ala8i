@@ -1,355 +1,563 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import {
-  AreaChart, Area, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from "recharts";
+import { Download, Loader2, RefreshCw, TrendingUp, TrendingDown, Minus, AlertTriangle, BarChart3 } from "lucide-react";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { createClient } from "@/lib/supabase/client";
-import { getFullAnalytics } from "@/lib/queries/analytics-page";
-import { DashboardSkeleton } from "@/components/ui/skeleton";
-import { Loader2 } from "lucide-react";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import {
+  getFullAnalytics,
+  getAppointmentsForExport,
+  toCsv,
+  type AnalyticsData,
+  type AnalyticsPeriod,
+  type SourceKey,
+} from "@/lib/queries/analytics-page";
+import { AnalyticsSkeleton, ChartSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { toast } from "@/components/ui/toast";
+import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { cn } from "@/lib/utils";
+import { SLICE_COLORS } from "./analytics-charts";
 
-type AnalyticsData = Awaited<ReturnType<typeof getFullAnalytics>>;
+// recharts is only needed on this route — load it after first paint.
+const RevenueTrendChart = dynamic(() => import("./analytics-charts").then((m) => m.RevenueTrendChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton bare height={240} />,
+});
+const SourcesDonut = dynamic(() => import("./analytics-charts").then((m) => m.SourcesDonut), {
+  ssr: false,
+  loading: () => <div className="skeleton size-[168px] shrink-0 rounded-full" aria-hidden />,
+});
+
+const PERIODS: AnalyticsPeriod[] = ["week", "month", "year"];
+/** Heatmap column order: Saturday-first in Arabic (Jordan), Monday-first in English. */
+const DAY_ORDER: Record<"ar" | "en", number[]> = { ar: [6, 0, 1, 2, 3, 4, 5], en: [1, 2, 3, 4, 5, 6, 0] };
+
+const card = "rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5 sm:p-7";
 
 export default function AnalyticsPage() {
-  const { isRTL, FF } = useTranslation();
-  const { shopId } = useWorkspaceStore();
-  const [period, setPeriod] = useState<"week" | "month" | "year">("month");
-
-  // Data state
-  const [loading, setLoading] = useState(true);
+  const { t, isRTL, FF, locale, href, formatCurrency, formatNumber, formatDate, formatTime, formatRelative } =
+    useTranslation();
+  const a = t.analytics;
+  const { shopId, hydrated } = useWorkspaceStore();
+  const [period, setPeriod] = useState<AnalyticsPeriod>("month");
   const [data, setData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [now, setNow] = useState(() => new Date());
+  const requestRef = useRef(0);
+
+  const load = useCallback(async () => {
+    if (!shopId) {
+      if (hydrated) setLoading(false);
+      return;
+    }
+    const id = ++requestRef.current;
+    setLoading(true);
+    setFailed(false);
+    try {
+      const res = await getFullAnalytics(createClient(), shopId, period);
+      if (id !== requestRef.current) return; // a newer period was requested
+      setData(res);
+      setLastUpdated(new Date());
+    } catch {
+      if (id !== requestRef.current) return;
+      setFailed(true);
+    } finally {
+      if (id === requestRef.current) setLoading(false);
+    }
+  }, [shopId, hydrated, period]);
 
   useEffect(() => {
-    async function fetchData() {
-      if (!shopId) return;
-      setLoading(true);
-      const supabase = createClient();
-      const res = await getFullAnalytics(supabase, shopId, period);
-      setData(res);
-      setLoading(false);
-    }
-    fetchData();
-  }, [shopId, period]);
+    // Data fetch on mount / period change.
+    void load();
+  }, [load]);
 
+  // Keep the "updated x minutes ago" note fresh.
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currency = data?.currency ?? "JOD";
+  const money = useCallback(
+    (n: number) => formatCurrency(n, currency, { maximumFractionDigits: 2, trimZeros: true }),
+    [formatCurrency, currency],
+  );
+
+  const periodLabel: Record<AnalyticsPeriod, string> = {
+    week: t.dashboard.weekly,
+    month: t.dashboard.monthly,
+    year: t.dashboard.yearly,
+  };
+
+  const sourceLabel = useCallback(
+    (s: SourceKey | string | null): string => {
+      switch (s) {
+        case "online": return a.sourceOnline;
+        case "instagram": return t.booking.instagram;
+        case "google": return t.booking.google;
+        case "word_of_mouth": return t.booking.wordOfMouth;
+        case "walk_in": return t.booking.walkIn;
+        case "whatsapp": return a.sourceWhatsapp;
+        default: return t.booking.other;
+      }
+    },
+    [a, t.booking],
+  );
+
+  // ── Revenue series with localized labels ──
+  const series = useMemo(() => {
+    if (!data) return [];
+    return data.revenueSeries.map((p) => {
+      const [y, m, d] = p.key.split("-").map(Number);
+      const date = new Date(y, m - 1, d || 1, 12);
+      const label =
+        data.bucket === "month"
+          ? formatDate(date, { month: "short" })
+          : data.period === "week"
+            ? formatDate(date, { weekday: "short" })
+            : formatDate(date, { day: "numeric" });
+      const fullLabel = data.bucket === "month" ? formatDate(date, "monthYear") : formatDate(date, "long");
+      return { key: p.key, label, fullLabel, revenue: p.revenue };
+    });
+  }, [data, formatDate]);
+  const hasRevenue = series.some((p) => p.revenue > 0);
+
+  // ── CSV export of the selected period ──
   async function handleExport() {
-    if (!shopId) return;
+    if (!shopId || exporting) return;
     setExporting(true);
-    const supabase = createClient();
-    const { data: appts } = await supabase.from('appointments').select('*').eq('shop_id', shopId).order('start_time', { ascending: false });
-    
-    if (appts && appts.length > 0) {
-      const headers = Object.keys(appts[0]).join(",");
-      const rows = appts.map(obj => Object.values(obj).map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(",")).join("\n");
-      const csv = `${headers}\n${rows}`;
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `appointments_export_${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+    try {
+      const supabase = createClient();
+      const tz = data?.timeZone ?? "Asia/Amman";
+      const [{ rows, error, truncated }, { data: staff }] = await Promise.all([
+        getAppointmentsForExport(supabase, shopId, period, tz),
+        supabase.from("profiles").select("id, full_name").eq("shop_id", shopId),
+      ]);
+      if (error) throw new Error(error.message);
+      if (rows.length === 0) {
+        toast.info(a.exportEmpty);
+        return;
+      }
+      const names = new Map(((staff ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name ?? ""]));
+      const statusLabel: Record<string, string> = {
+        pending: t.calendar.pending,
+        confirmed: t.calendar.confirmed,
+        completed: t.calendar.completed,
+        no_show: t.calendar.noShow,
+        "no-show": t.calendar.noShow,
+        cancelled: a.statusCancelled,
+      };
+      const paymentLabel: Record<string, string> = {
+        cash: t.dashboard.cash,
+        card: t.dashboard.card,
+        online: a.sourceOnline,
+        mixed: a.paymentMixed,
+      };
+      const zoned = (iso: string, opts: Intl.DateTimeFormatOptions) =>
+        formatDate(iso, { ...opts, timeZone: tz });
+      const csv = toCsv(
+        [a.csvDate, t.calendar.time, t.calendar.client, t.calendar.service, t.calendar.barber, t.services.price, t.settings.currency, t.calendar.status, a.csvPayment, a.csvSource],
+        rows.map((r) => [
+          zoned(r.start_time, { year: "numeric", month: "2-digit", day: "2-digit" }),
+          formatTime(r.start_time, { timeZone: tz }),
+          r.client_name ?? "",
+          r.service_name ?? "",
+          r.barber_id ? names.get(r.barber_id) ?? "" : "",
+          r.price ?? 0,
+          r.currency ?? currency,
+          r.status ? statusLabel[r.status] ?? r.status : "",
+          r.payment_method ? paymentLabel[r.payment_method] ?? r.payment_method : "",
+          sourceLabel(r.source ? r.source.toLowerCase() : "walk_in"),
+        ]),
+      );
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `appointments-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success(interpolate(a.exportDone, { count: rows.length }));
+      if (truncated) toast.info(a.truncated);
+    } catch {
+      toast.error(a.exportFailed);
+    } finally {
+      setExporting(false);
     }
-    setExporting(false);
   }
 
-  if (loading && !data) return <DashboardSkeleton />;
+  // ── Loading / empty / error ──
+  if (!data && (loading || (!hydrated && !shopId))) return <AnalyticsSkeleton />;
 
-  const { summaryMetrics, revenueData, barberData, acquisitionData, peakHoursData } = data ? {
-    summaryMetrics: data.summary,
-    revenueData: data.revenueChart,
-    barberData: data.barberChart,
-    acquisitionData: data.acquisitionChart,
-    peakHoursData: data.peakChart
-  } : { summaryMetrics: [], revenueData: [], barberData: [], acquisitionData: [], peakHoursData: [] };
+  if (!shopId) {
+    return <EmptyState icon={BarChart3} size="lg" title={a.noShopTitle} description={a.noShopDesc} />;
+  }
 
-  const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+  if (!data) {
+    return (
+      <EmptyState
+        tone="error"
+        size="lg"
+        icon={AlertTriangle}
+        title={a.loadFailed}
+        description={t.error.message}
+        action={{ label: t.common.retry, onClick: () => void load(), icon: RefreshCw }}
+      />
+    );
+  }
+
+  const s = data.summary;
+  const summaryCards: { id: string; label: string; value: string; change: number | null; sub: string; unit?: "pts" }[] = [
+    {
+      id: "revenue",
+      label: a.revenue,
+      value: money(s.revenue.current),
+      change: s.revenue.change,
+      sub: interpolate(a.vsPrevious, { value: money(s.revenue.previous) }),
+    },
+    {
+      id: "bookings",
+      label: a.bookings,
+      value: formatNumber(s.bookings.current),
+      change: s.bookings.change,
+      sub: interpolate(a.vsPrevious, { value: formatNumber(s.bookings.previous) }),
+    },
+    {
+      id: "clients",
+      label: a.newClients,
+      value: formatNumber(s.newClients.current),
+      change: s.newClients.change,
+      sub: interpolate(a.vsPrevious, { value: formatNumber(s.newClients.previous) }),
+    },
+    {
+      id: "repeat",
+      label: a.repeatRate,
+      value: s.repeatRate.current === null ? "—" : `${formatNumber(s.repeatRate.current, { maximumFractionDigits: 1 })}%`,
+      change: s.repeatRate.change,
+      sub: s.repeatRate.current === null ? a.notEnoughData : a.repeatRateHint,
+      unit: "pts",
+    },
+  ];
+
+  const dayOrder = DAY_ORDER[locale === "ar" ? "ar" : "en"];
+  // 2026-01-04 is a Sunday → index = weekday
+  const dayName = (wd: number, style: "short" | "long") => formatDate(new Date(2026, 0, 4 + wd, 12), { weekday: style });
+  const hourLabel = (h: number) => formatTime(`${String(h).padStart(2, "0")}:00`, { hour: "numeric" });
+  const heat = data.heatmap;
+  const topSources = data.sources.slice(0, 6);
+  const otherCount = data.sources.slice(6).reduce((n, x) => n + x.count, 0);
+  const slices = [
+    ...topSources.map((x) => ({ key: x.source, name: sourceLabel(x.source), count: x.count, pct: x.pct })),
+    ...(otherCount
+      ? [{ key: "rest", name: t.booking.other, count: otherCount, pct: Math.round((otherCount / s.bookings.current) * 100) }]
+      : []),
+  ];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.25, 1, 0.4, 1] }}
-      className="space-y-8"
+      className="flex flex-col gap-6 sm:gap-8"
     >
-      {/* ── Page Header ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* ── Header ── */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h2
-            className="font-extrabold text-on-surface"
+            className="font-extrabold text-[var(--text-primary)]"
             style={{ fontFamily: FF, fontSize: 28, letterSpacing: headingTracking(isRTL, "0.014em") }}
           >
-            {isRTL ? "التحليلات" : "Analytics"}
+            {a.title}
           </h2>
-          <p className="text-sm text-on-surface-variant mt-1">
-            {isRTL ? "نظرة عامة على أداء المشغل" : "A comprehensive view of your atelier performance"}
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">{a.subtitle}</p>
+          <p className="mt-1 text-xs text-[var(--text-muted)]" aria-live="polite">
+            {loading ? (
+              <span className="inline-flex items-center gap-1.5">
+                <Loader2 size={12} className="animate-spin" aria-hidden /> {a.updating}
+              </span>
+            ) : lastUpdated ? (
+              interpolate(a.updatedAgo, { time: formatRelative(lastUpdated, now) })
+            ) : null}
           </p>
         </div>
 
-        {/* Period Toggle */}
-        <div className="flex items-center gap-1 p-1 rounded-[8px] bg-[#f7f1e4]">
-          {(["week", "month", "year"] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`flex items-center justify-center px-5 min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
-                period === p
-                  ? "bg-white text-[#1c1611]"
-                  : "text-[#5a5147] hover:text-[#1c1611]"
-              }`}
-            >
-              {p === "week" ? (isRTL ? "أسبوعي" : "Weekly") : p === "month" ? (isRTL ? "شهري" : "Monthly") : (isRTL ? "سنوي" : "Yearly")}
-            </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div role="group" aria-label={a.periodLabel} className="flex items-center gap-1 rounded-lg bg-[var(--bg-secondary)] p-1">
+            {PERIODS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPeriod(p)}
+                aria-pressed={period === p}
+                className={cn(
+                  "min-h-10 cursor-pointer rounded-md px-4 text-[13px] font-semibold transition-colors sm:px-5",
+                  period === p
+                    ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                {periodLabel[p]}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            aria-busy={exporting || undefined}
+            className="btn btn-secondary min-h-11 text-[13px] font-semibold"
+          >
+            {exporting ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <Download size={15} aria-hidden />}
+            {a.exportCsv}
+          </button>
+        </div>
+      </div>
+
+      {failed && (
+        <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-[var(--accent-rose)] bg-[var(--accent-rose-muted)] px-4 py-3 text-sm text-[var(--text-primary)]">
+          <AlertTriangle size={16} className="text-[var(--accent-rose)]" aria-hidden />
+          <span className="flex-1">{a.loadFailed}</span>
+          <button type="button" className="btn btn-secondary min-h-9 text-[13px]" onClick={() => void load()}>
+            {t.common.retry}
+          </button>
+        </div>
+      )}
+      {data.truncated && (
+        <p role="status" className="rounded-lg bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+          {a.truncated}
+        </p>
+      )}
+
+      <div className={cn("flex flex-col gap-6 sm:gap-8 transition-opacity", loading && "opacity-60")} aria-busy={loading || undefined}>
+        {/* ── Summary ── */}
+        <div className="card-grid-4">
+          {summaryCards.map((m) => (
+            <div key={m.id} className={cn(card, "flex min-h-[148px] flex-col justify-between gap-3")}>
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-xs font-bold text-[var(--text-secondary)]">{m.label}</h3>
+                <ChangePill change={m.change} unit={m.unit} label={a.changeVsPrevious} formatNumber={formatNumber} />
+              </div>
+              <p
+                className="text-[28px] font-extrabold leading-none text-[var(--text-primary)] tabular-nums sm:text-[32px]"
+                style={{ fontFamily: "var(--font-intervar), sans-serif" }}
+              >
+                {m.value}
+              </p>
+              <p className="text-xs text-[var(--text-muted)]">{m.sub}</p>
+            </div>
           ))}
         </div>
-      </div>
 
-      {loading && data ? (
-        <div style={{ position: "fixed", top: 16, insetInlineEnd: 16, background: "#1c1611", color: "white", padding: "8px 16px", borderRadius: 8, fontSize: 13, zIndex: 50, display: "flex", alignItems: "center", gap: 8 }}>
-          <Loader2 size={14} className="animate-spin" /> Updating...
-        </div>
-      ) : null}
-
-      {/* ── Summary Metric Cards ── */}
-      <div className="card-grid-4">
-        {summaryMetrics.map((m, i) => (
-          <motion.div
-            key={m.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.08 }}
-            style={{
-              background: "#ffffff",
-              border: "1px solid #ede3cd",
-              borderRadius: 12,
-              padding: 28,
-              minHeight: 152,
-              display: "flex", flexDirection: "column", justifyContent: "space-between",
-              transition: "transform 0.2s ease",
-              cursor: "default",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLDivElement).style.transform = "";
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#5a5147", textTransform: "uppercase", letterSpacing: "0.12em" }}>{m.label}</span>
-              <div
-                style={{
-                  display: "flex", alignItems: "center", padding: "3px 8px",
-                  borderRadius: 9999, fontSize: 11, fontWeight: 700,
-                  background: m.dir === "up" ? "rgba(166,124,61,0.08)" : m.dir === "down" ? "rgba(186,26,26,0.08)" : "#f7f1e4",
-                  color: m.dir === "up" ? "#a67c3d" : m.dir === "down" ? "#ba1a1a" : "#1c1611",
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 14, marginInlineEnd: 2 }}>
-                  {m.dir === "up" ? "trending_up" : m.dir === "down" ? "trending_down" : "trending_flat"}
-                </span>
-                {m.change > 0 ? "+" : ""}{m.change}%
-              </div>
+        <div className="card-grid-2">
+          {/* 1. Revenue trend */}
+          <section className={card} aria-labelledby="an-rev">
+            <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+              <h3 id="an-rev" className="m-0 text-base font-bold text-[var(--text-primary)]" style={{ fontFamily: FF }}>
+                {a.revenueTrend}
+              </h3>
+              <span className="text-xs text-[var(--text-muted)]">{periodLabel[period]}</span>
             </div>
-            <div style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 32, fontWeight: 800, color: "#1c1611", letterSpacing: "0.016em", lineHeight: 1 }}>
-              {m.value}
-            </div>
-            <div style={{ fontSize: 12, color: "#a89e8c", marginTop: 8 }}>{m.sub}</div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* ── Charts 2×2 Grid ── */}
-      <div className="card-grid-2">
-
-        {/* 1. Revenue Trend */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          style={{
-            background: "#ffffff", border: "1px solid #ede3cd",
-            borderRadius: 12, padding: 28,
-          }}
-        >
-          <h3 style={{ fontFamily: FF, fontSize: 16, fontWeight: 700, color: "#1c1611", margin: "0 0 24px" }}>
-            {isRTL ? "اتجاه الإيرادات" : "Revenue Trend"}
-          </h3>
-          <div style={{ height: 220 }}>
-            {revenueData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
-                  <defs>
-                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#1c1611" stopOpacity={0.1} />
-                      <stop offset="100%" stopColor="#1c1611" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ede3cd" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: "#a89e8c", fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "#a89e8c", fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "#1c1611", border: "none", borderRadius: 8, fontSize: 12, color: "#fff" }} labelStyle={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }} />
-                  <Area type="monotone" dataKey="revenue" stroke="#1c1611" strokeWidth={2} fill="url(#revGrad)" dot={false} activeDot={{ r: 4, fill: "#1c1611", stroke: "#fff", strokeWidth: 2 }} />
-                </AreaChart>
-              </ResponsiveContainer>
+            {hasRevenue ? (
+              <RevenueTrendChart
+                data={series}
+                isRTL={isRTL}
+                formatValue={money}
+                formatAxis={(n) => formatNumber(n, { notation: "compact", maximumFractionDigits: 1 })}
+                caption={a.revenueTrend}
+                columnLabels={{ period: a.csvDate, value: a.revenue }}
+              />
             ) : (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#a89e8c", fontSize: 13 }}>No revenue data</div>
+              <EmptyState bare size="sm" icon={BarChart3} title={a.noRevenue} description={a.noRevenueHint} />
             )}
-          </div>
-        </motion.div>
+          </section>
 
-        {/* 2. Top Barbers */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          style={{
-            background: "#ffffff", border: "1px solid #ede3cd",
-            borderRadius: 12, padding: 28,
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-            <h3 style={{ fontFamily: FF, fontSize: 16, fontWeight: 700, color: "#1c1611", margin: 0 }}>
-              {isRTL ? "أفضل الحلاقين" : "Top Barbers"}
+          {/* 2. Top staff */}
+          <section className={card} aria-labelledby="an-staff">
+            <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+              <h3 id="an-staff" className="m-0 text-base font-bold text-[var(--text-primary)]" style={{ fontFamily: FF }}>
+                {a.topStaff}
+              </h3>
+              <Link href={href("/team")} className="text-xs font-semibold text-[var(--accent-text)] hover:underline">
+                {a.viewTeam}
+              </Link>
+            </div>
+            {data.barbers.length > 0 ? (
+              <ol className="flex flex-col gap-5">
+                {data.barbers.map((b, i) => (
+                  <li key={`${b.name}-${i}`}>
+                    <div className="mb-2.5 flex items-center gap-3">
+                      <span
+                        className={cn(
+                          "flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold",
+                          i === 0 ? "bg-[var(--text-primary)] text-[var(--bg-primary)]" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)]",
+                        )}
+                        aria-hidden
+                      >
+                        {formatNumber(i + 1)}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-bold text-[var(--text-primary)]">
+                        {b.name ?? a.unassigned}
+                      </span>
+                      <span className="text-[11px] font-semibold text-[var(--text-muted)] tabular-nums">{b.pct}%</span>
+                      <span className="min-w-[72px] text-end text-[13px] font-extrabold text-[var(--text-primary)] tabular-nums">
+                        {money(b.revenue)}
+                      </span>
+                    </div>
+                    <div
+                      className="h-1.5 w-full rounded-full bg-[var(--border-subtle)]"
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={b.pct}
+                      aria-label={`${b.name ?? a.unassigned}: ${b.pct}%`}
+                    >
+                      <div
+                        className="h-full rounded-full transition-[width] duration-700"
+                        style={{ width: `${b.pct}%`, background: i === 0 ? "var(--text-primary)" : "var(--accent-brass)" }}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <EmptyState bare size="sm" title={a.noStaffData} />
+            )}
+          </section>
+
+          {/* 3. Booking sources */}
+          <section className={card} aria-labelledby="an-src">
+            <h3 id="an-src" className="mb-5 mt-0 text-base font-bold text-[var(--text-primary)]" style={{ fontFamily: FF }}>
+              {a.sources}
             </h3>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#a89e8c", textTransform: "uppercase", letterSpacing: "0.1em" }}>This {period}</span>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {barberData.length > 0 ? barberData.map((b, i) => (
-              <div key={b.name}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                  <span style={{
-                    minWidth: 22, height: 22, borderRadius: "50%",
-                    background: i === 0 ? "#1c1611" : "#f7f1e4",
-                    color: i === 0 ? "#fff" : "#5a5147",
-                    fontSize: 10, fontWeight: 800,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0,
-                  }}>#{i + 1}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#1c1611", flex: 1 }}>{b.name}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#a89e8c" }}>{b.pct}%</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#1c1611", fontVariantNumeric: "tabular-nums", minWidth: 70, textAlign: "end" }}>
-                    {b.revenue.toLocaleString()} JOD
-                  </span>
-                </div>
-                <div style={{ height: 6, background: "#ede3cd", borderRadius: 999, width: "100%" }}>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${b.pct}%` }}
-                    transition={{ duration: 0.8, delay: 0.1 * i, ease: [0.25, 1, 0.5, 1] }}
-                    style={{ height: "100%", background: i === 0 ? "#1c1611" : "#ede3cd", borderRadius: 999 }}
-                  />
-                </div>
+            {slices.length > 0 ? (
+              <div className="flex flex-col items-center gap-6 sm:flex-row sm:gap-8">
+                <SourcesDonut data={slices} />
+                <ul className="flex w-full flex-1 flex-col gap-2.5">
+                  {slices.map((ch, i) => (
+                    <li key={ch.key} className="flex items-center gap-2.5 text-[13px]">
+                      <span
+                        aria-hidden
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{ background: SLICE_COLORS[i % SLICE_COLORS.length] }}
+                      />
+                      <span className="min-w-0 flex-1 truncate text-[var(--text-secondary)]">{ch.name}</span>
+                      <span className="font-semibold text-[var(--text-primary)] tabular-nums">{formatNumber(ch.count)}</span>
+                      <span className="w-10 text-end text-[var(--text-muted)] tabular-nums">{ch.pct}%</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            )) : (
-              <div style={{ color: "#a89e8c", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No barber data</div>
+            ) : (
+              <EmptyState bare size="sm" title={a.noBookings} />
             )}
-          </div>
-        </motion.div>
+          </section>
 
-        {/* 3. Acquisition Channels */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          style={{
-            background: "#ffffff", border: "1px solid #ede3cd",
-            borderRadius: 12, padding: 28,
-          }}
-        >
-          <h3 style={{ fontFamily: FF, fontSize: 16, fontWeight: 700, color: "#1c1611", margin: "0 0 24px" }}>
-            {isRTL ? "مصادر العملاء" : "Acquisition Channels"}
-          </h3>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 32, height: 200 }}>
-            <div style={{ width: 180, height: 180, flexShrink: 0 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={acquisitionData} cx="50%" cy="50%" innerRadius={56} outerRadius={82} paddingAngle={2} dataKey="value">
-                    {acquisitionData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
+          {/* 4. Peak hours (all 7 days, shop time) */}
+          <section className={card} aria-labelledby="an-peak">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <h3 id="an-peak" className="m-0 text-base font-bold text-[var(--text-primary)]" style={{ fontFamily: FF }}>
+                {a.peakHours}
+              </h3>
+              <div className="flex items-center gap-2" aria-hidden>
+                <span className="text-[11px] text-[var(--text-muted)]">{a.low}</span>
+                <div className="flex gap-[3px]">
+                  {[0.12, 0.3, 0.5, 0.75, 1].map((o) => (
+                    <span key={o} className="size-3 rounded-[3px]" style={{ background: heatColor(o) }} />
+                  ))}
+                </div>
+                <span className="text-[11px] text-[var(--text-muted)]">{a.high}</span>
+              </div>
+            </div>
+            {heat.total === 0 ? (
+              <EmptyState bare size="sm" title={a.noBookings} />
+            ) : (
+              <div className="-mx-1 overflow-x-auto px-1">
+                <table className="w-full min-w-[320px] border-separate" style={{ borderSpacing: 4 }}>
+                  <caption className="sr-only">{a.peakHoursCaption}</caption>
+                  <thead>
+                    <tr>
+                      <td />
+                      {dayOrder.map((wd) => (
+                        <th key={wd} scope="col" className="text-center text-[11px] font-bold text-[var(--text-secondary)]">
+                          <abbr title={dayName(wd, "long")} className="no-underline">
+                            {dayName(wd, "short")}
+                          </abbr>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {heat.hours.map((h, hi) => (
+                      <tr key={h}>
+                        <th scope="row" className="whitespace-nowrap pe-2 text-start text-[11px] font-semibold text-[var(--text-secondary)]">
+                          {hourLabel(h)}
+                        </th>
+                        {dayOrder.map((wd) => {
+                          const v = heat.counts[wd]?.[hi] ?? 0;
+                          const label = `${dayName(wd, "long")} ${hourLabel(h)}: ${interpolate(a.bookingsCount, { count: formatNumber(v) })}`;
+                          return (
+                            <td
+                              key={wd}
+                              title={label}
+                              className="h-6 rounded-[4px] p-0"
+                              style={{ background: v ? heatColor(heat.max ? v / heat.max : 0) : "var(--bg-secondary)" }}
+                            >
+                              <span className="sr-only">{label}</span>
+                            </td>
+                          );
+                        })}
+                      </tr>
                     ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
-              {acquisitionData.map((ch) => (
-                <div key={ch.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: ch.color, flexShrink: 0, border: ch.color === "#eceef0" ? "1px solid #ede3cd" : undefined }} />
-                  <span style={{ fontSize: 12, color: "#5a5147", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* 4. Peak Hours Heatmap */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          style={{
-            background: "#ffffff", border: "1px solid #ede3cd",
-            borderRadius: 12, padding: 28,
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-            <h3 style={{ fontFamily: FF, fontSize: 16, fontWeight: 700, color: "#1c1611", margin: 0 }}>
-              {isRTL ? "ساعات الذروة" : "Peak Hours Heatmap"}
-            </h3>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 10, color: "#a89e8c" }}>Low</span>
-              <div style={{ display: "flex", gap: 3 }}>
-                {[0.1, 0.25, 0.5, 0.75, 1].map((o, i) => (
-                  <div key={i} style={{ width: 12, height: 12, borderRadius: 3, background: `rgba(28,22,17,${o})` }} />
-                ))}
+                  </tbody>
+                </table>
               </div>
-              <span style={{ fontSize: 10, color: "#a89e8c" }}>High</span>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gap: 6, gridTemplateColumns: "auto repeat(7, 1fr)" }}>
-            <div />
-            {days.map((d) => (
-              <div key={d} style={{ fontSize: 9, fontWeight: 700, textAlign: "center", color: "#a89e8c", letterSpacing: "0.05em" }}>{d}</div>
-            ))}
-            {peakHoursData.map((row) => (
-              <React.Fragment key={row.hour}>
-                <div style={{ fontSize: 10, fontWeight: 600, color: "#5a5147", paddingInlineEnd: 8, display: "flex", alignItems: "center", whiteSpace: "nowrap" }}>{row.hour}</div>
-                {row.vals.map((v: number, di: number) => (
-                  <div
-                    key={di}
-                    style={{
-                      height: 28, borderRadius: 4,
-                      background: `rgba(28,22,17,${v})`,
-                      transition: "transform 0.15s", cursor: "default",
-                    }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1.1)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = ""; }}
-                  />
-                ))}
-              </React.Fragment>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Footer */}
-      <footer className="pt-8 border-t border-surface-container-low flex justify-between items-center text-on-surface-variant">
-        <p className="text-xs">© 2026 Halaqy Digital Atelier. All rights reserved.</p>
-        <div className="flex gap-4">
-          <button onClick={handleExport} disabled={exporting} className="nav-link text-xs flex items-center gap-2">
-            {exporting ? <Loader2 size={12} className="animate-spin" /> : null} Export Report
-          </button>
-          <button className="nav-link text-xs">Data Privacy</button>
+            )}
+          </section>
         </div>
-      </footer>
+      </div>
     </motion.div>
+  );
+}
+
+/** Ink tint that works in light and dark themes. */
+function heatColor(ratio: number) {
+  const pct = Math.round(15 + Math.max(0, Math.min(1, ratio)) * 85);
+  return `color-mix(in srgb, var(--text-primary) ${pct}%, transparent)`;
+}
+
+function ChangePill({
+  change, unit, label, formatNumber,
+}: {
+  change: number | null;
+  unit?: "pts";
+  label: string;
+  formatNumber: (n: number, o?: Intl.NumberFormatOptions) => string;
+}) {
+  if (change === null) return null;
+  const dir = change > 0 ? "up" : change < 0 ? "down" : "flat";
+  const Icon = dir === "up" ? TrendingUp : dir === "down" ? TrendingDown : Minus;
+  const text = `${change > 0 ? "+" : ""}${formatNumber(change, { maximumFractionDigits: 1 })}${unit === "pts" ? "" : "%"}`;
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold",
+        dir === "up" && "bg-[color-mix(in_srgb,var(--accent-brass)_14%,transparent)] text-[var(--accent-text)]",
+        dir === "down" && "bg-[var(--accent-rose-muted)] text-[var(--accent-rose)]",
+        dir === "flat" && "bg-[var(--bg-secondary)] text-[var(--text-secondary)]",
+      )}
+    >
+      <Icon size={12} aria-hidden className="rtl:-scale-x-100" />
+      <span className="sr-only">{label}: </span>
+      <span dir="ltr">{text}</span>
+    </span>
   );
 }

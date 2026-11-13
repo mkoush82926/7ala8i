@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Page } from "@playwright/test";
+// UI copy comes from the English dictionary so specs don't break when
+// wording changes (they run against /en routes).
+import en from "../src/i18n/en";
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 export interface SeedData {
   shopId: string;
@@ -29,20 +36,30 @@ export async function login(page: Page, email: string, password: string) {
  */
 export async function completeBooking(page: Page, shopId: string, serviceName: string) {
   await page.goto(`/en/book/${shopId}`);
-  await page.getByRole("button", { name: "Book Appointment" }).click();
+  await page.getByRole("button", { name: en.booking.bookAppointment }).first().click();
 
-  await page.getByRole("button", { name: new RegExp(serviceName) }).click();
-  await page.getByRole("button", { name: "Next", exact: false }).click();
+  await page.getByRole("button", { name: new RegExp(escapeRegExp(serviceName)) }).first().click();
+  await page.getByRole("button", { name: en.common.next, exact: false }).click();
 
-  await page.getByRole("button", { name: "Any Available Barber" }).click();
+  await page.getByRole("button", { name: new RegExp(escapeRegExp(en.booking.anyBarber)) }).click();
 
   await page
     .getByRole("button", { name: /\d{1,2}:\d{2}\s?(AM|PM)/i })
     .first()
     .click();
-  await page.getByRole("button", { name: "Next", exact: false }).click();
+  await page.getByRole("button", { name: en.common.next, exact: false }).click();
 
-  await page.getByPlaceholder("Your name").fill("E2E Customer");
-  await page.getByPlaceholder("+962 ...").fill("+962791112222");
-  await page.getByRole("button", { name: "Confirm Booking" }).click();
+  // Prefer the accessible label; fall back to the field type so a copy or
+  // placeholder change in the wizard doesn't break the flow.
+  await page
+    .getByLabel(en.booking.yourName)
+    .or(page.locator('input[type="text"]'))
+    .first()
+    .fill("E2E Customer");
+  await page
+    .getByLabel(en.booking.phoneNumber)
+    .or(page.locator('input[type="tel"]'))
+    .first()
+    .fill("+962791112222");
+  await page.getByRole("button", { name: en.booking.confirmBooking }).click();
 }

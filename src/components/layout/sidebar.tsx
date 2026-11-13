@@ -2,178 +2,165 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
+import { CalendarPlus, LogOut, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  Calendar,
-  Users,
-  Kanban,
-  Settings,
-  BarChart3,
-  CalendarPlus,
-  Scissors,
-  LogOut,
-  X,
-  IdCard,
-  Sun,
-} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import { useModalBehavior } from "@/components/ui/dialog";
+import { toast, clearToasts } from "@/components/ui/toast";
+import {
+  RAIL_GROUPS,
+  isNavActive,
+  navLabel,
+  stripLocale,
+  toShellRole,
+  visibleNavItems,
+  type NavItem,
+  type ShellRole,
+} from "@/components/layout/nav-config";
 
-const navItems = [
-  { id: "dashboard", icon: LayoutDashboard, href: "/" },
-  { id: "my-day", icon: Sun, href: "/my-day" },
-  { id: "calendar", icon: Calendar, href: "/calendar" },
-  { id: "leads", icon: Kanban, href: "/leads" },
-  { id: "clients", icon: Users, href: "/clients" },
-  { id: "services", icon: Scissors, href: "/services" },
-  { id: "team", icon: IdCard, href: "/team" },
-  { id: "analytics", icon: BarChart3, href: "/analytics" },
-  { id: "settings", icon: Settings, href: "/settings" },
-] as const;
+/**
+ * Role known to the shell. Until the workspace store has hydrated we do not
+ * know the role (the store defaults to "shop_admin"), so only the pages every
+ * staff role can open are shown — admin-only entries appear once confirmed.
+ */
+export function useShellRole(): ShellRole | null {
+  const hydrated = useWorkspaceStore((s) => s.hydrated);
+  const role = useWorkspaceStore((s) => s.role);
+  return hydrated ? toShellRole(role) : null;
+}
 
-function SidebarContent({ onClose }: { onClose?: () => void }) {
-  const pathname = usePathname();
-  const { t, locale, isRTL } = useTranslation();
+/** Sign out with feedback; shared by the rail, the drawer and the topbar menu. */
+export function useSignOut(onDone?: () => void) {
   const router = useRouter();
+  const { t, href } = useTranslation();
+  const [busy, setBusy] = React.useState(false);
 
-  const [currentUserRole, setCurrentUserRole] = React.useState<string | null>(null);
+  const signOut = React.useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      onDone?.();
+      clearToasts();
+      toast.success(t.sidebar.signedOut);
+      router.replace(href("/auth/login"));
+      router.refresh();
+    } catch {
+      toast.error(t.sidebar.signOutFailed);
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, href, onDone, router, t]);
 
-  React.useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (data.user) {
-        const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
-        setCurrentUserRole(profile?.role || null);
-      }
-    });
-  }, []);
+  return { signOut, busy };
+}
 
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    if (onClose) onClose();
-    router.push(`/${locale}/auth/login`);
+function Wordmark({ compact = false }: { compact?: boolean }) {
+  const { t, isRTL, FFD } = useTranslation();
+  if (compact) {
+    return (
+      <span
+        aria-hidden="true"
+        className="grid size-10 place-items-center rounded-[10px] bg-[var(--brand-primary)] text-[16px] font-extrabold text-[var(--brand-on-primary)]"
+        style={{ fontFamily: FFD }}
+      >
+        {t.sidebar.brand.charAt(0)}
+      </span>
+    );
   }
+  return (
+    <div>
+      <p
+        className="m-0 text-[22px] font-extrabold leading-none text-[var(--text-primary)]"
+        style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.012em") }}
+      >
+        {t.sidebar.brand}
+      </p>
+      <p
+        className={cn(
+          "m-0 mt-2 text-[11px] font-bold text-[var(--text-muted)]",
+          !isRTL && "uppercase tracking-[0.18em]",
+        )}
+      >
+        {t.sidebar.tagline}
+      </p>
+    </div>
+  );
+}
 
-  const labels: Record<string, string> = {
-    dashboard: t.sidebar.dashboard,
-    "my-day":  isRTL ? "يومي" : "My Day",
-    calendar:  t.sidebar.calendar,
-    leads:     t.sidebar.leads,
-    clients:   t.sidebar.clients,
-    services:  t.sidebar.services,
-    team:      t.sidebar.team,
-    analytics: t.sidebar.analytics,
-    settings:  t.sidebar.settings,
-  };
+/* ─── Mobile / tablet drawer content: the full labelled list ─── */
+function DrawerContent({ onClose, titleId }: { onClose: () => void; titleId: string }) {
+  const { t, href, isRTL } = useTranslation();
+  const pathname = usePathname();
+  const path = stripLocale(pathname);
+  const role = useShellRole();
+  const { signOut, busy } = useSignOut(onClose);
+  const items = visibleNavItems(role);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div style={{ padding: "36px 24px 32px", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-        <div>
-          <h1
-            style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: "0.012em", color: "#1c1611", lineHeight: 1 }}
-          >
-            Halaqy
-          </h1>
-          <p style={{ fontSize: 9, fontWeight: 700, color: "#5a5147", textTransform: "uppercase", letterSpacing: "0.22em", marginTop: 8 }}>
-            Digital Atelier
-          </p>
+    <div className="flex h-full flex-col">
+      <div className="flex items-start justify-between gap-3 px-6 pb-6 pt-8">
+        <div id={titleId}>
+          <Wordmark />
         </div>
-        <div className="flex items-center gap-2">
-          {onClose && (
-            <button
-              onClick={onClose}
-              aria-label={t.common.close}
-              className="md:hidden flex items-center justify-center w-11 h-11 rounded-lg text-on-surface-variant hover:bg-secondary-container transition-colors cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t.common.close}
+          className="-me-2 grid size-11 place-items-center rounded-lg text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] lg:hidden"
+        >
+          <X size={18} aria-hidden="true" />
+        </button>
       </div>
 
-      {/* Navigation */}
-      <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, padding: "0 16px" }}>
-        {navItems.map((item) => {
-          if (item.id === "settings" && currentUserRole !== 'shop_admin') return null;
-
-          const localePrefix = `/${locale}`;
-          const pathnameWithoutLocale =
-            pathname === localePrefix
-              ? "/"
-              : pathname.startsWith(`${localePrefix}/`)
-                ? pathname.slice(localePrefix.length)
-                : pathname;
-          const isActive =
-            item.href === "/"
-              ? pathnameWithoutLocale === "/"
-              : pathnameWithoutLocale.startsWith(item.href);
-          const href = item.href === "/" ? localePrefix : `${localePrefix}${item.href}`;
-
+      <nav aria-label={t.sidebar.mainNav} className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-4">
+        {items.map((item) => {
+          const active = isNavActive(item.href, path);
           return (
             <Link
               key={item.id}
-              href={href}
+              href={href(item.href)}
               onClick={onClose}
-              style={{
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "13px 16px", borderRadius: 8,
-                textDecoration: "none", fontSize: 13, fontWeight: 600,
-                letterSpacing: headingTracking(isRTL, "0.01em"),
-                transition: "all 0.2s",
-                background: isActive ? "#f7f1e4" : "transparent",
-                color: isActive ? "#1c1611" : "#5a5147",
-              }}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex min-h-11 items-center gap-3 rounded-lg px-4 py-3 text-[14px] font-semibold no-underline transition-colors",
+                active
+                  ? "bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]",
+              )}
+              style={{ letterSpacing: headingTracking(isRTL, "0.01em") }}
             >
-              <item.icon size={18} style={{ flexShrink: 0 }} />
-              <span>{labels[item.id]}</span>
+              <item.icon size={18} className="shrink-0" aria-hidden="true" />
+              <span>{navLabel(t, item.id)}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* Book Appointment CTA + Sign Out */}
-      <div style={{ padding: "24px 20px 32px", marginTop: "auto" }}>
-        {/* Divider line */}
-        <div style={{ height: 1, background: "#ede3cd", marginBottom: 20 }} />
+      <div className="mt-auto px-5 pb-8 pt-6">
+        <div className="mb-5 h-px bg-[var(--border-subtle)]" />
         <Link
-          href={`/${locale}/calendar`}
+          href={href("/calendar")}
           onClick={onClose}
-          className="btn btn-primary"
-          style={{ width: "100%", justifyContent: "center", marginBottom: 12 }}
+          className="btn btn-primary mb-3 w-full justify-center"
         >
-          <CalendarPlus size={16} />
+          <CalendarPlus size={16} aria-hidden="true" />
           {t.sidebar.bookAppointment}
         </Link>
         <button
-          onClick={handleSignOut}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            width: "100%", height: 40,
-            borderRadius: 8, border: "1px solid #ede3cd",
-            background: "transparent", fontSize: 13, fontWeight: 600,
-            color: "#5a5147", cursor: "pointer",
-            transition: "all 0.15s",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.color = "#ba1a1a";
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(186,26,26,0.3)";
-            (e.currentTarget as HTMLButtonElement).style.background = "rgba(186,26,26,0.08)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.color = "#5a5147";
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "#ede3cd";
-            (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-          }}
+          type="button"
+          onClick={signOut}
+          disabled={busy}
+          aria-busy={busy || undefined}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[var(--border-subtle)] bg-transparent text-[13px] font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-rose)] hover:bg-[var(--accent-rose-muted)] hover:text-[var(--accent-rose)] disabled:opacity-60"
         >
-          <LogOut size={14} />
+          <LogOut size={14} aria-hidden="true" />
           {t.sidebar.signOut}
         </button>
       </div>
@@ -181,49 +168,270 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   );
 }
 
-export function Sidebar() {
-  const { isMobileSidebarOpen, setMobileSidebarOpen } = useWorkspaceStore();
+/* ─── Desktop icon rail (lg+) — related pages grouped behind a flyout ─── */
+const railButton =
+  "grid size-12 place-items-center rounded-[10px] transition-colors duration-150";
+
+function DesktopIconRail() {
+  const { t, href, isRTL } = useTranslation();
+  const pathname = usePathname();
+  const path = stripLocale(pathname);
+  const role = useShellRole();
+  const { signOut, busy } = useSignOut();
+  const [openFlyout, setOpenFlyout] = React.useState<string | null>(null);
+  const railRef = React.useRef<HTMLDivElement>(null);
+  const flyoutRef = React.useRef<HTMLDivElement>(null);
+  const triggerRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Close the flyout when the route changes (derived during render instead of
+  // an effect, so there is no extra commit).
+  const [prevPath, setPrevPath] = React.useState(path);
+  if (prevPath !== path) {
+    setPrevPath(path);
+    setOpenFlyout(null);
+  }
+
+  const allowed = new Set(visibleNavItems(role).map((i) => i.id));
+  const groups = RAIL_GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((i) => allowed.has(i.id)),
+  })).filter((g) => g.items.length > 0);
+
+  React.useEffect(() => {
+    if (!openFlyout) return;
+    function handlePointer(e: MouseEvent) {
+      if (railRef.current && !railRef.current.contains(e.target as Node)) setOpenFlyout(null);
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        const id = openFlyout;
+        setOpenFlyout(null);
+        if (id) triggerRefs.current[id]?.focus();
+      }
+    }
+    document.addEventListener("mousedown", handlePointer);
+    document.addEventListener("keydown", handleKey);
+    // Move focus into the panel so keyboard users land on its first link.
+    const raf = requestAnimationFrame(() => {
+      flyoutRef.current?.querySelector<HTMLElement>("a[href]")?.focus();
+    });
+    return () => {
+      document.removeEventListener("mousedown", handlePointer);
+      document.removeEventListener("keydown", handleKey);
+      cancelAnimationFrame(raf);
+    };
+  }, [openFlyout]);
+
+  const openGroup = groups.find((g) => g.id === openFlyout && g.items.length > 1);
+
+  return (
+    <div ref={railRef} className="relative flex h-full flex-col">
+      <div className="flex justify-center pb-5 pt-6">
+        <Link href={href(role === "barber" ? "/my-day" : "/")} aria-label={t.sidebar.brand} className="rounded-[10px]">
+          <Wordmark compact />
+        </Link>
+      </div>
+
+      <nav aria-label={t.sidebar.mainNav} className="flex flex-1 flex-col items-center gap-1.5 px-3 py-2">
+        {groups.map((group) => {
+          const label = navLabel(t, group.items.length === 1 ? group.items[0].id : group.labelId);
+          const current = group.items.some((i) => isNavActive(i.href, path));
+          const expanded = openFlyout === group.id;
+          const highlighted = current || expanded;
+          const cls = cn(
+            railButton,
+            highlighted
+              ? "bg-[var(--brand-primary)] text-[var(--brand-on-primary)]"
+              : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]",
+          );
+
+          if (group.items.length === 1) {
+            const item = group.items[0];
+            return (
+              <Link
+                key={group.id}
+                href={href(item.href)}
+                aria-label={label}
+                title={label}
+                aria-current={current ? "page" : undefined}
+                onClick={() => setOpenFlyout(null)}
+                className={cls}
+              >
+                <group.icon size={20} aria-hidden="true" />
+              </Link>
+            );
+          }
+
+          return (
+            <button
+              key={group.id}
+              type="button"
+              ref={(el) => {
+                triggerRefs.current[group.id] = el;
+              }}
+              onClick={() => setOpenFlyout(expanded ? null : group.id)}
+              aria-label={label}
+              title={label}
+              aria-expanded={expanded}
+              aria-controls={`rail-flyout-${group.id}`}
+              aria-current={current ? "true" : undefined}
+              className={cls}
+            >
+              <group.icon size={20} aria-hidden="true" />
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="flex flex-col items-center gap-1.5 p-3">
+        <div className="mb-2.5 mt-1 h-px w-8 bg-[var(--border-subtle)]" />
+        <Link
+          href={href("/calendar")}
+          aria-label={t.sidebar.bookAppointment}
+          title={t.sidebar.bookAppointment}
+          className={cn(railButton, "bg-[var(--accent-mint)] text-[var(--on-accent)] hover:opacity-90")}
+        >
+          <CalendarPlus size={19} aria-hidden="true" />
+        </Link>
+        <button
+          type="button"
+          onClick={signOut}
+          disabled={busy}
+          aria-busy={busy || undefined}
+          aria-label={t.sidebar.signOut}
+          title={t.sidebar.signOut}
+          className={cn(
+            railButton,
+            "text-[var(--text-secondary)] hover:bg-[var(--accent-rose-muted)] hover:text-[var(--accent-rose)] disabled:opacity-60",
+          )}
+        >
+          <LogOut size={18} aria-hidden="true" />
+        </button>
+      </div>
+
+      {/* Flyout — floats over content, does not push the layout */}
+      <AnimatePresence>
+        {openGroup && (
+          <motion.div
+            key={openGroup.id}
+            ref={flyoutRef}
+            id={`rail-flyout-${openGroup.id}`}
+            role="region"
+            aria-label={navLabel(t, openGroup.labelId)}
+            initial={{ opacity: 0, x: isRTL ? 12 : -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: isRTL ? 12 : -12 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-y-0 z-[45] w-[220px] border-e border-[var(--border-subtle)] bg-[var(--bg-primary)] px-4 py-7 shadow-[8px_0_24px_-12px_rgba(28,22,17,0.15)]"
+            style={{ insetInlineStart: "var(--sidebar-width)" }}
+          >
+            <p
+              className={cn(
+                "m-0 mb-4 px-3 text-[11px] font-bold text-[var(--text-muted)]",
+                !isRTL && "uppercase tracking-[0.1em]",
+              )}
+            >
+              {navLabel(t, openGroup.labelId)}
+            </p>
+            {openGroup.items.map((item: NavItem) => {
+              const active = isNavActive(item.href, path);
+              return (
+                <Link
+                  key={item.id}
+                  href={href(item.href)}
+                  onClick={() => setOpenFlyout(null)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "mb-0.5 flex min-h-11 items-center rounded-lg px-3 text-[14px] font-semibold no-underline transition-colors",
+                    active
+                      ? "bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  {navLabel(t, item.id)}
+                </Link>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ─── Drawer panel (below lg): dialog semantics, focus trap, Escape ─── */
+function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { isRTL } = useTranslation();
+  const panelRef = React.useRef<HTMLElement>(null);
+  const titleId = React.useId();
+  useModalBehavior({ open, onClose, containerRef: panelRef });
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            key="sidebar-backdrop"
+            aria-hidden="true"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-[var(--overlay)] lg:hidden"
+            onClick={onClose}
+          />
+          <motion.aside
+            key="sidebar-panel"
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            initial={{ x: isRTL ? "100%" : "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: isRTL ? "100%" : "-100%" }}
+            transition={{ type: "tween", duration: 0.22, ease: [0.25, 1, 0.4, 1] }}
+            className="fixed inset-y-0 start-0 z-50 flex w-[min(18rem,85vw)] flex-col border-e border-[var(--border-subtle)] bg-[var(--bg-primary)] pb-[env(safe-area-inset-bottom)] lg:hidden"
+          >
+            <DrawerContent onClose={onClose} titleId={titleId} />
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export function Sidebar() {
+  const isMobileSidebarOpen = useWorkspaceStore((s) => s.isMobileSidebarOpen);
+  const setMobileSidebarOpen = useWorkspaceStore((s) => s.setMobileSidebarOpen);
+  const pathname = usePathname();
+  const close = React.useCallback(() => setMobileSidebarOpen(false), [setMobileSidebarOpen]);
+
+  // Navigating (links, back/forward, search results) always closes the drawer.
+  React.useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [pathname, setMobileSidebarOpen]);
+
+  // Growing past the lg breakpoint while open would leave a locked body scroll
+  // behind an invisible drawer — close it.
+  React.useEffect(() => {
+    if (!isMobileSidebarOpen || typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => {
+      if (mq.matches) close();
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [isMobileSidebarOpen, close]);
 
   return (
     <>
-      {/* Desktop Sidebar — matches Stitch: h-screen w-72 fixed bg-white border-r border-outline */}
       <aside
-        className={cn(
-          "hidden lg:flex fixed inset-y-0 z-40 w-72 bg-[var(--bg-primary)] border-e border-[var(--border-primary)] flex-col pt-20 transition-all",
-          "start-0"
-        )}
-        style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#ede3cd" }}
+        className="fixed inset-y-0 start-0 z-40 hidden flex-col border-e border-[var(--border-subtle)] bg-[var(--bg-primary)] lg:flex"
+        style={{ width: "var(--sidebar-width)" }}
       >
-        <SidebarContent />
+        <DesktopIconRail />
       </aside>
 
-      {/* Mobile Sidebar */}
-      <AnimatePresence>
-        {isMobileSidebarOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 md:hidden bg-black/40"
-              onClick={() => setMobileSidebarOpen(false)}
-            />
-            <motion.aside
-              initial={{ x: isRTL ? 100 : -100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: isRTL ? 100 : -100, opacity: 0 }}
-              className={cn(
-                "fixed inset-y-0 z-50 w-72 bg-[var(--bg-primary)] border-e border-[var(--border-primary)] flex flex-col",
-                "start-0"
-              )}
-              style={{ width: "var(--sidebar-width)", background: "#ffffff", borderColor: "#ede3cd" }}
-            >
-              <SidebarContent onClose={() => setMobileSidebarOpen(false)} />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+      <MobileDrawer open={isMobileSidebarOpen} onClose={close} />
     </>
   );
 }

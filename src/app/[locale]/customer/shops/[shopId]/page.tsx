@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 export default async function CustomerShopRedirect({
   params,
 }: {
-  params: Promise<{ shopId: string }>;
+  params: Promise<{ locale: string; shopId: string }>;
 }) {
-  const { shopId } = await params;
-  redirect(`/shop/${shopId}`);
+  const { locale, shopId } = await params;
+  redirect(`/${locale === "ar" ? "ar" : "en"}/shop/${encodeURIComponent(shopId)}`);
 }

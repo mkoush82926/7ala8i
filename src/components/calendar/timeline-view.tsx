@@ -1,657 +1,669 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { GlassCard } from "@/components/ui/glass-card";
-import { GlassButton } from "@/components/ui/glass-button";
-import { EmptyState } from "@/components/ui/empty-state";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { cn } from "@/lib/utils";
+import { addDays, format, isSameDay, isValid, parse, subDays } from "date-fns";
 import {
+  AlertTriangle,
+  CalendarX,
   ChevronLeft,
   ChevronRight,
-  Plus,
-  List,
   Clock,
-  CalendarX,
-  AlertTriangle,
+  List,
+  Plus,
+  UserPlus,
 } from "lucide-react";
-import { useWorkspaceStore } from "@/store/workspace-store";
-import { useSupabaseQuery } from "@/hooks/use-supabase-query";
-import { createClient } from "@/lib/supabase/client";
-import { getAppointmentsByDateRange } from "@/lib/queries/appointments";
+import { GlassCard } from "@/components/ui/glass-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
-import { usePos } from "@/hooks/use-pos";
-import { useTranslation } from "@/hooks/use-translation";
-import { format, parseISO, addDays, subDays } from "date-fns";
+import { cn, parseDateInput } from "@/lib/utils";
+import { useWorkspaceStore } from "@/store/workspace-store";
+import { useSupabase } from "@/hooks/use-supabase";
+import { getClientById } from "@/lib/queries/clients";
+import { useTranslation, interpolate, headingTracking } from "@/hooks/use-translation";
+import {
+  AppointmentActionError,
+  useAppointments,
+  type CalendarAppointment,
+} from "@/hooks/use-appointments";
+import { APPOINTMENT_STATUSES, type PaymentMethod } from "@/lib/types";
+import {
+  STATUS_STYLES,
+  blockPlacement,
+  computeHourRange,
+  hourTicks,
+  initialsOf,
+  nowPosition,
+  packTracks,
+} from "./calendar-utils";
+import { useStatusLabel } from "./status-label";
+import { errorText } from "./error-text";
+import { AppointmentDetailsDialog } from "./appointment-details-dialog";
+import { AppointmentFormDialog, type AppointmentFormDefaults } from "./appointment-form-dialog";
 
-const timeSlots = Array.from({ length: 12 }, (_, i) => {
-  const hour = i + 8; // 8 AM to 7 PM
-  return `${hour.toString().padStart(2, "0")}:00`;
-});
+const UNASSIGNED_LANE = "__unassigned__";
 
-const statusColors: Record<
-  string,
-  { bg: string; border: string; text: string }
-> = {
-  pending: {
-    bg: "bg-[var(--text-muted)]/10",
-    border: "border-[var(--text-muted)]/30",
-    text: "text-[var(--text-tertiary)]",
-  },
-  confirmed: {
-    bg: "bg-[var(--accent-blue-muted)]",
-    border: "border-[var(--accent-blue)]/30",
-    text: "text-[var(--accent-blue)]",
-  },
-  completed: {
-    bg: "bg-[var(--accent-mint-muted)]",
-    border: "border-[var(--accent-mint)]/30",
-    text: "text-[var(--accent-mint)]",
-  },
-  "no-show": {
-    bg: "bg-[var(--accent-rose-muted)]",
-    border: "border-[var(--accent-rose)]/30",
-    text: "text-[var(--accent-rose)]",
-  },
-  cancelled: {
-    bg: "bg-[var(--text-muted)]/5",
-    border: "border-[var(--text-muted)]/20",
-    text: "text-[var(--text-muted)]",
-  },
-};
+type Lane = { id: string; name: string; barberId: string | null };
+type PendingStatus = { appointment: CalendarAppointment; status: "no_show" | "cancelled" } | null;
+type FormState = { open: false } | { open: true; appointment: CalendarAppointment | null; defaults: AppointmentFormDefaults };
 
 export function TimelineView() {
-  const [view, setView] = useState<"timeline" | "list">("timeline");
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [now, setNow] = useState(new Date());
-  const [confirmAction, setConfirmAction] = useState<{
-    open: boolean;
-    appointmentId: string;
-    status: string;
-    label: string;
-  }>({ open: false, appointmentId: "", status: "", label: "" });
+  const { t, isRTL, FFD, href, formatDate, formatTime, formatDuration, formatCurrency } = useTranslation();
+  const statusLabel = useStatusLabel();
+  const barbers = useWorkspaceStore((s) => s.barbers);
+  const currentView = useWorkspaceStore((s) => s.currentView);
+  const role = useWorkspaceStore((s) => s.role);
+  const shopCurrency = useWorkspaceStore((s) => s.currency);
 
-  React.useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 60000);
+  const [view, setView] = useState<"timeline" | "list">("timeline");
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [now, setNow] = useState(() => new Date());
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [pendingStatus, setPendingStatus] = useState<PendingStatus>(null);
+  const [form, setForm] = useState<FormState>({ open: false });
+
+  // Deep links from notifications, the topbar search and the clients drawer:
+  //   /calendar?date=yyyy-MM-dd[&appt=<id>]  → that day (and appointment)
+  //   /calendar?new=1&client=<id>            → new-booking form for that client
+  // Applied whenever the query changes (also while already on /calendar),
+  // adjusting state during render. The params are stripped once consumed, so
+  // choosing the same result again changes the URL and re-applies it.
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const supabase = useSupabase();
+  const linkKey = ["date", "appt", "new", "client"].map((k) => searchParams.get(k) ?? "").join("|");
+  const hasLink = linkKey !== "|||";
+  const [appliedLink, setAppliedLink] = useState<string | null>(null);
+  const [pendingAppt, setPendingAppt] = useState<string | null>(null);
+  const [pendingClient, setPendingClient] = useState<string | null>(null);
+  if (linkKey !== appliedLink) {
+    setAppliedLink(linkKey);
+    const linkedDate = parseDateInput(searchParams.get("date"));
+    if (linkedDate) setSelectedDate(linkedDate);
+    const linkedAppt = searchParams.get("appt");
+    if (linkedAppt) {
+      setDetailsId(linkedAppt);
+      setPendingAppt(linkedAppt);
+    }
+    if (searchParams.get("new") === "1") setPendingClient(searchParams.get("client") ?? "");
+  }
+
+  // Strip consumed deep-link params (state above already holds what they asked for).
+  useEffect(() => {
+    if (hasLink) router.replace(pathname, { scroll: false });
+  }, [hasLink, linkKey, pathname, router]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
   }, []);
 
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-  let currentPosition = -1;
-  if (currentHour >= 8 && currentHour < 20) {
-    currentPosition = ((currentHour - 8 + currentMinute / 60) / 12) * 100;
-  }
-
-  const { barbers, currentView, shopId } = useWorkspaceStore();
-  const { markPaid, loadingId } = usePos();
-  const { isRTL, locale } = useTranslation();
-  const displayBarbers =
-    currentView === "master"
-      ? barbers
-      : barbers.filter((b) => b.id === currentView);
-
-  const dateStr = format(selectedDate, "yyyy-MM-dd");
-  const supabase = createClient();
-
-  type Appointment = {
-    id: string;
-    shop_id: string;
-    client_id: string | null;
-    barber_id: string | null;
-    service_ids: string[] | null;
-    client_name: string;
-    start_time: string;
-    end_time: string;
-    status: string | null;
-    price: number;
-    service_name?: string | null;
-  };
-
   const {
-    data: appointments,
+    appointments,
     loading,
     error,
     refetch,
-  } = useSupabaseQuery<Appointment[]>(
-    () => getAppointmentsByDateRange(supabase, shopId, dateStr, dateStr) as Promise<{ data: Appointment[] | null; error: { message: string } | null }>,
-    [shopId, dateStr],
-    { enabled: !!shopId },
-  );
+    updateStatus,
+    markPaid,
+    createAppointment,
+    updateAppointment,
+    loadedDate,
+  } = useAppointments(selectedDate);
 
-  const filteredAppointments = useMemo(() => {
-    if (!appointments) return [] as Appointment[];
-    if (currentView === "master") return appointments;
-    return appointments.filter((a) => a.barber_id === currentView);
-  }, [appointments, currentView]);
+  const dayStr = format(selectedDate, "yyyy-MM-dd");
 
-  // "Any Barber" bookings (barber_id === null) have no lane of their own —
-  // surface them as an explicit synthetic row instead of letting them vanish.
-  const hasUnassigned = useMemo(
-    () =>
-      currentView === "master" &&
-      filteredAppointments.some((a) => a.barber_id === null),
-    [currentView, filteredAppointments],
-  );
+  // A linked appointment that isn't on that day's list (deleted, moved, or
+  // another shop's) gets feedback instead of silently doing nothing.
+  useEffect(() => {
+    if (!pendingAppt || loading || loadedDate !== dayStr) return;
+    if (!appointments.some((a) => a.id === pendingAppt)) {
+      toast.error(t.common.linkNotFound);
+      setDetailsId(null);
+    }
+    setPendingAppt(null);
+  }, [pendingAppt, loading, loadedDate, dayStr, appointments, t]);
 
-  const timelineBarbers = useMemo(() => {
-    if (!hasUnassigned) return displayBarbers;
-    return [
-      ...displayBarbers,
-      { id: "unassigned", name: isRTL ? "أي حلاق" : "Unassigned / Any Barber" },
-    ];
-  }, [displayBarbers, hasUnassigned, isRTL]);
-
-  const handleStatusUpdate = async (appointmentId: string, status: string) => {
-    try {
-      const res = await fetch("/api/booking/status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appointment_id: appointmentId, status }),
-      });
-
-      const result = await res.json();
-      if (!result.success) {
-        toast("error", result.error || "Failed to update status");
+  // "New booking" from the clients drawer: prefill the form with that client.
+  useEffect(() => {
+    if (pendingClient === null) return;
+    const clientId = pendingClient;
+    let cancelled = false;
+    (async () => {
+      let defaults: Partial<AppointmentFormDefaults> | null = {};
+      if (clientId) {
+        try {
+          const { data } = await getClientById(supabase, clientId);
+          const row = (data ?? null) as { name?: string | null; phone?: string | null } | null;
+          defaults = row ? { clientName: row.name ?? "", clientPhone: row.phone ?? "" } : null;
+        } catch {
+          defaults = null;
+        }
+      }
+      if (cancelled) return;
+      setPendingClient(null);
+      if (!defaults) {
+        toast.error(t.common.linkNotFound);
         return;
       }
+      setForm({
+        open: true,
+        appointment: null,
+        defaults: { day: dayStr, barberId: currentView !== "master" ? currentView : null, ...defaults },
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Runs once per link; day/lane/t are read at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingClient, supabase]);
+  const isToday = isSameDay(selectedDate, now);
 
-      toast("success", `Appointment marked as ${status}`);
-      refetch();
-    } catch {
-      toast("error", "Failed to update appointment");
+  const visible = useMemo(
+    () => (currentView === "master" ? appointments : appointments.filter((a) => a.barberId === currentView)),
+    [appointments, currentView],
+  );
+
+  const barberName = (id: string | null) =>
+    id ? barbers.find((b) => b.id === id)?.name ?? t.calendar.barber : t.calendar.unassigned;
+
+  // Lanes: team members in view, plus anyone else who has bookings today
+  // (e.g. an owner who also cuts hair), plus "Unassigned" when needed.
+  const lanes = useMemo<Lane[]>(() => {
+    const base: Lane[] =
+      currentView === "master"
+        ? barbers.map((b) => ({ id: b.id, name: b.name, barberId: b.id }))
+        : barbers.filter((b) => b.id === currentView).map((b) => ({ id: b.id, name: b.name, barberId: b.id }));
+    const known = new Set(base.map((l) => l.id));
+    for (const a of visible) {
+      if (a.barberId && !known.has(a.barberId)) {
+        known.add(a.barberId);
+        base.push({ id: a.barberId, name: t.calendar.barber, barberId: a.barberId });
+      }
+    }
+    if (currentView === "master" && (visible.some((a) => a.barberId === null) || base.length === 0)) {
+      base.push({ id: UNASSIGNED_LANE, name: t.calendar.unassigned, barberId: null });
+    }
+    return base;
+  }, [barbers, currentView, visible, t]);
+
+  const range = useMemo(() => computeHourRange(visible), [visible]);
+  const ticks = hourTicks(range);
+  const nowPct = isToday ? nowPosition(now, range) : null;
+  const currency = shopCurrency || appointments[0]?.currency || "JOD";
+
+  const details = detailsId ? appointments.find((a) => a.id === detailsId) ?? null : null;
+
+  // ─── Actions ───
+  const openCreate = (defaults?: Partial<AppointmentFormDefaults>) =>
+    setForm({
+      open: true,
+      appointment: null,
+      defaults: {
+        day: dayStr,
+        barberId: currentView !== "master" ? currentView : null,
+        ...defaults,
+      },
+    });
+
+  const handleConfirmStatus = async (a: CalendarAppointment) => {
+    try {
+      await updateStatus(a.id, "confirmed");
+      toast.success(t.calendar.markedConfirmed);
+    } catch (err) {
+      toast.error(errorText(t, err instanceof AppointmentActionError ? err.code : null));
     }
   };
 
-  const handleMarkPaid = async (appt: Appointment, barberName: string) => {
-    await markPaid({
-      appointmentId: appt.id,
-      clientName: appt.client_name,
-      barberName,
-      serviceLabel: appt.service_name || "Appointment",
-      scheduledTime: format(parseISO(appt.start_time), "h:mm a"),
-      amount: appt.price,
-      method: "cash",
-    });
-    toast("success", "Appointment marked as completed");
-    refetch();
+  const handlePay = async (a: CalendarAppointment, method: PaymentMethod) => {
+    try {
+      await markPaid(a.id, method);
+      toast.success(t.calendar.markedPaid);
+      setDetailsId(null);
+    } catch (err) {
+      toast.error(errorText(t, err instanceof AppointmentActionError ? err.code : null));
+    }
   };
+
+  // Rethrows so ConfirmDialog stays open with an inline error.
+  const runPendingStatus = async () => {
+    if (!pendingStatus) return;
+    const { appointment, status } = pendingStatus;
+    try {
+      await updateStatus(appointment.id, status);
+    } catch (err) {
+      throw new Error(errorText(t, err instanceof AppointmentActionError ? err.code : null));
+    }
+    toast.success(status === "no_show" ? t.calendar.markedNoShow : t.calendar.markedCancelled);
+    setDetailsId(null);
+  };
+
+  const navButton =
+    "inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] cursor-pointer";
+  const toggleButton = (active: boolean) =>
+    cn(
+      "flex min-h-[36px] min-w-[44px] items-center justify-center rounded-[8px] px-4 transition-colors cursor-pointer",
+      active
+        ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
+        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+    );
+
+  const appointmentAriaLabel = (a: CalendarAppointment) =>
+    [a.clientName, `${formatTime(a.startTime)} – ${formatTime(a.endTime)}`, a.serviceName, statusLabel(a.status)]
+      .filter(Boolean)
+      .join(", ");
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <h2 className="text-[20px] tracking-[0.012em] text-[var(--text-primary)] font-light">
-            Calendar
-          </h2>
-          <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <h1
+            className="text-[22px] font-light text-[var(--text-primary)]"
+            style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.012em") }}
+          >
+            {t.calendar.title}
+          </h1>
+          <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={() => setSelectedDate((d) => subDays(d, 1))}
-              aria-label={isRTL ? "اليوم السابق" : "Previous day"}
-              className="w-11 h-11 flex items-center justify-center rounded-[var(--radius-sm)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
+              aria-label={t.calendar.prevDay}
+              className={navButton}
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={18} className="rtl:-scale-x-100" aria-hidden="true" />
             </button>
-            <span className="text-[13px] font-medium text-[var(--text-primary)] min-w-[120px] text-center">
-              {format(selectedDate, "MMMM d, yyyy")}
-            </span>
+            <label className="relative">
+              <span className="sr-only">{t.calendar.jumpToDate}</span>
+              <input
+                type="date"
+                value={dayStr}
+                onChange={(e) => {
+                  const d = parse(e.target.value, "yyyy-MM-dd", new Date());
+                  if (isValid(d)) setSelectedDate(d);
+                }}
+                className="field-input h-11 w-auto min-w-0 cursor-pointer px-3 text-[14px]"
+              />
+            </label>
             <button
+              type="button"
               onClick={() => setSelectedDate((d) => addDays(d, 1))}
-              aria-label={isRTL ? "اليوم التالي" : "Next day"}
-              className="w-11 h-11 flex items-center justify-center rounded-[var(--radius-sm)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
+              aria-label={t.calendar.nextDay}
+              className={navButton}
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={18} className="rtl:-scale-x-100" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedDate(new Date())}
+              disabled={isToday}
+              className="btn btn-ghost ms-1 disabled:opacity-50"
+            >
+              {t.common.today}
             </button>
           </div>
+          <p className="w-full text-[13px] text-[var(--text-secondary)] sm:w-auto" aria-live="polite">
+            {formatDate(selectedDate, "long")}
+          </p>
         </div>
 
-        <div className="flex items-center gap-6">
-          {/* View Toggle */}
-          <div className="flex items-center gap-1 p-1 rounded-[8px] bg-[var(--bg-secondary)] border border-[var(--border-primary)]">
+        <div className="flex items-center gap-3">
+          <div
+            role="group"
+            aria-label={t.calendar.viewMode}
+            className="flex items-center gap-1 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-1"
+          >
             <button
+              type="button"
               onClick={() => setView("timeline")}
-              aria-label={isRTL ? "عرض الجدول الزمني" : "Timeline view"}
+              aria-label={t.calendar.timeline}
               aria-pressed={view === "timeline"}
-              className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
-                view === "timeline"
-                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
-                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              }`}
+              className={toggleButton(view === "timeline")}
             >
-              <Clock size={16} />
+              <Clock size={16} aria-hidden="true" />
             </button>
             <button
+              type="button"
               onClick={() => setView("list")}
-              aria-label={isRTL ? "عرض القائمة" : "List view"}
+              aria-label={t.calendar.listView}
               aria-pressed={view === "list"}
-              className={`flex items-center justify-center px-4 min-w-[44px] min-h-[36px] rounded-[8px] text-[13px] font-semibold transition-all cursor-pointer ${
-                view === "list"
-                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
-                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              }`}
+              className={toggleButton(view === "list")}
             >
-              <List size={16} />
+              <List size={16} aria-hidden="true" />
             </button>
           </div>
-
-          <div className="h-8 w-px bg-[var(--border-primary)] hidden md:block" />
-
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              if (!shopId) return;
-              window.location.href = `/${locale}/book/${shopId}`;
-            }}
-          >
-            <Plus size={16} />
-            New Booking
+          <button type="button" className="btn btn-primary flex-1 sm:flex-none" onClick={() => openCreate()}>
+            <Plus size={16} aria-hidden="true" />
+            {t.calendar.newBooking}
           </button>
         </div>
       </div>
 
-      {/* Status Legend */}
-      <div className="flex items-center gap-4 flex-wrap">
-        {Object.entries(statusColors).map(([status, colors]) => (
-          <div key={status} className="flex items-center gap-1.5">
-            <div
-              className={cn(
-                "w-2 h-2 rounded-full",
-                colors.bg,
-                `border ${colors.border}`,
-              )}
-            />
-            <span className="text-[11px] text-[var(--text-tertiary)] capitalize">
-              {status === "no-show" ? "No Show" : status}
-            </span>
-          </div>
+      {/* Status legend */}
+      <ul className="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label={t.calendar.legend}>
+        {APPOINTMENT_STATUSES.map((status) => (
+          <li key={status} className="flex items-center gap-1.5">
+            <span className={cn("h-2 w-2 rounded-full", STATUS_STYLES[status].dot)} aria-hidden="true" />
+            <span className="text-[12px] text-[var(--text-secondary)]">{statusLabel(status)}</span>
+          </li>
         ))}
-      </div>
+      </ul>
 
-      {/* Loading State */}
+      {/* Loading */}
       {loading && (
         <GlassCard hoverable={false} padding="md">
-          <div className="animate-pulse space-y-4 min-h-[200px]">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-14 rounded-lg bg-[var(--bg-surface)]" />
+          <SkeletonGroup className="min-h-[200px] space-y-4">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-14 w-full rounded-lg" />
             ))}
-          </div>
+          </SkeletonGroup>
         </GlassCard>
       )}
 
-      {/* Error State — distinct from a genuine empty day */}
+      {/* Error — distinct from a genuinely empty day */}
       {!loading && error && (
         <EmptyState
           icon={AlertTriangle}
-          title={isRTL ? "تعذر تحميل المواعيد" : "Couldn't load appointments"}
-          description={error}
-          action={{ label: isRTL ? "إعادة المحاولة" : "Retry", onClick: refetch }}
+          tone="error"
+          title={t.calendar.loadError}
+          description={errorText(t, error)}
+          action={{ label: t.common.retry, onClick: refetch }}
         />
       )}
 
-      {/* Empty State */}
-      {!loading && !error && filteredAppointments.length === 0 && (
+      {/* Empty */}
+      {!loading && !error && visible.length === 0 && (
         <EmptyState
           icon={CalendarX}
-          title={isRTL ? "لا توجد مواعيد لهذا اليوم" : "No appointments for this day"}
-          description={
-            isRTL
-              ? "ستظهر هنا المواعيد المحجوزة لهذا التاريخ."
-              : "Appointments booked for this date will appear here."
-          }
+          title={t.calendar.emptyTitle}
+          description={t.calendar.emptyDescription}
+          action={{ label: t.calendar.newBooking, onClick: () => openCreate(), icon: Plus }}
         />
       )}
 
-      {/* Timeline View */}
-      {!loading && !error && filteredAppointments.length > 0 && view === "timeline" ? (
-        <GlassCard hoverable={false} padding="md" className="overflow-x-auto">
-          <div className="min-w-[800px]">
-            {/* Time header */}
-            <div className="flex border-b border-[var(--border-primary)]">
-              <div className="w-32 flex-shrink-0 p-3 text-[11px] text-[var(--text-tertiary)] font-light">
-                Barber
+      {/* Timeline */}
+      {!loading && !error && visible.length > 0 && view === "timeline" && (
+        <div className="relative">
+          <GlassCard hoverable={false} padding="sm" className="overflow-x-auto overscroll-x-contain !p-0">
+            <div style={{ minWidth: Math.max(640, ticks.length * 72 + 128) }}>
+              {/* Hour header */}
+              <div className="flex border-b border-[var(--border-subtle)]" aria-hidden="true">
+                <div className="sticky start-0 z-20 w-28 shrink-0 bg-[var(--bg-primary)] p-3 text-[12px] text-[var(--text-muted)] sm:w-32">
+                  {t.calendar.barber}
+                </div>
+                <div className="flex flex-1">
+                  {ticks.map((h) => (
+                    <div
+                      key={h}
+                      className="flex-1 border-s border-[var(--border-subtle)] px-2 py-3 text-start text-[11px] tabular-nums text-[var(--text-muted)]"
+                    >
+                      {formatTime(`${String(h).padStart(2, "0")}:00`, { minute: undefined })}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex-1 flex">
-                {timeSlots.map((time) => (
-                  <div
-                    key={time}
-                    className="flex-1 p-3 text-center text-[11px] text-[var(--text-muted)] font-light border-s border-[var(--border-primary)]"
+
+              {/* Lanes */}
+              {lanes.map((lane, laneIdx) => {
+                const laneAppts = visible.filter((a) =>
+                  lane.id === UNASSIGNED_LANE ? a.barberId === null : a.barberId === lane.id,
+                );
+                const tracks = packTracks(laneAppts);
+                const maxTracks = Math.max(1, ...Array.from(tracks.values()).map((v) => v.tracks));
+                const laneHeight = Math.max(72, maxTracks * 44 + 12);
+
+                return (
+                  <motion.div
+                    key={lane.id}
+                    role="group"
+                    aria-label={lane.name}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: laneIdx * 0.04 }}
+                    className="flex border-b border-[var(--border-subtle)] last:border-b-0"
                   >
-                    {time}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Barber rows */}
-            {timelineBarbers.map((barber, barberIdx) => {
-              const barberAppts = filteredAppointments.filter((a) =>
-                barber.id === "unassigned"
-                  ? a.barber_id === null
-                  : a.barber_id === barber.id,
-              );
-
-              return (
-                <motion.div
-                  key={barber.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: barberIdx * 0.05 }}
-                  className="flex border-b border-[var(--border-primary)] last:border-b-0"
-                >
-                  <div className="w-32 flex-shrink-0 p-3 flex items-center">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center">
-                        <span className="text-[9px] font-medium text-[var(--text-primary)]">
-                          {barber.id === "unassigned"
-                            ? "—"
-                            : barber.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                        </span>
-                      </div>
-                      <span className="text-[12px] text-[var(--text-secondary)] font-light truncate">
-                        {barber.name.split(" ")[0]}
+                    <div className="sticky start-0 z-20 flex w-28 shrink-0 items-center gap-2 bg-[var(--bg-primary)] p-3 sm:w-32">
+                      <span
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[11px] font-medium text-[var(--text-primary)]"
+                        aria-hidden="true"
+                      >
+                        {lane.id === UNASSIGNED_LANE ? "—" : initialsOf(lane.name)}
                       </span>
-                    </div>
-                  </div>
-                  <div className="flex-1 relative min-h-[60px]">
-                    {/* Grid lines */}
-                    <div className="absolute inset-0 flex">
-                      {timeSlots.map((time) => (
-                        <div
-                          key={time}
-                          className="flex-1 border-s border-[var(--border-primary)]"
-                        />
-                      ))}
+                      <span className="truncate text-[13px] text-[var(--text-secondary)]">{lane.name}</span>
                     </div>
 
-                    {/* Current time indicator */}
-                    {currentPosition >= 0 &&
-                      format(selectedDate, "yyyy-MM-dd") ===
-                        format(now, "yyyy-MM-dd") && (
+                    <div className="relative flex-1" style={{ minHeight: laneHeight }}>
+                      {/* Hour cells: click an empty slot to book it (mouse shortcut; keyboard uses "New Booking") */}
+                      <div className="absolute inset-0 flex">
+                        {ticks.map((h) => {
+                          const timeStr = `${String(h).padStart(2, "0")}:00`;
+                          return (
+                            <button
+                              key={h}
+                              type="button"
+                              tabIndex={-1}
+                              aria-label={interpolate(t.calendar.addAtTime, {
+                                barber: lane.name,
+                                time: formatTime(timeStr),
+                              })}
+                              onClick={() => openCreate({ time: timeStr, barberId: lane.barberId })}
+                              className="flex-1 cursor-copy border-s border-[var(--border-subtle)] transition-colors hover:bg-[var(--bg-secondary)]/60"
+                            />
+                          );
+                        })}
+                      </div>
+
+                      {/* Now line */}
+                      {nowPct !== null && (
                         <div
-                          className="absolute top-0 bottom-0 w-[1px] bg-[var(--accent-mint)]/50 z-20 pointer-events-none"
-                          style={{ insetInlineStart: `${currentPosition}%` }}
+                          className="pointer-events-none absolute inset-y-0 z-10 w-px bg-[var(--accent-mint)]/60"
+                          style={{ insetInlineStart: `${nowPct}%` }}
+                          aria-hidden="true"
                         >
-                          <div className="absolute top-0 -translate-x-1/2 -mt-1 w-2 h-2 rounded-full bg-[var(--accent-mint)]" />
+                          {laneIdx === 0 && (
+                            <span className="absolute top-0 h-2 w-2 -translate-x-1/2 rtl:translate-x-1/2 rounded-full bg-[var(--accent-mint)]" />
+                          )}
                         </div>
                       )}
 
-                    {/* Appointment blocks */}
-                    {barberAppts.map((appt) => {
-                      const apptDate = parseISO(appt.start_time);
-                      const hour = apptDate.getHours();
-                      const minute = apptDate.getMinutes();
-                      const startSlot = hour - 8 + minute / 60;
-
-                      const endDate = parseISO(appt.end_time);
-                      const durationMinutes =
-                        (endDate.getTime() - apptDate.getTime()) / 60000;
-                      const widthSlots = durationMinutes / 60;
-
-                      const colors =
-                        statusColors[appt.status ?? "pending"] ??
-                        statusColors.pending;
-
-                      return (
-                        <motion.div
-                          key={appt.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          whileHover={{ scale: 1.02, zIndex: 30 }}
-                          className={cn(
-                            "absolute top-1.5 rounded-[var(--radius-sm)] px-2 py-1.5 cursor-pointer",
-                            "border transition-all duration-200 group",
-                            colors.bg,
-                            colors.border,
-                          )}
-                          style={{
-                            insetInlineStart: `${(startSlot / 12) * 100}%`,
-                            width: `${(widthSlots / 12) * 100}%`,
-                            bottom: "6px",
-                          }}
-                        >
-                          <p
+                      {/* Appointment blocks */}
+                      {laneAppts.map((a) => {
+                        const { startPct, widthPct } = blockPlacement(a.startTime, a.endTime, range);
+                        const { track, tracks: n } = tracks.get(a.id) ?? { track: 0, tracks: 1 };
+                        const styles = STATUS_STYLES[a.status];
+                        const usable = laneHeight - 12;
+                        const h = usable / n;
+                        return (
+                          <button
+                            key={a.id}
+                            type="button"
+                            onClick={() => setDetailsId(a.id)}
+                            aria-label={appointmentAriaLabel(a)}
+                            aria-haspopup="dialog"
                             className={cn(
-                              "text-[10px] font-medium truncate",
-                              colors.text,
+                              "absolute z-[15] overflow-hidden rounded-[var(--radius-sm)] border px-2 py-1 text-start",
+                              "cursor-pointer transition-shadow hover:shadow-md focus-visible:z-30",
+                              styles.bg,
+                              styles.border,
                             )}
+                            style={{
+                              insetInlineStart: `${startPct}%`,
+                              width: `calc(${widthPct}% - 2px)`,
+                              top: 6 + track * h,
+                              height: h - 4,
+                            }}
                           >
-                            {appt.client_name}
-                          </p>
-                          <p className="text-[9px] text-[var(--text-muted)] truncate">
-                            {format(apptDate, "h:mm a")} ·{" "}
-                            {Math.round(durationMinutes)}m
-                          </p>
-
-                          {/* Tooltip with actions */}
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max min-w-[160px] p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-primary)] opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all z-50 flex flex-col gap-2">
-                            <p className="text-[12px] text-[var(--text-primary)] font-medium">
-                              {appt.client_name}
-                            </p>
-                            <p className="text-[10px] text-[var(--text-secondary)]">
-                              {Math.round(durationMinutes)} min ·{" "}
-                              {appt.price.toFixed(2)} JOD
-                            </p>
-                            <div className="flex items-center gap-1 mt-1">
-                              <div
-                                className={cn(
-                                  "w-1.5 h-1.5 rounded-full",
-                                  colors.bg,
-                                  `border ${colors.border}`,
-                                )}
-                              />
-                              <span className="text-[9px] text-[var(--text-tertiary)] capitalize">
-                                {appt.status === "no-show"
-                                  ? "No Show"
-                                  : appt.status}
+                            <span className={cn("block truncate text-[12px] font-medium", styles.text)}>
+                              {a.clientName}
+                            </span>
+                            {h >= 40 && (
+                              <span className="block truncate text-[11px] tabular-nums text-[var(--text-muted)]">
+                                {formatTime(a.startTime)} · {formatDuration(a.durationMinutes)}
                               </span>
-                            </div>
-
-                            {/* POS Actions */}
-                            {(appt.status === "pending" ||
-                              appt.status === "confirmed") && (
-                              <div className="flex gap-1 mt-1 pt-2 border-t border-[var(--border-primary)]">
-                                {appt.status === "pending" && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleStatusUpdate(
-                                        appt.id,
-                                        "confirmed",
-                                      );
-                                    }}
-                                    className="flex-1 min-h-[36px] rounded text-[10px] uppercase font-bold bg-[var(--accent-blue-muted)] text-[var(--accent-blue)] hover:opacity-80 cursor-pointer transition-opacity"
-                                  >
-                                    Confirm
-                                  </button>
-                                )}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMarkPaid(appt, barber.name);
-                                  }}
-                                  disabled={loadingId === appt.id}
-                                  className="flex-1 min-h-[36px] rounded text-[10px] uppercase font-bold bg-[var(--accent-mint-muted)] text-[var(--accent-mint)] hover:opacity-80 cursor-pointer transition-opacity"
-                                >
-                                  Paid
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setConfirmAction({
-                                      open: true,
-                                      appointmentId: appt.id,
-                                      status: "no-show",
-                                      label: "No Show",
-                                    });
-                                  }}
-                                  className="flex-1 min-h-[36px] rounded text-[10px] uppercase font-bold bg-[var(--accent-rose-muted)] text-[var(--accent-rose)] hover:opacity-80 cursor-pointer transition-opacity"
-                                >
-                                  No Show
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setConfirmAction({
-                                      open: true,
-                                      appointmentId: appt.id,
-                                      status: "cancelled",
-                                      label: "Cancel",
-                                    });
-                                  }}
-                                  className="flex-1 min-h-[36px] rounded text-[10px] uppercase font-bold bg-[var(--text-muted)]/10 text-[var(--text-muted)] hover:opacity-80 cursor-pointer transition-opacity"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
                             )}
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </GlassCard>
-      ) : (
-        !loading &&
-        !error &&
-        filteredAppointments.length > 0 && (
-          /* List View */
-          <GlassCard hoverable={false} padding="md">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[var(--border-primary)]">
-                    {[
-                      "Time",
-                      "Client",
-                      "Duration",
-                      "Price",
-                      "Status",
-                      "Actions",
-                    ].map((h) => (
-                      <th
-                        key={h}
-                        className="text-start text-[11px] text-[var(--text-tertiary)] font-light uppercase tracking-wider px-4 py-3"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAppointments.map((appt, i) => {
-                    const colors =
-                      statusColors[appt.status ?? "pending"] ??
-                      statusColors.pending;
-                    const apptDate = parseISO(appt.start_time);
-                    const endDate = parseISO(appt.end_time);
-                    const durationMinutes =
-                      (endDate.getTime() - apptDate.getTime()) / 60000;
-
-                    return (
-                      <motion.tr
-                        key={appt.id}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        className="border-b border-[var(--border-primary)] last:border-b-0 hover:bg-[var(--bg-surface-hover)] transition-colors"
-                      >
-                        <td className="px-4 py-3 text-[13px] text-[var(--text-primary)] font-light tabular-nums">
-                          {format(apptDate, "h:mm a")}
-                        </td>
-                        <td className="px-4 py-3 text-[13px] text-[var(--text-primary)] font-light">
-                          {appt.client_name}
-                        </td>
-                        <td className="px-4 py-3 text-[13px] text-[var(--text-secondary)] font-light">
-                          {Math.round(durationMinutes)} min
-                        </td>
-                        <td className="px-4 py-3 text-[13px] text-[var(--text-primary)] font-medium tabular-nums">
-                          {appt.price.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={cn(
-                              "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border capitalize",
-                              colors.bg,
-                              colors.border,
-                              colors.text,
-                            )}
-                          >
-                            {appt.status === "no-show"
-                              ? "No Show"
-                              : appt.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {(appt.status === "pending" ||
-                            appt.status === "confirmed") && (
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() =>
-                                  handleMarkPaid(
-                                    appt,
-                                    barbers.find(
-                                      (b) => b.id === appt.barber_id,
-                                    )?.name || "Barber",
-                                  )
-                                }
-                                disabled={loadingId === appt.id}
-                                className="min-h-[36px] px-3 rounded text-[11px] font-bold uppercase bg-[var(--accent-mint-muted)] text-[var(--accent-mint)] cursor-pointer hover:opacity-80 transition-opacity"
-                              >
-                                Paid
-                              </button>
-                              <button
-                                onClick={() =>
-                                  setConfirmAction({
-                                    open: true,
-                                    appointmentId: appt.id,
-                                    status: "cancelled",
-                                    label: "Cancel",
-                                  })
-                                }
-                                className="min-h-[36px] px-3 rounded text-[11px] font-bold uppercase bg-[var(--text-muted)]/10 text-[var(--text-muted)] cursor-pointer hover:opacity-80 transition-opacity"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           </GlassCard>
-        )
+
+          {role === "shop_admin" && (
+            <Link
+              href={href("/team")}
+              aria-label={t.calendar.addTeamMember}
+              title={t.calendar.addTeamMember}
+              className="absolute -bottom-5 end-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] shadow-[0_10px_24px_-8px_rgba(28,22,17,0.45)] transition-opacity hover:opacity-90"
+            >
+              <UserPlus size={20} aria-hidden="true" />
+            </Link>
+          )}
+        </div>
       )}
 
-      {/* Confirm Dialog for destructive actions */}
+      {/* List */}
+      {!loading && !error && visible.length > 0 && view === "list" && (
+        <GlassCard hoverable={false} padding="sm" className="!p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px]">
+              <caption className="sr-only">{formatDate(selectedDate, "long")}</caption>
+              <thead>
+                <tr className="border-b border-[var(--border-subtle)]">
+                  {[
+                    t.calendar.time,
+                    t.calendar.client,
+                    t.calendar.barber,
+                    t.calendar.duration,
+                    t.calendar.price,
+                    t.calendar.status,
+                  ].map((h, i) => (
+                    <th
+                      key={h}
+                      scope="col"
+                      className={cn(
+                        "px-4 py-3 text-start text-[12px] font-medium text-[var(--text-secondary)]",
+                        (i === 2 || i === 3) && "hidden md:table-cell",
+                      )}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((a) => {
+                  const styles = STATUS_STYLES[a.status];
+                  return (
+                    <tr
+                      key={a.id}
+                      className="border-b border-[var(--border-subtle)] transition-colors last:border-b-0 hover:bg-[var(--bg-secondary)]"
+                    >
+                      <td className="px-4 py-3 text-[13px] tabular-nums text-[var(--text-primary)]">
+                        {formatTime(a.startTime)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => setDetailsId(a.id)}
+                          aria-haspopup="dialog"
+                          className="min-h-[44px] cursor-pointer text-start text-[14px] text-[var(--text-primary)] underline-offset-4 hover:underline"
+                        >
+                          {a.clientName}
+                          {a.serviceName && (
+                            <span className="block text-[12px] text-[var(--text-muted)]">{a.serviceName}</span>
+                          )}
+                        </button>
+                      </td>
+                      <td className="hidden px-4 py-3 text-[13px] text-[var(--text-secondary)] md:table-cell">
+                        {barberName(a.barberId)}
+                      </td>
+                      <td className="hidden px-4 py-3 text-[13px] text-[var(--text-secondary)] md:table-cell">
+                        {formatDuration(a.durationMinutes)}
+                      </td>
+                      <td className="px-4 py-3 text-[13px] font-medium tabular-nums text-[var(--text-primary)]">
+                        {formatCurrency(a.price, a.currency)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-medium",
+                            styles.bg,
+                            styles.border,
+                            styles.text,
+                          )}
+                        >
+                          {statusLabel(a.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Details (actions) */}
+      <AppointmentDetailsDialog
+        appointment={pendingStatus || form.open ? null : details}
+        barberName={details ? barberName(details.barberId) : ""}
+        onClose={() => setDetailsId(null)}
+        onConfirmStatus={handleConfirmStatus}
+        onPay={handlePay}
+        onEdit={(a) =>
+          setForm({ open: true, appointment: a, defaults: { day: dayStr, barberId: a.barberId } })
+        }
+        onNoShow={(a) => setPendingStatus({ appointment: a, status: "no_show" })}
+        onCancel={(a) => setPendingStatus({ appointment: a, status: "cancelled" })}
+      />
+
+      {/* Destructive confirmations */}
       <ConfirmDialog
-        open={confirmAction.open}
-        onClose={() =>
-          setConfirmAction({
-            open: false,
-            appointmentId: "",
-            status: "",
-            label: "",
-          })
+        open={!!pendingStatus}
+        onClose={() => setPendingStatus(null)}
+        onConfirm={runPendingStatus}
+        title={
+          pendingStatus
+            ? interpolate(
+                pendingStatus.status === "no_show" ? t.calendar.noShowTitle : t.calendar.cancelTitle,
+                { name: pendingStatus.appointment.clientName },
+              )
+            : ""
         }
-        onConfirm={() =>
-          handleStatusUpdate(confirmAction.appointmentId, confirmAction.status)
+        description={
+          pendingStatus
+            ? `${formatTime(pendingStatus.appointment.startTime)} · ${barberName(pendingStatus.appointment.barberId)}. ${t.calendar.irreversible}`
+            : undefined
         }
-        title={`Mark as ${confirmAction.label}?`}
-        description={`This action cannot be undone. The appointment will be marked as "${confirmAction.label}".`}
-        confirmLabel={confirmAction.label}
+        confirmLabel={pendingStatus?.status === "no_show" ? t.calendar.markNoShow : t.calendar.cancelAppointment}
+        cancelLabel={t.calendar.keepAppointment}
         destructive
+      />
+
+      {/* Create / edit / reschedule */}
+      <AppointmentFormDialog
+        open={form.open}
+        onClose={() => setForm({ open: false })}
+        appointment={form.open ? form.appointment : null}
+        defaults={form.open ? form.defaults : { day: dayStr }}
+        barbers={barbers}
+        currency={currency}
+        onCreate={createAppointment}
+        onUpdate={updateAppointment}
+        onSaved={(mode) => {
+          toast.success(mode === "create" ? t.calendar.created : t.calendar.saved);
+          setForm({ open: false });
+          setDetailsId(null);
+        }}
       />
     </div>
   );

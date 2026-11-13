@@ -1,436 +1,506 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, ArrowRight, Lock, Mail, MailCheck, Phone, Store, User, Users, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
-import { motion } from "framer-motion";
-import { useTranslation, headingTracking, FONT_EN, FONT_AR } from "@/hooks/use-translation";
+import { toast } from "@/components/ui/toast";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import {
+  authErrorKey,
+  isValidEmail,
+  isValidPhone,
+  MIN_PASSWORD_LENGTH,
+  type AuthErrorKey,
+} from "../auth-errors";
+import { isInviteNext, resolveNext, safeNextPath } from "../safe-next";
+import {
+  AuthAlert,
+  AuthCard,
+  AuthField,
+  AuthFootnote,
+  AuthHeader,
+  AuthShell,
+  PasswordField,
+  SubmitButton,
+  TermsNotice,
+} from "../_components/auth-shell";
 
-type UserType = "shop_admin" | "customer" | "barber";
+// Only these two roles can be chosen at signup. Barbers join a shop through
+// an invite link (/join), which signs them up as a customer and then
+// promotes them server-side in accept_invite.
+type SignupRole = "shop_admin" | "customer";
+type FieldName = "fullName" | "shopName" | "phone" | "email" | "password" | "confirmPassword";
 
-const roles: { id: UserType; icon: string; title: string; desc: string }[] = [
-  {
-    id: "shop_admin",
-    icon: "storefront",
-    title: "Shop Manager",
-    desc: "Directing operations, managing staff, and scaling your business.",
-  },
-  {
-    id: "customer",
-    icon: "person",
-    title: "Customer",
-    desc: "Booking appointments and curating your personal grooming journey.",
-  },
-  {
-    id: "barber",
-    icon: "content_cut",
-    title: "Professional",
-    desc: "Managing your individual schedule, clients, and creative portfolio.",
-  },
-];
+const RESEND_COOLDOWN_SECONDS = 60;
 
-const inputStyle = (isFocused = false, font: string = FONT_EN): React.CSSProperties => ({
-  width: "100%",
-  height: 56,
-  padding: "0 20px",
-  borderRadius: 8,
-  border: isFocused ? "1px solid #a67c3d" : "1px solid #ede3cd",
-  background: "#ffffff",
-  color: "#1c1611",
-  fontSize: 14,
-  fontFamily: font,
-  outline: "none",
-  transition: "all 0.2s ease",
-  boxShadow: isFocused ? "var(--shadow-focus)" : "none",
-});
+function SignupContent() {
+  const { t, locale, href, isRTL, FFD } = useTranslation();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = safeNextPath(searchParams.get("next"), "");
+  const fromInvite = isInviteNext(next);
 
-function StyledInput({ font, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { font?: string }) {
-  const [focused, setFocused] = useState(false);
+  // Landing "owner" CTAs link here with ?role=shop_admin: skip the chooser and
+  // go straight to the shop-owner form. Invites always sign up as customers
+  // first (the invite then assigns the staff role).
+  const ownerPreset = !fromInvite && searchParams.get("role") === "shop_admin";
+  const [step, setStep] = useState<"role" | "form">(fromInvite || ownerPreset ? "form" : "role");
+  const [role, setRole] = useState<SignupRole>(ownerPreset ? "shop_admin" : "customer");
+  const [values, setValues] = useState<Record<FieldName, string>>({
+    fullName: "",
+    shopName: "",
+    phone: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
+  const [errorKey, setErrorKey] = useState<AuthErrorKey | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const [resending, setResending] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const headingRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
+
+  // Move focus to the new step's heading for keyboard/screen-reader users.
+  useEffect(() => {
+    if (step === "form" && !fromInvite) headingRef.current?.querySelector<HTMLElement>("h1 [tabindex]")?.focus();
+  }, [step, fromInvite]);
+
+  const destination = next || (role === "customer" ? "/customer" : "/");
+
+  function validate(field: FieldName): string | null {
+    const v = values[field];
+    switch (field) {
+      case "fullName":
+        return v.trim().length < 2 ? (v.trim() ? t.auth.nameTooShort : t.auth.fieldRequired) : null;
+      case "shopName":
+        return role === "shop_admin" && !v.trim() ? t.auth.fieldRequired : null;
+      case "phone":
+        return v.trim() && !isValidPhone(v) ? t.auth.invalidPhone : null;
+      case "email":
+        return !v.trim() ? t.auth.fieldRequired : !isValidEmail(v) ? t.auth.errors.invalidEmail : null;
+      case "password":
+        return !v ? t.auth.fieldRequired : v.length < MIN_PASSWORD_LENGTH ? t.auth.passwordRules : null;
+      case "confirmPassword":
+        return !v ? t.auth.fieldRequired : v !== values.password ? t.auth.passwordsDontMatch : null;
+    }
+  }
+
+  const fieldsInForm: FieldName[] = [
+    "fullName",
+    ...(role === "shop_admin" ? (["shopName"] as FieldName[]) : []),
+    ...(role === "customer" ? (["phone"] as FieldName[]) : []),
+    "email",
+    "password",
+    "confirmPassword",
+  ];
+
+  const errorFor = (field: FieldName) => (touched[field] ? validate(field) : null);
+
+  const bind = (field: FieldName) => ({
+    name: field,
+    value: values[field],
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => setValues((s) => ({ ...s, [field]: e.target.value })),
+    onBlur: () => setTouched((s) => ({ ...s, [field]: true })),
+    error: errorFor(field),
+  });
+
+  function emailRedirectTo() {
+    return `${window.location.origin}/${locale}/auth/callback?next=${encodeURIComponent(destination)}`;
+  }
+
+  async function handleSignup(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorKey(null);
+    setTouched(Object.fromEntries(fieldsInForm.map((f) => [f, true])));
+    const firstInvalid = fieldsInForm.find((f) => validate(f));
+    if (firstInvalid) {
+      formRef.current?.querySelector<HTMLInputElement>(`[name="${firstInvalid}"]`)?.focus();
+      return;
+    }
+
+    setLoading(true);
+    const metadata: Record<string, string> = {
+      full_name: values.fullName.trim(),
+      // The DB trigger only honours "shop_admin"; anything else becomes a customer.
+      role,
+    };
+    if (role === "shop_admin") metadata.shop_name = values.shopName.trim();
+    // Contact number only — stored on the profile, never used to prove identity.
+    if (role === "customer" && values.phone.trim()) metadata.phone = values.phone.trim();
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email.trim().toLowerCase(),
+        password: values.password,
+        options: { data: metadata, emailRedirectTo: emailRedirectTo() },
+      });
+
+      if (error) {
+        setErrorKey(authErrorKey(error));
+        setLoading(false);
+        return;
+      }
+
+      // Email confirmation disabled → we already have a session.
+      if (data?.session) {
+        router.replace(resolveNext(destination, locale));
+        router.refresh();
+        return;
+      }
+
+      setSentTo(values.email.trim());
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      setLoading(false);
+    } catch {
+      setErrorKey("generic");
+      setLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    if (!sentTo || cooldown > 0) return;
+    setResending(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: sentTo,
+        options: { emailRedirectTo: emailRedirectTo() },
+      });
+      if (error) {
+        toast.error(t.auth.errors[authErrorKey(error)]);
+      } else {
+        toast.success(t.auth.emailResent);
+        setCooldown(RESEND_COOLDOWN_SECONDS);
+      }
+    } catch {
+      toast.error(t.auth.errors.generic);
+    } finally {
+      setResending(false);
+    }
+  }
+
+  const loginHref = href(`/auth/login${next ? `?next=${encodeURIComponent(next)}` : ""}`);
+
+  // ── Success: check your email ──
+  if (sentTo) {
+    const [before, after = ""] = t.auth.checkEmailBody.split("{email}");
+    return (
+      <AuthShell navLink={{ href: loginHref, label: t.auth.signInBtn }}>
+        <AuthCard>
+          <AuthHeader
+            icon={MailCheck}
+            tone="success"
+            align="center"
+            title={t.auth.checkEmailTitle}
+            subtitle={
+              <>
+                {before}
+                <strong dir="ltr" style={{ color: "var(--text-primary)", wordBreak: "break-all" }}>
+                  {sentTo}
+                </strong>
+                {after}
+              </>
+            }
+          />
+          {fromInvite && <AuthAlert tone="info">{t.auth.checkEmailInvite}</AuthAlert>}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 20 }}>
+            <a href={loginHref} className="btn btn-primary" style={{ width: "100%", minHeight: 52 }}>
+              {t.auth.backToSignIn}
+            </a>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleResend}
+              disabled={resending || cooldown > 0}
+              aria-busy={resending || undefined}
+              style={{ width: "100%", minHeight: 48 }}
+            >
+              {resending
+                ? t.auth.resending
+                : cooldown > 0
+                  ? t.auth.resendIn.replace("{seconds}", String(cooldown))
+                  : t.auth.resendEmail}
+            </button>
+          </div>
+          <p style={{ marginTop: 16, fontSize: 13, textAlign: "center", color: "var(--text-muted)" }}>
+            {t.auth.checkSpam}
+          </p>
+        </AuthCard>
+      </AuthShell>
+    );
+  }
+
+  // ── Step 1: choose how you'll use Halaqy ──
+  if (step === "role") {
+    const roleCards: { id: SignupRole; icon: LucideIcon; title: string; desc: string }[] = [
+      { id: "customer", icon: User, title: t.auth.roleCustomerTitle, desc: t.auth.roleCustomerDesc },
+      { id: "shop_admin", icon: Store, title: t.auth.roleOwnerTitle, desc: t.auth.roleOwnerDesc },
+    ];
+    return (
+      <AuthShell navLink={{ href: loginHref, label: t.auth.signInBtn }} width="md">
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <h1
+            style={{
+              fontFamily: FFD,
+              fontSize: "clamp(28px, 7vw, 40px)",
+              fontWeight: 800,
+              lineHeight: 1.15,
+              letterSpacing: headingTracking(isRTL, "0.012em"),
+              margin: "0 0 12px",
+            }}
+          >
+            {t.auth.howWillYouUse}
+          </h1>
+          <p style={{ color: "var(--text-secondary)", fontSize: 16, margin: 0 }}>{t.auth.chooseRoleSubtitle}</p>
+        </div>
+
+        <ul role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 16 }}>
+          {roleCards.map(({ id, icon: Icon, title, desc }) => (
+            <li key={id}>
+              <button
+                type="button"
+                onClick={() => {
+                  setRole(id);
+                  setStep("form");
+                }}
+                className="focus-ring"
+                aria-describedby={`role-${id}-desc`}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  padding: "20px",
+                  textAlign: "start",
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: 12,
+                  background: "var(--bg-primary)",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  transition: "border-color 0.2s ease, transform 0.2s ease",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--accent-brass)")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-subtle)")}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    flexShrink: 0,
+                    borderRadius: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "var(--bg-secondary)",
+                    color: "var(--accent-text)",
+                  }}
+                >
+                  <Icon size={22} />
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 17, fontWeight: 700, marginBottom: 4 }}>{title}</span>
+                  <span id={`role-${id}-desc`} style={{ display: "block", fontSize: 14, lineHeight: 1.6, color: "var(--text-secondary)" }}>
+                    {desc}
+                  </span>
+                </span>
+                <ArrowRight size={18} aria-hidden="true" className="rtl:-scale-x-100" style={{ flexShrink: 0, color: "var(--text-muted)" }} />
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <p style={{ marginTop: 20, textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>{t.auth.barberViaInvite}</p>
+        <AuthFootnote text={t.auth.haveAccount} linkLabel={t.auth.signInBtn} linkHref={loginHref} />
+      </AuthShell>
+    );
+  }
+
+  // ── Step 2: account details ──
   return (
-    <input
-      {...props}
-      style={inputStyle(focused, font)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-    />
+    <AuthShell navLink={{ href: loginHref, label: t.auth.signInBtn }}>
+      <AuthCard>
+        {!fromInvite && (
+          <button
+            type="button"
+            onClick={() => {
+              setStep("role");
+              setErrorKey(null);
+            }}
+            className="focus-ring"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              minHeight: 40,
+              padding: "0 4px",
+              marginBottom: 16,
+              background: "none",
+              border: "none",
+              color: "var(--text-secondary)",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            <ArrowLeft size={16} aria-hidden="true" className="rtl:-scale-x-100" />
+            {t.common.back}
+          </button>
+        )}
+
+        <div ref={headingRef}>
+          {!fromInvite && (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "4px 12px",
+                borderRadius: 9999,
+                background: "var(--bg-secondary)",
+                color: "var(--accent-text)",
+                fontSize: 13,
+                fontWeight: 600,
+                marginBottom: 14,
+              }}
+            >
+              {role === "shop_admin" ? <Store size={14} aria-hidden="true" /> : <User size={14} aria-hidden="true" />}
+              {role === "shop_admin" ? t.auth.roleOwnerTitle : t.auth.roleCustomerTitle}
+            </span>
+          )}
+          <AuthHeader
+            title={<span tabIndex={-1} style={{ outline: "none" }}>{t.auth.createYourAccount}</span>}
+            subtitle={fromInvite ? t.auth.inviteSignUpNotice : t.auth.joinHalaqy}
+          />
+        </div>
+
+        {fromInvite && (
+          <div style={{ marginBottom: 18 }}>
+            <AuthAlert tone="info">
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <Users size={14} aria-hidden="true" />
+                {t.auth.inviteBanner}
+              </span>
+            </AuthAlert>
+          </div>
+        )}
+
+        <form ref={formRef} onSubmit={handleSignup} noValidate style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <AuthField
+            id="fullName"
+            label={t.auth.fullName}
+            icon={User}
+            type="text"
+            required
+            autoComplete="name"
+            maxLength={100}
+            {...bind("fullName")}
+          />
+
+          {role === "shop_admin" && (
+            <AuthField
+              id="shopName"
+              label={t.auth.shopName}
+              icon={Store}
+              type="text"
+              required
+              autoComplete="organization"
+              maxLength={100}
+              {...bind("shopName")}
+            />
+          )}
+
+          {role === "customer" && (
+            <AuthField
+              id="phone"
+              label={
+                <>
+                  {t.booking.phoneNumber}{" "}
+                  <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({t.common.optional})</span>
+                </>
+              }
+              icon={Phone}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              dir="ltr"
+              style={{ textAlign: "start" }}
+              placeholder="+962 7X XXX XXXX"
+              maxLength={20}
+              hint={t.auth.phoneHint}
+              {...bind("phone")}
+            />
+          )}
+
+          <AuthField
+            id="email"
+            label={t.auth.emailAddress}
+            icon={Mail}
+            type="email"
+            required
+            autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            dir="ltr"
+            style={{ textAlign: "start" }}
+            placeholder="name@example.com"
+            {...bind("email")}
+          />
+
+          <PasswordField
+            id="password"
+            label={t.auth.password}
+            icon={Lock}
+            required
+            autoComplete="new-password"
+            minLength={MIN_PASSWORD_LENGTH}
+            showStrength
+            hint={t.auth.passwordRules}
+            {...bind("password")}
+          />
+
+          <PasswordField
+            id="confirmPassword"
+            label={t.auth.confirmPassword}
+            icon={Lock}
+            required
+            autoComplete="new-password"
+            placeholder={t.auth.confirmPasswordPlaceholder}
+            {...bind("confirmPassword")}
+          />
+
+          {errorKey && <AuthAlert>{t.auth.errors[errorKey]}</AuthAlert>}
+
+          <SubmitButton loading={loading} loadingLabel={t.auth.signingUp} style={{ marginTop: 4 }}>
+            {t.auth.createAccount}
+          </SubmitButton>
+        </form>
+
+        <AuthFootnote text={t.auth.haveAccount} linkLabel={t.auth.signInBtn} linkHref={loginHref} />
+      </AuthCard>
+
+      <TermsNotice template={t.auth.signUpTerms} />
+    </AuthShell>
   );
 }
 
 export default function SignupPage() {
-  const [step, setStep] = useState<"role" | "form">("role");
-  const [selectedRole, setSelectedRole] = useState<UserType>("customer");
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [shopName, setShopName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const router = useRouter();
-  const supabase = createClient();
-  const { FF, dir, isRTL, t } = useTranslation();
-
-  const roles = [
-    {
-      id: "shop_admin" as UserType,
-      icon: "storefront",
-      title: isRTL ? "مدير محل" : "Shop Manager",
-      desc: isRTL ? "إدارة العمليات والفريق وتنمية عملك." : "Directing operations, managing staff, and scaling your business.",
-    },
-    {
-      id: "customer" as UserType,
-      icon: "person",
-      title: isRTL ? "عميل" : "Customer",
-      desc: isRTL ? "حجز المواعيد والعناية الشخصية." : "Booking appointments and curating your personal grooming journey.",
-    },
-    {
-      id: "barber" as UserType,
-      icon: "content_cut",
-      title: isRTL ? "محترف" : "Professional",
-      desc: isRTL ? "إدارة مواعيدك وعملائك ومحفظتك الإبداعية." : "Managing your individual schedule, clients, and creative portfolio.",
-    },
-  ];
-
-  async function handleSignup(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    if (password.length < 8) {
-      setError(t.auth.passwordRules);
-      setLoading(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError(isRTL ? "كلمتا المرور غير متطابقتين." : "Passwords do not match.");
-      setLoading(false);
-      return;
-    }
-
-    const metadata: Record<string, string> = {
-      full_name: fullName,
-      role: selectedRole,
-    };
-
-    if (selectedRole === "shop_admin" && shopName) {
-      metadata.shop_name = shopName;
-    }
-    if (phone) {
-      metadata.phone = phone;
-    }
-
-    const { data: signUpData, error: err } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: metadata },
-    });
-
-    if (err) {
-      setError(err.message);
-      setLoading(false);
-      return;
-    }
-
-    // If email confirmation is disabled, we get a session immediately — redirect now
-    if (signUpData?.session) {
-      if (selectedRole === "customer") {
-        router.push("/customer");
-      } else if (selectedRole === "shop_admin") {
-        router.push("/");
-      } else {
-        router.push("/");
-      }
-      return;
-    }
-
-    // Otherwise show "check your email" screen
-    setSuccess(true);
-    setLoading(false);
-  }
-
-  const navBar = (
-    <nav className="auth-nav"
-      style={{
-        background: "#ffffff",
-        borderBottom: "1px solid #ede3cd",
-      }}
-    >
-      <Link href="/landing" style={{ fontSize: 20, fontWeight: 800, color: "#1c1611", letterSpacing: "0.01em", fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", textDecoration: "none" }}>
-        Halaqy
-      </Link>
-      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-        <button style={{ background: "none", border: "none", cursor: "pointer", color: "#5a5147" }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>language</span>
-        </button>
-        <Link href="/auth/login" className="btn btn-secondary" style={{ borderRadius: 9999, minHeight: 36, padding: "0 16px", fontSize: 12 }}>
-          Sign In
-        </Link>
-      </div>
-    </nav>
-  );
-
-  if (success) {
-    return (
-      <div style={{ minHeight: "100dvh", background: "#ffffff", display: "flex", flexDirection: "column" }}>
-        {navBar}
-        <div className="auth-main">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={{ maxWidth: 480, width: "100%", textAlign: "center" }}
-          >
-            <div className="auth-card" style={{
-              background: "#ffffff", borderRadius: 12, border: "1px solid #ede3cd",
-            }}>
-              <div style={{ width: 56, height: 56, background: "#a67c3d", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 32px" }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 24, color: "#fff", fontVariationSettings: "'FILL' 1" }}>check</span>
-              </div>
-              <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "0.012em", color: "#1c1611", marginBottom: 12, fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif" }}>
-                Check your email
-              </h2>
-              <p style={{ color: "#5a5147", fontSize: 14, fontWeight: 300, lineHeight: 1.7, marginBottom: 40 }}>
-                We&apos;ve sent a confirmation link to <strong style={{ color: "#1c1611" }}>{email}</strong>. Click the link to activate your account.
-              </p>
-              <Link href="/auth/login" className="btn btn-primary" style={{ minHeight: 52, padding: "0 32px", width: "100%" }}>
-                Back to Sign In
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
-
-
   return (
-    <div style={{ minHeight: "100dvh", background: "#ffffff", color: "#1c1611", fontFamily: FF, direction: dir, display: "flex", flexDirection: "column" }}>
-      {navBar}
-
-      {/* Step 1 — Role Selection */}
-      {step === "role" && (
-        <main className="auth-main">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
-            style={{ textAlign: "center", marginBottom: 72, maxWidth: 640 }}
-          >
-            <h1 style={{ fontSize: 48, fontWeight: 300, fontFamily: FF, letterSpacing: headingTracking(isRTL, "0.016em"), color: "#1c1611", marginBottom: 20 }}>
-              {isRTL ? "كيف ستستخدم حلاقي؟" : "How will you use Halaqy?"}
-            </h1>
-            <p style={{ color: "#5a5147", fontSize: 18, fontWeight: 300, maxWidth: 400, margin: "0 auto" }}>
-              Select the role that best describes your daily operations and goals.
-            </p>
-          </motion.div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24, width: "100%", maxWidth: 960 }}>
-            {roles.map((role, i) => (
-              <motion.button
-                key={role.id}
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: i * 0.08, ease: [0.25, 1, 0.5, 1] }}
-                onClick={() => { setSelectedRole(role.id); setStep("form"); }}
-                style={{
-                  display: "flex", flexDirection: "column", padding: 48,
-                  border: "1px solid #ede3cd", borderRadius: 12, textAlign: "left",
-                  background: "#ffffff", cursor: "pointer",
-                  transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#a67c3d"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#ede3cd"; e.currentTarget.style.transform = "none"; }}
-              >
-                <div style={{ marginBottom: 56 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 30, color: "#5a5147" }}>{role.icon}</span>
-                </div>
-                <div>
-                  <h3 style={{ fontSize: 18, fontWeight: 600, color: "#1c1611", marginBottom: 12 }}>{role.title}</h3>
-                  <p style={{ fontSize: 14, color: "#5a5147", fontWeight: 300, lineHeight: 1.7 }}>{role.desc}</p>
-                </div>
-                <div style={{ marginTop: 40, display: "flex", alignItems: "center", color: "#1c1611", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em" }}>
-                  Select{" "}
-                  <span className="material-symbols-outlined" style={{ fontSize: 14, marginLeft: 8 }}>arrow_forward</span>
-                </div>
-              </motion.button>
-            ))}
-          </div>
-
-          <div style={{ marginTop: 64, textAlign: "center" }}>
-            <p style={{ fontSize: 14, color: "#5a5147", fontWeight: 300 }}>
-              {t.auth.haveAccount}{" "}
-              <Link href="/auth/login" style={{ color: "#1c1611", fontWeight: 600, marginLeft: 4, textDecoration: "none", borderBottom: "1px solid #ede3cd" }}>
-                {t.auth.signInBtn}
-              </Link>
-            </p>
-          </div>
-        </main>
-      )}
-
-      {/* Step 2 — Account Details */}
-      {step === "form" && (
-        <main className="auth-main">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
-            style={{ width: "100%", maxWidth: 520 }}
-          >
-            <button
-              onClick={() => setStep("role")}
-              className="nav-link"
-              style={{ color: "#5a5147", marginBottom: 40 }}
-            >
-              <ArrowLeft size={16} />
-              Back
-            </button>
-
-            <div style={{ marginBottom: 40 }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 9999, background: "#f7f1e4", marginBottom: 20 }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#1c1611" }}>
-                  {roles.find((r) => r.id === selectedRole)?.icon}
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.1em"), color: "#1c1611" }}>
-                  {roles.find((r) => r.id === selectedRole)?.title}
-                </span>
-              </div>
-              <h1 style={{ fontSize: 40, fontWeight: 800, fontFamily: "'Cairo','Segoe UI',Tahoma,Arial,sans-serif", letterSpacing: headingTracking(isRTL, "0.014em"), color: "#1c1611", marginBottom: 10 }}>
-                {t.auth.createYourAccount}
-              </h1>
-              <p style={{ color: "#5a5147", fontSize: 15, fontWeight: 300 }}>{t.auth.joinHalaqy}</p>
-            </div>
-
-            <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-
-              {/* Full Name */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
-                  {t.auth.fullName}
-                </label>
-                <StyledInput type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t.auth.fullName} required font={FF} />
-              </div>
-
-              {/* Shop Name (admin only) */}
-              {selectedRole === "shop_admin" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
-                    {t.auth.shopName}
-                  </label>
-                  <StyledInput type="text" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder={t.auth.shopName} required font={FF} />
-                </div>
-              )}
-
-              {/* Phone (customer only) */}
-              {selectedRole === "customer" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
-                    {t.booking.phoneNumber}
-                  </label>
-                  <StyledInput type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+962 7X XXX XXXX" font={FF} />
-                </div>
-              )}
-
-              {/* Email */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
-                  {t.auth.emailAddress}
-                </label>
-                <StyledInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@domain.com" required font={FF} />
-              </div>
-
-              {/* Password */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
-                  {t.auth.password}
-                </label>
-                <div style={{ position: "relative" }}>
-                  <StyledInput
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t.auth.passwordRules}
-                    required
-                    minLength={8}
-                    font={FF}
-                    style={{ ...inputStyle(false, FF), paddingRight: 48 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#a89e8c", display: "flex", alignItems: "center" }}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Confirm Password */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <label style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: "#5a5147" }}>
-                  {isRTL ? "تأكيد كلمة المرور" : "Confirm Password"}
-                </label>
-                <input
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder={isRTL ? "أعد إدخال كلمة المرور" : "Repeat your password"}
-                  style={{
-                    ...inputStyle(false, FF),
-                    border: confirmPassword && confirmPassword !== password ? "1px solid #ba1a1a" : inputStyle(false, FF).border,
-                  }}
-                />
-                {confirmPassword && confirmPassword !== password && (
-                  <p style={{ fontSize: 12, color: "#ba1a1a", margin: 0 }}>
-                    {isRTL ? "كلمتا المرور غير متطابقتين" : "Passwords do not match"}
-                  </p>
-                )}
-              </div>
-
-              {error && (
-                <div style={{ padding: "14px 16px", background: "rgba(186,26,26,0.06)", border: "1px solid rgba(186,26,26,0.2)", borderRadius: 12, color: "#ba1a1a", fontSize: 13 }}>
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn btn-primary"
-                style={{ marginTop: 8, width: "100%", height: 56, opacity: loading ? 0.7 : 1 }}
-              >
-                {loading ? <Loader2 size={18} className="animate-spin" /> : (
-                  <>
-                    <span>{t.auth.createAccount}</span>
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{dir === 'rtl' ? 'arrow_back' : 'arrow_forward'}</span>
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div style={{ marginTop: 32, textAlign: "center" }}>
-              <p style={{ fontSize: 13, color: "#5a5147" }}>
-                {t.auth.haveAccount}{" "}
-                <Link href="/auth/login" style={{ color: "#1c1611", fontWeight: 700, marginLeft: 4, textDecoration: "none" }}>
-                  {t.auth.signInBtn}
-                </Link>
-              </p>
-            </div>
-          </motion.div>
-        </main>
-      )}
-
-      <footer className="auth-footer" style={{ borderTop: "1px solid #ede3cd" }}>
-        <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.2em", color: "#a89e8c" }}>
-          © 2026 Halaqy Digital.
-        </p>
-      </footer>
-    </div>
+    <Suspense fallback={null}>
+      <SignupContent />
+    </Suspense>
   );
 }

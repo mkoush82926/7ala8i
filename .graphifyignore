@@ -1,0 +1,11 @@
+node_modules/
+.next/
+coverage/
+graphify-out/
+stitch-designs/
+videoassets/
+public/
+test-results/
+playwright-report/
+*.tsbuildinfo
+package-lock.json

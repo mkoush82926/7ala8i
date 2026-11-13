@@ -1,309 +1,421 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { MetricCards } from "@/components/dashboard/metric-cards";
-import { SalesChart } from "@/components/dashboard/sales-chart";
-import { DailyReceipt } from "@/components/dashboard/daily-receipt";
-import { DashboardSkeleton } from "@/components/ui/skeleton";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
-import { useWorkspaceStore } from "@/store/workspace-store";
-import { createClient } from "@/lib/supabase/client";
-import { format } from "date-fns";
+import React, { useState } from "react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { isToday } from "date-fns";
 import {
   CheckCircle,
   UserX,
   XCircle,
   Loader2,
   CalendarCheck,
+  CalendarPlus,
+  UserPlus,
+  ArrowRight,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
-import { usePos } from "@/hooks/use-pos";
-import { formatCurrency } from "@/lib/utils";
+import { MetricCards } from "@/components/dashboard/metric-cards";
+import { DailyReceipt } from "@/components/dashboard/daily-receipt";
+import { CheckoutDialog, type CheckoutTarget } from "@/components/dashboard/checkout-dialog";
+import { StatusBadge } from "@/components/dashboard/status-badge";
+import { ChartSkeleton, DashboardSkeleton, TableRowsSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { toast } from "@/components/ui/toast";
+import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import { useWorkspaceStore } from "@/store/workspace-store";
+import { useSupabaseQuery } from "@/hooks/use-supabase-query";
+import { usePos, useDashboardVersion, errorMessageFor } from "@/hooks/use-pos";
+import { useShopSettings } from "@/hooks/use-dashboard-data";
+import { createClient } from "@/lib/supabase/client";
+import { cn, getInitials } from "@/lib/utils";
+import { normalizeAppointmentStatus, type AppointmentStatus } from "@/lib/types";
 
-/* ────────────────────────────────────────────────────
-   Upcoming Appointments — full table matching Stitch
-   10-dashboard.html exactly
-──────────────────────────────────────────────────── */
+// recharts is ~100 kB; load it after the rest of the overview has painted.
+const SalesChart = dynamic(() => import("@/components/dashboard/sales-chart").then((m) => m.SalesChart), {
+  ssr: false,
+  loading: () => <ChartSkeleton />,
+});
+
 interface Appt {
   id: string;
   client: string;
   service: string;
-  barber: string;
-  time: string;
+  barberId: string | null;
+  startTime: string;
   price: number;
-  status: string;
-  paymentStatus: string;
+  status: AppointmentStatus;
 }
 
-function statusBadge(status: string, paymentStatus: string) {
-  if (paymentStatus === "paid") {
-    return (
-      <span className="px-3 py-1.5 rounded-full bg-[#f7f1e4] text-[#a67c3d] text-[10px] font-black uppercase tracking-wider">
-        Paid
-      </span>
-    );
-  }
-  if (status === "in_progress") {
-    return (
-      <span className="px-3 py-1.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] font-black uppercase tracking-wider">
-        In Progress
-      </span>
-    );
-  }
-  return (
-    <span className="px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-black uppercase tracking-wider">
-      Confirmed
-    </span>
-  );
-}
+type PendingAction = { kind: "cancel" | "no_show"; appt: Appt } | null;
+
+const UPCOMING_LIMIT = 8;
 
 function UpcomingAppointments() {
-  const { t, isRTL, locale, FF } = useTranslation();
+  const { t, isRTL, FFD, href, formatCurrency, formatTime, formatDate } = useTranslation();
   const shopId = useWorkspaceStore((s) => s.shopId);
   const barbers = useWorkspaceStore((s) => s.barbers);
-  const role = useWorkspaceStore((s) => s.role);
+  const version = useDashboardVersion();
+  const { currency } = useShopSettings();
   const { markPaid, markNoShow, cancelAppointment, loadingId } = usePos();
   const [supabase] = useState(() => createClient());
-  const [appointments, setAppointments] = useState<Appt[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set());
+  const [pending, setPending] = useState<PendingAction>(null);
+  const [checkout, setCheckout] = useState<CheckoutTarget | null>(null);
 
-  useEffect(() => {
-    async function fetchData() {
-      if (!shopId) { setLoading(false); return; }
-      try {
-        const now = new Date();
-        const { data } = await supabase
-          .from("appointments")
-          .select("id, client_name, start_time, barber_id, status, price, payment_status, service_name")
-          .eq("shop_id", shopId)
-          .gte("start_time", now.toISOString())
-          .neq("status", "cancelled")
-          .neq("status", "completed")
-          .order("start_time")
-          .limit(8);
+  const { data, initialLoading, error, refetch } = useSupabaseQuery<Appt[]>(
+    async () => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, client_name, start_time, barber_id, status, price, service_name")
+        .eq("shop_id", shopId)
+        .gte("start_time", new Date().toISOString())
+        .in("status", ["pending", "confirmed"])
+        .order("start_time", { ascending: true })
+        .limit(UPCOMING_LIMIT);
+      if (error) return { data: null, error: { message: error.message } };
+      const rows = (data ?? []) as {
+        id: string;
+        client_name: string | null;
+        start_time: string;
+        barber_id: string | null;
+        status: string | null;
+        price: number | string | null;
+        service_name: string | null;
+      }[];
+      return {
+        data: rows.map((a) => ({
+          id: a.id,
+          client: a.client_name ?? "",
+          service: a.service_name ?? "",
+          barberId: a.barber_id,
+          startTime: a.start_time,
+          price: Number(a.price) || 0,
+          status: normalizeAppointmentStatus(a.status) ?? "confirmed",
+        })),
+        error: null,
+      };
+    },
+    [shopId, version],
+    { enabled: !!shopId },
+  );
 
-        if (data) {
-          setAppointments(data.map((a) => ({
-            id: a.id,
-            client: a.client_name,
-            service: a.service_name || (isRTL ? "موعد" : "Appointment"),
-            barber: barbers.find((b) => b.id === a.barber_id)?.name?.split(" ").map((w: string, i: number) => i === 0 ? w : w[0] + ".").join(" ") || (isRTL ? "أي" : "Any"),
-            time: format(new Date(a.start_time), "HH:mm"),
-            price: a.price || 0,
-            status: a.status || "confirmed",
-            paymentStatus: a.payment_status || "unpaid",
-          })));
-        }
-      } catch { /* fallback to empty */ }
-      setLoading(false);
+  const appointments = (data ?? []).filter((a) => !hidden.has(a.id));
+
+  const barberName = (id: string | null) => barbers.find((b) => b.id === id)?.name || t.dashboard.anyBarber;
+  const serviceName = (a: Appt) => a.service || t.dashboard.appointment;
+  const whenLabel = (iso: string) => {
+    const d = new Date(iso);
+    return isToday(d) ? formatTime(d) : `${formatDate(d, "dayMonth")} · ${formatTime(d)}`;
+  };
+
+  // Rows disappear immediately after a successful action; the refetch that
+  // follows (via the dashboard version) reconciles with the server.
+  const hideRow = (id: string) => setHidden((prev) => new Set(prev).add(id));
+
+  async function confirmPending() {
+    if (!pending) return;
+    const { kind, appt } = pending;
+    const res = kind === "cancel" ? await cancelAppointment(appt.id) : await markNoShow(appt.id);
+    if (!res.ok) throw new Error(errorMessageFor(t, res.code));
+    hideRow(appt.id);
+    toast.success(kind === "cancel" ? t.dashboard.cancelledToast : t.dashboard.noShowToast);
+  }
+
+  async function confirmCheckout(method: "cash" | "card") {
+    if (!checkout) return { ok: false as const, code: "INTERNAL" };
+    const res = await markPaid({ appointmentId: checkout.id, method });
+    if (res.ok) {
+      hideRow(checkout.id);
+      toast.success(t.dashboard.paidToast);
     }
-    fetchData();
-  }, [supabase, shopId, barbers, isRTL]);
+    return res;
+  }
 
-  const cols = isRTL
-    ? ["الإجراءات", "الحالة", "السعر", "الوقت", "الحلاق", "الخدمة", "العميل"]
-    : ["Client", "Service", "Barber", "Time", "Price", "Status", "Actions"];
+  const openCheckout = (a: Appt) =>
+    setCheckout({
+      id: a.id,
+      clientName: a.client,
+      serviceName: serviceName(a),
+      amount: a.price,
+      currency,
+      whenLabel: whenLabel(a.startTime),
+    });
+
+  function renderActions(a: Appt, compact = false) {
+    const busy = loadingId === a.id;
+    const btn = cn(
+      "grid place-items-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+      compact ? "size-11" : "size-11 lg:size-9",
+    );
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-1.5",
+          !compact && "justify-end opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100",
+        )}
+      >
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => openCheckout(a)}
+          aria-label={`${t.dashboard.markPaid}: ${a.client}`}
+          title={t.dashboard.markPaid}
+          className={cn(btn, "text-[var(--accent-text)] hover:bg-[var(--bg-secondary)]")}
+        >
+          {busy ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <CheckCircle size={20} aria-hidden="true" />}
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => setPending({ kind: "no_show", appt: a })}
+          aria-label={`${t.dashboard.markNoShow}: ${a.client}`}
+          title={t.dashboard.markNoShow}
+          className={cn(btn, "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]")}
+        >
+          <UserX size={20} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => setPending({ kind: "cancel", appt: a })}
+          aria-label={`${t.dashboard.cancelAppointment}: ${a.client}`}
+          title={t.dashboard.cancelAppointment}
+          className={cn(btn, "text-[var(--accent-rose)] hover:bg-[var(--accent-rose-muted)]")}
+        >
+          <XCircle size={20} aria-hidden="true" />
+        </button>
+      </div>
+    );
+  }
+
+  const cols = [
+    t.calendar.client,
+    t.calendar.service,
+    t.calendar.barber,
+    t.calendar.time,
+    t.dashboard.price,
+    t.calendar.status,
+  ];
+
+  let body: React.ReactNode;
+  if (initialLoading) {
+    body = (
+      <>
+        <div className="md:hidden">
+          <TableRowsSkeleton rows={4} columns={3} />
+        </div>
+        <table className="hidden w-full md:table">
+          <tbody>
+            <TableRowsSkeleton asRows rows={5} columns={7} />
+          </tbody>
+        </table>
+      </>
+    );
+  } else if (error) {
+    body = (
+      <EmptyState
+        bare
+        size="sm"
+        tone="error"
+        icon={AlertTriangle}
+        title={t.dashboard.upcomingError}
+        description={t.error.message}
+        action={{ label: t.common.retry, onClick: refetch, icon: RefreshCw }}
+      />
+    );
+  } else if (appointments.length === 0) {
+    body = (
+      <EmptyState
+        bare
+        size="sm"
+        icon={CalendarCheck}
+        title={t.dashboard.noUpcoming}
+        description={t.dashboard.noUpcomingHint}
+        action={{ label: t.sidebar.bookAppointment, href: href("/calendar"), icon: CalendarPlus }}
+      />
+    );
+  } else {
+    body = (
+      <>
+        {/* Phones: stacked cards with always-visible, 44px actions */}
+        <ul className="m-0 list-none divide-y divide-[var(--border-subtle)] p-0 md:hidden">
+          {appointments.map((a) => (
+            <li key={a.id} className="flex flex-col gap-3 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="m-0 truncate text-[15px] font-extrabold text-[var(--text-primary)]">{a.client}</p>
+                  <p className="m-0 mt-0.5 truncate text-[13px] text-[var(--text-secondary)]">
+                    {serviceName(a)} · {barberName(a.barberId)}
+                  </p>
+                </div>
+                <div className="shrink-0 text-end">
+                  <p className="m-0 text-[14px] font-extrabold tabular-nums text-[var(--text-primary)]">
+                    {whenLabel(a.startTime)}
+                  </p>
+                  <p className="m-0 mt-0.5 text-[13px] font-semibold tabular-nums text-[var(--text-secondary)]">
+                    {formatCurrency(a.price, currency)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <StatusBadge status={a.status} />
+                {renderActions(a, true)}
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        {/* md+: table. One logical column order; `dir` mirrors it in Arabic. */}
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full border-collapse text-start">
+            <caption className="sr-only">{t.dashboard.upcomingAppointments}</caption>
+            <thead>
+              <tr className="bg-[var(--bg-secondary)]">
+                {cols.map((col, i) => (
+                  <th
+                    key={col}
+                    scope="col"
+                    className={cn(
+                      "px-5 py-4 text-start text-[11px] font-bold text-[var(--text-secondary)] lg:px-6",
+                      !isRTL && "uppercase tracking-[0.12em]",
+                      i === 2 && "hidden lg:table-cell",
+                    )}
+                  >
+                    {col}
+                  </th>
+                ))}
+                <th scope="col" className="px-5 py-4 text-end lg:px-6">
+                  <span className="sr-only">{t.dashboard.actions}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border-subtle)]">
+              {appointments.map((a) => (
+                <tr key={a.id} className="table-row-hover group transition-colors">
+                  <td className="px-5 py-4 lg:px-6">
+                    <div className="flex items-center gap-3">
+                      <span
+                        aria-hidden="true"
+                        className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-[12px] font-extrabold text-[var(--text-primary)]"
+                      >
+                        {getInitials(a.client || "?")}
+                      </span>
+                      <span className="text-[14px] font-extrabold text-[var(--text-primary)]">{a.client}</span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-[14px] font-semibold text-[var(--text-primary)] lg:px-6">{serviceName(a)}</td>
+                  <td className="hidden px-5 py-4 text-[14px] font-semibold text-[var(--text-secondary)] lg:table-cell lg:px-6">
+                    {barberName(a.barberId)}
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-4 text-[14px] font-bold tabular-nums text-[var(--text-primary)] lg:px-6">
+                    {whenLabel(a.startTime)}
+                  </td>
+                  <td className="whitespace-nowrap px-5 py-4 text-[14px] font-bold tabular-nums text-[var(--text-primary)] lg:px-6">
+                    {formatCurrency(a.price, currency)}
+                  </td>
+                  <td className="px-5 py-4 lg:px-6">
+                    <StatusBadge status={a.status} />
+                  </td>
+                  <td className="px-5 py-4 text-end lg:px-6">
+                    {renderActions(a)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
+    );
+  }
 
   return (
-    <section style={{ marginTop: 8 }}>
-      {/* Section Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h3 style={{ fontFamily: FF, fontSize: 22, fontWeight: 800, letterSpacing: headingTracking(isRTL, "0.012em"), color: "#1c1611", margin: 0 }}>
-          {isRTL ? "المواعيد القادمة" : "Upcoming Appointments"}
-        </h3>
-        <a
-          href={`/${locale}/calendar`}
-          className="nav-link"
-          style={{
-            fontSize: 11, fontWeight: 700, textTransform: "uppercase",
-            letterSpacing: headingTracking(isRTL, "0.15em"), color: "#1c1611",
-          }}
+    <section aria-labelledby="upcoming-title" className="mt-8">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h2
+          id="upcoming-title"
+          className="m-0 text-[20px] font-extrabold text-[var(--text-primary)] sm:text-[22px]"
+          style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.012em") }}
         >
-          {isRTL ? "عرض الجدول" : "View All Schedule"} →
-        </a>
+          {t.dashboard.upcomingAppointments}
+        </h2>
+        <Link
+          href={href("/calendar")}
+          className={cn(
+            "nav-link inline-flex min-h-11 items-center gap-1.5 text-[12px] font-bold text-[var(--text-primary)]",
+            !isRTL && "uppercase tracking-[0.12em]",
+          )}
+        >
+          {t.dashboard.viewSchedule}
+          <ArrowRight size={14} aria-hidden="true" className="rtl:-scale-x-100" />
+        </Link>
       </div>
 
-      {/* Table — consistent card styling matching rest of dashboard */}
-      <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #ede3cd", overflow: "hidden" }}>
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="animate-spin text-on-surface-variant" size={24} />
-          </div>
-        ) : appointments.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px", gap: 16 }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: 12,
-              background: "#f7f1e4",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <CalendarCheck size={26} style={{ color: "#a67c3d" }} />
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: "#5a5147", margin: "0 0 6px" }}>
-                {isRTL ? "لا مواعيد قادمة" : "No upcoming appointments"}
-              </p>
-              <p style={{ fontSize: 12, color: "#5a5147", margin: 0 }}>Your schedule is clear for now</p>
-            </div>
-            <a href={`/${locale}/calendar`} className="btn btn-primary" style={{ marginTop: 4, padding: "0 24px" }}>
-              {isRTL ? "احجز الآن" : "+ Book Appointment"}
-            </a>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            {/* Exact Stitch table structure */}
-            <table className="w-full text-start border-collapse">
-              <thead>
-                <tr className="bg-secondary-container">
-                  {cols.map((col) => (
-                    <th
-                      key={col}
-                      className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant"
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline">
-                {appointments.map((apt) => (
-                  <tr key={apt.id} className="table-row-hover transition-colors group">
-                    {/* Client */}
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-secondary-container border border-outline flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-extrabold text-primary">
-                            {apt.client.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
-                          </span>
-                        </div>
-                        <span className="font-extrabold text-sm text-primary">{apt.client}</span>
-                      </div>
-                    </td>
-                    {/* Service */}
-                    <td className="px-8 py-6 text-sm font-semibold text-primary">{apt.service}</td>
-                    {/* Barber */}
-                    <td className="px-8 py-6 text-sm font-semibold text-on-surface-variant">{apt.barber}</td>
-                    {/* Time */}
-                    <td className="px-8 py-6 text-sm font-black text-primary">{apt.time}</td>
-                    {/* Price */}
-                    <td className="px-8 py-6 text-sm font-extrabold text-primary">
-                      {formatCurrency(apt.price)}
-                    </td>
-                    {/* Status Badge */}
-                    <td className="px-8 py-6">
-                      {statusBadge(apt.status, apt.paymentStatus)}
-                    </td>
-                    {/* Actions */}
-                    <td className="px-8 py-6 text-end">
-                      {role !== "client" && apt.paymentStatus !== "paid" && (
-                        <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {/* Mark Paid */}
-                          <button
-                            disabled={loadingId === apt.id}
-                            onClick={() =>
-                              markPaid({
-                                appointmentId: apt.id,
-                                clientName: apt.client,
-                                barberName: apt.barber,
-                                serviceLabel: apt.service,
-                                scheduledTime: apt.time,
-                                amount: apt.price,
-                                method: "cash",
-                              })
-                            }
-                            title="Mark Paid"
-                            aria-label="Mark Paid"
-                            className="w-8 h-8 flex items-center justify-center text-[#a67c3d] hover:bg-[#f7f1e4] rounded-lg transition-colors cursor-pointer"
-                          >
-                            <CheckCircle size={20} />
-                          </button>
-                          {/* No-show */}
-                          <button
-                            disabled={loadingId === apt.id}
-                            onClick={() => markNoShow(apt.id)}
-                            title="No-show"
-                            aria-label="No-show"
-                            className="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-secondary-container rounded-lg transition-colors cursor-pointer"
-                          >
-                            <UserX size={20} />
-                          </button>
-                          {/* Cancel */}
-                          <button
-                            disabled={loadingId === apt.id}
-                            onClick={() => cancelAppointment(apt.id)}
-                            title="Cancel"
-                            aria-label="Cancel"
-                            className="w-8 h-8 flex items-center justify-center text-[#ba1a1a] hover:bg-[rgba(186,26,26,0.08)] rounded-lg transition-colors cursor-pointer"
-                          >
-                            <XCircle size={20} />
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <div className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]">{body}</div>
+
+      <ConfirmDialog
+        open={!!pending}
+        onClose={() => setPending(null)}
+        onConfirm={confirmPending}
+        destructive
+        title={pending?.kind === "no_show" ? t.dashboard.noShowConfirmTitle : t.dashboard.cancelConfirmTitle}
+        description={
+          pending
+            ? `${pending.appt.client} · ${serviceName(pending.appt)} · ${whenLabel(pending.appt.startTime)}`
+            : undefined
+        }
+        confirmLabel={pending?.kind === "no_show" ? t.dashboard.markNoShow : t.dashboard.cancelAppointment}
+        cancelLabel={t.dashboard.keepAppointment}
+      />
+      <CheckoutDialog target={checkout} onClose={() => setCheckout(null)} onConfirm={confirmCheckout} />
     </section>
   );
 }
 
-/* ────────────────────────────────────────────────────
-   Dashboard Page — matches Stitch 10-dashboard.html
-──────────────────────────────────────────────────── */
 export default function DashboardPage() {
-  const [ready, setReady] = useState(false);
   const hydrated = useWorkspaceStore((s) => s.hydrated);
-  const { t, isRTL, locale, FF } = useTranslation();
+  const { t, isRTL, FFD, href, formatDate } = useTranslation();
 
-  useEffect(() => {
-    const timer = setTimeout(() => setReady(true), 600);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!ready || !hydrated) return <DashboardSkeleton />;
+  if (!hydrated) return <DashboardSkeleton />;
 
   return (
-    /* Matches Stitch main: min-h-screen p-10 lg:p-14 */
     <div className="page-enter">
-      {/* Page Header */}
-      <header style={{ display: "flex", flexDirection: "column", marginBottom: 32, gap: 16 }}>
+      <header className="mb-8">
         <div className="dashboard-header-flex">
           <div>
-            <h2 style={{ fontFamily: FF, fontSize: 38, fontWeight: 800, letterSpacing: headingTracking(isRTL, "0.016em"), color: "#1c1611", lineHeight: 1.1, margin: 0 }}>
-              {isRTL ? "نظرة عامة على الأتيليه" : "Atelier Overview"}
-            </h2>
-            <p style={{ color: "#5a5147", fontWeight: 400, marginTop: 10, fontSize: 14, letterSpacing: "0.01em" }}>
-              {format(new Date(), "EEEE, d MMMM yyyy")}
-            </p>
+            <h1
+              className="m-0 text-[30px] font-extrabold leading-tight text-[var(--text-primary)] sm:text-[38px]"
+              style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.016em") }}
+            >
+              {t.dashboard.overviewTitle}
+            </h1>
+            <p className="m-0 mt-2.5 text-[14px] text-[var(--text-secondary)]">{formatDate(new Date(), "long")}</p>
           </div>
 
-          {/* Header action buttons */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <a href={`/${locale}/calendar`} className="btn btn-secondary">
-              <CalendarCheck size={16} />
-              <span>{isRTL ? "حجز جديد" : "New Booking"}</span>
-            </a>
-            <a href={`/${locale}/leads`} className="btn btn-secondary">
-              <span>{isRTL ? "إضافة عميل" : "New Lead"}</span>
-            </a>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Link href={href("/calendar")} className="btn btn-secondary">
+              <CalendarCheck size={16} aria-hidden="true" />
+              <span>{t.calendar.newBooking}</span>
+            </Link>
+            <Link href={href("/leads")} className="btn btn-secondary">
+              <UserPlus size={16} aria-hidden="true" />
+              <span>{t.dashboard.newLead}</span>
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Metrics Grid */}
-      <div style={{ marginBottom: 32 }}>
+      <div className="mb-8">
         <MetricCards />
       </div>
 
-      {/* Charts + Receipt — proper responsive 2/3 + 1/3 grid */}
       <div className="dashboard-main-grid">
         <SalesChart />
         <DailyReceipt />
       </div>
 
-      {/* Appointments Table */}
       <UpcomingAppointments />
     </div>
   );

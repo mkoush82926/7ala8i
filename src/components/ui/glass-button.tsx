@@ -13,7 +13,7 @@ interface GlassButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
 
 const variants = {
   primary:
-    "bg-[var(--accent-mint)] text-white hover:bg-[var(--accent-mint)]/90",
+    "bg-[var(--accent-mint)] text-[var(--on-accent)] hover:bg-[var(--accent-mint)]/90",
   secondary:
     "bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] hover:border-[var(--border-hover)]",
   ghost:
@@ -44,17 +44,19 @@ export function GlassButton({
       whileTap={{ scale: 0.98 }}
       className={cn(
         "inline-flex items-center justify-center font-medium transition-all duration-[var(--transition-fast)] cursor-pointer",
-        "focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
         "disabled:opacity-40 disabled:pointer-events-none",
         variants[variant],
         sizes[size],
         className,
       )}
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...(props as React.ComponentProps<typeof motion.button>)}
     >
       {loading ? (
         <motion.div
+          aria-hidden="true"
           className="w-4 h-4 border-2 border-current border-t-transparent rounded-full"
           animate={{ rotate: 360 }}
           transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}

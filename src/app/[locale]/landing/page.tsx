@@ -1,118 +1,85 @@
-"use client";
-
-import React, { useEffect, useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
+// Marketing landing page — a Server Component. All copy is rendered on the
+// server from the locale dictionary (SEO, no copy shipped as JS); only the
+// nav, scroll container and background videos are client islands.
+import type { Metadata } from "next";
 import Link from "next/link";
-import { useTranslation, headingTracking, FONT_EN_DISPLAY } from "@/hooks/use-translation";
-import { useRouter, usePathname } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BarChart3,
+  CalendarCheck,
+  CalendarDays,
+  Check,
+  Link2,
+  MonitorSmartphone,
+  Search,
+  ShieldCheck,
+  TrendingUp,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react";
+import en, { type TranslationKeys } from "@/i18n/en";
+import ar from "@/i18n/ar";
+import { formatCurrency } from "@/lib/utils";
+import { BackgroundVideo, LandingNav, LandingShell } from "./landing-client";
 
-// ─── Design tokens ("Data Observatory on Cloud Paper") ───
-const T = {
-  black:   "#1c1611", // Midnight Ink — structural dark ink
-  white:   "#ffffff", // Paper
-  dark:    "#1c1611", // Midnight Ink
-  mid:     "#5a5147", // Slate — secondary/muted text
-  outline: "#ede3cd", // Frost Border
-  surfLow: "#f7f1e4", // Lavender Wash — section-level tint zone
-  surfCont:"#ede3cd", // Frost Border
-  accent:  "#a67c3d", // Brass — the sole chromatic note
-};
+type Props = { params: Promise<{ locale: string }> };
 
-// ─── Reduced-motion guard for scroll-linked parallax ───
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = () => setReduced(mq.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-  return reduced;
+/** Listed price per barber per month (JOD). */
+const PRICE_PER_BARBER = 1.5;
+
+function resolve(raw: string | undefined): { locale: "en" | "ar"; t: TranslationKeys; isRTL: boolean } {
+  const locale = raw === "ar" ? "ar" : "en";
+  return { locale, t: locale === "ar" ? ar : en, isRTL: locale === "ar" };
 }
 
-// ─── Looping ambient background video (the real barbershop-tool footage from
-// /public/videos), dimmed under a tinted overlay so foreground text and
-// controls stay legible. Paused (first-frame only) when the visitor prefers
-// reduced motion. ───
-function BackgroundVideo({ src, overlay }: { src: string; overlay: string }) {
-  const reducedMotion = usePrefersReducedMotion();
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  // The `autoPlay` attribute isn't reliably honored once React owns the
-  // element (it's applied as a property post-hydration rather than at parse
-  // time), so drive playback explicitly instead of trusting the attribute.
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el || reducedMotion) return;
-    el.play().catch(() => {});
-  }, [reducedMotion]);
-
-  return (
-    <>
-      {/* Blurred + slightly scaled up (to hide the blur's edge falloff) so the
-          footage reads as soft ambient texture instead of a sharp photo that
-          competes with the foreground heading/body text for attention. */}
-      <video
-        ref={videoRef}
-        src={src}
-        loop
-        muted
-        playsInline
-        aria-hidden
-        style={{
-          position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0,
-          filter: "blur(4px) saturate(0.8)", transform: "scale(1.08)",
-        }}
-      />
-      <div style={{ position: "absolute", inset: 0, background: overlay, zIndex: 0 }} />
-    </>
-  );
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale, t } = resolve((await params).locale);
+  return {
+    title: { absolute: t.landing.metaTitle },
+    description: t.landing.metaDescription,
+    alternates: {
+      canonical: `/${locale}/landing`,
+      languages: { en: "/en/landing", ar: "/ar/landing", "x-default": "/en/landing" },
+    },
+    openGraph: { url: `/${locale}/landing`, title: t.landing.metaTitle, description: t.landing.metaDescription },
+  };
 }
 
-function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.1 });
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 16 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: [0.25, 1, 0.5, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
-}
+// ─── Presentational helpers (server) ────────────────────────────────────────
 
-// Small uppercase brand-accent label used above every section heading —
-// centralized so the eyebrow treatment can never drift out of sync between
-// sections (weight, tracking, and color were previously duplicated ad hoc).
-function Eyebrow({ children, isRTL, dark = false }: { children: React.ReactNode; isRTL: boolean; dark?: boolean }) {
+const headingTracking = (isRTL: boolean, latin: string) => (isRTL ? "normal" : latin);
+
+function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
   return (
-    <div style={{
-      fontWeight: 700, fontSize: 12, textTransform: "uppercase",
-      letterSpacing: headingTracking(isRTL, "0.14em"),
-      color: dark ? "#d8b88a" : T.accent,
-      marginBottom: 16,
-    }}>
+    <div className={`reveal ${className}`} style={delay ? { transitionDelay: `${delay}s` } : undefined}>
       {children}
     </div>
   );
 }
 
-// Centered eyebrow + title + subtitle — the standard section header used by
-// Features, How It Works, Pricing, and Contact so every page introduces
-// itself the same way instead of jumping straight into content.
+function Eyebrow({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
+  // .eyebrow = AA brass (#7c5a26 on light); the dark variant sits on ink.
+  return (
+    <p className="eyebrow" style={{ marginBottom: 16, ...(dark ? { color: "#d8b88a" } : {}) }}>
+      {children}
+    </p>
+  );
+}
+
 function SectionHeading({
-  eyebrow, title, subtitle, FFD, isRTL, dark = false, marginBottom = 64,
+  id,
+  eyebrow,
+  title,
+  subtitle,
+  isRTL,
+  dark = false,
+  marginBottom = 64,
 }: {
+  id: string;
   eyebrow: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
-  FFD: string;
   isRTL: boolean;
   dark?: boolean;
   marginBottom?: number;
@@ -120,16 +87,21 @@ function SectionHeading({
   return (
     <Reveal>
       <div style={{ textAlign: "center", maxWidth: 560, margin: `0 auto ${marginBottom}px` }}>
-        <Eyebrow isRTL={isRTL} dark={dark}>{eyebrow}</Eyebrow>
-        <h2 style={{
-          fontFamily: FFD, fontWeight: 800, fontSize: "clamp(1.8rem, 3.4vw, 2.6rem)",
-          letterSpacing: headingTracking(isRTL, "0.014em"),
-          color: dark ? T.white : T.dark, marginBottom: subtitle ? 16 : 0,
-        }}>
+        <Eyebrow dark={dark}>{eyebrow}</Eyebrow>
+        <h2
+          id={id}
+          style={{
+            fontWeight: 800,
+            fontSize: "clamp(1.8rem, 3.4vw, 2.6rem)",
+            letterSpacing: headingTracking(isRTL, "0.014em"),
+            color: dark ? "#ffffff" : "var(--text-primary)",
+            marginBottom: subtitle ? 16 : 0,
+          }}
+        >
           {title}
         </h2>
         {subtitle && (
-          <p style={{ color: dark ? "rgba(255,255,255,0.6)" : T.mid, fontSize: 16, fontWeight: 300, lineHeight: 1.7 }}>
+          <p style={{ color: dark ? "rgba(255,255,255,0.75)" : "var(--text-secondary)", fontSize: 16, fontWeight: 300, lineHeight: 1.7 }}>
             {subtitle}
           </p>
         )}
@@ -138,504 +110,444 @@ function SectionHeading({
   );
 }
 
-// A large heading + thin rule + paragraph, alternately aligned — the Nodenza "statement block" motif
 function Statement({
-  align, eyebrow, title, body, FFD, isRTL,
+  align,
+  eyebrow,
+  title,
+  body,
+  isRTL,
 }: {
   align: "start" | "end";
-  eyebrow?: string;
-  title: React.ReactNode;
-  body: React.ReactNode;
-  FFD: string;
+  eyebrow: string;
+  title: string;
+  body: string;
   isRTL: boolean;
 }) {
   return (
     <Reveal>
       <div className={`landing-statement${align === "end" ? " landing-statement--end" : ""}`}>
-        {eyebrow && <Eyebrow isRTL={isRTL}>{eyebrow}</Eyebrow>}
-        <h2 style={{ fontFamily: FFD, fontWeight: 800, fontSize: "clamp(1.9rem, 3.4vw, 2.6rem)", letterSpacing: headingTracking(isRTL, "0.014em"), color: T.dark, marginBottom: 20 }}>
+        <Eyebrow>{eyebrow}</Eyebrow>
+        <h3
+          style={{
+            fontWeight: 800,
+            fontSize: "clamp(1.9rem, 3.4vw, 2.6rem)",
+            letterSpacing: headingTracking(isRTL, "0.014em"),
+            color: "var(--text-primary)",
+            marginBottom: 20,
+          }}
+        >
           {title}
-        </h2>
-        <div className="landing-statement-rule" style={{ width: 56, height: 2, background: T.accent, marginBottom: 20 }} />
-        <p style={{ color: T.mid, fontSize: 16, fontWeight: 300, lineHeight: 1.75 }}>
-          {body}
-        </p>
+        </h3>
+        <div className="landing-statement-rule" aria-hidden="true" style={{ width: 56, height: 2, background: "var(--accent-brass)", marginBottom: 20 }} />
+        <p style={{ color: "var(--text-secondary)", fontSize: 16, fontWeight: 300, lineHeight: 1.75 }}>{body}</p>
       </div>
     </Reveal>
   );
 }
 
-export default function LandingPage() {
-  const { FF, FFD, isRTL, locale } = useTranslation();
-  const router = useRouter();
-  const pathname = usePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const snapContainerRef = useRef<HTMLDivElement>(null);
+/** Splits "The future of {accent} management" around the accent word. */
+function Headline({ template, accent }: { template: string; accent: string }) {
+  const [before, after = ""] = template.split("{accent}");
+  return (
+    <>
+      {before}
+      <span style={{ color: "var(--accent-text)" }}>{accent}</span>
+      {after}
+    </>
+  );
+}
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => setIsLoggedIn(!!user));
-  }, []);
+// ─── Page ───────────────────────────────────────────────────────────────────
 
-  // Full-page scroll-snap: this page owns its own scroll container (rather
-  // than the document), so lock the document body's scroll for as long as
-  // we're mounted and restore it on the way out.
-  useEffect(() => {
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
-  }, []);
+export default async function LandingPage({ params }: Props) {
+  const { locale, t, isRTL } = resolve((await params).locale);
+  const L = t.landing;
+  const Forward = isRTL ? ArrowLeft : ArrowRight;
+  const year = new Date().getFullYear();
+  const href = (path: string) => (path === "/" ? `/${locale}` : `/${locale}${path}`);
+  const ownerSignup = `${href("/auth/signup")}?role=shop_admin`;
 
-  // Keyboard paging (Space / Page Down / arrows) — the document itself no
-  // longer scrolls, so without this the browser's default "scroll the page"
-  // key handling would have nothing to act on.
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      const container = snapContainerRef.current;
-      if (!container) return;
-      const isTypingTarget = document.activeElement instanceof HTMLElement
-        && ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName);
-      if (isTypingTarget) return;
-      if (e.key === " " && document.activeElement !== document.body) return; // don't hijack a focused button's activation
-
-      if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ") {
-        e.preventDefault();
-        container.scrollBy({ top: container.clientHeight, behavior: "smooth" });
-      } else if (e.key === "ArrowUp" || e.key === "PageUp") {
-        e.preventDefault();
-        container.scrollBy({ top: -container.clientHeight, behavior: "smooth" });
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  const navLinks = isLoggedIn
-    ? [
-        { label: isRTL ? "لوحة التحكم" : "Dashboard", href: "/" },
-        { label: isRTL ? "التقويم" : "Calendar", href: "/calendar" },
-        { label: isRTL ? "العملاء المحتملين" : "Leads", href: "/leads" },
-      ]
-    : [
-        { label: isRTL ? "الميزات" : "Features", href: "#features" },
-        { label: isRTL ? "التسعير" : "Pricing", href: "#pricing" },
-        { label: isRTL ? "الخصوصية" : "Privacy", href: "/privacy" },
-        { label: isRTL ? "الشروط" : "Terms", href: "/terms" },
-      ];
-
-  const ctaHref = isLoggedIn ? "/" : "/auth/signup";
-  const ctaLabel = isLoggedIn
-    ? (isRTL ? "لوحة التحكم" : "Dashboard")
-    : (isRTL ? "ابدأ الآن" : "Get Started");
-
-  const handleToggleLocale = () => {
-    const newLocale = locale === "en" ? "ar" : "en";
-    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
-    router.push(newPath || `/${newLocale}`);
-  };
-
-  const pillars = [
-    { icon: "calendar_month", title: isRTL ? "أدر" : "Manage", desc: isRTL ? "شغّل تقويمك وفريقك وسجل عملائك من لوحة تحكم واحدة مصممة للاستخدام اليومي." : "Run your calendar, team, and client history from one dashboard built for daily use." },
-    { icon: "event_available", title: isRTL ? "احجز" : "Book", desc: isRTL ? "امنح عملاءك بوابة حجز بعلامتك التجارية، متاحة في أي وقت ومن أي جهاز." : "Give clients a branded booking page they can use anytime, from any device." },
-    { icon: "trending_up", title: isRTL ? "انمُ" : "Grow", desc: isRTL ? "حوّل الرؤى إلى قرارات، واحتفظ بعملائك عبر طلبات مراجعة تلقائية." : "Turn insights into decisions, and keep clients coming back with automated review requests." },
+  const pillars: { icon: LucideIcon; title: string; desc: string }[] = [
+    { icon: CalendarDays, title: L.pillarManage, desc: L.pillarManageDesc },
+    { icon: CalendarCheck, title: L.pillarBook, desc: L.pillarBookDesc },
+    { icon: TrendingUp, title: L.pillarGrow, desc: L.pillarGrowDesc },
   ];
 
-  const features = [
-    { icon: "schedule",      title: isRTL ? "تقويم ذكي"        : "Smart Calendar",     desc: isRTL ? "إدارة جداول زمنية متكيفة تتزامن مع سير عمل فريقك."             : "Adaptive scheduling that fits your team's natural rhythm." },
-    { icon: "account_tree",  title: isRTL ? "مسار إدارة العملاء": "CRM Pipeline",       desc: isRTL ? "تصور رحلة عميلك من الاكتشاف إلى الولاء طويل الأمد."           : "Follow every client from first visit to long-term loyalty." },
-    { icon: "link",          title: isRTL ? "الحجز الإلكتروني"  : "Online Booking",    desc: isRTL ? "بوابة حجز بسيطة تعيش على منصاتك الاجتماعية وموقعك."           : "A simple booking page that lives on your socials and site." },
-    { icon: "insights",      title: isRTL ? "تقارير وتحليلات"   : "Insights",          desc: isRTL ? "أطر تحليلية لفهم الاحتفاظ بالعملاء وأوقات الذروة."             : "Clear reporting on retention and your busiest hours." },
-    { icon: "thumb_up",      title: isRTL ? "مركز السمعة"       : "Reputation",        desc: isRTL ? "تذكيرات تلقائية تعزز حضورك في نتائج البحث المحلية."           : "Automated review requests that build your local reputation." },
-    { icon: "smartphone",    title: isRTL ? "تجربة متحركة"      : "Mobile App",        desc: isRTL ? "تطبيقات iOS و Android لإدارة عملك من أي مكان."                : "iOS and Android apps for managing things on the go." },
+  const features: { icon: LucideIcon; title: string; desc: string }[] = [
+    { icon: CalendarDays, title: L.featureCalendar, desc: L.featCalendarDesc },
+    { icon: Workflow, title: L.featureCrm, desc: L.featCrmDesc },
+    { icon: Link2, title: L.featureBooking, desc: L.featBookingDesc },
+    { icon: BarChart3, title: L.featInsights, desc: L.featInsightsDesc },
+    { icon: ShieldCheck, title: L.featReviews, desc: L.featReviewsDesc },
+    { icon: MonitorSmartphone, title: L.featAnyDevice, desc: L.featAnyDeviceDesc },
   ];
 
   const steps = [
-    { num: "01", title: isRTL ? "أنشئ"  : "Set up",    desc: isRTL ? "أدخل موظفيك وخدماتك وأسعارك."                                 : "Add your team, services, and pricing." },
-    { num: "02", title: isRTL ? "وزّع"  : "Share",     desc: isRTL ? "شارك رابط الحجز الخاص بك عبر التواصل الاجتماعي والويب."       : "Share your booking link across social and web." },
-    { num: "03", title: isRTL ? "حسّن"  : "Grow",      desc: isRTL ? "استخدم الأتمتة لتحسين الاحتفاظ بالعملاء وزيادة الإيرادات."      : "Use automation to improve retention and revenue." },
+    { num: "01", title: L.stepSetupTitle, desc: L.stepSetupDesc },
+    { num: "02", title: L.stepShareTitle, desc: L.stepShareDesc },
+    { num: "03", title: L.pillarGrow, desc: L.stepGrowDesc },
   ];
 
-  const pricingFeats = [
-    isRTL ? "حجوزات لا محدودة"   : "Unlimited bookings",
-    isRTL ? "مجموعة CRM الكاملة" : "Full CRM suite",
-    isRTL ? "رؤى متقدمة"         : "Advanced insights",
-    isRTL ? "بوابة حجز مخصصة"   : "Branded booking page",
-    isRTL ? "أتمتة المراجعات"    : "Review automation",
-    isRTL ? "وصول للتطبيق"       : "Mobile app access",
+  const planFeatures = [
+    L.pricingFeature1,
+    L.pricingFeature2,
+    L.pricingFeature3,
+    L.pricingFeature4,
+    L.planFeatureTeam,
+    L.featAnyDevice,
   ];
+
+  const footerLinks = [
+    { href: href("/explore"), label: L.navFindBarber },
+    { href: "#features", label: L.navFeatures },
+    { href: "#pricing", label: L.navPricing },
+    { href: href("/auth/login"), label: L.navLogin },
+  ];
+  const legalLinks = [
+    { href: href("/privacy"), label: L.privacy },
+    { href: href("/terms"), label: L.terms },
+    { href: href("/policy"), label: L.cancellationPolicy },
+  ];
+
+  const pillCta = { minHeight: 56, padding: "0 32px", borderRadius: 9999, fontSize: 15, fontWeight: 700 } as const;
 
   return (
-    <div
-      ref={snapContainerRef}
-      className="landing-snap-container"
-      style={{ fontFamily: FF, background: T.white, color: T.dark, overflowX: "hidden", position: "relative" }}
-    >
+    <LandingShell>
+      <a href="#main" className="skip-link">
+        {t.common.skipToContent}
+      </a>
+      <LandingNav />
 
-      {/* ═══ FLOATING PILL NAV — fixed above the snapped pages ═══ */}
-      <div style={{ position: "fixed", insetInlineStart: 0, insetInlineEnd: 0, top: 16, zIndex: 50, padding: "0 16px" }}>
-        <nav
+      <main id="main" tabIndex={-1} style={{ outline: "none" }}>
+        {/* ═══ HERO — two clear paths: shop owners and customers ═══ */}
+        <section
+          aria-labelledby="hero-title"
+          className="landing-snap-page"
           style={{
-            maxWidth: 1100, margin: "0 auto", display: "flex",
-            alignItems: "center", justifyContent: "space-between",
-            background: T.white, borderRadius: 16,
-            border: `1px solid ${T.surfCont}`,
-            boxShadow: `0 0 24px 0 ${T.accent}26`,
-            padding: "15px 15px 15px 20px",
+            position: "relative",
+            overflow: "hidden",
+            alignItems: "center",
+            background: "linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%)",
+            padding: "128px 16px 112px",
           }}
         >
-          <span dir="ltr" style={{ fontFamily: FONT_EN_DISPLAY, fontSize: 18, fontWeight: 700, letterSpacing: "0.008em", color: T.dark }}>
-            Halaqy.
-          </span>
-          <button
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label={isRTL ? "فتح القائمة" : "Toggle menu"}
-            aria-expanded={menuOpen}
-            style={{
-              width: 44, height: 44, borderRadius: 9999, border: "none", cursor: "pointer",
-              background: T.dark, color: T.white,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
-              {menuOpen ? "close" : "menu"}
-            </span>
-          </button>
-        </nav>
+          <div className="fade-slide-up" style={{ position: "relative", zIndex: 1, maxWidth: 760, textAlign: "center" }}>
+            <Eyebrow>{L.heroEyebrow}</Eyebrow>
 
-        {/* Dropdown menu panel */}
-        {menuOpen && (
-          <div style={{ maxWidth: 1100, margin: "12px auto 0" }}>
-            <div style={{
-              background: T.white, borderRadius: 24, border: `1px solid ${T.surfCont}`,
-              boxShadow: "0 24px 60px -20px rgba(28,22,17,0.22)",
-              padding: 24, display: "flex", flexDirection: "column", gap: 4,
-            }}>
-              {navLinks.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setMenuOpen(false)}
-                  style={{ padding: "12px 8px", fontSize: 16, fontWeight: 500, color: T.dark, textDecoration: "none", borderRadius: 8 }}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <div style={{ height: 1, background: T.outline, margin: "8px 0" }} />
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                <button onClick={handleToggleLocale} className="nav-link" style={{ fontSize: 14 }}>
-                  {isRTL ? "English" : "العربية"}
-                </button>
-                <Link
-                  href={ctaHref}
-                  className="btn btn-primary"
-                  style={{ borderRadius: 9999, minHeight: 48, padding: "0 28px", fontSize: 14, fontWeight: 700 }}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {ctaLabel}
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ═══ HERO ═══ */}
-      <section className="landing-snap-page" style={{
-        position: "relative", overflow: "hidden",
-        alignItems: "center",
-        background: `linear-gradient(180deg, ${T.surfLow} 0%, ${T.white} 100%)`,
-        padding: "96px 24px 120px",
-      }}>
-
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.25, 1, 0.5, 1] }}
-          style={{ position: "relative", zIndex: 1, maxWidth: 760, textAlign: "center" }}
-        >
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <Eyebrow isRTL={isRTL}>{isRTL ? "المعيار الرائد في الأردن" : "Jordan's Standard for Barbers"}</Eyebrow>
-          </div>
-
-          <h1 style={{
-            fontFamily: FFD, fontWeight: 800,
-            fontSize: "clamp(2.6rem, 6.5vw, 4.6rem)",
-            lineHeight: 1.06, letterSpacing: headingTracking(isRTL, "0.014em"),
-            color: T.dark, marginBottom: 28,
-          }}>
-            {isRTL ? (
-              <>مستقبل إدارة <span style={{ color: T.accent }}>الحرف</span></>
-            ) : (
-              <>The future of <span style={{ color: T.accent }}>craft</span> management</>
-            )}
-          </h1>
-
-          <p style={{ fontSize: 18, color: T.mid, fontWeight: 300, lineHeight: 1.7, maxWidth: 480, margin: "0 auto 40px" }}>
-            {isRTL
-              ? "الحجز والتحليلات وإدارة العملاء، معادة تصورها لمشغلك."
-              : "Booking, analytics, and CRM — reimagined for the modern atelier."}
-          </p>
-
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 16 }}>
-            <Link
-              href="/auth/signup"
-              className="btn btn-primary"
-              style={{ minHeight: 56, padding: "0 36px", borderRadius: 9999, fontSize: 15, fontWeight: 700 }}
-            >
-              {isRTL ? "ابدأ البناء" : "Get started now"}
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                {isRTL ? "arrow_back" : "arrow_forward"}
-              </span>
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="btn"
+            <h1
+              id="hero-title"
               style={{
-                minHeight: 56, padding: "0 36px", borderRadius: 9999, fontSize: 15, fontWeight: 700,
-                background: T.white, color: T.dark, border: `1px solid ${T.surfCont}`,
+                fontWeight: 800,
+                fontSize: "clamp(2.4rem, 6.5vw, 4.6rem)",
+                lineHeight: 1.08,
+                letterSpacing: headingTracking(isRTL, "0.014em"),
+                color: "var(--text-primary)",
+                marginBottom: 24,
               }}
             >
-              {isRTL ? "احجز عرضاً تجريبياً" : "Book a demo"}
-            </Link>
+              <Headline template={L.heroHeadline} accent={L.heroHeadlineAccent} />
+            </h1>
+
+            <p style={{ fontSize: 18, color: "var(--text-secondary)", fontWeight: 300, lineHeight: 1.7, maxWidth: 540, margin: "0 auto 40px" }}>
+              {L.heroLead}
+            </p>
+
+            <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <Link href={ownerSignup} className="btn btn-primary" style={pillCta}>
+                {L.heroOwnerCta}
+                <Forward size={18} aria-hidden="true" />
+              </Link>
+              <Link href={href("/explore")} className="btn btn-secondary" style={pillCta}>
+                <Search size={18} aria-hidden="true" />
+                {L.heroCustomerCta}
+              </Link>
+            </div>
+            <p style={{ marginTop: 20, fontSize: 14, color: "var(--text-muted)" }}>{L.heroAudienceNote}</p>
           </div>
-        </motion.div>
 
-        {/* Scroll indicator */}
-        <div style={{
-          position: "absolute", bottom: 40, left: "50%", transform: "translateX(-50%)",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 8, zIndex: 1,
-        }}>
-          <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.14em"), color: T.mid, borderBottom: `1px solid ${T.mid}`, paddingBottom: 4 }}>
-            {isRTL ? "مرر للأسفل" : "Scroll"}
-          </span>
-        </div>
-      </section>
+          <a
+            href="#why"
+            className="hidden md:block"
+            style={{
+              position: "absolute",
+              bottom: 32,
+              insetInline: 0,
+              width: "fit-content",
+              margin: "0 auto",
+              zIndex: 1,
+              fontSize: 12,
+              fontWeight: 600,
+              color: "var(--text-muted)",
+              borderBottom: "1px solid var(--text-muted)",
+              paddingBottom: 4,
+              textDecoration: "none",
+            }}
+          >
+            {L.scrollHint}
+          </a>
+        </section>
 
-      {/* ═══ VALUE PILLARS — Manage / Book / Grow ═══ */}
-      <section className="landing-snap-page" style={{ background: T.white, padding: "96px 24px" }}>
-        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-          <SectionHeading
-            FFD={FFD}
-            isRTL={isRTL}
-            eyebrow={isRTL ? "لماذا حلاقي" : "Why Halaqy"}
-            title={isRTL ? "منصة واحدة، كل ما يحتاجه مشغلك." : "One platform, everything your shop needs."}
-            marginBottom={72}
-          />
-          <div className="card-grid-3">
-            {pillars.map((p, i) => (
-              <Reveal key={i} delay={i * 0.08}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{
-                    width: 56, height: 56, borderRadius: 9999, background: T.surfLow,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    margin: "0 auto 24px",
-                  }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 26, color: T.accent }}>{p.icon}</span>
-                  </div>
-                  <h3 style={{ fontWeight: 700, fontSize: 18, color: T.dark, marginBottom: 10 }}>{p.title}</h3>
-                  <p style={{ color: T.mid, fontSize: 14, lineHeight: 1.7, fontWeight: 300 }}>{p.desc}</p>
-                </div>
-              </Reveal>
-            ))}
+        {/* ═══ VALUE PILLARS ═══ */}
+        <section id="why" aria-labelledby="why-title" className="landing-snap-page" style={{ background: "var(--bg-primary)", padding: "96px 16px" }}>
+          <div style={{ maxWidth: 1000, margin: "0 auto", width: "100%" }}>
+            <SectionHeading id="why-title" isRTL={isRTL} eyebrow={L.whyEyebrow} title={L.whyTitle} marginBottom={64} />
+            <ul className="card-grid-3">
+              {pillars.map((p, i) => {
+                const Icon = p.icon;
+                return (
+                  <li key={p.title}>
+                    <Reveal delay={i * 0.08}>
+                      <div style={{ textAlign: "center" }}>
+                        <div
+                          aria-hidden="true"
+                          style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: 9999,
+                            background: "var(--bg-secondary)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            margin: "0 auto 24px",
+                          }}
+                        >
+                          <Icon size={24} className="text-[var(--accent-brass)]" />
+                        </div>
+                        <h3 style={{ fontWeight: 700, fontSize: 18, color: "var(--text-primary)", marginBottom: 10 }}>{p.title}</h3>
+                        <p style={{ color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.7, fontWeight: 300 }}>{p.desc}</p>
+                      </div>
+                    </Reveal>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ═══ FEATURES ═══ */}
-      <section id="features" className="landing-snap-page" style={{ background: T.surfLow, padding: "96px 24px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <SectionHeading
-            FFD={FFD}
-            isRTL={isRTL}
-            eyebrow={isRTL ? "الميزات" : "Features"}
-            title={isRTL ? "كل ما يحتاجه مشغلك، في مكان واحد." : "Everything your shop needs, in one place."}
-            subtitle={isRTL
-              ? "من أول حجز إلى آخر مراجعة، صُممت هذه الأدوات لتعمل معًا بلا احتكاك."
-              : "From the first booking to the last review, these tools are built to work together."}
-          />
-          <div style={{ borderRadius: 20, overflow: "hidden", border: `1px solid ${T.surfCont}`, background: T.surfCont, boxShadow: "0 32px 70px -32px rgba(28,22,17,0.12)" }}>
-            <div className="landing-feature-grid">
-              {features.map((f, i) => (
-                <Reveal key={i} delay={i * 0.05}>
-                  <div className="landing-feature-cell">
-                    <div className="landing-feature-icon">
-                      <span className="material-symbols-outlined">{f.icon}</span>
-                    </div>
-                    <h3 style={{ fontWeight: 700, fontSize: 15, color: T.dark, marginBottom: 10 }}>
-                      {f.title}
-                    </h3>
-                    <p style={{ color: T.mid, fontSize: 14, lineHeight: 1.7, fontWeight: 300 }}>{f.desc}</p>
-                  </div>
-                </Reveal>
-              ))}
+        {/* ═══ FEATURES ═══ */}
+        <section id="features" aria-labelledby="features-title" className="landing-snap-page" style={{ background: "var(--bg-secondary)", padding: "96px 16px" }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto", width: "100%" }}>
+            <SectionHeading id="features-title" isRTL={isRTL} eyebrow={L.navFeatures} title={L.featuresHeading} subtitle={L.featuresLead} />
+            <div
+              style={{
+                borderRadius: 20,
+                overflow: "hidden",
+                border: "1px solid var(--border-subtle)",
+                background: "var(--border-subtle)",
+                boxShadow: "0 32px 70px -32px rgba(28,22,17,0.12)",
+              }}
+            >
+              <ul className="landing-feature-grid">
+                {features.map((f, i) => {
+                  const Icon = f.icon;
+                  return (
+                    <li key={f.title} className="h-full">
+                      <Reveal delay={i * 0.05} className="h-full">
+                        <div className="landing-feature-cell group">
+                          <div className="landing-feature-icon" aria-hidden="true">
+                            <Icon size={20} className="text-[var(--accent-brass)] transition-colors group-hover:text-[var(--on-accent)]" />
+                          </div>
+                          <h3 style={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary)", marginBottom: 10 }}>{f.title}</h3>
+                          <p style={{ color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.7, fontWeight: 300 }}>{f.desc}</p>
+                        </div>
+                      </Reveal>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ═══ HOW IT WORKS ═══ */}
-      <section className="landing-snap-page" style={{ background: T.white, padding: "96px 24px" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <SectionHeading
-            FFD={FFD}
-            isRTL={isRTL}
-            eyebrow={isRTL ? "كيف يعمل" : "How It Works"}
-            title={isRTL ? "من الإعداد إلى النمو." : "From setup to growth."}
-            subtitle={isRTL
-              ? "أنشئ بوابة حجزك واقبل أول موعد رقمي خلال دقائق."
-              : "Set up your booking page and take your first digital appointment in minutes."}
-            marginBottom={56}
-          />
-          <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
-            {steps.map((step, i) => (
-              <Reveal key={i} delay={i * 0.08}>
-                <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: T.accent, flexShrink: 0, paddingTop: 3 }}>
-                    {step.num}
-                  </div>
-                  <div>
-                    <h4 style={{ fontWeight: 700, fontSize: 16, color: T.dark, marginBottom: 8 }}>
-                      {step.title}
-                    </h4>
-                    <p style={{ color: T.mid, fontWeight: 300, lineHeight: 1.7, fontSize: 15 }}>{step.desc}</p>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
+        {/* ═══ HOW IT WORKS ═══ */}
+        <section aria-labelledby="how-title" className="landing-snap-page" style={{ background: "var(--bg-primary)", padding: "96px 16px" }}>
+          <div style={{ maxWidth: 720, margin: "0 auto", width: "100%" }}>
+            <SectionHeading id="how-title" isRTL={isRTL} eyebrow={L.howEyebrow} title={L.howHeading} subtitle={L.howLead} marginBottom={56} />
+            <ol style={{ display: "flex", flexDirection: "column", gap: 40 }}>
+              {steps.map((step, i) => (
+                <li key={step.num}>
+                  <Reveal delay={i * 0.08}>
+                    <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+                      <span aria-hidden="true" dir="ltr" style={{ fontSize: 14, fontWeight: 700, color: "var(--accent-text)", flexShrink: 0, paddingTop: 3 }}>
+                        {step.num}
+                      </span>
+                      <div>
+                        <h3 style={{ fontWeight: 700, fontSize: 17, color: "var(--text-primary)", marginBottom: 8 }}>{step.title}</h3>
+                        <p style={{ color: "var(--text-secondary)", fontWeight: 300, lineHeight: 1.7, fontSize: 15 }}>{step.desc}</p>
+                      </div>
+                    </div>
+                  </Reveal>
+                </li>
+              ))}
+            </ol>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ═══ MISSION / APPROACH — alternating statement blocks ═══ */}
-      <section className="landing-snap-page" style={{ position: "relative", overflow: "hidden", padding: "120px 24px" }}>
-        <BackgroundVideo
-          src="/videos/1.mp4"
-          overlay={`linear-gradient(180deg, ${T.white}f2 0%, ${T.surfLow}ee 50%, ${T.white}f2 100%)`}
-        />
-        <div style={{ position: "relative", zIndex: 1, maxWidth: 1000, margin: "0 auto", display: "flex", flexDirection: "column", gap: 96 }}>
-          <Statement
-            align="start"
-            eyebrow={isRTL ? "مهمتنا" : "Our Mission"}
-            FFD={FFD}
-            isRTL={isRTL}
-            title={isRTL ? "أدوات مصقولة لمحترفين مصقولين." : "Refined tools for refined masters."}
-            body={isRTL
-              ? "كل ما هو مطلوب لتقليل الاحتكاك التشغيلي والتركيز على حرفتك."
-              : "Everything you need to cut operational friction and focus on your craft."}
+        {/* ═══ MISSION / APPROACH ═══ */}
+        <section aria-labelledby="mission-title" className="landing-snap-page" style={{ position: "relative", overflow: "hidden", padding: "112px 16px" }}>
+          <BackgroundVideo
+            src="/videos/1.mp4"
+            poster="/videos/1-poster.jpg"
+            overlay="linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(247,241,228,0.93) 50%, rgba(255,255,255,0.95) 100%)"
           />
-          <Statement
-            align="end"
-            eyebrow={isRTL ? "نهجنا" : "Our Approach"}
-            FFD={FFD}
-            isRTL={isRTL}
-            title={isRTL ? "نُبنى مع الحلاقين، لا لهم فقط." : "Built with barbers, not just for them."}
-            body={isRTL
-              ? "نعمل مباشرة مع مشاغل حقيقية لتشكيل كل ميزة — فلا شيء يُطلق ما لم يصمد أمام ازدحام يوم السبت."
-              : "We work directly with working shops to shape every feature — nothing ships that doesn't survive a Saturday rush."}
-          />
-        </div>
-      </section>
+          <h2 id="mission-title" className="sr-only">
+            {L.missionEyebrow}
+          </h2>
+          <div style={{ position: "relative", zIndex: 1, maxWidth: 1000, margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: 88 }}>
+            <Statement align="start" isRTL={isRTL} eyebrow={L.missionEyebrow} title={L.missionTitle} body={L.missionBody} />
+            <Statement align="end" isRTL={isRTL} eyebrow={L.approachEyebrow} title={L.approachTitle} body={L.approachBody} />
+          </div>
+        </section>
 
-      {/* ═══ PRICING ═══ */}
-      <section id="pricing" className="landing-snap-page" style={{ background: T.surfLow, padding: "96px 24px" }}>
-        <div style={{ maxWidth: 640, margin: "0 auto" }}>
-          <SectionHeading
-            FFD={FFD}
-            isRTL={isRTL}
-            eyebrow={isRTL ? "التسعير" : "Pricing"}
-            title={isRTL ? "تسعير شفاف." : "Honest pricing."}
-            subtitle={isRTL ? "مسار واحد شفاف لكل متجر." : "One simple plan for every shop."}
-          />
+        {/* ═══ PRICING ═══ */}
+        <section id="pricing" aria-labelledby="pricing-title" className="landing-snap-page" style={{ background: "var(--bg-secondary)", padding: "96px 16px" }}>
+          <div style={{ maxWidth: 640, margin: "0 auto", width: "100%" }}>
+            <SectionHeading id="pricing-title" isRTL={isRTL} eyebrow={L.navPricing} title={L.pricingHeading} subtitle={L.pricingLead} />
 
-          <Reveal delay={0.1}>
-            <div style={{ padding: 48, borderRadius: 24, background: T.white, border: `1px solid ${T.surfCont}`, boxShadow: "0 32px 70px -32px rgba(28,22,17,0.22)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24, marginBottom: 40, paddingBottom: 40, borderBottom: `1px solid ${T.surfCont}` }}>
-                <div>
-                  <h3 style={{ fontWeight: 700, fontSize: 22, color: T.dark, marginBottom: 6 }}>Professional</h3>
-                  <p style={{ color: T.mid, fontWeight: 300, fontSize: 14 }}>{isRTL ? "حرية تشغيل كاملة." : "Total operational freedom."}</p>
-                </div>
-                <div style={{ textAlign: "end" }}>
-                  <div style={{ fontWeight: 800, fontSize: 40, color: T.dark, lineHeight: 1, fontVariantNumeric: "tabular-nums lining-nums" }}>1.5 JOD</div>
-                  <div style={{ fontWeight: 500, fontSize: 12, color: T.mid, marginTop: 6 }}>
-                    {isRTL ? "لكل حلاق / شهر" : "per barber / month"}
-                  </div>
-                </div>
-              </div>
-
-              <div className="card-grid-2" style={{ marginBottom: 40 }}>
-                {pricingFeats.map((feat, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 18, color: T.accent }}>check</span>
-                    <span style={{ fontSize: 14, fontWeight: 500, color: T.dark }}>{feat}</span>
-                  </div>
-                ))}
-              </div>
-
-              <Link
-                href="/auth/signup"
-                className="btn btn-primary"
-                style={{ width: "100%", minHeight: 52, borderRadius: 9999, fontSize: 15, fontWeight: 700 }}
+            <Reveal delay={0.1}>
+              <div
+                className="p-6 sm:p-12"
+                style={{
+                  borderRadius: 24,
+                  background: "var(--bg-primary)",
+                  border: "1px solid var(--border-subtle)",
+                  boxShadow: "0 32px 70px -32px rgba(28,22,17,0.22)",
+                }}
               >
-                {isRTL ? "ابدأ تجربة 14 يوم" : "Start 14-day trial"}
-              </Link>
-              <p style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: T.mid }}>
-                {isRTL ? "لا يتطلب التزامًا." : "No commitment required."}
-              </p>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-end",
+                    flexWrap: "wrap",
+                    gap: 24,
+                    marginBottom: 32,
+                    paddingBottom: 32,
+                    borderBottom: "1px solid var(--border-subtle)",
+                  }}
+                >
+                  <div>
+                    <h3 style={{ fontWeight: 700, fontSize: 22, color: "var(--text-primary)", marginBottom: 6 }}>{L.planName}</h3>
+                    <p style={{ color: "var(--text-secondary)", fontWeight: 300, fontSize: 15 }}>{L.planTagline}</p>
+                  </div>
+                  <div style={{ textAlign: "end" }}>
+                    <p style={{ fontWeight: 800, fontSize: 40, color: "var(--text-primary)", lineHeight: 1, fontVariantNumeric: "tabular-nums lining-nums" }}>
+                      {formatCurrency(PRICE_PER_BARBER, locale, "JOD", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                    </p>
+                    <p style={{ fontWeight: 500, fontSize: 13, color: "var(--text-secondary)", marginTop: 6 }}>{L.pricingPerBarber}</p>
+                  </div>
+                </div>
+
+                <ul className="card-grid-2" style={{ marginBottom: 36, gap: 16 }}>
+                  {planFeatures.map((feat) => (
+                    <li key={feat} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <Check size={18} aria-hidden="true" className="shrink-0 text-[var(--accent-brass)]" />
+                      <span style={{ fontSize: 15, fontWeight: 500, color: "var(--text-primary)" }}>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link href={ownerSignup} className="btn btn-primary" style={{ width: "100%", minHeight: 52, borderRadius: 9999, fontSize: 15, fontWeight: 700 }}>
+                  {L.heroOwnerCta}
+                </Link>
+                <p style={{ textAlign: "center", marginTop: 16, fontSize: 14, color: "var(--text-muted)" }}>{L.planNote}</p>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ═══ CONTACT + FOOTER — the final "page" ═══ */}
+        <section
+          aria-labelledby="contact-title"
+          className="landing-snap-page"
+          style={{ position: "relative", overflow: "hidden", background: "#1c1611", color: "#ffffff", padding: "96px 16px 32px" }}
+        >
+          <BackgroundVideo
+            src="/videos/2.mp4"
+            poster="/videos/2-poster.jpg"
+            overlay="linear-gradient(180deg, rgba(28,22,17,0.78) 0%, rgba(28,22,17,0.86) 55%, rgba(28,22,17,0.92) 100%)"
+          />
+
+          <Reveal>
+            <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: 620, margin: "0 auto" }}>
+              <Eyebrow dark>{L.contactEyebrow}</Eyebrow>
+              <h2
+                id="contact-title"
+                style={{ fontWeight: 800, fontSize: "clamp(1.8rem, 3.4vw, 2.6rem)", letterSpacing: headingTracking(isRTL, "0.014em"), marginBottom: 16, color: "#ffffff" }}
+              >
+                {L.contactHeading}
+              </h2>
+              <p style={{ color: "rgba(255,255,255,0.78)", fontSize: 16, fontWeight: 300, lineHeight: 1.7, marginBottom: 36 }}>{L.contactLead}</p>
+              <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+                <Link
+                  href={ownerSignup}
+                  className="btn"
+                  style={{ ...pillCta, minHeight: 52, background: "#ffffff", color: "#1c1611" }}
+                >
+                  {L.heroOwnerCta}
+                </Link>
+                <Link
+                  href={href("/explore")}
+                  className="btn"
+                  style={{ ...pillCta, minHeight: 52, background: "transparent", color: "#ffffff", border: "1px solid rgba(255,255,255,0.4)" }}
+                >
+                  <Search size={18} aria-hidden="true" />
+                  {L.heroCustomerCta}
+                </Link>
+              </div>
             </div>
           </Reveal>
-        </div>
-      </section>
 
-      {/* ═══ CONTACT + FOOTER — the final "page" ═══ */}
-      <section className="landing-snap-page" style={{ position: "relative", overflow: "hidden", background: T.dark, color: T.white, padding: "96px 24px 32px" }}>
-        <BackgroundVideo
-          src="/videos/2.mp4"
-          overlay={`linear-gradient(180deg, ${T.dark}c8 0%, ${T.dark}dc 55%, ${T.dark}ea 100%)`}
-        />
+          <footer
+            style={{
+              position: "relative",
+              zIndex: 1,
+              maxWidth: 1100,
+              margin: "80px auto 0",
+              width: "100%",
+              borderTop: "1px solid rgba(255,255,255,0.14)",
+              paddingTop: 32,
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 24,
+            }}
+          >
+            <span dir="ltr" style={{ fontFamily: "var(--font-bdo-grotesk), system-ui, sans-serif", fontSize: 17, fontWeight: 700, color: "#ffffff" }}>
+              Halaqy<span style={{ color: "#d8b88a" }}>.</span>
+            </span>
 
-        <Reveal>
-          <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
-            <Eyebrow isRTL={isRTL} dark>{isRTL ? "تواصل" : "Get In Touch"}</Eyebrow>
-            <h2 style={{ fontFamily: FFD, fontWeight: 800, fontSize: "clamp(1.8rem, 3.4vw, 2.6rem)", letterSpacing: headingTracking(isRTL, "0.014em"), marginBottom: 16 }}>
-              {isRTL ? "نرحب بك للتواصل." : "We'd love to hear from you."}
-            </h2>
-            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 16, fontWeight: 300, marginBottom: 40 }}>
-              {isRTL ? "ابدأ اليوم أو تحدث معنا حول احتياجات مشغلك." : "Start today, or talk to us about your shop's needs."}
+            <nav aria-label={L.product}>
+              <ul style={{ display: "flex", flexWrap: "wrap", gap: "12px 28px" }}>
+                {footerLinks.map((link) => (
+                  <li key={link.href}>
+                    <a href={link.href} className="hover:underline underline-offset-4" style={{ fontSize: 14, color: "rgba(255,255,255,0.78)" }}>
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <nav aria-label={L.legal}>
+              <ul style={{ display: "flex", flexWrap: "wrap", gap: "12px 28px" }}>
+                {legalLinks.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="hover:underline underline-offset-4" style={{ fontSize: 14, color: "rgba(255,255,255,0.78)" }}>
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, flexBasis: "100%" }}>
+              <span dir="ltr">© {year} Halaqy.</span> {L.allRightsReserved}
             </p>
-            <Link
-              href="/auth/signup"
-              className="btn"
-              style={{ minHeight: 52, padding: "0 36px", borderRadius: 9999, fontSize: 15, fontWeight: 700, background: T.white, color: T.dark }}
-            >
-              {isRTL ? "ابدأ الآن" : "Get started"}
-            </Link>
-          </div>
-        </Reveal>
-
-        {/* Footer bar */}
-        <div style={{
-          position: "relative", zIndex: 1, maxWidth: 1100, margin: "96px auto 0", width: "100%",
-          borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 32,
-          display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 24,
-        }}>
-          <span dir="ltr" style={{ fontFamily: FONT_EN_DISPLAY, fontSize: 17, fontWeight: 700, color: T.white }}>Halaqy.</span>
-
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 32 }}>
-            {navLinks.filter((l) => !l.href.startsWith("/customer") && !l.href.startsWith("/calendar") && !l.href.startsWith("/leads") && l.href !== "/").map((link) => (
-              <Link key={link.label} href={link.href} style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", textDecoration: "none" }}>
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", margin: 0 }}>
-            © 2026 Halaqy.
-          </p>
-        </div>
-      </section>
-    </div>
+          </footer>
+        </section>
+      </main>
+    </LandingShell>
   );
 }

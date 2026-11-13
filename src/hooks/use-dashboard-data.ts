@@ -1,12 +1,23 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
+import { endOfDay, startOfDay } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import { useWorkspaceStore } from "@/store/workspace-store";
-import {
-  startOfDay, endOfDay, startOfWeek, endOfWeek,
-  startOfMonth, endOfMonth, subDays, subWeeks, subMonths,
-} from "date-fns";
+import { useSupabaseQuery } from "@/hooks/use-supabase-query";
+import { useDashboardVersion } from "@/hooks/use-pos";
+import type { DashboardMetrics as DashboardMetricsRow } from "@/lib/supabase/database.types";
+import type { PaymentMethod } from "@/lib/types";
+
+/* ─────────────────────────────────────────────────────────────
+   Overview data hooks.
+   - Metrics come from ONE `dashboard_metrics` RPC (shop time zone,
+     SECURITY INVOKER) instead of nine parallel queries that summed
+     every sale row in the browser.
+   - Shop display settings (currency, time zone, goal) are fetched once
+     per shop and shared by every widget through a module cache.
+   - Every hook re-runs when a POS mutation bumps the dashboard version.
+   ───────────────────────────────────────────────────────────── */
 
 export interface DashboardMetrics {
   todayBookings: number;
@@ -19,6 +30,8 @@ export interface DashboardMetrics {
   monthlyRevenueChange: number;
   dailyGoal: number;
   dailyProgress: number;
+  currency: string;
+  timezone: string;
 }
 
 export interface SaleItem {
@@ -27,156 +40,187 @@ export interface SaleItem {
   service: string;
   barberName: string;
   amount: number;
-  time: string;
-  paymentMethod: "cash" | "card";
+  /** ISO timestamp of the sale. */
+  soldAt: string;
+  paymentMethod: PaymentMethod;
 }
 
-function calcChange(current: number, previous: number): number {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return Math.round(((current - previous) / previous) * 100 * 10) / 10;
+export interface ShopSettings {
+  currency: string;
+  timezone: string;
+  dailyGoal: number;
 }
 
-const emptyMetrics: DashboardMetrics = {
-  todayBookings: 0, todayBookingsChange: 0,
-  todaySales: 0, todaySalesChange: 0,
-  weeklyTrajectory: 0, weeklyTrajectoryChange: 0,
-  monthlyRevenue: 0, monthlyRevenueChange: 0,
-  dailyGoal: 120, dailyProgress: 0,
+export const DEFAULT_CURRENCY = "JOD";
+const DEFAULT_GOAL = 120;
+
+/** Percent change, one decimal. A rise from zero reads as +100%. */
+export function calcChange(current: number, previous: number): number {
+  if (!previous) return current > 0 ? 100 : 0;
+  return Math.round(((current - previous) / previous) * 1000) / 10;
+}
+
+export const EMPTY_METRICS: DashboardMetrics = {
+  todayBookings: 0,
+  todayBookingsChange: 0,
+  todaySales: 0,
+  todaySalesChange: 0,
+  weeklyTrajectory: 0,
+  weeklyTrajectoryChange: 0,
+  monthlyRevenue: 0,
+  monthlyRevenueChange: 0,
+  dailyGoal: DEFAULT_GOAL,
+  dailyProgress: 0,
+  currency: DEFAULT_CURRENCY,
+  timezone: "Asia/Amman",
 };
 
-export function useDashboardMetrics() {
-  const [metrics, setMetrics] = useState<DashboardMetrics>(emptyMetrics);
-  const [loading, setLoading] = useState(true);
-  const shopId = useWorkspaceStore((s) => s.shopId);
-  const supabase = useRef(createClient()).current;
-
-  useEffect(() => {
-    async function fetchMetrics() {
-      if (!shopId) { setLoading(false); return; }
-
-      try {
-        const now = new Date();
-        const todayStart = startOfDay(now).toISOString();
-        const todayEnd = endOfDay(now).toISOString();
-        const yesterdayStart = startOfDay(subDays(now, 1)).toISOString();
-        const yesterdayEnd = endOfDay(subDays(now, 1)).toISOString();
-        const weekStart = startOfWeek(now, { weekStartsOn: 1 }).toISOString();
-        const weekEnd = endOfWeek(now, { weekStartsOn: 1 }).toISOString();
-        const prevWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }).toISOString();
-        const prevWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }).toISOString();
-        const monthStart = startOfMonth(now).toISOString();
-        const monthEnd = endOfMonth(now).toISOString();
-        const prevMonthStart = startOfMonth(subMonths(now, 1)).toISOString();
-        const prevMonthEnd = endOfMonth(subMonths(now, 1)).toISOString();
-
-        const [
-          todayAppts, yesterdayAppts,
-          todaySalesRes, yesterdaySalesRes,
-          weeklySalesRes, prevWeeklySalesRes,
-          monthlySalesRes, prevMonthlySalesRes,
-          shopRes,
-        ] = await Promise.all([
-          supabase.from("appointments").select("id", { count: "exact", head: true })
-            .eq("shop_id", shopId).gte("start_time", todayStart).lte("start_time", todayEnd).neq("status", "cancelled"),
-          supabase.from("appointments").select("id", { count: "exact", head: true })
-            .eq("shop_id", shopId).gte("start_time", yesterdayStart).lte("start_time", yesterdayEnd).neq("status", "cancelled"),
-          supabase.from("daily_sales").select("amount").eq("shop_id", shopId)
-            .gte("created_at", todayStart).lte("created_at", todayEnd),
-          supabase.from("daily_sales").select("amount").eq("shop_id", shopId)
-            .gte("created_at", yesterdayStart).lte("created_at", yesterdayEnd),
-          supabase.from("daily_sales").select("amount").eq("shop_id", shopId)
-            .gte("created_at", weekStart).lte("created_at", weekEnd),
-          supabase.from("daily_sales").select("amount").eq("shop_id", shopId)
-            .gte("created_at", prevWeekStart).lte("created_at", prevWeekEnd),
-          supabase.from("daily_sales").select("amount").eq("shop_id", shopId)
-            .gte("created_at", monthStart).lte("created_at", monthEnd),
-          supabase.from("daily_sales").select("amount").eq("shop_id", shopId)
-            .gte("created_at", prevMonthStart).lte("created_at", prevMonthEnd),
-          supabase.from("shops").select("daily_goal").eq("id", shopId).single(),
-        ]);
-
-        const sum = (data: { amount: number }[] | null) => (data || []).reduce((s, r) => s + Number(r.amount), 0);
-
-        const todayBookings = todayAppts.count || 0;
-        const yesterdayBookings = yesterdayAppts.count || 0;
-        const todaySalesTotal = sum(todaySalesRes.data);
-        const yesterdaySalesTotal = sum(yesterdaySalesRes.data);
-        const weeklyTotal = sum(weeklySalesRes.data);
-        const prevWeeklyTotal = sum(prevWeeklySalesRes.data);
-        const monthlyTotal = sum(monthlySalesRes.data);
-        const prevMonthlyTotal = sum(prevMonthlySalesRes.data);
-        const dailyGoal = Number(shopRes.data?.daily_goal) || 120;
-
-        setMetrics({
-          todayBookings,
-          todayBookingsChange: calcChange(todayBookings, yesterdayBookings),
-          todaySales: todaySalesTotal,
-          todaySalesChange: calcChange(todaySalesTotal, yesterdaySalesTotal),
-          weeklyTrajectory: weeklyTotal,
-          weeklyTrajectoryChange: calcChange(weeklyTotal, prevWeeklyTotal),
-          monthlyRevenue: monthlyTotal,
-          monthlyRevenueChange: calcChange(monthlyTotal, prevMonthlyTotal),
-          dailyGoal,
-          dailyProgress: todaySalesTotal,
-        });
-      } catch {
-        setMetrics(emptyMetrics);
-      }
-      setLoading(false);
-    }
-
-    fetchMetrics();
-  }, [supabase, shopId]);
-
-  return { metrics, loading };
+/** Maps the RPC row (or null, e.g. in mock mode) to the view model. Pure. */
+export function toDashboardMetrics(row: Partial<DashboardMetricsRow> | null | undefined): DashboardMetrics {
+  if (!row) return EMPTY_METRICS;
+  const n = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+  const todayBookings = n(row.today_bookings);
+  const todaySales = n(row.today_sales);
+  const week = n(row.week_sales);
+  const month = n(row.month_sales);
+  return {
+    todayBookings,
+    todayBookingsChange: calcChange(todayBookings, n(row.yesterday_bookings)),
+    todaySales,
+    todaySalesChange: calcChange(todaySales, n(row.yesterday_sales)),
+    weeklyTrajectory: week,
+    weeklyTrajectoryChange: calcChange(week, n(row.prev_week_sales)),
+    monthlyRevenue: month,
+    monthlyRevenueChange: calcChange(month, n(row.prev_month_sales)),
+    dailyGoal: n(row.daily_goal) || DEFAULT_GOAL,
+    dailyProgress: todaySales,
+    currency: row.currency || DEFAULT_CURRENCY,
+    timezone: row.timezone || EMPTY_METRICS.timezone,
+  };
 }
 
-export function useDailySales() {
-  const [sales, setSales] = useState<SaleItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export function useDashboardMetrics() {
   const shopId = useWorkspaceStore((s) => s.shopId);
-  const supabase = useRef(createClient()).current;
+  const version = useDashboardVersion();
+  const [supabase] = useState(() => createClient());
 
-  useEffect(() => {
-    async function fetchSales() {
-      if (!shopId) { setLoading(false); return; }
+  const query = useSupabaseQuery<DashboardMetrics>(
+    async () => {
+      const { data, error } = await supabase.rpc("dashboard_metrics", { p_shop_id: shopId });
+      if (error) return { data: null, error: { message: error.message } };
+      return { data: toDashboardMetrics(data as DashboardMetricsRow | null), error: null };
+    },
+    [shopId, version],
+    { enabled: !!shopId },
+  );
 
-      try {
-        const now = new Date();
-        const todayStart = startOfDay(now).toISOString();
-        const todayEnd = endOfDay(now).toISOString();
+  return {
+    metrics: query.data ?? EMPTY_METRICS,
+    loading: query.initialLoading,
+    refreshing: query.refreshing,
+    error: query.error,
+    refetch: query.refetch,
+  };
+}
 
-        const { data, error } = await supabase
-          .from("daily_sales")
-          .select("*")
-          .eq("shop_id", shopId)
-          .gte("created_at", todayStart)
-          .lte("created_at", todayEnd)
-          .order("sale_time", { ascending: false });
+/* ── Shop settings: one request per shop per session ── */
+const settingsCache = new Map<string, Promise<ShopSettings>>();
 
-        if (error || !data) {
-          setSales([]);
-          setLoading(false);
-          return;
-        }
+async function loadShopSettings(shopId: string): Promise<ShopSettings> {
+  const supabase = createClient();
+  // daily_goal is a private column: only own-shop staff read it, via RPC.
+  const [shopRes, privateRes] = await Promise.all([
+    supabase.from("shops").select("currency, timezone").eq("id", shopId).maybeSingle(),
+    supabase.rpc("get_my_shop_private"),
+  ]);
+  if (shopRes.error) throw shopRes.error;
+  const row = (shopRes.data ?? {}) as { currency?: string | null; timezone?: string | null };
+  const priv = ((privateRes.data ?? []) as { shop_id: string; daily_goal: number | null }[]).find(
+    (r) => r.shop_id === shopId,
+  );
+  return {
+    currency: row.currency || DEFAULT_CURRENCY,
+    timezone: row.timezone || EMPTY_METRICS.timezone,
+    dailyGoal: Number(priv?.daily_goal) || DEFAULT_GOAL,
+  };
+}
 
-        setSales(data.map((s) => ({
-          id: s.id,
-          clientName: s.client_name,
-          service: s.service_name,
-          barberName: s.barber_name,
-          amount: Number(s.amount),
-          time: s.sale_time,
-          paymentMethod: s.payment_method as "cash" | "card",
-        })));
-      } catch {
-        setSales([]);
+/** Clears the cached settings, e.g. after the settings page saves the currency. */
+export function invalidateShopSettings(shopId?: string) {
+  if (shopId) settingsCache.delete(shopId);
+  else settingsCache.clear();
+}
+
+export function useShopSettings(): ShopSettings {
+  const shopId = useWorkspaceStore((s) => s.shopId);
+  const { data } = useSupabaseQuery<ShopSettings>(
+    async () => {
+      let p = settingsCache.get(shopId);
+      if (!p) {
+        p = loadShopSettings(shopId);
+        settingsCache.set(shopId, p);
+        // Do not cache failures — the next mount retries.
+        p.catch(() => settingsCache.delete(shopId));
       }
-      setLoading(false);
-    }
+      return { data: await p, error: null };
+    },
+    [shopId],
+    { enabled: !!shopId, retryCount: 0 },
+  );
+  return data ?? { currency: DEFAULT_CURRENCY, timezone: EMPTY_METRICS.timezone, dailyGoal: DEFAULT_GOAL };
+}
 
-    fetchSales();
-  }, [supabase, shopId]);
+/** Today's recorded sales (daily_sales rows written by complete_appointment_sale). */
+export function useDailySales() {
+  const shopId = useWorkspaceStore((s) => s.shopId);
+  const version = useDashboardVersion();
+  const [supabase] = useState(() => createClient());
 
-  return { sales, loading };
+  const query = useSupabaseQuery<SaleItem[]>(
+    async () => {
+      const now = new Date();
+      const { data, error } = await supabase
+        .from("daily_sales")
+        .select("id, client_name, service_name, barber_name, amount, payment_method, created_at")
+        .eq("shop_id", shopId)
+        .gte("created_at", startOfDay(now).toISOString())
+        .lte("created_at", endOfDay(now).toISOString())
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) return { data: null, error: { message: error.message } };
+      const rows = (data ?? []) as {
+        id: string;
+        client_name: string | null;
+        service_name: string | null;
+        barber_name: string | null;
+        amount: number | string | null;
+        payment_method: string | null;
+        created_at: string | null;
+      }[];
+      return {
+        data: rows.map((s) => ({
+          id: s.id,
+          clientName: s.client_name ?? "",
+          service: s.service_name ?? "",
+          barberName: s.barber_name ?? "",
+          amount: Number(s.amount) || 0,
+          soldAt: s.created_at ?? now.toISOString(),
+          paymentMethod: (["cash", "card", "online", "mixed"].includes(s.payment_method ?? "")
+            ? s.payment_method
+            : "cash") as PaymentMethod,
+        })),
+        error: null,
+      };
+    },
+    [shopId, version],
+    { enabled: !!shopId },
+  );
+
+  return {
+    sales: query.data ?? [],
+    loading: query.initialLoading,
+    refreshing: query.refreshing,
+    error: query.error,
+    refetch: query.refetch,
+  };
 }

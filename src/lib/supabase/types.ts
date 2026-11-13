@@ -1,8 +1,10 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type LeadStage = "new" | "contacted" | "booked" | "completed" | "regular";
-export type UserRole = "shop_admin" | "barber" | "customer";
-export type AppointmentStatus = "pending" | "confirmed" | "cancelled" | "completed";
+// Loose, hand-maintained row shapes used to parameterize the cookie-bound
+// server client (src/lib/supabase/server.ts). The complete, generated-style
+// schema incl. RPC signatures lives in ./database.types.ts.
+import type { AppointmentStatus, LeadStage, UserRole } from "@/lib/types";
+export type { AppointmentStatus, LeadStage, UserRole };
 
 export interface Database {
   public: {
@@ -17,6 +19,11 @@ export interface Database {
           phone: string | null;
           instagram: string | null;
           google_maps_url: string | null;
+          whatsapp: string | null;
+          description: string | null;
+          timezone: string;
+          cancellation_policy_hours: number | null;
+          cancellation_fee_percent: number | null;
           daily_goal: number;
           created_at: string;
           updated_at: string;
@@ -50,6 +57,7 @@ export interface Database {
           role: UserRole;
           full_name: string;
           avatar_url: string | null;
+          phone: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -111,6 +119,9 @@ export interface Database {
           notes: string | null;
           source: string | null;
           total_spend: number;
+          auth_user_id: string | null;
+          phone_digits: string;
+          deleted_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -145,7 +156,17 @@ export interface Database {
           end_time: string;
           status: AppointmentStatus;
           price: number;
+          currency: string | null;
+          service_name: string | null;
+          notes: string | null;
           source: string | null;
+          payment_status: string | null;
+          payment_method: string | null;
+          amount_total: number | null;
+          amount_paid: number | null;
+          cancelled_at: string | null;
+          cancellation_reason: string | null;
+          no_show: boolean | null;
           created_at: string;
           updated_at: string;
         };

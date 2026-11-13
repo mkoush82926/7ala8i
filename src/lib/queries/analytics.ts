@@ -1,194 +1,156 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/supabase/database.types";
-import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subWeeks, subMonths } from "date-fns";
+import type { Database, DashboardMetrics } from "@/lib/supabase/database.types";
+import { fetchAllRows } from "./analytics-page";
+import {
+  type AnalyticsPeriod,
+  DEFAULT_TIMEZONE,
+  bucketKeyOf,
+  getPeriodRange,
+  inclusiveEnd,
+  pctChange,
+} from "./analytics-period";
 
 type Client = SupabaseClient<Database>;
-type ApptRow = { id: string; price: number; status: string | null; start_time?: string; barber_id?: string | null };
-type QueryResult<T> = { data: T[] | null; error: { message: string } | null };
+type Row = Record<string, unknown>;
 
-// Helper to query appointments for a date range with explicit typing
-async function queryAppts(
-  supabase: Client,
-  shopId: string,
-  fields: string,
-  start: string,
-  end: string,
-  extraFilters?: { status?: string },
-): Promise<QueryResult<ApptRow>> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let query = (supabase.from("appointments") as any).select(fields).eq("shop_id", shopId);
+// Revenue everywhere = daily_sales (money taken), matching the
+// dashboard_metrics RPC and the Analytics page. Bookings = non-cancelled
+// appointments.
 
-  if (extraFilters?.status) {
-    query = query.eq("status", extraFilters.status);
-  }
-
-  query = query.gte("start_time", start).lte("start_time", end);
-
-  return query as unknown as QueryResult<ApptRow>;
+export interface DashboardMetricsView {
+  todayBookings: number;
+  todayBookingsChange: number;
+  todaySales: number;
+  todaySalesChange: number;
+  weeklyTrajectory: number;
+  weeklyTrajectoryChange: number;
+  monthlyRevenue: number;
+  monthlyRevenueChange: number;
+  dailyGoal: number;
+  dailyProgress: number;
+  currency: string;
+  timezone: string;
 }
 
-// ─── Dashboard metrics ───
-export async function getDashboardMetrics(supabase: Client, shopId: string) {
-  const today = new Date();
-  const todayStart = format(startOfDay(today), "yyyy-MM-dd'T'HH:mm:ss");
-  const todayEnd = format(endOfDay(today), "yyyy-MM-dd'T'HH:mm:ss");
-  const yesterdayStart = format(startOfDay(subDays(today, 1)), "yyyy-MM-dd'T'HH:mm:ss");
-  const yesterdayEnd = format(endOfDay(subDays(today, 1)), "yyyy-MM-dd'T'HH:mm:ss");
-
-  const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-  const weekEnd = format(endOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-  const prevWeekStart = format(startOfWeek(subWeeks(today, 1), { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-  const prevWeekEnd = format(endOfWeek(subWeeks(today, 1), { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-
-  const monthStart = format(startOfMonth(today), "yyyy-MM-dd'T'HH:mm:ss");
-  const monthEnd = format(endOfMonth(today), "yyyy-MM-dd'T'HH:mm:ss");
-  const prevMonthStart = format(startOfMonth(subMonths(today, 1)), "yyyy-MM-dd'T'HH:mm:ss");
-  const prevMonthEnd = format(endOfMonth(subMonths(today, 1)), "yyyy-MM-dd'T'HH:mm:ss");
-
-  const fields = "id, price, status";
-
-  const [todayAppts, yesterdayAppts, weekAppts, prevWeekAppts, monthAppts, prevMonthAppts] =
-    await Promise.all([
-      queryAppts(supabase, shopId, fields, todayStart, todayEnd),
-      queryAppts(supabase, shopId, fields, yesterdayStart, yesterdayEnd),
-      queryAppts(supabase, shopId, fields, weekStart, weekEnd),
-      queryAppts(supabase, shopId, fields, prevWeekStart, prevWeekEnd),
-      queryAppts(supabase, shopId, fields, monthStart, monthEnd),
-      queryAppts(supabase, shopId, fields, prevMonthStart, prevMonthEnd),
-    ]);
-
-  const calcRevenue = (appts: ApptRow[] | null) =>
-    (appts ?? [])
-      .filter((a) => a.status === "completed")
-      .reduce((sum, a) => sum + a.price, 0);
-
-  const calcCount = (appts: ApptRow[] | null) => (appts ?? []).length;
-
-  const pctChange = (current: number, previous: number) =>
-    previous === 0 ? (current > 0 ? 100 : 0) : +((current - previous) / previous * 100).toFixed(1);
-
-  const todaySales = calcRevenue(todayAppts.data);
-  const yesterdaySales = calcRevenue(yesterdayAppts.data);
-  const weeklyRevenue = calcRevenue(weekAppts.data);
-  const prevWeeklyRevenue = calcRevenue(prevWeekAppts.data);
-  const monthlyRevenue = calcRevenue(monthAppts.data);
-  const prevMonthlyRevenue = calcRevenue(prevMonthAppts.data);
-
+export function toDashboardMetricsView(m: Partial<DashboardMetrics> | null | undefined): DashboardMetricsView {
+  const n = (v: unknown) => Number(v) || 0;
+  const todaySales = n(m?.today_sales);
   return {
-    todayBookings: calcCount(todayAppts.data),
-    todayBookingsChange: pctChange(calcCount(todayAppts.data), calcCount(yesterdayAppts.data)),
+    todayBookings: n(m?.today_bookings),
+    todayBookingsChange: pctChange(n(m?.today_bookings), n(m?.yesterday_bookings)),
     todaySales,
-    todaySalesChange: pctChange(todaySales, yesterdaySales),
-    weeklyTrajectory: weeklyRevenue,
-    weeklyTrajectoryChange: pctChange(weeklyRevenue, prevWeeklyRevenue),
-    monthlyRevenue,
-    monthlyRevenueChange: pctChange(monthlyRevenue, prevMonthlyRevenue),
-    dailyGoal: 120, // TODO: make configurable per shop
+    todaySalesChange: pctChange(todaySales, n(m?.yesterday_sales)),
+    weeklyTrajectory: n(m?.week_sales),
+    weeklyTrajectoryChange: pctChange(n(m?.week_sales), n(m?.prev_week_sales)),
+    monthlyRevenue: n(m?.month_sales),
+    monthlyRevenueChange: pctChange(n(m?.month_sales), n(m?.prev_month_sales)),
+    dailyGoal: m?.daily_goal == null ? 120 : n(m.daily_goal),
     dailyProgress: todaySales,
+    currency: m?.currency || "JOD",
+    timezone: m?.timezone || DEFAULT_TIMEZONE,
   };
 }
 
-// ─── Revenue chart data ───
+// ─── Dashboard metrics (one RPC, shop time zone, weeks start Monday) ───
+export async function getDashboardMetrics(
+  supabase: Client,
+  shopId: string,
+): Promise<DashboardMetricsView & { error: { message: string } | null }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc("dashboard_metrics", { p_shop_id: shopId });
+  return { ...toDashboardMetricsView(error ? null : (data as DashboardMetrics | null)), error: error ?? null };
+}
+
+async function shopZone(supabase: Client, shopId: string): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.from("shops") as any).select("timezone").eq("id", shopId).maybeSingle();
+  return (data as { timezone?: string | null } | null)?.timezone || DEFAULT_TIMEZONE;
+}
+
+function salesQuery(supabase: Client, shopId: string, cols: string, from: string, to: string) {
+  return () =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("daily_sales") as any)
+      .select(cols)
+      .eq("shop_id", shopId)
+      .gte("created_at", from)
+      .lte("created_at", to)
+      .order("created_at", { ascending: true });
+}
+
+function bucketLabel(key: string, bucket: "day" | "month", period: AnalyticsPeriod, locale: string, timeZone: string) {
+  const [y, m, d] = key.split("-").map(Number);
+  // Noon UTC keeps the calendar date stable in any display zone.
+  const date = new Date(Date.UTC(y, m - 1, d || 1, 12));
+  const intl = locale === "ar" ? "ar-JO-u-nu-latn" : locale === "en" ? "en-GB" : locale;
+  const opts: Intl.DateTimeFormatOptions =
+    bucket === "month"
+      ? { month: "short" }
+      : period === "week"
+        ? { weekday: "short" }
+        : { day: "numeric", month: "short" };
+  try {
+    return new Intl.DateTimeFormat(intl, { ...opts, timeZone: "UTC" }).format(date);
+  } catch {
+    void timeZone;
+    return key;
+  }
+}
+
+// ─── Revenue chart data (gap-free buckets for the whole period) ───
 export async function getRevenueChart(
   supabase: Client,
   shopId: string,
-  period: "week" | "month" | "year",
+  period: AnalyticsPeriod,
+  options: { locale?: string; now?: Date } = {},
 ) {
-  const today = new Date();
-  let startDate: string;
-  let endDate: string;
+  const timeZone = await shopZone(supabase, shopId);
+  const range = getPeriodRange(period, timeZone, options.now);
+  const res = await fetchAllRows(
+    salesQuery(supabase, shopId, "amount, created_at", range.start.toISOString(), inclusiveEnd(range.end)),
+  );
+  if (res.error) return { data: [], error: res.error };
 
-  switch (period) {
-    case "week":
-      startDate = format(startOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-      endDate = format(endOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-      break;
-    case "month":
-      startDate = format(startOfMonth(today), "yyyy-MM-dd'T'HH:mm:ss");
-      endDate = format(endOfMonth(today), "yyyy-MM-dd'T'HH:mm:ss");
-      break;
-    case "year":
-      startDate = format(startOfYear(today), "yyyy-MM-dd'T'HH:mm:ss");
-      endDate = format(endOfYear(today), "yyyy-MM-dd'T'HH:mm:ss");
-      break;
+  const buckets = new Map(range.buckets.map((k) => [k, { revenue: 0, bookings: 0 }]));
+  for (const s of res.rows as Row[]) {
+    const key = bucketKeyOf(String(s.created_at ?? ""), range.bucket, range.timeZone);
+    const b = key ? buckets.get(key) : undefined;
+    if (!b) continue;
+    b.revenue += Number(s.amount) || 0;
+    b.bookings += 1; // completed sales in the bucket
   }
 
-  const result = await queryAppts(supabase, shopId, "start_time, price, status", startDate, endDate, { status: "completed" });
-
-  if (result.error) return { data: [], error: result.error };
-
-  const appointments = result.data ?? [];
-
-  // Group by date label
-  const grouped: Record<string, { revenue: number; bookings: number }> = {};
-
-  appointments.forEach((appt) => {
-    const date = new Date(appt.start_time!);
-    let label: string;
-
-    switch (period) {
-      case "week":
-        label = format(date, "EEE");
-        break;
-      case "month":
-        label = format(date, "MMM d");
-        break;
-      case "year":
-        label = format(date, "MMM");
-        break;
-    }
-
-    if (!grouped[label]) grouped[label] = { revenue: 0, bookings: 0 };
-    grouped[label].revenue += appt.price;
-    grouped[label].bookings += 1;
-  });
-
   return {
-    data: Object.entries(grouped).map(([label, vals]) => ({
-      label,
-      ...vals,
+    data: range.buckets.map((key) => ({
+      /** yyyy-MM-dd or yyyy-MM in shop time — format with the locale helpers */
+      date: key,
+      label: bucketLabel(key, range.bucket, period, options.locale ?? "en", range.timeZone),
+      revenue: +buckets.get(key)!.revenue.toFixed(3),
+      bookings: buckets.get(key)!.bookings,
     })),
     error: null,
   };
 }
 
-// ─── Barber performance ───
-export async function getBarberPerformance(supabase: Client, shopId: string) {
-  const monthStart = format(startOfMonth(new Date()), "yyyy-MM-dd'T'HH:mm:ss");
-  const monthEnd = format(endOfMonth(new Date()), "yyyy-MM-dd'T'HH:mm:ss");
+// ─── Staff performance (this month, from sales) ───
+export async function getBarberPerformance(supabase: Client, shopId: string, now?: Date) {
+  const timeZone = await shopZone(supabase, shopId);
+  const range = getPeriodRange("month", timeZone, now);
+  const res = await fetchAllRows(
+    salesQuery(supabase, shopId, "amount, barber_name", range.start.toISOString(), inclusiveEnd(range.end)),
+  );
+  if (res.error) return { data: [], error: res.error };
 
-  const result = await queryAppts(supabase, shopId, "barber_id, price, status", monthStart, monthEnd, { status: "completed" });
-
-  if (result.error) return { data: [], error: result.error };
-
-  const appointments = result.data ?? [];
-
-  // Get barber names
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: profiles } = (await (supabase.from("profiles") as any)
-    .select("id, full_name")
-    .eq("shop_id", shopId)) as unknown as { data: { id: string; full_name: string }[] | null };
-
-  const nameMap = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
-
-  // Aggregate
-  const barberMap: Record<string, { name: string; revenue: number; bookings: number }> = {};
-
-  appointments.forEach((appt) => {
-    const id = appt.barber_id ?? "unknown";
-    if (!barberMap[id]) {
-      barberMap[id] = {
-        name: nameMap.get(id) ?? "Unknown",
-        revenue: 0,
-        bookings: 0,
-      };
-    }
-    barberMap[id].revenue += appt.price;
-    barberMap[id].bookings += 1;
-  });
-
+  const map = new Map<string, { name: string; revenue: number; bookings: number }>();
+  for (const s of res.rows as Row[]) {
+    const name = String(s.barber_name ?? "").trim();
+    const entry = map.get(name) ?? { name, revenue: 0, bookings: 0 };
+    entry.revenue += Number(s.amount) || 0;
+    entry.bookings += 1;
+    map.set(name, entry);
+  }
   return {
-    data: Object.values(barberMap).sort((a, b) => b.revenue - a.revenue),
+    data: [...map.values()].sort((a, b) => b.revenue - a.revenue),
     error: null,
   };
 }

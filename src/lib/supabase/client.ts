@@ -1,28 +1,21 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { MOCK_DATA_ENABLED } from "@/lib/mock-data";
+import { publicEnv } from "@/lib/env";
 import { createMockClient } from "@/lib/supabase/mock-client";
 
-// This app's two Database type files (types.ts, database.types.ts) are both
-// stale/incomplete versus the live schema (missing working_hours, reviews,
-// barber_services, and several columns) — parameterizing createBrowserClient
-// with either one makes TS enforce a wrong schema and floods unrelated files
-// with bogus `never`-type errors. So createRealClient() below stays exactly
-// as it always was (no generic — loose typing, matching what every existing
-// consumer file was written against), and SupabaseBrowserClient captures
-// *that* real return type for the mock branch to assert against, instead of
-// naming a (wrong) type up front.
+// The browser client is intentionally NOT parameterized with the Database
+// type: many existing consumers were written against loose typing. Opt into
+// strict typing per call site with `SupabaseClient<Database>` from
+// "@/lib/supabase/database.types" (see src/lib/queries/*).
 function createRealClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
+  return createBrowserClient(publicEnv.supabaseUrl, publicEnv.supabaseAnonKey);
 }
 
 type SupabaseBrowserClient = ReturnType<typeof createRealClient>;
 
 export function createClient(): SupabaseBrowserClient {
-  // Local design-preview escape hatch — see src/lib/mock-data.ts for why
-  // this exists and how it's scoped so it can never activate in production.
+  // Local design-preview escape hatch. MOCK_DATA_ENABLED comes from
+  // src/lib/env.ts, which refuses mock mode in production builds.
   if (MOCK_DATA_ENABLED) {
     return createMockClient() as unknown as SupabaseBrowserClient;
   }

@@ -1,209 +1,284 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React, { useMemo, useState } from "react";
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
 } from "recharts";
+import {
+  addDays,
+  addMonths,
+  endOfMonth,
+  endOfWeek,
+  endOfYear,
+  format,
+  startOfMonth,
+  startOfWeek,
+  startOfYear,
+} from "date-fns";
+import { TrendingUp, AlertTriangle, RefreshCw } from "lucide-react";
 import { useTranslation, headingTracking } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
+import { useDashboardVersion } from "@/hooks/use-pos";
+import { useShopSettings } from "@/hooks/use-dashboard-data";
 import { createClient } from "@/lib/supabase/client";
-import { getRevenueChart } from "@/lib/queries/analytics";
-import { TrendingUp, Loader2, AlertTriangle } from "lucide-react";
+import { ChartSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cn } from "@/lib/utils";
 
-type Period = "week" | "month" | "year";
+export type Period = "week" | "month" | "year";
 
-function CustomTooltip({
+export interface RevenuePoint {
+  /** yyyy-MM-dd (day buckets) or yyyy-MM (month buckets). */
+  key: string;
+  date: Date;
+  revenue: number;
+}
+
+/**
+ * Builds a continuous series for the period (empty days/months included, so
+ * the area does not jump over gaps) and sums sales into it. Weeks start on
+ * Monday to match the dashboard_metrics RPC. Pure, exported for tests.
+ */
+export function buildRevenueSeries(
+  sales: { amount: number | string | null; created_at: string | null }[],
+  period: Period,
+  now: Date = new Date(),
+): RevenuePoint[] {
+  const points: RevenuePoint[] = [];
+  if (period === "year") {
+    for (let d = startOfYear(now); d <= endOfYear(now); d = addMonths(d, 1)) {
+      points.push({ key: format(d, "yyyy-MM"), date: d, revenue: 0 });
+    }
+  } else {
+    const start = period === "week" ? startOfWeek(now, { weekStartsOn: 1 }) : startOfMonth(now);
+    const end = period === "week" ? endOfWeek(now, { weekStartsOn: 1 }) : endOfMonth(now);
+    for (let d = start; d <= end; d = addDays(d, 1)) {
+      points.push({ key: format(d, "yyyy-MM-dd"), date: d, revenue: 0 });
+    }
+  }
+  const index = new Map(points.map((p, i) => [p.key, i]));
+  for (const s of sales) {
+    if (!s.created_at) continue;
+    const at = new Date(s.created_at);
+    if (Number.isNaN(at.getTime())) continue;
+    const key = format(at, period === "year" ? "yyyy-MM" : "yyyy-MM-dd");
+    const i = index.get(key);
+    if (i !== undefined) points[i].revenue += Number(s.amount) || 0;
+  }
+  return points.map((p) => ({ ...p, revenue: Math.round(p.revenue * 100) / 100 }));
+}
+
+function periodRange(period: Period, now = new Date()): [Date, Date] {
+  if (period === "week") return [startOfWeek(now, { weekStartsOn: 1 }), endOfWeek(now, { weekStartsOn: 1 })];
+  if (period === "month") return [startOfMonth(now), endOfMonth(now)];
+  return [startOfYear(now), endOfYear(now)];
+}
+
+function ChartTooltip({
   active,
   payload,
   label,
+  formatLabel,
+  formatValue,
 }: {
   active?: boolean;
   payload?: { value: number }[];
   label?: string;
+  formatLabel: (key: string) => string;
+  formatValue: (n: number) => string;
 }) {
-  if (!active || !payload?.length) return null;
+  if (!active || !payload?.length || !label) return null;
   return (
-    <div style={{
-      background: "#1c1611",
-      border: "none",
-      borderRadius: 12,
-      padding: "10px 16px",
-    }}>
-      <p style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p>
-      <p style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--font-intervar), sans-serif" }}>
-        {payload[0].value.toFixed(1)} JOD
-      </p>
+    <div className="rounded-xl bg-[var(--brand-primary)] px-4 py-2.5 text-[var(--brand-on-primary)] shadow-lg">
+      <p className="m-0 mb-1 text-[11px] font-semibold opacity-70">{formatLabel(label)}</p>
+      <p className="m-0 text-[15px] font-extrabold tabular-nums">{formatValue(payload[0].value)}</p>
     </div>
   );
 }
 
 export function SalesChart() {
   const [period, setPeriod] = useState<Period>("week");
-  const { t, isRTL, FF } = useTranslation();
-  const { shopId } = useWorkspaceStore();
-  const supabase = createClient();
+  const { t, isRTL, FFD, formatCurrency, formatDate } = useTranslation();
+  const shopId = useWorkspaceStore((s) => s.shopId);
+  const version = useDashboardVersion();
+  const { currency } = useShopSettings();
+  const [supabase] = useState(() => createClient());
 
-  const { data: chartResult, loading, error, refetch } = useSupabaseQuery(
+  const { data: sales, initialLoading, refreshing, error, refetch } = useSupabaseQuery<
+    { amount: number; created_at: string | null }[]
+  >(
     async () => {
-      const result = await getRevenueChart(supabase, shopId, period);
-      return { data: result, error: result.error };
+      const [from, to] = periodRange(period);
+      const { data, error } = await supabase
+        .from("daily_sales")
+        .select("amount, created_at")
+        .eq("shop_id", shopId)
+        .gte("created_at", from.toISOString())
+        .lte("created_at", to.toISOString())
+        .order("created_at", { ascending: true })
+        .limit(5000);
+      if (error) return { data: null, error: { message: error.message } };
+      return { data: (data ?? []) as { amount: number; created_at: string | null }[], error: null };
     },
-    [shopId, period],
+    [shopId, period, version],
     { enabled: !!shopId },
   );
 
-  const data = (chartResult as { data: { label: string; revenue: number; bookings: number }[] })?.data ?? [];
+  const series = useMemo(() => buildRevenueSeries(sales ?? [], period), [sales, period]);
+  const total = series.reduce((s, p) => s + p.revenue, 0);
+  const hasData = total > 0;
 
-  const periodLabels: Record<Period, string> = {
-    week:  t.dashboard.weekly  || "Weekly",
-    month: t.dashboard.monthly || "Monthly",
-    year:  t.dashboard.yearly  || "Yearly",
+  // Dates for axis labels are reconstructed from the bucket key.
+  const byKey = useMemo(() => new Map(series.map((p) => [p.key, p.date])), [series]);
+  const tickLabel = (key: string) => {
+    const d = byKey.get(key);
+    if (!d) return key;
+    if (period === "week") return formatDate(d, { weekday: "short" });
+    if (period === "month") return formatDate(d, { day: "numeric" });
+    return formatDate(d, { month: "short" });
   };
+  const tooltipLabel = (key: string) => {
+    const d = byKey.get(key);
+    if (!d) return key;
+    return period === "year" ? formatDate(d, "monthYear") : formatDate(d, "long");
+  };
+  const money = (n: number) => formatCurrency(n, currency);
+  const axisMoney = (n: number) =>
+    formatCurrency(n, currency, { maximumFractionDigits: 0, minimumFractionDigits: 0, hideCurrency: true });
+
+  const periods: { id: Period; label: string }[] = [
+    { id: "week", label: t.dashboard.weekly },
+    { id: "month", label: t.dashboard.monthly },
+    { id: "year", label: t.dashboard.yearly },
+  ];
 
   return (
-    <div style={{
-      background: "#ffffff",
-      border: "1px solid #ede3cd",
-      borderRadius: 12,
-      padding: "32px 36px",
-      height: "100%",
-      display: "flex",
-      flexDirection: "column",
-    }}
+    <section
+      aria-labelledby="sales-chart-title"
+      className="flex h-full flex-col rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5 sm:p-7 lg:px-9 lg:py-8"
     >
-      {/* Header row */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
-        <div>
-          <h3 style={{
-            fontFamily: FF,
-            fontSize: 18,
-            fontWeight: 800,
-            color: "#1c1611",
-            letterSpacing: headingTracking(isRTL, "0.01em"),
-            margin: "0 0 4px",
-          }}>
-            {t.dashboard.revenueOverview || "Revenue Overview"}
-          </h3>
-          <p style={{ fontSize: 12, color: "#a89e8c", margin: 0 }}>Track your earnings over time</p>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2
+            id="sales-chart-title"
+            className="m-0 mb-1 text-[18px] font-extrabold text-[var(--text-primary)]"
+            style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.01em") }}
+          >
+            {t.dashboard.revenueOverview}
+          </h2>
+          <p className="m-0 text-[13px] text-[var(--text-muted)]">
+            {hasData ? `${t.dashboard.periodTotal}: ${money(total)}` : t.dashboard.revenueSubtitle}
+          </p>
         </div>
 
-        {/* Period toggle — pill style */}
-        <div style={{
-          display: "flex",
-          background: "#ede3cd",
-          borderRadius: 8,
-          padding: 4,
-          gap: 2,
-        }}>
-          {(["week", "month", "year"] as Period[]).map((p) => (
+        <div
+          role="group"
+          aria-label={t.dashboard.chartPeriod}
+          className="flex gap-0.5 rounded-lg bg-[var(--bg-secondary)] p-1"
+        >
+          {periods.map((p) => (
             <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              style={{
-                padding: "6px 14px",
-                fontSize: 11,
-                fontWeight: 700,
-                textTransform: "uppercase" as const,
-                letterSpacing: headingTracking(isRTL, "0.08em"),
-                borderRadius: 8,
-                border: "none",
-                cursor: "pointer",
-                transition: "all 0.18s ease",
-                background: period === p ? "#f7f1e4" : "transparent",
-                color: period === p ? "#1c1611" : "#5a5147",
-              }}
+              key={p.id}
+              type="button"
+              aria-pressed={period === p.id}
+              onClick={() => setPeriod(p.id)}
+              className={cn(
+                "min-h-9 rounded-md px-3.5 text-[12px] font-bold transition-colors",
+                !isRTL && "uppercase tracking-[0.06em]",
+                period === p.id
+                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+              )}
             >
-              {periodLabels[p]}
+              {p.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Chart area */}
-      <motion.div
-        key={period}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-        style={{ flex: 1, minHeight: 220 }}
+      <div
+        className={cn("min-h-[220px] flex-1 transition-opacity", refreshing && "opacity-60")}
+        aria-busy={refreshing || undefined}
       >
-        {loading ? (
-          <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Loader2 size={24} style={{ color: "#a89e8c", animation: "spin 1s linear infinite" }} />
-          </div>
+        {initialLoading ? (
+          <ChartSkeleton bare height={220} />
         ) : error ? (
-          <div style={{
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 12,
-          }}>
-            <div style={{
-              width: 48, height: 48, borderRadius: 12,
-              background: "rgba(186,26,26,0.1)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <AlertTriangle size={22} style={{ color: "#ba1a1a" }} />
-            </div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#1c1611", margin: 0 }}>Couldn&apos;t load revenue data</p>
-            <p style={{ fontSize: 11, color: "#a89e8c", margin: 0 }}>{error}</p>
-            <button onClick={refetch} className="btn btn-secondary" style={{ marginTop: 4 }}>Retry</button>
-          </div>
-        ) : data.length === 0 ? (
-          <div style={{
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 12,
-          }}>
-            <div style={{
-              width: 48, height: 48, borderRadius: 12,
-              background: "#ede3cd",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <TrendingUp size={22} style={{ color: "#a89e8c" }} />
-            </div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#a89e8c", margin: 0 }}>No revenue data for this period</p>
-            <p style={{ fontSize: 11, color: "#a89e8c", margin: 0 }}>Bookings will appear here once completed</p>
-          </div>
+          <EmptyState
+            bare
+            size="sm"
+            tone="error"
+            icon={AlertTriangle}
+            title={t.dashboard.revenueError}
+            description={t.error.message}
+            action={{ label: t.common.retry, onClick: refetch, icon: RefreshCw }}
+          />
+        ) : !hasData ? (
+          <EmptyState
+            bare
+            size="sm"
+            icon={TrendingUp}
+            title={t.dashboard.noRevenue}
+            description={t.dashboard.noRevenueHint}
+          />
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 8, right: 4, left: -16, bottom: 0 }}>
-              <defs>
-                <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1c1611" stopOpacity={0.12} />
-                  <stop offset="100%" stopColor="#1c1611" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ede3cd" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fontSize: 10, fill: "#a89e8c", fontWeight: 700 }}
-              />
-              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#a89e8c" }} />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#ede3cd", strokeWidth: 1 }} />
-              <Area
-                type="monotone"
-                dataKey="revenue"
-                stroke="#1c1611"
-                strokeWidth={2.5}
-                fill="url(#revenueGrad)"
-                dot={false}
-                activeDot={{ r: 5, fill: "#1c1611", stroke: "#ffffff", strokeWidth: 2.5 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          <figure className="m-0 h-[240px] w-full" aria-label={`${t.dashboard.revenueOverview}: ${money(total)}`}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={series} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--text-primary)" stopOpacity={0.14} />
+                    <stop offset="100%" stopColor="var(--text-primary)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+                <XAxis
+                  dataKey="key"
+                  reversed={isRTL}
+                  tickLine={false}
+                  axisLine={false}
+                  interval="preserveStartEnd"
+                  minTickGap={12}
+                  tickFormatter={tickLabel}
+                  tick={{ fontSize: 11, fill: "var(--text-secondary)", fontWeight: 600 }}
+                />
+                <YAxis
+                  orientation={isRTL ? "right" : "left"}
+                  tickLine={false}
+                  axisLine={false}
+                  width={44}
+                  allowDecimals={false}
+                  tickFormatter={axisMoney}
+                  tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
+                />
+                <Tooltip
+                  content={<ChartTooltip formatLabel={tooltipLabel} formatValue={money} />}
+                  cursor={{ stroke: "var(--border-primary)", strokeWidth: 1 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  name={t.dashboard.revenue}
+                  stroke="var(--text-primary)"
+                  strokeWidth={2.5}
+                  fill="url(#revenueGrad)"
+                  dot={false}
+                  activeDot={{ r: 5, fill: "var(--text-primary)", stroke: "var(--bg-primary)", strokeWidth: 2.5 }}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </figure>
         )}
-      </motion.div>
-    </div>
+      </div>
+    </section>
   );
 }
+
+export default SalesChart;

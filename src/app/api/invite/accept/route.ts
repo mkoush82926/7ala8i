@@ -1,57 +1,49 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { z } from "zod";
+import { InviteAcceptSchema } from "@/lib/validations";
+import { rateLimit, rateLimitKey, getClientIp } from "@/lib/rate-limit";
+import {
+  apiErrorCode,
+  apiResponse,
+  apiValidationError,
+  dbErrorResponse,
+  serverError,
+} from "@/lib/api-helpers";
 
-const inviteAcceptSchema = z.object({
-  token: z.string().min(1, "Invite token is required").max(500, "Token is too long"),
-});
-
+// Accepts a team invite for the signed-in user. All checks (auth, token
+// validity, expiry, single use, never demoting the last admin) happen inside
+// the accept_invite SECURITY DEFINER RPC; this route only rate-limits,
+// validates the shape and maps the RPC's error codes:
+//   NOT_AUTHENTICATED 401 · INVITE_INVALID 404 · INVITE_USED 409 ·
+//   INVITE_EXPIRED 410 · LAST_ADMIN 409 · RATE_LIMITED 429
 export async function POST(request: NextRequest) {
+  // Throttle token guessing before any other work.
+  const rl = await rateLimit(rateLimitKey("invite-accept", getClientIp(request)), 10, 60);
+  if (!rl.success) return apiErrorCode("RATE_LIMITED", { retryAfter: rl.retryAfter });
+
+  let body: unknown;
   try {
-    const body = await request.json();
-
-    const parsed = inviteAcceptSchema.safeParse(body);
-    if (!parsed.success) {
-      const errors = parsed.error.flatten().fieldErrors;
-      const firstError = Object.values(errors).flat()[0] || "Invalid input data";
-      return NextResponse.json({ error: firstError, details: errors }, { status: 400 });
-    }
-
-    const { token } = parsed.data;
-
-    const supabase = await createClient();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.rpc as any)("accept_invite", { p_token: token });
-
-    if (error) {
-      const message = error.message || "";
-      if (message.includes("Not authenticated")) {
-        return NextResponse.json({ error: "Please log in to accept this invite" }, { status: 401 });
-      }
-      if (message.includes("already been used")) {
-        return NextResponse.json({ error: "This invite has already been used" }, { status: 409 });
-      }
-      if (message === "This invite has expired") {
-        return NextResponse.json({ error: "This invite has expired" }, { status: 410 });
-      }
-      return NextResponse.json({ error: "Invalid or expired invite" }, { status: 404 });
-    }
-
-    const result = Array.isArray(data) ? data[0] : data;
-    if (!result) {
-      return NextResponse.json({ error: "Invalid or expired invite" }, { status: 404 });
-    }
-
-    return NextResponse.json({
-      shopId: result.shop_id,
-      role: result.role,
-      message: "Invite accepted successfully",
-    });
+    body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Failed to accept invite" },
-      { status: 500 },
-    );
+    return apiErrorCode("VALIDATION_FAILED");
+  }
+
+  const parsed = InviteAcceptSchema.safeParse(body);
+  if (!parsed.success) return apiValidationError(parsed.error);
+
+  try {
+    const supabase = (await createClient()) as unknown as {
+      rpc: (fn: "accept_invite", args: { p_token: string }) => PromiseLike<{ data: unknown; error: unknown }>;
+    };
+    const { data, error } = await supabase.rpc("accept_invite", { p_token: parsed.data.token });
+
+    if (error) return dbErrorResponse("invite.accept", error);
+
+    const result = (Array.isArray(data) ? data[0] : data) as { shop_id?: string; role?: string } | null;
+    if (!result?.shop_id) return apiErrorCode("INVITE_INVALID");
+
+    return apiResponse({ shopId: result.shop_id, role: result.role ?? "barber" });
+  } catch (err) {
+    return serverError("invite.accept", err);
   }
 }

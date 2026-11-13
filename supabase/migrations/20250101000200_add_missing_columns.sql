@@ -43,9 +43,14 @@ CREATE INDEX IF NOT EXISTS idx_daily_sales_shop_date
   ON public.daily_sales(shop_id, created_at);
 
 -- RLS for daily_sales
-CREATE POLICY "Shop members can manage sales" ON public.daily_sales
-  FOR ALL TO authenticated
-  USING (shop_id = public.get_current_shop_id());
+-- (Replay guard added 2026-11: 001_initial_schema already creates a policy
+-- with this name, so a bare CREATE POLICY aborted `supabase db reset`.)
+DO $$ BEGIN
+  CREATE POLICY "Shop members can manage sales" ON public.daily_sales
+    FOR ALL TO authenticated
+    USING (shop_id = public.get_current_shop_id());
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ============================================
 -- Allow public (anon) to read appointments for availability checks

@@ -1,431 +1,619 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import React, { useId, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import {
-  Plus, Search, Clock, DollarSign, GripVertical,
-  Pencil, Trash2, X, Loader2, Sparkles, ToggleLeft, ToggleRight,
-} from "lucide-react";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
-import { useServices, type ServiceItem } from "@/hooks/use-services";
-import { createClient } from "@/lib/supabase/client";
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type Announcements,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Plus, Search, Clock, GripVertical, Pencil, Trash2, Loader2, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { useServices, type ServiceItem, type ServiceInputData } from "@/hooks/use-services";
+import { useWorkspaceStore } from "@/store/workspace-store";
+import { ServiceSchema } from "@/lib/validations";
+import { Dialog, DialogFooter } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ListSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const ICONS = ["✂️", "💈", "🧔", "💇", "🪒", "🧴", "💆", "🎨", "✨", "👑", "🧖", "💅"];
 
+type FormField = "name" | "name_ar" | "duration" | "price";
+type FormErrors = Partial<Record<FormField, string>>;
+
+const iconBtn =
+  "inline-flex size-11 lg:size-9 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-brass)] cursor-pointer";
+
 export default function ServicesPage() {
-  const { t, isRTL, FF } = useTranslation();
-  const { services, loading, addService, updateService, deleteService, toggleActive, reorderServices } = useServices();
+  const { t, isRTL, FF, formatCurrency, formatDuration } = useTranslation();
+  const svc = t.services;
+  const {
+    services, loading, error, currency, refetch,
+    addService, updateService, removeService, toggleActive, reorderServices,
+  } = useServices();
+  const role = useWorkspaceStore((s) => s.role);
+  const hydrated = useWorkspaceStore((s) => s.hydrated);
+  const isAdmin = hydrated && role === "shop_admin";
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ServiceItem | null>(null);
 
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
-  const supabase = React.useMemo(() => createClient(), []);
-
-  React.useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (data.user) {
-        const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
-        setCurrentUserRole(profile?.role || null);
-      }
-    });
-  }, [supabase]);
-
+  // Form state
   const [name, setName] = useState("");
   const [nameAr, setNameAr] = useState("");
   const [duration, setDuration] = useState("30");
   const [price, setPrice] = useState("");
   const [icon, setIcon] = useState("✂️");
+  const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const formId = useId();
+  const searchId = useId();
 
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const [draggedId, setDraggedId] = useState<string | null>(null);
-
-  const filtered = services.filter(
-    (s) =>
-      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (s.name_ar && s.name_ar.includes(searchTerm)),
+  const query = searchTerm.trim().toLowerCase();
+  const filtered = useMemo(
+    () =>
+      query
+        ? services.filter(
+            (s) => s.name.toLowerCase().includes(query) || (s.name_ar ?? "").toLowerCase().includes(query),
+          )
+        : services,
+    [services, query],
   );
+  // Drag-to-reorder only makes sense on the full, unfiltered list.
+  const canReorder = isAdmin && !query && services.length > 1;
+
+  const displayName = (s: ServiceItem) => (isRTL && s.name_ar ? s.name_ar : s.name);
+
+  function resetForm(s: ServiceItem | null) {
+    setEditingService(s);
+    setName(s?.name ?? "");
+    setNameAr(s?.name_ar ?? "");
+    setDuration(String(s?.duration ?? 30));
+    setPrice(s ? String(s.price) : "");
+    setIcon(s?.icon || "✂️");
+    setErrors({});
+  }
 
   function openAdd() {
-    setEditingService(null);
-    setName(""); setNameAr(""); setDuration("30"); setPrice(""); setIcon("✂️");
+    resetForm(null);
     setShowForm(true);
   }
 
   function openEdit(s: ServiceItem) {
-    setEditingService(s);
-    setName(s.name);
-    setNameAr(s.name_ar || "");
-    setDuration(s.duration.toString());
-    setPrice(s.price.toString());
-    setIcon(s.icon || "✂️");
+    resetForm(s);
     setShowForm(true);
+  }
+
+  function closeForm() {
+    if (saving) return;
+    setShowForm(false);
+  }
+
+  function validate(): ServiceInputData | null {
+    const parsed = ServiceSchema.safeParse({
+      name,
+      name_ar: nameAr.trim() || null,
+      duration: duration.trim() === "" ? Number.NaN : Number(duration),
+      price: price.trim() === "" ? Number.NaN : Number(price),
+    });
+    if (parsed.success) {
+      setErrors({});
+      return {
+        name: parsed.data.name,
+        name_ar: parsed.data.name_ar ?? null,
+        duration: parsed.data.duration,
+        price: parsed.data.price,
+        icon,
+      };
+    }
+    const next: FormErrors = {};
+    for (const issue of parsed.error.issues) {
+      const field = issue.path[0] as FormField;
+      if (next[field]) continue;
+      next[field] =
+        field === "name" ? svc.errName
+        : field === "name_ar" ? svc.errNameAr
+        : field === "duration" ? svc.errDuration
+        : svc.errPrice;
+    }
+    setErrors(next);
+    // Move focus to the first invalid field.
+    const first = (["name", "name_ar", "duration", "price"] as FormField[]).find((f) => next[f]);
+    if (first) document.getElementById(`${formId}-${first}`)?.focus();
+    return null;
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !price.trim()) return;
+    if (saving) return;
+    const data = validate();
+    if (!data) return;
     setSaving(true);
-    const data = {
-      name: name.trim(),
-      name_ar: nameAr.trim() || null,
-      duration: parseInt(duration) || 30,
-      price: parseFloat(price) || 0,
-      icon,
-    };
-    if (editingService) {
-      await updateService(editingService.id, data);
-    } else {
-      await addService(data);
-    }
+    const ok = editingService ? await updateService(editingService.id, data) : await addService(data);
     setSaving(false);
-    setShowForm(false);
-    setEditingService(null);
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm(t.services.deleteConfirm)) return;
-    await deleteService(id);
-  }
-
-  function handleDragStart(id: string) {
-    setDraggedId(id);
-  }
-  function handleDragOver(e: React.DragEvent, id: string) {
-    e.preventDefault();
-    setDragOverId(id);
-  }
-  function handleDrop(targetId: string) {
-    if (!draggedId || draggedId === targetId) {
-      setDraggedId(null);
-      setDragOverId(null);
-      return;
+    // Keep the dialog (and the typed values) open when the save failed.
+    if (ok) {
+      setShowForm(false);
+      setEditingService(null);
     }
-    const ids = services.map((s) => s.id);
-    const fromIdx = ids.indexOf(draggedId);
-    const toIdx = ids.indexOf(targetId);
-    if (fromIdx === -1 || toIdx === -1) return;
-    const reordered = [...ids];
-    reordered.splice(fromIdx, 1);
-    reordered.splice(toIdx, 0, draggedId);
-    reorderServices(reordered);
-    setDraggedId(null);
-    setDragOverId(null);
   }
 
-  const svc = t.services;
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const result = await removeService(pendingDelete.id);
+    if (!result) throw new Error(svc.deleteFailed);
+  }
+
+  // ─── Reorder (pointer, touch and keyboard) ───
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const ids = useMemo(() => services.map((s) => s.id), [services]);
+  const nameById = (id: string | number) => {
+    const s = services.find((x) => x.id === id);
+    return s ? displayName(s) : "";
+  };
+  const position = (id: string | number) => ids.indexOf(String(id)) + 1;
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => interpolate(svc.reorderPicked, { name: nameById(active.id) }),
+    onDragOver: ({ active, over }) =>
+      over
+        ? interpolate(svc.reorderMoved, { name: nameById(active.id), position: position(over.id), total: ids.length })
+        : undefined,
+    onDragEnd: ({ active, over }) =>
+      over
+        ? interpolate(svc.reorderDropped, { name: nameById(active.id), position: position(over.id), total: ids.length })
+        : undefined,
+    onDragCancel: () => svc.reorderCancelled,
+  };
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return;
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from === -1 || to === -1) return;
+    void reorderServices(arrayMove(ids, from, to));
+  }
+
+  const fieldError = (f: FormField) =>
+    errors[f] ? (
+      <p id={`${formId}-${f}-error`} className="field-error" role="alert">
+        {errors[f]}
+      </p>
+    ) : null;
+  const fieldA11y = (f: FormField) => ({
+    id: `${formId}-${f}`,
+    "aria-invalid": errors[f] ? true : undefined,
+    "aria-describedby": errors[f] ? `${formId}-${f}-error` : undefined,
+  });
+
+  const rows = filtered.map((service) => (
+    <ServiceRow
+      key={service.id}
+      service={service}
+      sortable={canReorder}
+      isAdmin={isAdmin}
+      title={displayName(service)}
+      subtitle={service.name_ar ? (isRTL ? service.name : service.name_ar) : null}
+      meta={`${formatDuration(service.duration)} · ${formatCurrency(service.price, currency)}`}
+      fontFamily={FF}
+      labels={{
+        reorder: interpolate(svc.reorderHandle, { name: displayName(service) }),
+        edit: `${svc.editService}: ${displayName(service)}`,
+        remove: `${svc.deleteService}: ${displayName(service)}`,
+        toggle: `${svc.active}: ${displayName(service)}`,
+        inactive: svc.inactive,
+        durationLabel: svc.duration,
+      }}
+      onEdit={() => openEdit(service)}
+      onDelete={() => setPendingDelete(service)}
+      onToggle={() => void toggleActive(service.id, !service.is_active)}
+    />
+  ));
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-      style={{ display: "flex", flexDirection: "column", gap: 36 }}
+      className="flex flex-col gap-6 sm:gap-9"
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between" style={{ gap: 20 }}>
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2
-            className="text-4xl font-extrabold text-[#1c1611]"
+            className="font-extrabold text-[var(--text-primary)]"
             style={{ fontFamily: FF, fontSize: 32, letterSpacing: headingTracking(isRTL, "0.016em") }}
           >
             {svc.title}
           </h2>
-          <p className="text-[#5a5147] font-medium" style={{ fontSize: 14, marginTop: 8 }}>
-            {svc.subtitle}
-          </p>
+          <p className="mt-2 text-sm font-medium text-[var(--text-secondary)]">{svc.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative w-full sm:w-64">
-            <Search size={15} className="absolute start-3 top-1/2 -translate-y-1/2 text-[#5a5147]" />
+            <label htmlFor={searchId} className="sr-only">
+              {svc.searchPlaceholder}
+            </label>
+            <Search
+              size={15}
+              aria-hidden
+              className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"
+            />
             <input
-              type="text"
+              id={searchId}
+              type="search"
               placeholder={svc.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-10 ps-10 pe-4 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-sm font-medium text-[#1c1611] placeholder-[#5a5147] focus:outline-none focus:shadow-[var(--shadow-focus)] transition-all"
+              className="h-11 w-full rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] ps-10 pe-4 text-base font-medium text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all focus:outline-none focus:shadow-[var(--shadow-focus)] sm:text-sm"
             />
           </div>
-          {currentUserRole === 'shop_admin' && (
+          {isAdmin && (
             <button
+              type="button"
               onClick={openAdd}
               aria-label={svc.addService}
-              className="h-10 px-5 rounded-[var(--radius-buttons)] bg-[var(--accent-mint)] text-white font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
+              className="btn btn-primary shrink-0 px-4 sm:px-5 text-[14px] font-bold"
             >
-              <Plus size={15} />
+              <Plus size={16} aria-hidden />
               <span className="hidden sm:inline">{svc.addService}</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Services grid */}
+      {canReorder && (
+        <p className="-mt-2 text-xs text-[var(--text-muted)] sm:-mt-5">{svc.reorderHint}</p>
+      )}
+
+      {/* List */}
       {loading ? (
-        <div className="flex items-center justify-center" style={{ paddingTop: 80 }}>
-          <Loader2 size={24} className="animate-spin text-[var(--text-muted)]" />
-        </div>
+        <ListSkeleton rows={6} />
+      ) : error && services.length === 0 ? (
+        <EmptyState
+          tone="error"
+          title={svc.loadFailed}
+          action={{ label: t.common.retry, onClick: () => void refetch() }}
+        />
+      ) : services.length === 0 ? (
+        <EmptyState
+          icon={Sparkles}
+          title={svc.noServices}
+          description={svc.noServicesDesc}
+          action={isAdmin ? { label: svc.addService, onClick: openAdd, icon: Plus } : undefined}
+        />
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center" style={{ paddingTop: 80 }}>
-          <div
-            className="rounded-2xl flex items-center justify-center"
-            style={{ width: 64, height: 64, background: "var(--bg-secondary)", marginBottom: 20 }}
-          >
-            <Sparkles size={28} className="text-[var(--text-primary)]" />
-          </div>
-          <p className="text-[var(--text-secondary)] font-semibold" style={{ fontSize: 16, marginBottom: 8 }}>
-            {svc.noServices}
-          </p>
-          <p className="text-[var(--text-muted)]" style={{ fontSize: 13, maxWidth: 280 }}>
-            {svc.noServicesDesc}
-          </p>
-          {currentUserRole === 'shop_admin' && (
-            <button
-              onClick={openAdd}
-              className="mt-6 h-10 px-6 rounded-[var(--radius-buttons)] bg-[var(--accent-mint)] text-white font-semibold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
-            >
-              <Plus size={15} />
-              {svc.addService}
-            </button>
-          )}
-        </div>
+        <EmptyState
+          size="sm"
+          icon={Search}
+          title={svc.noResults}
+          action={{ label: svc.clearSearch, onClick: () => setSearchTerm("") }}
+        />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: 20 }}>
-          {filtered.map((service) => (
-            <div
-              key={service.id}
-              draggable
-              onDragStart={() => handleDragStart(service.id)}
-              onDragOver={(e) => handleDragOver(e, service.id)}
-              onDrop={() => handleDrop(service.id)}
-              onDragEnd={() => { setDraggedId(null); setDragOverId(null); }}
-              className={cn(
-                "group relative rounded-xl border bg-white p-6 transition-all duration-200 hover:-translate-y-1",
-                "cursor-grab active:cursor-grabbing",
-                draggedId === service.id && "opacity-40",
-                dragOverId === service.id && "border-[#1c1611]/20 scale-[1.02]",
-                !service.is_active && "opacity-60",
-                "border-[#ede3cd] hover:border-[var(--border-hover)]",
-              )}
+        <div
+          className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]"
+          aria-busy={saving || undefined}
+        >
+          {canReorder ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+              accessibility={{ announcements, screenReaderInstructions: { draggable: svc.reorderInstructions } }}
             >
-              <div className="flex items-start justify-between" style={{ marginBottom: 18 }}>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="rounded-xl flex items-center justify-center text-lg cursor-grab active:cursor-grabbing"
-                    style={{ width: 44, height: 44, background: "var(--bg-secondary)" }}
-                  >
-                    {service.icon || "✂️"}
-                  </div>
-                  <div>
-                    <p className="text-[#1c1611] font-bold" style={{ fontSize: 14, marginBottom: 2, fontFamily: FF }}>
-                      {isRTL && service.name_ar ? service.name_ar : service.name}
-                    </p>
-                    {service.name_ar && !isRTL && (
-                      <p className="text-[var(--text-muted)]" style={{ fontSize: 11 }}>{service.name_ar}</p>
-                    )}
-                    {!isRTL && service.name && isRTL && (
-                      <p className="text-[var(--text-muted)]" style={{ fontSize: 11 }}>{service.name}</p>
-                    )}
-                  </div>
-                </div>
-
-                {currentUserRole === 'shop_admin' && (
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => toggleActive(service.id, !service.is_active)}
-                      className="w-[30px] h-[30px] rounded-[var(--radius-buttons)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
-                      title={service.is_active ? svc.inactive : svc.active}
-                      aria-label={service.is_active ? svc.deactivate : svc.activate}
-                    >
-                      {service.is_active ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
-                    </button>
-                    <button
-                      onClick={() => openEdit(service)}
-                      className="w-[30px] h-[30px] rounded-[var(--radius-buttons)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-lavender)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
-                      aria-label={svc.editService}
-                    >
-                      <Pencil size={13} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(service.id)}
-                      className="w-[30px] h-[30px] rounded-[var(--radius-buttons)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent-rose)] hover:bg-[var(--bg-surface)] transition-all cursor-pointer"
-                      aria-label={svc.deleteService}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center" style={{ gap: 16 }}>
-                <div className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
-                  <Clock size={13} />
-                  <span style={{ fontSize: 12 }}>{service.duration} {svc.minutes}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[var(--accent-mint)] font-semibold">
-                  <DollarSign size={13} />
-                  <span style={{ fontSize: 12 }}>{service.price.toFixed(1)} {t.common.jod}</span>
-                </div>
-                {!service.is_active && (
-                  <span
-                    className="text-[var(--accent-rose)] bg-[var(--accent-rose-muted)] px-2 py-0.5 rounded-full font-medium"
-                    style={{ fontSize: 10 }}
-                  >
-                    {svc.inactive}
-                  </span>
-                )}
-              </div>
-
-              {currentUserRole === 'shop_admin' && (
-                <div className="absolute top-1/2 end-2 -translate-y-1/2 text-[var(--text-muted)] opacity-0 group-hover:opacity-40 transition-opacity cursor-grab active:cursor-grabbing">
-                  <GripVertical size={14} />
-                </div>
-              )}
-            </div>
-          ))}
+              <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+                <ul role="list">{rows}</ul>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <ul role="list">{rows}</ul>
+          )}
         </div>
       )}
 
-      {/* Add / Edit Modal */}
-      <AnimatePresence>
-        {showForm && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 z-50"
-              onClick={() => setShowForm(false)}
+      {/* Add / Edit dialog */}
+      <Dialog
+        open={showForm}
+        onClose={closeForm}
+        title={editingService ? svc.editService : svc.addService}
+        initialFocusRef={nameRef}
+        closeOnBackdrop={!saving}
+        closeOnEscape={!saving}
+        footer={
+          <DialogFooter>
+            <button type="button" className="btn btn-secondary" onClick={closeForm} disabled={saving}>
+              {t.common.cancel}
+            </button>
+            <button type="submit" form={formId} className="btn btn-primary font-bold" disabled={saving} aria-busy={saving || undefined}>
+              {saving ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
+              {editingService ? svc.saveChanges : svc.addService}
+            </button>
+          </DialogFooter>
+        }
+      >
+        <form id={formId} onSubmit={handleSave} noValidate className="flex flex-col gap-5">
+          {/* Icon picker */}
+          <fieldset>
+            <legend className="field-label">{svc.icon}</legend>
+            <div className="flex flex-wrap gap-2">
+              {ICONS.map((ic) => (
+                <button
+                  key={ic}
+                  type="button"
+                  onClick={() => setIcon(ic)}
+                  aria-pressed={icon === ic}
+                  className={cn(
+                    "flex size-11 cursor-pointer items-center justify-center rounded-[var(--radius-buttons)] border text-lg transition-all",
+                    icon === ic
+                      ? "border-[var(--accent-brass)] bg-[var(--bg-secondary)]"
+                      : "border-transparent bg-[var(--bg-secondary)]/60 hover:border-[var(--border-primary)]",
+                  )}
+                >
+                  <span aria-hidden>{ic}</span>
+                  <span className="sr-only">{`${svc.icon} ${ICONS.indexOf(ic) + 1}`}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <div>
+            <label htmlFor={`${formId}-name`} className="field-label">
+              {svc.serviceName} <span aria-hidden>*</span>
+            </label>
+            <input
+              ref={nameRef}
+              {...fieldA11y("name")}
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              maxLength={100}
+              autoComplete="off"
+              className="field-input"
+              placeholder={svc.namePlaceholder}
             />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              onClick={(e) => e.target === e.currentTarget && setShowForm(false)}
-            >
-              <div
-                className="w-full max-w-md rounded-2xl bg-white border border-[#ede3cd]"
-                style={{ padding: "28px 28px 24px" }}
-              >
-                <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
-                  <h3 className="text-[#1c1611] font-extrabold" style={{ fontSize: 20, fontFamily: FF }}>
-                    {editingService ? svc.editService : svc.addService}
-                  </h3>
-                  <button
-                    onClick={() => setShowForm(false)}
-                    aria-label={t.common.close}
-                    className="w-8 h-8 rounded-[var(--radius-buttons)] flex items-center justify-center text-[#5a5147] hover:text-[#1c1611] hover:bg-[var(--bg-secondary)] transition-all cursor-pointer"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
+            {fieldError("name")}
+          </div>
 
-                <form onSubmit={handleSave} className="flex flex-col" style={{ gap: 18 }}>
-                  {/* Icon picker */}
-                  <div>
-                    <label className="text-[var(--text-tertiary)] font-medium block" style={{ fontSize: 12, marginBottom: 8 }}>
-                      {svc.icon}
-                    </label>
-                    <div className="flex flex-wrap" style={{ gap: 8 }}>
-                      {ICONS.map((ic) => (
-                        <button
-                          key={ic}
-                          type="button"
-                          onClick={() => setIcon(ic)}
-                          className={cn(
-                            "w-10 h-10 rounded-[var(--radius-buttons)] flex items-center justify-center text-lg transition-all cursor-pointer border",
-                            icon === ic
-                              ? "bg-[var(--bg-secondary)] border-[#1c1611]/20 scale-110"
-                              : "bg-[var(--bg-surface)] border-transparent hover:border-[var(--border-hover)]",
-                          )}
-                        >
-                          {ic}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+          <div>
+            <label htmlFor={`${formId}-name_ar`} className="field-label">
+              {svc.serviceNameAr}
+            </label>
+            <input
+              {...fieldA11y("name_ar")}
+              type="text"
+              value={nameAr}
+              onChange={(e) => setNameAr(e.target.value)}
+              dir="rtl"
+              lang="ar"
+              maxLength={100}
+              autoComplete="off"
+              className="field-input"
+              placeholder={svc.nameArPlaceholder}
+            />
+            {fieldError("name_ar")}
+          </div>
 
-                  {/* Name */}
-                  <div>
-                    <label className="text-[var(--text-tertiary)] font-medium block" style={{ fontSize: 12, marginBottom: 8 }}>
-                      {svc.serviceName} *
-                    </label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      className="w-full h-10 px-3 rounded-[var(--radius-inputs)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all"
-                      placeholder="e.g. Haircut"
-                    />
-                  </div>
+          <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2">
+            <div>
+              <label htmlFor={`${formId}-duration`} className="field-label">
+                {svc.duration} ({svc.minutes})
+              </label>
+              <input
+                {...fieldA11y("duration")}
+                type="number"
+                inputMode="numeric"
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                min={5}
+                max={480}
+                step={5}
+                className="field-input"
+              />
+              {fieldError("duration")}
+            </div>
+            <div>
+              <label htmlFor={`${formId}-price`} className="field-label">
+                {svc.price} ({currency}) <span aria-hidden>*</span>
+              </label>
+              <input
+                {...fieldA11y("price")}
+                type="number"
+                inputMode="decimal"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                required
+                min={0}
+                step="0.5"
+                className="field-input"
+              />
+              {fieldError("price")}
+            </div>
+          </div>
+        </form>
+      </Dialog>
 
-                  {/* Arabic Name */}
-                  <div>
-                    <label className="text-[var(--text-tertiary)] font-medium block" style={{ fontSize: 12, marginBottom: 8 }}>
-                      {svc.serviceNameAr}
-                    </label>
-                    <input
-                      type="text"
-                      value={nameAr}
-                      onChange={(e) => setNameAr(e.target.value)}
-                      dir="rtl"
-                      className="w-full h-10 px-3 rounded-[var(--radius-inputs)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all"
-                      placeholder="مثال: قص شعر"
-                    />
-                  </div>
-
-                  {/* Duration + Price */}
-                  <div className="grid grid-cols-2" style={{ gap: 12 }}>
-                    <div>
-                      <label className="text-[var(--text-tertiary)] font-medium block" style={{ fontSize: 12, marginBottom: 8 }}>
-                        {svc.duration} ({svc.minutes})
-                      </label>
-                      <input
-                        type="number"
-                        value={duration}
-                        onChange={(e) => setDuration(e.target.value)}
-                        min="5"
-                        step="5"
-                        className="w-full h-10 px-3 rounded-[var(--radius-inputs)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[var(--text-tertiary)] font-medium block" style={{ fontSize: 12, marginBottom: 8 }}>
-                        {svc.price} ({t.common.jod}) *
-                      </label>
-                      <input
-                        type="number"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        required
-                        min="0"
-                        step="0.5"
-                        className="w-full h-10 px-3 rounded-[var(--radius-inputs)] bg-[var(--bg-surface)] border border-transparent focus:border-[var(--accent-mint)]/30 text-[13px] text-[var(--text-primary)] transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Save */}
-                  <button
-                    type="submit"
-                    disabled={saving || !name.trim() || !price.trim()}
-                    className="h-11 rounded-[var(--radius-buttons)] bg-[var(--accent-mint)] text-white font-bold text-[13px] flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
-                    style={{ marginTop: 8 }}
-                  >
-                    {saving ? <Loader2 size={15} className="animate-spin" /> : null}
-                    {editingService ? svc.saveChanges : svc.addService}
-                  </button>
-                </form>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* Delete / archive confirmation */}
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={confirmDelete}
+        destructive
+        title={pendingDelete ? `${svc.deleteService}: ${displayName(pendingDelete)}` : svc.deleteService}
+        description={svc.deleteArchiveNote}
+        confirmLabel={t.common.delete}
+        errorMessage={svc.deleteFailed}
+      />
     </motion.div>
+  );
+}
+
+// ─── Row ───
+
+interface ServiceRowProps {
+  service: ServiceItem;
+  sortable: boolean;
+  isAdmin: boolean;
+  title: string;
+  subtitle: string | null;
+  meta: string;
+  fontFamily: string;
+  labels: {
+    reorder: string;
+    edit: string;
+    remove: string;
+    toggle: string;
+    inactive: string;
+    durationLabel: string;
+  };
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggle: () => void;
+}
+
+function ServiceRow(props: ServiceRowProps) {
+  // Hooks can't be conditional: a sortable row and a static row are separate
+  // components sharing the same body.
+  return props.sortable ? <SortableServiceRow {...props} /> : <ServiceRowBody {...props} />;
+}
+
+function SortableServiceRow(props: ServiceRowProps) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.service.id,
+  });
+  return (
+    <ServiceRowBody
+      {...props}
+      rowRef={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      dragging={isDragging}
+      handle={
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          aria-label={props.labels.reorder}
+          className={cn(iconBtn, "cursor-grab touch-none active:cursor-grabbing")}
+        >
+          <GripVertical size={16} aria-hidden />
+        </button>
+      }
+    />
+  );
+}
+
+function ServiceRowBody({
+  service, isAdmin, title, subtitle, meta, fontFamily, labels,
+  onEdit, onDelete, onToggle, rowRef, style, dragging, handle,
+}: ServiceRowProps & {
+  rowRef?: (el: HTMLElement | null) => void;
+  style?: React.CSSProperties;
+  dragging?: boolean;
+  handle?: React.ReactNode;
+}) {
+  return (
+    <li
+      ref={rowRef}
+      style={style}
+      className={cn(
+        "group relative flex items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-3 last:border-b-0 transition-colors hover:bg-[var(--bg-secondary)] sm:gap-4 sm:px-6 sm:py-3.5",
+        dragging && "z-10 shadow-lg ring-1 ring-[var(--accent-brass)]",
+      )}
+    >
+      {handle}
+
+      <div
+        className={cn(
+          "hidden size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-secondary)] text-lg min-[420px]:flex",
+          !service.is_active && "opacity-60",
+        )}
+        aria-hidden
+      >
+        {service.icon || "✂️"}
+      </div>
+
+      <div className={cn("min-w-0 flex-1", !service.is_active && "opacity-70")}>
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="truncate text-sm font-bold text-[var(--text-primary)]" style={{ fontFamily }}>
+            {title}
+          </p>
+          {!service.is_active && (
+            <span className="shrink-0 rounded-full bg-[var(--accent-rose-muted)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-rose)]">
+              {labels.inactive}
+            </span>
+          )}
+        </div>
+        {subtitle && <p className="mt-0.5 truncate text-xs text-[var(--text-muted)]">{subtitle}</p>}
+        <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] tabular-nums">
+          <Clock size={12} aria-hidden />
+          <span className="sr-only">{labels.durationLabel}:</span>
+          {meta}
+        </p>
+      </div>
+
+      {isAdmin && (
+        // Always visible below lg (touch); revealed on hover/focus on desktop.
+        <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={service.is_active}
+            onClick={onToggle}
+            aria-label={labels.toggle}
+            title={labels.toggle}
+            className={iconBtn}
+          >
+            <span
+              aria-hidden
+              className={cn(
+                "relative inline-block h-5 w-9 rounded-full transition-colors",
+                service.is_active ? "bg-[var(--accent-mint)]" : "bg-[var(--border-primary)]",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 size-4 rounded-full bg-[var(--bg-primary)] shadow transition-all",
+                  service.is_active ? "start-[18px]" : "start-0.5",
+                )}
+              />
+            </span>
+          </button>
+          <button type="button" onClick={onEdit} aria-label={labels.edit} title={labels.edit} className={iconBtn}>
+            <Pencil size={15} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={labels.remove}
+            title={labels.remove}
+            className={cn(iconBtn, "hover:text-[var(--accent-rose)]")}
+          >
+            <Trash2 size={15} aria-hidden />
+          </button>
+        </div>
+      )}
+    </li>
   );
 }

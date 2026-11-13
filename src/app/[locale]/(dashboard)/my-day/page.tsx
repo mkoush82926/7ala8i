@@ -1,202 +1,313 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { format, startOfDay, endOfDay } from "date-fns";
-import { CheckCircle, UserX, XCircle, Loader2, Sun, Users } from "lucide-react";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import { endOfDay, startOfDay } from "date-fns";
+import { CheckCircle, UserX, XCircle, Loader2, Sun, Users, AlertTriangle, RefreshCw } from "lucide-react";
+import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
+import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { createClient } from "@/lib/supabase/client";
-import { usePos } from "@/hooks/use-pos";
+import { usePos, useDashboardVersion, errorMessageFor, type PaymentMethod } from "@/hooks/use-pos";
+import { useShopSettings } from "@/hooks/use-dashboard-data";
 import { toast } from "@/components/ui/toast";
-import { formatCurrency } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ListSkeleton } from "@/components/ui/skeleton";
+import { CheckoutDialog, type CheckoutTarget } from "@/components/dashboard/checkout-dialog";
+import { StatusBadge } from "@/components/dashboard/status-badge";
+import { normalizeAppointmentStatus, type AppointmentStatus } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface Appt {
   id: string;
   client_name: string;
   start_time: string;
   barber_id: string | null;
-  status: string | null;
+  status: AppointmentStatus;
   price: number;
   payment_status: string | null;
   service_name: string | null;
 }
 
-// An appointment that's already paid, completed, no-showed, or cancelled has
-// nothing left for the barber to do with it mid-shift.
-function isResolved(appt: Appt): boolean {
-  return (
-    appt.payment_status === "paid" ||
-    appt.status === "completed" ||
-    appt.status === "no_show" ||
-    appt.status === "cancelled"
-  );
+/** Paid, completed, no-show or cancelled: nothing left to do mid-shift. Pure. */
+function isResolved(appt: Pick<Appt, "status" | "payment_status">): boolean {
+  return appt.payment_status === "paid" || !["pending", "confirmed"].includes(appt.status);
 }
 
-function resolvedLabel(appt: Appt, isRTL: boolean): string {
-  if (appt.payment_status === "paid" || appt.status === "completed") {
-    return isRTL ? "مدفوع" : "Paid";
-  }
-  if (appt.status === "no_show") return isRTL ? "لم يحضر" : "No-show";
-  if (appt.status === "cancelled") return isRTL ? "ملغى" : "Cancelled";
-  return appt.status || "";
-}
-
-async function loadTodayAppointments(
-  supabase: ReturnType<typeof createClient>,
-  shopId: string,
-  barberId: string,
-): Promise<Appt[]> {
-  const today = new Date();
-  const start = format(startOfDay(today), "yyyy-MM-dd'T'HH:mm:ss");
-  const end = format(endOfDay(today), "yyyy-MM-dd'T'HH:mm:ss");
-
-  const { data } = await supabase
-    .from("appointments")
-    .select(
-      "id, client_name, start_time, barber_id, status, price, payment_status, service_name",
-    )
-    .eq("shop_id", shopId)
-    .eq("barber_id", barberId)
-    .gte("start_time", start)
-    .lte("start_time", end)
-    .order("start_time", { ascending: true });
-
-  return (data ?? []) as Appt[];
-}
+type Pending = { kind: "cancel" | "no_show"; appt: Appt } | null;
 
 export default function MyDayPage() {
-  const { isRTL, FF } = useTranslation();
+  const { t, isRTL, FFD, href, formatDate, formatTime, formatCurrency } = useTranslation();
   const shopId = useWorkspaceStore((s) => s.shopId);
   const role = useWorkspaceStore((s) => s.role);
+  const hydrated = useWorkspaceStore((s) => s.hydrated);
   const barbers = useWorkspaceStore((s) => s.barbers);
+  const version = useDashboardVersion();
+  const { currency } = useShopSettings();
   const { markPaid, markNoShow, cancelAppointment, loadingId } = usePos();
-
   const [supabase] = useState(() => createClient());
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [selectedBarberId, setSelectedBarberId] = useState<string | null>(null);
-  const [appointments, setAppointments] = useState<Appt[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Optimistic status overrides, rolled back if the server rejects the change.
+  const [overrides, setOverrides] = useState<Record<string, Partial<Appt>>>({});
+  const [pending, setPending] = useState<Pending>(null);
+  const [checkout, setCheckout] = useState<CheckoutTarget | null>(null);
 
-  // Barber-role users see only their own day — resolve their profile id.
-  useEffect(() => {
-    if (role !== "barber") return;
-    let cancelled = false;
-    supabase.auth.getUser().then(({ data }) => {
-      if (!cancelled) setCurrentUserId(data.user?.id ?? null);
+  const isBarber = role === "barber";
+
+  // Barbers see their own day; resolve their profile id once.
+  const { data: me, error: meError, initialLoading: meLoading, refetch: refetchMe } = useSupabaseQuery<string | null>(
+    async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) return { data: null, error: { message: error.message } };
+      return { data: data.user?.id ?? null, error: null };
+    },
+    [isBarber],
+    { enabled: hydrated && isBarber },
+  );
+
+  // Admins default to the first barber; picking a chip overrides it.
+  const activeBarberId = isBarber ? me ?? null : selectedBarberId ?? barbers[0]?.id ?? null;
+  const activeBarberName = barbers.find((b) => b.id === activeBarberId)?.name;
+
+  const { data, initialLoading, refreshing, error, refetch } = useSupabaseQuery<Appt[]>(
+    async () => {
+      const today = new Date();
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, client_name, start_time, barber_id, status, price, payment_status, service_name")
+        .eq("shop_id", shopId)
+        .eq("barber_id", activeBarberId)
+        .gte("start_time", startOfDay(today).toISOString())
+        .lte("start_time", endOfDay(today).toISOString())
+        .order("start_time", { ascending: true });
+      if (error) return { data: null, error: { message: error.message } };
+      const rows = (data ?? []) as (Omit<Appt, "status" | "price"> & { status: string | null; price: number | string | null })[];
+      return {
+        data: rows.map((r) => ({
+          ...r,
+          client_name: r.client_name ?? "",
+          price: Number(r.price) || 0,
+          status: normalizeAppointmentStatus(r.status) ?? "confirmed",
+        })),
+        error: null,
+      };
+    },
+    [shopId, activeBarberId, version],
+    { enabled: !!shopId && !!activeBarberId },
+  );
+
+  const appointments = (data ?? []).map((a) => ({ ...a, ...overrides[a.id] }));
+  const remaining = appointments.filter((a) => !isResolved(a)).length;
+
+  const serviceOf = (a: Appt) => a.service_name || t.dashboard.appointment;
+
+  function setOverride(id: string, patch: Partial<Appt> | null) {
+    setOverrides((prev) => {
+      const next = { ...prev };
+      if (patch) next[id] = { ...prev[id], ...patch };
+      else delete next[id];
+      return next;
     });
-    return () => {
-      cancelled = true;
-    };
-  }, [role, supabase]);
+  }
 
-  // Shop admins default to the first barber on the team — derived at render
-  // time rather than synced through an effect, so picking one just overrides
-  // the fallback.
-  const activeBarberId =
-    role === "barber" ? currentUserId : selectedBarberId ?? barbers[0]?.id ?? null;
-  const activeBarberName =
-    barbers.find((b) => b.id === activeBarberId)?.name ||
-    (isRTL ? "حلاق" : "Barber");
-
-  // Refetch after a POS action (event-handler triggered, not effect-driven).
-  const refetch = useCallback(async () => {
-    if (!shopId || !activeBarberId) return;
-    const data = await loadTodayAppointments(supabase, shopId, activeBarberId);
-    setAppointments(data);
-  }, [supabase, shopId, activeBarberId]);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function run() {
-      if (!shopId || !activeBarberId) return;
-      const data = await loadTodayAppointments(supabase, shopId, activeBarberId);
-      if (!cancelled) {
-        setAppointments(data);
-        setLoading(false);
-      }
+  async function confirmPending() {
+    if (!pending) return;
+    const { kind, appt } = pending;
+    setOverride(appt.id, { status: kind === "cancel" ? "cancelled" : "no_show" });
+    const res = kind === "cancel" ? await cancelAppointment(appt.id) : await markNoShow(appt.id);
+    if (!res.ok) {
+      setOverride(appt.id, null); // rollback
+      throw new Error(errorMessageFor(t, res.code));
     }
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [supabase, shopId, activeBarberId]);
-
-  async function handleMarkPaid(appt: Appt) {
-    await markPaid({
-      appointmentId: appt.id,
-      clientName: appt.client_name,
-      barberName: activeBarberName,
-      serviceLabel: appt.service_name || (isRTL ? "موعد" : "Appointment"),
-      scheduledTime: format(new Date(appt.start_time), "HH:mm"),
-      amount: appt.price,
-      method: "cash",
-    });
-    toast("success", isRTL ? "تم تسجيل الدفع" : "Marked as paid");
-    refetch();
+    toast.success(kind === "cancel" ? t.dashboard.cancelledToast : t.dashboard.noShowToast);
   }
 
-  async function handleNoShow(appt: Appt) {
-    await markNoShow(appt.id);
-    toast("success", isRTL ? "تم التسجيل كغياب" : "Marked as no-show");
-    refetch();
+  async function confirmCheckout(method: PaymentMethod) {
+    if (!checkout) return { ok: false as const, code: "INTERNAL" };
+    const id = checkout.id;
+    setOverride(id, { status: "completed", payment_status: "paid" });
+    const res = await markPaid({ appointmentId: id, method });
+    if (res.ok) toast.success(t.dashboard.paidToast);
+    else setOverride(id, null);
+    return res;
   }
 
-  async function handleCancel(appt: Appt) {
-    await cancelAppointment(appt.id);
-    toast("success", isRTL ? "تم إلغاء الموعد" : "Appointment cancelled");
-    refetch();
-  }
+  const showBarberPicker = !isBarber;
 
-  const showBarberPicker = role !== "barber";
+  let body: React.ReactNode;
+  if (isBarber && meError) {
+    body = (
+      <EmptyState
+        tone="error"
+        icon={AlertTriangle}
+        title={t.dashboard.myDayError}
+        description={t.error.message}
+        action={{ label: t.common.retry, onClick: refetchMe, icon: RefreshCw }}
+      />
+    );
+  } else if (!hydrated || (isBarber && (meLoading || !me)) || (activeBarberId && initialLoading)) {
+    body = <ListSkeleton rows={4} />;
+  } else if (showBarberPicker && barbers.length === 0) {
+    body = (
+      <EmptyState
+        icon={Users}
+        title={t.dashboard.noBarbers}
+        description={t.dashboard.noBarbersHint}
+        action={{ label: t.sidebar.team, href: href("/team"), icon: Users }}
+      />
+    );
+  } else if (error) {
+    body = (
+      <EmptyState
+        tone="error"
+        icon={AlertTriangle}
+        title={t.dashboard.myDayError}
+        description={t.error.message}
+        action={{ label: t.common.retry, onClick: refetch, icon: RefreshCw }}
+      />
+    );
+  } else if (appointments.length === 0) {
+    body = <EmptyState icon={Sun} title={t.dashboard.noAppointmentsToday} description={t.dashboard.quietDay} />;
+  } else {
+    body = (
+      <ul className={cn("m-0 flex list-none flex-col gap-4 p-0 transition-opacity", refreshing && "opacity-70")}>
+        {appointments.map((appt) => {
+          const resolved = isResolved(appt);
+          const busy = loadingId === appt.id;
+          const time = formatTime(appt.start_time);
+          return (
+            <li
+              key={appt.id}
+              className={cn(
+                "flex flex-col gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5",
+                resolved && "opacity-75",
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p
+                    className="m-0 truncate text-[18px] font-extrabold text-[var(--text-primary)]"
+                    style={{ fontFamily: FFD }}
+                  >
+                    {appt.client_name}
+                  </p>
+                  <p className="m-0 mt-1 text-[14px] text-[var(--text-secondary)]">{serviceOf(appt)}</p>
+                </div>
+                <div className="shrink-0 text-end">
+                  <p className="m-0 text-[20px] font-extrabold tabular-nums text-[var(--text-primary)]">{time}</p>
+                  <p className="m-0 mt-1 text-[14px] font-bold tabular-nums text-[var(--text-secondary)]">
+                    {formatCurrency(appt.price, currency)}
+                  </p>
+                </div>
+              </div>
+
+              {resolved ? (
+                <StatusBadge
+                  status={appt.status}
+                  paid={appt.payment_status === "paid" || appt.status === "completed"}
+                  className="self-start"
+                />
+              ) : (
+                <div className="flex gap-2.5">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() =>
+                      setCheckout({
+                        id: appt.id,
+                        clientName: appt.client_name,
+                        serviceName: serviceOf(appt),
+                        amount: appt.price,
+                        currency,
+                        whenLabel: time,
+                      })
+                    }
+                    className="btn flex-1 min-h-[52px] rounded-xl border-0 bg-[var(--accent-mint)] text-[14px] font-bold text-[var(--on-accent)] hover:opacity-90 disabled:opacity-60"
+                  >
+                    {busy ? (
+                      <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+                    ) : (
+                      <CheckCircle size={18} aria-hidden="true" />
+                    )}
+                    {t.dashboard.markPaid}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setPending({ kind: "no_show", appt })}
+                    aria-label={`${t.dashboard.markNoShow}: ${appt.client_name}`}
+                    title={t.dashboard.markNoShow}
+                    className="grid min-h-[52px] min-w-[52px] place-items-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] disabled:opacity-60"
+                  >
+                    <UserX size={20} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setPending({ kind: "cancel", appt })}
+                    aria-label={`${t.dashboard.cancelAppointment}: ${appt.client_name}`}
+                    title={t.dashboard.cancelAppointment}
+                    className="grid min-h-[52px] min-w-[52px] place-items-center rounded-xl border border-[var(--accent-rose)] bg-[var(--accent-rose-muted)] text-[var(--accent-rose)] transition-opacity hover:opacity-85 disabled:opacity-60"
+                  >
+                    <XCircle size={20} aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.25, 1, 0.4, 1] }}
-      style={{ maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}
+      transition={{ duration: 0.4, ease: [0.25, 1, 0.4, 1] }}
+      className="mx-auto flex max-w-[560px] flex-col gap-6"
     >
-      {/* Header */}
-      <div>
-        <h2
-          style={{
-            fontFamily: FF,
-            fontSize: 28,
-            fontWeight: 800,
-            letterSpacing: headingTracking(isRTL, "0.014em"),
-            color: "#1c1611",
-            margin: 0,
-          }}
+      <header>
+        <h1
+          className="m-0 text-[28px] font-extrabold text-[var(--text-primary)]"
+          style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.014em") }}
         >
-          {isRTL ? "يومي" : "My Day"}
-        </h2>
-        <p style={{ fontSize: 14, color: "#5a5147", marginTop: 6, fontWeight: 400 }}>
-          {format(new Date(), "EEEE, d MMMM yyyy")}
+          {t.sidebar.myDay}
+        </h1>
+        <p className="m-0 mt-1.5 text-[14px] text-[var(--text-secondary)]">
+          {formatDate(new Date(), "long")}
+          {appointments.length > 0 && (
+            <>
+              {" · "}
+              <span className="font-semibold">
+                {remaining > 0 ? interpolate(t.dashboard.remainingToday, { count: remaining }) : t.dashboard.allDone}
+              </span>
+            </>
+          )}
         </p>
-      </div>
+      </header>
 
-      {/* Barber picker — admins pick whose day to view, minimal tap chips */}
       {showBarberPicker && barbers.length > 0 && (
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+        <div
+          role="group"
+          aria-label={t.calendar.barber}
+          className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
+        >
           {barbers.map((b) => {
             const active = b.id === activeBarberId;
             return (
               <button
                 key={b.id}
+                type="button"
+                aria-pressed={active}
                 onClick={() => setSelectedBarberId(b.id)}
-                style={{
-                  flexShrink: 0,
-                  padding: "10px 18px",
-                  borderRadius: 999,
-                  whiteSpace: "nowrap",
-                  border: active ? "1px solid #1c1611" : "1px solid #ede3cd",
-                  background: active ? "#1c1611" : "#ffffff",
-                  color: active ? "#ffffff" : "#5a5147",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
+                className={cn(
+                  "min-h-11 shrink-0 whitespace-nowrap rounded-full border px-[18px] text-[13px] font-bold transition-colors",
+                  active
+                    ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-on-primary)]"
+                    : "border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:border-[var(--border-hover)]",
+                )}
               >
                 {b.name}
               </button>
@@ -205,209 +316,21 @@ export default function MyDayPage() {
         </div>
       )}
 
-      {/* Body */}
-      {showBarberPicker && barbers.length === 0 ? (
-        <EmptyState
-          icon={<Users size={26} style={{ color: "#a89e8c" }} />}
-          title={isRTL ? "لا يوجد حلاقون بعد" : "No barbers on your team yet"}
-          subtitle={
-            isRTL
-              ? "أضف حلاقًا من صفحة الفريق لعرض جدول يومه"
-              : "Add a barber from the Team page to view their day"
-          }
-        />
-      ) : role === "barber" && !currentUserId ? (
-        <LoadingState />
-      ) : loading ? (
-        <LoadingState />
-      ) : appointments.length === 0 ? (
-        <EmptyState
-          icon={<Sun size={26} style={{ color: "#a89e8c" }} />}
-          title={isRTL ? "لا مواعيد اليوم" : "No appointments today"}
-          subtitle={isRTL ? "استمتع بيوم هادئ" : "Enjoy the quiet day"}
-        />
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {appointments.map((appt) => {
-            const resolved = isResolved(appt);
-            const busy = loadingId === appt.id;
-            return (
-              <div
-                key={appt.id}
-                style={{
-                  background: "#ffffff",
-                  border: "1px solid #ede3cd",
-                  borderRadius: 12,
-                  padding: 20,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 16,
-                }}
-              >
-                {/* Client + time/price */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                  <div>
-                    <p style={{ fontSize: 18, fontWeight: 800, color: "#1c1611", margin: 0, fontFamily: "var(--font-intervar), sans-serif" }}>
-                      {appt.client_name}
-                    </p>
-                    <p style={{ fontSize: 14, color: "#5a5147", margin: "4px 0 0" }}>
-                      {appt.service_name || (isRTL ? "موعد" : "Appointment")}
-                    </p>
-                  </div>
-                  <div style={{ textAlign: "end", flexShrink: 0 }}>
-                    <p style={{ fontSize: 20, fontWeight: 800, color: "#1c1611", margin: 0, fontVariantNumeric: "tabular-nums" }}>
-                      {format(new Date(appt.start_time), "HH:mm")}
-                    </p>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: "#5a5147", margin: "4px 0 0" }}>
-                      {formatCurrency(appt.price)}
-                    </p>
-                  </div>
-                </div>
+      {activeBarberName && showBarberPicker && <h2 className="sr-only">{activeBarberName}</h2>}
 
-                {/* Actions or resolved badge */}
-                {resolved ? (
-                  <span
-                    style={{
-                      alignSelf: "flex-start",
-                      padding: "6px 14px",
-                      borderRadius: 999,
-                      background: "#f7f1e4",
-                      color: "#a67c3d",
-                      fontSize: 11,
-                      fontWeight: 800,
-                      textTransform: "uppercase",
-                      letterSpacing: headingTracking(isRTL, "0.1em"),
-                    }}
-                  >
-                    {resolvedLabel(appt, isRTL)}
-                  </span>
-                ) : (
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <button
-                      disabled={busy}
-                      onClick={() => handleMarkPaid(appt)}
-                      style={{
-                        flex: 1,
-                        minHeight: 52,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        border: "none",
-                        borderRadius: 12,
-                        background: "#a67c3d",
-                        color: "#ffffff",
-                        fontSize: 14,
-                        fontWeight: 700,
-                        cursor: busy ? "default" : "pointer",
-                        opacity: busy ? 0.6 : 1,
-                      }}
-                    >
-                      {busy ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-                      {isRTL ? "دفع" : "Mark Paid"}
-                    </button>
-                    <button
-                      disabled={busy}
-                      onClick={() => handleNoShow(appt)}
-                      title={isRTL ? "لم يحضر" : "No-show"}
-                      aria-label={isRTL ? "لم يحضر" : "No-show"}
-                      style={{
-                        minHeight: 52,
-                        minWidth: 52,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border: "1px solid #ede3cd",
-                        borderRadius: 12,
-                        background: "#ffffff",
-                        color: "#5a5147",
-                        cursor: busy ? "default" : "pointer",
-                        opacity: busy ? 0.6 : 1,
-                      }}
-                    >
-                      <UserX size={20} />
-                    </button>
-                    <button
-                      disabled={busy}
-                      onClick={() => handleCancel(appt)}
-                      title={isRTL ? "إلغاء" : "Cancel"}
-                      aria-label={isRTL ? "إلغاء" : "Cancel"}
-                      style={{
-                        minHeight: 52,
-                        minWidth: 52,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border: "1px solid rgba(186,26,26,0.3)",
-                        borderRadius: 12,
-                        background: "rgba(186,26,26,0.06)",
-                        color: "#ba1a1a",
-                        cursor: busy ? "default" : "pointer",
-                        opacity: busy ? 0.6 : 1,
-                      }}
-                    >
-                      <XCircle size={20} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {body}
+
+      <ConfirmDialog
+        open={!!pending}
+        onClose={() => setPending(null)}
+        onConfirm={confirmPending}
+        destructive
+        title={pending?.kind === "no_show" ? t.dashboard.noShowConfirmTitle : t.dashboard.cancelConfirmTitle}
+        description={pending ? `${pending.appt.client_name} · ${serviceOf(pending.appt)} · ${formatTime(pending.appt.start_time)}` : undefined}
+        confirmLabel={pending?.kind === "no_show" ? t.dashboard.markNoShow : t.dashboard.cancelAppointment}
+        cancelLabel={t.dashboard.keepAppointment}
+      />
+      <CheckoutDialog target={checkout} onClose={() => setCheckout(null)} onConfirm={confirmCheckout} />
     </motion.div>
-  );
-}
-
-function LoadingState() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "64px 0" }}>
-      <Loader2 className="animate-spin" size={26} style={{ color: "#5a5147" }} />
-    </div>
-  );
-}
-
-function EmptyState({
-  title,
-  subtitle,
-  icon,
-}: {
-  title: string;
-  subtitle: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 16,
-        padding: "56px 24px",
-        background: "#ffffff",
-        border: "1px solid #ede3cd",
-        borderRadius: 12,
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: 12,
-          background: "#f7f1e4",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {icon}
-      </div>
-      <div>
-        <p style={{ fontSize: 14, fontWeight: 700, color: "#5a5147", margin: "0 0 6px" }}>{title}</p>
-        <p style={{ fontSize: 12, color: "#5a5147", margin: 0 }}>{subtitle}</p>
-      </div>
-    </div>
   );
 }

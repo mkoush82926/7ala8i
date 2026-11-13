@@ -7,14 +7,25 @@
 // barbershop data so those pages can be previewed and iterated on visually
 // without a live backend.
 //
-// Gated by NEXT_PUBLIC_USE_MOCK_DATA, read only from .env.local (which is
-// git-ignored and never deployed) — see src/lib/supabase/client.ts. There is
-// no code path that can accidentally enable this in production: the flag
-// defaults to unset/false, and Vercel's env for the real deployment never
-// sets it.
+// Gated by NEXT_PUBLIC_USE_MOCK_DATA via src/lib/env.ts, which REFUSES mock
+// mode whenever NODE_ENV === "production" (unless the explicit escape hatch
+// NEXT_PUBLIC_ALLOW_MOCK_IN_PROD=true is set). Import MOCK_DATA_ENABLED /
+// MOCK_AUTH_ROLE from here (or MOCK_MODE from env.ts) — never read the raw
+// env flags directly, so browser, middleware and server agree.
 // ─────────────────────────────────────────────────────────────────────────
 
-export const MOCK_DATA_ENABLED = process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true";
+import type { AppointmentStatus } from "@/lib/types";
+import { MOCK_MODE, MOCK_AUTH_ROLE as ENV_MOCK_AUTH_ROLE, type MockAuthRole } from "@/lib/env";
+
+export const MOCK_DATA_ENABLED: boolean = MOCK_MODE;
+
+// Optional, separate opt-in on top of MOCK_DATA_ENABLED — set
+// NEXT_PUBLIC_MOCK_AUTH_ROLE=shop_admin|barber|customer in .env.local to also
+// preview the auth-gated pages (middleware must use this same export for its
+// bypass). Always null when mock mode is off or refused.
+export const MOCK_AUTH_ROLE: MockAuthRole | null = ENV_MOCK_AUTH_ROLE;
+
+export const MOCK_ADMIN_ID = "99999999-9999-9999-9999-999999999999";
 
 export const MOCK_SHOP_IDS = {
   gentlemansChair: "11111111-1111-1111-1111-111111111111",
@@ -31,7 +42,20 @@ export interface MockShop {
   instagram: string;
   google_maps_url: string;
   whatsapp: string;
+  description: string | null;
+  currency: string;
+  timezone: string;
+  cancellation_policy_hours: number;
+  cancellation_fee_percent: number;
 }
+
+const SHOP_DEFAULTS = {
+  description: null,
+  currency: "JOD",
+  timezone: "Asia/Amman",
+  cancellation_policy_hours: 12,
+  cancellation_fee_percent: 0,
+} as const;
 
 export const MOCK_SHOPS: MockShop[] = [
   {
@@ -43,6 +67,7 @@ export const MOCK_SHOPS: MockShop[] = [
     instagram: "gentlemanschair",
     google_maps_url: "https://maps.google.com/?q=Abdoun+Amman",
     whatsapp: "+962791234567",
+    ...SHOP_DEFAULTS,
   },
   {
     id: MOCK_SHOP_IDS.classicRazor,
@@ -53,6 +78,7 @@ export const MOCK_SHOPS: MockShop[] = [
     instagram: "classicrazor.jo",
     google_maps_url: "https://maps.google.com/?q=Al+Weibdeh+Amman",
     whatsapp: "+962789876543",
+    ...SHOP_DEFAULTS,
   },
   {
     id: MOCK_SHOP_IDS.urbanClippers,
@@ -63,6 +89,7 @@ export const MOCK_SHOPS: MockShop[] = [
     instagram: "urbanclippers",
     google_maps_url: "https://maps.google.com/?q=Sweifieh+Amman",
     whatsapp: "+962771112222",
+    ...SHOP_DEFAULTS,
   },
 ];
 
@@ -73,9 +100,13 @@ export interface MockService {
   name_ar: string;
   duration: number;
   price: number;
+  is_active: boolean;
+  sort_order: number;
 }
 
-export const MOCK_SERVICES: MockService[] = [
+type MockServiceSeed = Omit<MockService, "is_active" | "sort_order">;
+
+const MOCK_SERVICE_SEED: MockServiceSeed[] = [
   // Gentleman's Chair — the full menu
   { id: "s-gc-1", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Classic Haircut", name_ar: "قص كلاسيكي", duration: 30, price: 8 },
   { id: "s-gc-2", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Skin Fade", name_ar: "سكين فييد", duration: 30, price: 10 },
@@ -98,6 +129,8 @@ export const MOCK_SERVICES: MockService[] = [
   { id: "s-uc-3", shop_id: MOCK_SHOP_IDS.urbanClippers, name: "Haircut & Beard", name_ar: "قص ولحية", duration: 45, price: 12 },
   { id: "s-uc-4", shop_id: MOCK_SHOP_IDS.urbanClippers, name: "Hair Coloring", name_ar: "صبغ شعر", duration: 60, price: 22 },
 ];
+
+export const MOCK_SERVICES: MockService[] = MOCK_SERVICE_SEED.map((s, i) => ({ ...s, is_active: true, sort_order: i }));
 
 export interface MockBarber {
   id: string;
@@ -131,12 +164,61 @@ export const MOCK_BARBERS: MockBarber[] = [
   },
 ];
 
+export interface MockClient {
+  id: string;
+  shop_id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  notes: string | null;
+  total_spend: number;
+  created_at: string;
+  deleted_at: string | null;
+  auth_user_id: string | null;
+}
+
+// Dashboard-only — the guest booking flow never reads this table, only the
+// Clients list page does, to preview real row content instead of just an
+// empty state.
+export const MOCK_CLIENTS: MockClient[] = [
+  { id: "c-1", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Yousef R.", phone: "+962 79 111 2233", email: "yousef.r@example.com", notes: null, total_spend: 84, created_at: daysAgo(2), deleted_at: null, auth_user_id: null },
+  { id: "c-2", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Tariq H.", phone: "+962 78 222 3344", email: "tariq.h@example.com", notes: null, total_spend: 46, created_at: daysAgo(5), deleted_at: null, auth_user_id: null },
+  { id: "c-3", shop_id: MOCK_SHOP_IDS.gentlemansChair, name: "Mahmoud S.", phone: "+962 77 333 4455", email: null, notes: null, total_spend: 21, created_at: daysAgo(9), deleted_at: null, auth_user_id: null },
+];
+
+// The signed-in shop_admin/barber MOCK_AUTH_ROLE resolves to, always scoped
+// to Gentleman's Chair — dashboard pages query `profiles` for this id to
+// resolve shopId/role, same shape as MOCK_BARBERS but without barber_services
+// (an admin isn't a barber).
+export interface MockAdminProfile {
+  id: string;
+  shop_id: string;
+  full_name: string;
+  avatar_url: string | null;
+  role: "shop_admin" | "barber" | "customer";
+}
+
+export const MOCK_ADMIN_PROFILE: MockAdminProfile = {
+  id: MOCK_ADMIN_ID,
+  shop_id: MOCK_SHOP_IDS.gentlemansChair,
+  full_name: "Mohammad (Preview)",
+  avatar_url: null,
+  role: "shop_admin",
+};
+
+// Every row the mock client's "profiles" table serves — dashboard queries
+// (team lists, role lookups) expect admins and barbers side by side in one
+// table, same as the real schema.
+export const MOCK_PROFILES: (MockAdminProfile | MockBarber)[] = [MOCK_ADMIN_PROFILE, ...MOCK_BARBERS];
+
 export interface MockReview {
   id: string;
   shop_id: string;
   rating: number;
   comment: string;
   created_at: string;
+  /** Public display name stored on the review (replaces the clients(name) embed). */
+  reviewer_name: string;
   clients: { name: string };
 }
 
@@ -147,19 +229,19 @@ function daysAgo(n: number): string {
 }
 
 export const MOCK_REVIEWS: MockReview[] = [
-  { id: "r-gc-1", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Best fade I've had in Amman — Sami really knows his craft.", created_at: daysAgo(2), clients: { name: "Yousef R." } },
-  { id: "r-gc-2", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Clean shop, friendly staff, quick service. Highly recommend.", created_at: daysAgo(5), clients: { name: "Tariq H." } },
-  { id: "r-gc-3", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 4, comment: "The hot towel shave is worth every dinar.", created_at: daysAgo(9), clients: { name: "Mahmoud S." } },
-  { id: "r-gc-4", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Been coming here for two years, never disappointed.", created_at: daysAgo(14), clients: { name: "Basel N." } },
-  { id: "r-gc-5", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 3, comment: "A bit busy on weekends, but the quality makes up for the wait.", created_at: daysAgo(20), clients: { name: "Fadi K." } },
-  { id: "r-gc-6", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Khaled's beard lineup is unreal. My go-to shop now.", created_at: daysAgo(26), clients: { name: "Zaid A." } },
+  { id: "r-gc-1", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Best fade I've had in Amman — Sami really knows his craft.", created_at: daysAgo(2), reviewer_name: "Yousef R.", clients: { name: "Yousef R." } },
+  { id: "r-gc-2", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Clean shop, friendly staff, quick service. Highly recommend.", created_at: daysAgo(5), reviewer_name: "Tariq H.", clients: { name: "Tariq H." } },
+  { id: "r-gc-3", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 4, comment: "The hot towel shave is worth every dinar.", created_at: daysAgo(9), reviewer_name: "Mahmoud S.", clients: { name: "Mahmoud S." } },
+  { id: "r-gc-4", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Been coming here for two years, never disappointed.", created_at: daysAgo(14), reviewer_name: "Basel N.", clients: { name: "Basel N." } },
+  { id: "r-gc-5", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 3, comment: "A bit busy on weekends, but the quality makes up for the wait.", created_at: daysAgo(20), reviewer_name: "Fadi K.", clients: { name: "Fadi K." } },
+  { id: "r-gc-6", shop_id: MOCK_SHOP_IDS.gentlemansChair, rating: 5, comment: "Khaled's beard lineup is unreal. My go-to shop now.", created_at: daysAgo(26), reviewer_name: "Zaid A.", clients: { name: "Zaid A." } },
 
-  { id: "r-cr-1", shop_id: MOCK_SHOP_IDS.classicRazor, rating: 5, comment: "Old-school barbering done right. Great atmosphere.", created_at: daysAgo(4), clients: { name: "Hassan T." } },
-  { id: "r-cr-2", shop_id: MOCK_SHOP_IDS.classicRazor, rating: 4, comment: "Solid haircut, reasonable prices, easy to book online.", created_at: daysAgo(11), clients: { name: "Ali Z." } },
-  { id: "r-cr-3", shop_id: MOCK_SHOP_IDS.classicRazor, rating: 5, comment: "Omar is precise and fast. In and out in 30 minutes looking sharp.", created_at: daysAgo(18), clients: { name: "Karam F." } },
+  { id: "r-cr-1", shop_id: MOCK_SHOP_IDS.classicRazor, rating: 5, comment: "Old-school barbering done right. Great atmosphere.", created_at: daysAgo(4), reviewer_name: "Hassan T.", clients: { name: "Hassan T." } },
+  { id: "r-cr-2", shop_id: MOCK_SHOP_IDS.classicRazor, rating: 4, comment: "Solid haircut, reasonable prices, easy to book online.", created_at: daysAgo(11), reviewer_name: "Ali Z.", clients: { name: "Ali Z." } },
+  { id: "r-cr-3", shop_id: MOCK_SHOP_IDS.classicRazor, rating: 5, comment: "Omar is precise and fast. In and out in 30 minutes looking sharp.", created_at: daysAgo(18), reviewer_name: "Karam F.", clients: { name: "Karam F." } },
 
-  { id: "r-uc-1", shop_id: MOCK_SHOP_IDS.urbanClippers, rating: 5, comment: "Modern space, great music, even better haircuts.", created_at: daysAgo(3), clients: { name: "Saeed M." } },
-  { id: "r-uc-2", shop_id: MOCK_SHOP_IDS.urbanClippers, rating: 4, comment: "Rami nailed the color job, exactly what I asked for.", created_at: daysAgo(8), clients: { name: "Majed S." } },
+  { id: "r-uc-1", shop_id: MOCK_SHOP_IDS.urbanClippers, rating: 5, comment: "Modern space, great music, even better haircuts.", created_at: daysAgo(3), reviewer_name: "Saeed M.", clients: { name: "Saeed M." } },
+  { id: "r-uc-2", shop_id: MOCK_SHOP_IDS.urbanClippers, rating: 4, comment: "Rami nailed the color job, exactly what I asked for.", created_at: daysAgo(8), reviewer_name: "Majed S.", clients: { name: "Majed S." } },
 ];
 
 export interface MockWorkingHour {
@@ -189,6 +271,38 @@ function standardWeek(barberId: string): MockWorkingHour[] {
 
 export const MOCK_WORKING_HOURS: MockWorkingHour[] = MOCK_BARBERS.flatMap((b) => standardWeek(b.id));
 
-// No pre-existing bookings — every generated slot shows as open for this
-// fresh design preview.
-export const MOCK_APPOINTMENTS: { start_time: string; end_time: string; barber_id: string; shop_id: string; status: string }[] = [];
+export interface MockAppointment {
+  id: string;
+  shop_id: string;
+  barber_id: string;
+  client_id: string | null;
+  client_name: string;
+  service_name: string;
+  service_ids: string[];
+  price: number;
+  currency: string;
+  start_time: string;
+  end_time: string;
+  status: AppointmentStatus;
+  source: string;
+}
+
+// One real booking today (Gentleman's Chair, Sami, 2pm) so the dashboard
+// Calendar/My Day pages have something to render instead of only their
+// empty states — everything else stays open for the guest booking flow.
+// Times are full ISO timestamps (timestamptz), like the real column.
+function todayAt(hours: number, minutes = 0): string {
+  const d = new Date();
+  d.setHours(hours, minutes, 0, 0);
+  return d.toISOString();
+}
+
+export const MOCK_APPOINTMENTS: MockAppointment[] = [
+  {
+    id: "appt-1", shop_id: MOCK_SHOP_IDS.gentlemansChair, barber_id: "b-gc-1",
+    client_id: "c-1", client_name: "Yousef R.", service_name: "Classic Haircut", service_ids: ["s-gc-1"],
+    price: 8, currency: "JOD",
+    start_time: todayAt(14), end_time: todayAt(14, 30),
+    status: "confirmed", source: "online",
+  },
+];

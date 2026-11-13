@@ -2,129 +2,90 @@
 
 import React from "react";
 import { useDroppable } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { LeadCard } from "./lead-card";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { interpolate, useTranslation } from "@/hooks/use-translation";
 import type { Lead } from "@/lib/types";
 import type { LeadStage } from "@/store/leads-store";
+import { LeadCard } from "./lead-card";
+import type { StageMeta } from "./stages";
 
 interface KanbanColumnProps {
-  stage: { id: LeadStage; label: string; color: string };
+  stage: StageMeta;
   leads: Lead[];
   onLeadClick: (lead: Lead) => void;
+  /** Shop admins only: drag + "add to this stage". */
+  editable?: boolean;
+  onAdd?: (stage: LeadStage) => void;
 }
 
-/* ─────────────────────────────────────────────────────────────────
-   Best Practices Applied:
-   1. Column contrast — subtle bg #f7f9fb to distinguish from white cards
-   3. Spacing — 8px gaps between cards (2× base unit)
-   5. Column width fixed at 284px for consistent grid
-   6. Grid-based — consistent column widths across all stages
-   8. Drop zone "active" state via isOver ring highlight
-───────────────────────────────────────────────────────────────── */
-export function KanbanColumn({ stage, leads, onLeadClick }: KanbanColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: stage.id,
-  });
+/**
+ * One pipeline stage. Fixed-width (snaps on phones), drop target for cards,
+ * and a non-interactive hint when empty.
+ */
+export function KanbanColumn({ stage, leads, onLeadClick, editable = false, onAdd }: KanbanColumnProps) {
+  const { t } = useTranslation();
+  const { setNodeRef, isOver } = useDroppable({ id: stage.id, disabled: !editable });
+  const headingId = `kanban-col-${stage.id}`;
 
   return (
-    <div
-      style={{
-        flexShrink: 0,
-        width: 284,           // Practice #6 — fixed column width
-        display: "flex",
-        flexDirection: "column",
-        borderRadius: 12,
-        // Practice #8 — isOver state
-        outline: isOver ? "2px solid rgba(28,22,17,0.18)" : "2px solid transparent",
-        outlineOffset: 2,
-        transition: "outline-color 0.15s ease",
-      }}
+    <section
+      aria-labelledby={headingId}
+      className={cn(
+        "flex w-[min(284px,82vw)] shrink-0 snap-start flex-col rounded-[12px] outline-2 outline-offset-2 transition-[outline-color] duration-150",
+        isOver ? "outline outline-[var(--border-primary)]" : "outline-transparent",
+      )}
     >
-      {/* Column Header */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: 12, padding: "0 4px",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Stage colour dot */}
-          <div style={{
-            width: 7, height: 7, borderRadius: "50%",
-            background: stage.color, flexShrink: 0,
-          }} />
-          <span style={{
-            // Practice #2 — 13px column label
-            fontSize: 13, fontWeight: 700, color: "#1c1611",
-            fontFamily: "var(--font-intervar), sans-serif",
-          }}>
+      {/* Column header */}
+      <div className="mb-3 flex items-center justify-between gap-2 px-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: stage.color }} aria-hidden="true" />
+          <h3 id={headingId} className="truncate text-[13px] font-bold text-[var(--text-primary)]">
             {stage.label}
+            <span className="sr-only"> ({leads.length})</span>
+          </h3>
+          <span
+            aria-hidden="true"
+            className="rounded-full bg-[var(--bg-secondary)] px-2 py-0.5 text-[11px] font-extrabold tabular-nums text-[var(--text-primary)]"
+          >
+            {leads.length}
           </span>
         </div>
-        {/* Count badge */}
-        <span style={{
-          padding: "2px 8px", borderRadius: 9999,
-          background: "#f7f1e4",
-          // Practice #2 — 11px count
-          fontSize: 11, fontWeight: 800, color: "#1c1611",
-        }}>
-          {leads.length}
-        </span>
-      </div>
-
-      {/* Cards container */}
-      <div
-        ref={setNodeRef}
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,             // Practice #3 — 8px = 2× base unit
-          minHeight: 120,
-          padding: "4px 0",
-        }}
-      >
-        <SortableContext
-          items={leads.map((l) => l.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {leads.map((lead) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              onClick={() => onLeadClick(lead)}
-            />
-          ))}
-        </SortableContext>
-
-        {/* Practice #4 — empty state that communicates what happens */}
-        {leads.length === 0 && (
+        {editable && onAdd && (
           <button
-            style={{
-              width: "100%",
-              padding: "20px 16px",
-              border: "2px dashed #ede3cd",
-              borderRadius: 12,
-              color: "#5a5147",
-              fontSize: 12, fontWeight: 600,
-              background: "transparent",
-              cursor: "pointer",
-              transition: "border-color 0.2s, background 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "#f7f1e4";
-              (e.currentTarget as HTMLButtonElement).style.borderColor = "#ede3cd";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-              (e.currentTarget as HTMLButtonElement).style.borderColor = "#ede3cd";
-            }}
+            type="button"
+            onClick={() => onAdd(stage.id)}
+            aria-label={interpolate(t.leads.addToStage, { stage: stage.label })}
+            title={interpolate(t.leads.addToStage, { stage: stage.label })}
+            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
           >
-            + Drop here to add
+            <Plus size={16} aria-hidden="true" />
           </button>
         )}
       </div>
-    </div>
+
+      {/* Cards */}
+      <div ref={setNodeRef} className="flex min-h-[120px] flex-1 flex-col gap-2 py-1">
+        <SortableContext items={leads.map((l) => l.id)} strategy={verticalListSortingStrategy}>
+          {leads.map((lead) => (
+            <LeadCard key={lead.id} lead={lead} draggable={editable} onClick={() => onLeadClick(lead)} />
+          ))}
+        </SortableContext>
+
+        {leads.length === 0 && (
+          <div
+            className={cn(
+              "rounded-[12px] border-2 border-dashed px-4 py-5 text-center text-[12px] font-semibold text-[var(--text-secondary)] transition-colors",
+              isOver
+                ? "border-[var(--border-primary)] bg-[var(--bg-secondary)]"
+                : "border-[var(--border-subtle)]",
+            )}
+          >
+            {editable ? t.leads.dropHere : t.common.noData}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

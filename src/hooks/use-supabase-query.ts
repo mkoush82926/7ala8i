@@ -3,7 +3,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 interface QueryState<T> {
   data: T | null;
   error: string | null;
+  /** True while any request is in flight (first load or refetch). */
   loading: boolean;
+  /** True only until the first request settles — use it to gate full-page skeletons. */
+  initialLoading: boolean;
+  /** True while a refetch runs with previous data still on screen. */
+  refreshing: boolean;
   refetch: () => void;
 }
 
@@ -13,15 +18,22 @@ interface QueryOptions {
   retryDelay?: number;
 }
 
+type QueryFnResult<T> = { data: T | null; error: { message: string } | null };
+
 /**
  * Custom hook for Supabase queries with loading, error, retry, and refetch.
+ *
+ * - Previous data stays on screen while a refetch runs (no flashing skeletons).
+ * - Responses from superseded requests (e.g. an older search term that comes
+ *   back late) are discarded, so the UI never shows results for stale input.
+ * - Pending retries are cancelled on unmount / dependency change.
  *
  * @param queryFn - Async function that returns `{ data, error }` (Supabase shape)
  * @param deps - Dependency array to re-run the query
  * @param options - Optional config for retry and enabled state
  */
 export function useSupabaseQuery<T>(
-  queryFn: () => Promise<{ data: T | null; error: { message: string } | null }>,
+  queryFn: () => Promise<QueryFnResult<T>>,
   deps: unknown[] = [],
   options: QueryOptions = {},
 ): QueryState<T> {
@@ -29,11 +41,31 @@ export function useSupabaseQuery<T>(
 
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
+  const [settledOnce, setSettledOnce] = useState(false);
+
   const retriesRef = useRef(0);
   const mountedRef = useRef(true);
+  const requestIdRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Always call the latest queryFn without making it a dependency.
+  const queryFnRef = useRef(queryFn);
+  useEffect(() => {
+    queryFnRef.current = queryFn;
+  });
+
+  const clearRetry = () => {
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+  };
 
   const execute = useCallback(async () => {
+    clearRetry();
+    const requestId = ++requestIdRef.current;
+    const isCurrent = () => mountedRef.current && requestId === requestIdRef.current;
+
     if (!enabled) {
       setLoading(false);
       return;
@@ -42,42 +74,44 @@ export function useSupabaseQuery<T>(
     setLoading(true);
     setError(null);
 
-    try {
-      const result = await queryFn();
+    const scheduleRetry = () => {
+      retriesRef.current++;
+      retryTimerRef.current = setTimeout(() => {
+        if (isCurrent()) execute();
+      }, retryDelay);
+    };
 
-      if (!mountedRef.current) return;
+    try {
+      const result = await queryFnRef.current();
+      if (!isCurrent()) return;
 
       if (result.error) {
         if (retriesRef.current < retryCount) {
-          retriesRef.current++;
-          setTimeout(() => {
-            if (mountedRef.current) execute();
-          }, retryDelay);
+          scheduleRetry();
           return;
         }
-        setError(result.error.message);
+        setError(result.error.message || "Request failed");
         setData(null);
       } else {
         setData(result.data);
         retriesRef.current = 0;
       }
     } catch (err) {
-      if (!mountedRef.current) return;
-
+      if (!isCurrent()) return;
       if (retriesRef.current < retryCount) {
-        retriesRef.current++;
-        setTimeout(() => {
-          if (mountedRef.current) execute();
-        }, retryDelay);
+        scheduleRetry();
         return;
       }
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
       setData(null);
-    } finally {
-      if (mountedRef.current) setLoading(false);
+    }
+
+    if (isCurrent()) {
+      setLoading(false);
+      setSettledOnce(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, enabled, retryCount, retryDelay]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -85,6 +119,7 @@ export function useSupabaseQuery<T>(
     execute();
     return () => {
       mountedRef.current = false;
+      clearRetry();
     };
   }, [execute]);
 
@@ -93,5 +128,14 @@ export function useSupabaseQuery<T>(
     execute();
   }, [execute]);
 
-  return { data, error, loading, refetch };
+  const initialLoading = enabled && !settledOnce;
+
+  return {
+    data,
+    error,
+    loading,
+    initialLoading,
+    refreshing: loading && settledOnce,
+    refetch,
+  };
 }

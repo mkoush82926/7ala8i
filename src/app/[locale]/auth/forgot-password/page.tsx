@@ -1,227 +1,211 @@
 "use client";
 
-import React, { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Loader2, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
-import { motion } from "framer-motion";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import { KeyRound, Mail, MailCheck } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { useTranslation } from "@/hooks/use-translation";
+import { authErrorKey, isValidEmail, type AuthErrorKey } from "../auth-errors";
+import {
+  AuthAlert,
+  AuthCard,
+  AuthField,
+  AuthFootnote,
+  AuthHeader,
+  AuthShell,
+  SubmitButton,
+} from "../_components/auth-shell";
 
-const T = {
-  dark:    "#1c1611",
-  mid:     "#5a5147",
-  muted:   "#5a5147",
-  outline: "#ede3cd",
-  surfLow: "#ffffff",
-  white:   "#ffffff",
-  black:   "#1c1611",
-  accent:  "#7c4a1e",
-  error:   "#ba1a1a",
-  errBg:   "#ffdad6",
-};
+const RESEND_COOLDOWN_SECONDS = 60;
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordContent() {
+  const { t, locale, href } = useTranslation();
   const [email, setEmail] = useState("");
+  const [touched, setTouched] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
-  const supabase = createClient();
-  const { t, dir, isRTL, FF, FFD } = useTranslation();
-  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<AuthErrorKey | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
+
+  const fieldError = touched
+    ? !email.trim()
+      ? t.auth.fieldRequired
+      : !isValidEmail(email)
+        ? t.auth.errors.invalidEmail
+        : null
+    : null;
+
+  async function sendLink(address: string) {
+    const supabase = createClient();
+    return supabase.auth.resetPasswordForEmail(address, {
+      redirectTo: `${window.location.origin}/${locale}/auth/reset-password`,
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    });
-
-    if (err) {
-      setError(err.message);
-      setLoading(false);
+    setTouched(true);
+    if (!email.trim() || !isValidEmail(email)) {
+      emailRef.current?.focus();
       return;
     }
+    setErrorKey(null);
+    setLoading(true);
+    try {
+      const address = email.trim().toLowerCase();
+      const { error } = await sendLink(address);
+      // Only rate limits are surfaced; any other outcome shows the same
+      // neutral confirmation so the form can't be used to probe accounts.
+      if (error && authErrorKey(error) === "rateLimited") {
+        setErrorKey("rateLimited");
+        return;
+      }
+      setSentTo(address);
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch {
+      setErrorKey("generic");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    setSent(true);
-    setLoading(false);
+  async function handleResend() {
+    if (!sentTo || cooldown > 0) return;
+    setLoading(true);
+    try {
+      const { error } = await sendLink(sentTo);
+      if (error && authErrorKey(error) === "rateLimited") setErrorKey("rateLimited");
+      else setCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch {
+      setErrorKey("generic");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const loginHref = href("/auth/login");
+
+  if (sentTo) {
+    const [before, after = ""] = t.auth.resetSentBody.split("{email}");
+    return (
+      <AuthShell navLink={{ href: loginHref, label: t.auth.backToSignIn }}>
+        <AuthCard>
+          <AuthHeader
+            icon={MailCheck}
+            tone="success"
+            align="center"
+            title={t.auth.checkEmailTitle}
+            subtitle={
+              <>
+                {before}
+                <strong dir="ltr" style={{ color: "var(--text-primary)", wordBreak: "break-all" }}>
+                  {sentTo}
+                </strong>
+                {after}
+              </>
+            }
+          />
+          {errorKey && (
+            <div style={{ marginBottom: 16 }}>
+              <AuthAlert>{t.auth.errors[errorKey]}</AuthAlert>
+            </div>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <Link href={loginHref} className="btn btn-primary" style={{ width: "100%", minHeight: 52 }}>
+              {t.auth.backToSignIn}
+            </Link>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleResend}
+              disabled={loading || cooldown > 0}
+              aria-busy={loading || undefined}
+              style={{ width: "100%", minHeight: 48 }}
+            >
+              {loading
+                ? t.auth.sending
+                : cooldown > 0
+                  ? t.auth.resendIn.replace("{seconds}", String(cooldown))
+                  : t.auth.resendEmail}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSentTo(null);
+                setErrorKey(null);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                minHeight: 40,
+                color: "var(--text-secondary)",
+                fontSize: 14,
+                fontWeight: 600,
+                textDecoration: "underline",
+                textUnderlineOffset: 3,
+                cursor: "pointer",
+              }}
+            >
+              {t.auth.useDifferentEmail}
+            </button>
+          </div>
+          <p style={{ marginTop: 16, fontSize: 13, textAlign: "center", color: "var(--text-muted)" }}>{t.auth.checkSpam}</p>
+        </AuthCard>
+      </AuthShell>
+    );
   }
 
   return (
-    <div style={{ background: T.white, minHeight: "100dvh", fontFamily: FF, direction: dir }}>
-      {/* NavBar */}
-      <nav className="auth-nav" style={{
-        background: T.white,
-        borderBottom: `1px solid ${T.outline}`,
-      }}>
-        <Link href="/landing" style={{ textDecoration: "none" }}>
-          <span style={{ fontFamily: "var(--font-intervar), sans-serif", fontSize: 20, fontWeight: 800, letterSpacing: "0.012em", color: T.dark }}>
-            Halaqy
-          </span>
-        </Link>
-        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <Link
-            href="/auth/login"
-            className="btn btn-secondary"
-            style={{ borderRadius: 9999, minHeight: 36, padding: "0 16px", fontSize: 12 }}
-          >
-            {isRTL ? "العودة لتسجيل الدخول" : "Back to Sign In"}
-          </Link>
-        </div>
-      </nav>
+    <AuthShell navLink={{ href: loginHref, label: t.auth.backToSignIn }}>
+      <AuthCard>
+        <AuthHeader icon={KeyRound} title={t.auth.resetTitle} subtitle={t.auth.resetSubtitle} />
 
-      {/* Main Content */}
-      <main className="auth-main" style={{ background: T.white }}>
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
-          style={{ width: "100%", maxWidth: 480 }}
-        >
-          <div className="auth-card" style={{
-            background: T.white, borderRadius: 12,
-            border: `1px solid ${T.outline}`,
-          }}>
-            {sent ? (
-              /* ── Success State ── */
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 16 }}>
-                <div style={{
-                  width: 64, height: 64, borderRadius: 12,
-                  background: "rgba(166,124,61,0.1)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  marginBottom: 8,
-                }}>
-                  <CheckCircle size={28} style={{ color: "#a67c3d" }} />
-                </div>
-                <h1 style={{ fontFamily: FFD, fontSize: 24, fontWeight: 700, color: T.dark, margin: 0 }}>
-                  {isRTL ? "تحقق من بريدك الإلكتروني" : "Check your email"}
-                </h1>
-                <p style={{ fontSize: 14, color: T.muted, maxWidth: 340, lineHeight: 1.6, margin: 0 }}>
-                  {isRTL ? "لقد أرسلنا رابط إعادة تعيين كلمة المرور إلى " : "We sent a password reset link to "}
-                  <strong style={{ color: T.dark }}>{email}</strong>
-                  {isRTL ? ". تحقق من بريدك الوارد واتبع التعليمات." : ". Check your inbox and follow the instructions."}
-                </p>
-                <div style={{ marginTop: 24, width: "100%" }}>
-                  <Link
-                    href="/auth/login"
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      width: "100%", height: 52,
-                      background: T.accent, color: T.white,
-                      borderRadius: 8, fontSize: 14, fontWeight: 700,
-                      textDecoration: "none",
-                    }}
-                  >
-                    <BackArrow size={16} /> {isRTL ? "العودة لتسجيل الدخول" : "Back to Sign In"}
-                  </Link>
-                </div>
-                <p style={{ fontSize: 12, color: T.muted, marginTop: 8 }}>
-                  {isRTL ? "لم تستلم البريد الإلكتروني؟" : "Didn't receive the email?"}{" "}
-                  <button
-                    onClick={() => setSent(false)}
-                    style={{ background: "none", border: "none", color: T.dark, fontWeight: 700, cursor: "pointer", fontSize: 12 }}
-                  >
-                    {isRTL ? "حاول مرة أخرى" : "Try again"}
-                  </button>
-                </p>
-              </div>
-            ) : (
-              /* ── Form State ── */
-              <>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 48 }}>
-                  <div style={{
-                    width: 44, height: 44, background: T.black, borderRadius: 12,
-                    display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 28,
-                  }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 22, color: T.white, fontVariationSettings: "'FILL' 1" }}>
-                      lock_reset
-                    </span>
-                  </div>
-                  <h1 style={{ fontFamily: FFD, fontSize: 28, fontWeight: 300, letterSpacing: headingTracking(isRTL, "0.016em"), color: T.dark, marginBottom: 10 }}>
-                    {isRTL ? "إعادة تعيين كلمة المرور" : "Reset password"}
-                  </h1>
-                  <p style={{ fontSize: 14, color: T.muted, fontWeight: 300, letterSpacing: headingTracking(isRTL, "0.01em"), textAlign: "center" }}>
-                    {isRTL ? "أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين." : "Enter your email address and we'll send you a reset link."}
-                  </p>
-                </div>
+        <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <AuthField
+            ref={emailRef}
+            id="email"
+            name="email"
+            type="email"
+            label={t.auth.emailAddress}
+            icon={Mail}
+            required
+            autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            dir="ltr"
+            style={{ textAlign: "start" }}
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => setTouched(true)}
+            error={fieldError}
+          />
 
-                {error && (
-                  <div style={{
-                    marginBottom: 24, padding: "12px 16px",
-                    borderRadius: 12, background: T.errBg,
-                    color: T.error, fontSize: 14, fontWeight: 500,
-                  }}>
-                    {error}
-                  </div>
-                )}
+          {errorKey && <AuthAlert>{t.auth.errors[errorKey]}</AuthAlert>}
 
-                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <label
-                      htmlFor="email"
-                      style={{ fontFamily: FF, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: headingTracking(isRTL, "0.2em"), color: T.muted }}
-                    >
-                      {t.auth.emailAddress}
-                    </label>
-                    <input
-                      id="email"
-                      type="email"
-                      required
-                      autoComplete="email"
-                      placeholder="name@domain.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      style={{
-                        height: 52, padding: "0 18px",
-                        borderRadius: 8, border: `1px solid ${T.outline}`,
-                        background: T.surfLow, fontFamily: FF, fontSize: 14,
-                        color: T.dark, outline: "none", transition: "all 0.15s",
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.background = T.white;
-                        e.currentTarget.style.border = "1px solid #a67c3d";
-                        e.currentTarget.style.boxShadow = "var(--shadow-focus)";
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.background = T.surfLow;
-                        e.currentTarget.style.border = `1px solid ${T.outline}`;
-                        e.currentTarget.style.boxShadow = "none";
-                      }}
-                    />
-                  </div>
+          <SubmitButton loading={loading} loadingLabel={t.auth.sending}>
+            {t.auth.sendResetLink}
+          </SubmitButton>
+        </form>
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn btn-primary"
-                    style={{ height: 52, width: "100%", opacity: loading ? 0.7 : 1 }}
-                    aria-label={isRTL ? "إرسال رابط إعادة التعيين" : "Send Reset Link"}
-                  >
-                    {loading ? (
-                      <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
-                    ) : (
-                      <>
-                        <span>{isRTL ? "إرسال رابط إعادة التعيين" : "Send Reset Link"}</span>
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{isRTL ? "arrow_back" : "arrow_forward"}</span>
-                      </>
-                    )}
-                  </button>
-                </form>
+        <AuthFootnote text={t.auth.rememberPassword} linkLabel={t.auth.signInBtn} linkHref={loginHref} />
+      </AuthCard>
+    </AuthShell>
+  );
+}
 
-                <div style={{ marginTop: 32, textAlign: "center" }}>
-                  <p style={{ fontSize: 12, color: T.muted, opacity: 0.7 }}>
-                    {isRTL ? "تتذكر كلمة مرورك؟" : "Remember your password?"}{" "}
-                    <Link href="/auth/login" style={{ fontWeight: 700, color: T.dark, textDecoration: "none" }}>
-                      {t.auth.signInBtn}
-                    </Link>
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        </motion.div>
-      </main>
-    </div>
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ForgotPasswordContent />
+    </Suspense>
   );
 }

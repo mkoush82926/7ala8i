@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+// LEGACY one-off generator for the root /seed.sql (hard-coded ids of one hosted
+// project). Not used by `supabase db reset` — see supabase/seed.sql.
 const fs = require('fs');
 
 const managerId = '017ebd83-2992-414f-a28f-82473123930f';

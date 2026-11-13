@@ -1,18 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, X } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { AlertTriangle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/use-translation";
+import { Dialog, DialogFooter } from "@/components/ui/dialog";
 
-interface ConfirmDialogProps {
+export interface ConfirmDialogProps {
   open: boolean;
   onClose: () => void;
+  /**
+   * Runs on confirm. The dialog closes only when it resolves; if it throws
+   * (or rejects) the dialog stays open and shows `errorMessage` (or the
+   * thrown Error's message, or a generic translated message).
+   */
   onConfirm: () => void | Promise<void>;
   title: string;
-  description?: string;
+  description?: React.ReactNode;
+  /** Defaults to t.common.confirm */
   confirmLabel?: string;
+  /** Defaults to t.common.cancel */
   cancelLabel?: string;
+  /** Red confirm button + warning icon; Cancel gets initial focus. */
   destructive?: boolean;
+  /** Alias of `destructive` for variant-style call sites. */
+  variant?: "default" | "destructive";
+  /** Externally-controlled busy state (in addition to the internal one). */
+  loading?: boolean;
+  /** Shown when onConfirm throws; defaults to the thrown message / t.error.message. */
+  errorMessage?: string;
+  /** Optional extra content between the description and the actions. */
+  children?: React.ReactNode;
 }
 
 export function ConfirmDialog({
@@ -21,89 +39,109 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   destructive = false,
+  variant,
+  loading: externalLoading = false,
+  errorMessage,
+  children,
 }: ConfirmDialogProps) {
-  const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
+  const isDestructive = destructive || variant === "destructive";
+  const busy = pending || externalLoading;
+
+  const handleClose = () => {
+    if (busy) return; // don't drop an in-flight action
+    setError(null);
+    onClose();
+  };
 
   const handleConfirm = async () => {
-    setLoading(true);
+    if (busy) return;
+    setPending(true);
+    setError(null);
     try {
       await onConfirm();
-    } finally {
-      setLoading(false);
+      setPending(false);
       onClose();
+    } catch (err) {
+      setPending(false);
+      setError(
+        errorMessage ??
+          (err instanceof Error && err.message ? err.message : t.error.message),
+      );
     }
   };
 
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-[100]"
-            onClick={onClose}
-          />
-
-          {/* Dialog */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
-            className="fixed inset-0 flex items-center justify-center z-[101] p-4"
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      role="alertdialog"
+      size="sm"
+      title={
+        <span className="flex items-start gap-3">
+          {isDestructive && (
+            <span
+              aria-hidden="true"
+              className="mt-[-2px] inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-cards)] bg-[var(--accent-rose-muted)]"
+            >
+              <AlertTriangle size={18} className="text-[var(--accent-rose)]" />
+            </span>
+          )}
+          <span className="pt-1">{title}</span>
+        </span>
+      }
+      description={description}
+      initialFocusRef={isDestructive ? cancelRef : confirmRef}
+      closeOnBackdrop={!busy}
+      closeOnEscape={!busy}
+      hideCloseButton
+      bodyClassName={!children && !error ? "hidden" : undefined}
+      footer={
+        <DialogFooter>
+          <button
+            ref={cancelRef}
+            type="button"
+            onClick={handleClose}
+            disabled={busy}
+            className="btn btn-secondary text-[14px]"
           >
-            <div className="w-full max-w-sm rounded-[var(--radius-lg)] border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-6">
-              {/* Icon */}
-              {destructive && (
-                <div className="w-10 h-10 rounded-[var(--radius-cards)] bg-[var(--accent-rose-muted)] flex items-center justify-center mb-4">
-                  <AlertTriangle size={18} className="text-[var(--accent-rose)]" />
-                </div>
-              )}
-
-              {/* Content */}
-              <h3 className="text-[15px] text-[var(--text-primary)] font-medium mb-1">
-                {title}
-              </h3>
-              {description && (
-                <p className="text-[13px] text-[var(--text-tertiary)] font-light mb-6 leading-relaxed">
-                  {description}
-                </p>
-              )}
-
-              {/* Actions */}
-              <div className="flex items-center gap-3 justify-end">
-                <button
-                  onClick={onClose}
-                  disabled={loading}
-                  className="h-11 px-4 rounded-[var(--radius-buttons)] text-[13px] text-[var(--text-secondary)] font-light border border-[var(--border-primary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {cancelLabel}
-                </button>
-                <button
-                  onClick={handleConfirm}
-                  disabled={loading}
-                  className={`h-11 px-5 rounded-[var(--radius-buttons)] text-[13px] font-medium flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                    destructive
-                      ? "bg-[var(--accent-rose)] text-white hover:opacity-90"
-                      : "bg-[var(--accent-mint)] text-white hover:opacity-90"
-                  }`}
-                >
-                  {loading && (
-                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  )}
-                  {confirmLabel}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </>
+            {cancelLabel ?? t.common.cancel}
+          </button>
+          <button
+            ref={confirmRef}
+            type="button"
+            onClick={handleConfirm}
+            disabled={busy}
+            aria-busy={busy || undefined}
+            className={cn("btn text-[14px]", isDestructive ? "btn-destructive" : "btn-primary")}
+          >
+            {busy && (
+              <span
+                aria-hidden="true"
+                className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin"
+              />
+            )}
+            <span>{busy ? t.common.processing : (confirmLabel ?? t.common.confirm)}</span>
+          </button>
+        </DialogFooter>
+      }
+    >
+      {children}
+      {error && (
+        <p
+          role="alert"
+          className="mt-1 rounded-[var(--radius-inputs)] bg-[var(--accent-rose-muted)] px-3 py-2 text-[13px] text-[var(--accent-rose)]"
+        >
+          {error}
+        </p>
       )}
-    </AnimatePresence>
+    </Dialog>
   );
 }

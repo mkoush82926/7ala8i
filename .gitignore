@@ -11,7 +11,12 @@
 !.yarn/versions
 
 # testing
-/coverage
+coverage/
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+/e2e/.seed-data.json
 
 # next.js
 /.next/
@@ -25,6 +30,7 @@
 *.pem
 
 # debug
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -37,16 +43,22 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local tool settings (shared settings live in .claude/settings.json)
+.claude/settings.local.json
+
+# supabase CLI local state
+/supabase/.branches
+/supabase/.temp
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-# testing
-/coverage
-/test-results
-/playwright-report
-/e2e/.seed-data.json
-
 # raw asset drop-off — the actual files used by the app are copied into
 # public/videos/, which IS committed; this is just the untouched original
 /videoassets
+
+# graphify — keep graph.json committed for teammates; skip heavy/derived output
+graphify-out/cache/
+graphify-out/graph.html
+graphify-out/.graphify_labels.pending.json

@@ -1,38 +1,65 @@
+import { NextResponse } from "next/server";
 import { CancelBookingSchema } from "@/lib/validations";
-import { apiResponse, apiError } from "@/lib/api-helpers";
+import {
+  apiResponse,
+  apiErrorCode,
+  apiValidationError,
+  dbErrorResponse,
+  mapDbError,
+  serverError,
+} from "@/lib/api-helpers";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit, rateLimitKey, getClientIp } from "@/lib/rate-limit";
+import { callRpc } from "../rpc";
 
+/**
+ * POST /api/booking/cancel — a signed-in customer cancels their own booking.
+ * Ownership, status, start time and the shop's cancellation window are all
+ * checked inside the cancel_customer_booking RPC.
+ */
 export async function POST(request: Request) {
+  const rl = await rateLimit(rateLimitKey("cancel", getClientIp(request)), 20, 3600);
+  if (!rl.success) return apiErrorCode("RATE_LIMITED", { retryAfter: rl.retryAfter });
+
+  let body: unknown;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch {
+    return apiErrorCode("VALIDATION_FAILED");
+  }
 
-    // ─── Validate input ───
-    const parsed = CancelBookingSchema.safeParse(body);
-    if (!parsed.success) {
-      return apiError("Validation failed", 400, parsed.error.flatten());
-    }
+  const parsed = CancelBookingSchema.safeParse(body);
+  if (!parsed.success) return apiValidationError(parsed.error);
+  const { appointment_id, reason } = parsed.data;
 
-    const { appointment_id, reason } = parsed.data;
-
+  try {
     const supabase = await createClient();
-
-    // ─── Cancel appointment via secure RPC ───
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: cancelled, error: rpcErr } = await (supabase.rpc as any)("cancel_customer_booking", {
+    const { data, error: rpcErr } = await callRpc(supabase, "cancel_customer_booking", {
       p_appointment_id: appointment_id,
+      p_reason: reason || null,
     });
 
-    if (rpcErr || !cancelled) {
-      console.error("[Cancel] RPC failed:", rpcErr);
-      // The RPC throws exact error strings like "Cannot cancel..." or "Appointment not found"
-      const msg = rpcErr?.message || "Failed to cancel appointment. Please try again.";
-      const status = msg.includes("not found") ? 404 : 400;
-      return apiError(msg, status);
+    if (rpcErr) {
+      const mapped = mapDbError(rpcErr);
+      if (mapped.code === "INSIDE_CANCELLATION_WINDOW") {
+        // error.details carries the shop's policy (hours) so the UI can say "at least N hours before".
+        const hours = Number.parseInt(String((rpcErr as { details?: unknown }).details ?? ""), 10);
+        return NextResponse.json(
+          {
+            success: false,
+            error: mapped.message,
+            code: mapped.code,
+            ...(Number.isFinite(hours) ? { policyHours: hours } : {}),
+          },
+          { status: mapped.status },
+        );
+      }
+      return dbErrorResponse("booking.cancel", rpcErr);
     }
+    if (!data) return apiErrorCode("APPT_NOT_FOUND");
 
-    return apiResponse({ cancelled: true, appointment_id });
+    return apiResponse(data);
   } catch (err) {
-    console.error("[Cancel] Unexpected error:", err);
-    return apiError("Something went wrong. Please try again.", 500);
+    return serverError("booking.cancel", err);
   }
 }

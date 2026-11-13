@@ -1,191 +1,323 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subWeeks, subMonths, subYears, parseISO } from "date-fns";
+import {
+  type AnalyticsPeriod,
+  DEFAULT_TIMEZONE,
+  bucketKeyOf,
+  getPeriodRange,
+  inclusiveEnd,
+  pctChange,
+  zonedParts,
+} from "./analytics-period";
 
-interface AnalyticsAppointmentRow {
-  id: string;
-  price: number | null;
-  status: string | null;
+export type { AnalyticsPeriod } from "./analytics-period";
+
+// ═══════════════════════════════════════════════════════
+// Analytics page data.
+//
+// Definitions (kept identical to the dashboard_metrics RPC so the Overview
+// and Analytics pages never disagree):
+//   • Revenue  = sum of daily_sales.amount (money actually taken), by sale time.
+//   • Bookings = appointments that are not cancelled, by start time.
+//   • New clients = client records created in the period.
+//   • Repeat-client rate = share of the period's distinct clients who booked
+//     two or more times in the period.
+//
+// Queries are bounded: every read is limited to the selected period and is
+// paged with .range() (PostgREST silently caps a single response at 1000
+// rows), up to MAX_ROWS per dataset; `truncated` tells the UI when the cap
+// was hit. Long-term this aggregation belongs in SQL (see handoffs).
+// ═══════════════════════════════════════════════════════
+
+export const PAGE_SIZE = 1000;
+export const MAX_ROWS = 20_000;
+
+/** Booking sources (lib/types BOOKING_SOURCES); unknown/legacy values fold into "other". */
+export const SOURCE_KEYS = ["online", "instagram", "google", "word_of_mouth", "walk_in", "whatsapp", "other"] as const;
+export type SourceKey = (typeof SOURCE_KEYS)[number];
+
+export interface MetricDelta {
+  current: number;
+  previous: number;
+  change: number;
+}
+
+export interface AnalyticsData {
+  period: AnalyticsPeriod;
+  timeZone: string;
+  currency: string;
+  range: { start: string; end: string };
+  summary: {
+    revenue: MetricDelta;
+    bookings: MetricDelta;
+    newClients: MetricDelta;
+    /** 0–100, null when there are no clients in the period */
+    repeatRate: { current: number | null; previous: number | null; change: number | null };
+    averageTicket: MetricDelta;
+  };
+  /** Full, gap-free series: key is yyyy-MM-dd (week/month) or yyyy-MM (year). */
+  revenueSeries: { key: string; revenue: number; bookings: number }[];
+  bucket: "day" | "month";
+  /** Top 5 staff by revenue; name null = sale without a barber. */
+  barbers: { name: string | null; revenue: number; sales: number; pct: number }[];
+  sources: { source: SourceKey; count: number; pct: number }[];
+  /** Bookings per weekday (0=Sun…6=Sat) × hour, in shop time. */
+  heatmap: { hours: number[]; counts: Record<number, number[]>; max: number; total: number };
+  truncated: boolean;
+}
+
+type Row = Record<string, unknown>;
+type Builder = PromiseLike<{ data: Row[] | null; error: { message: string } | null; count?: number | null }> & {
+  range: (from: number, to: number) => Builder;
+};
+
+/** Pages through a query until exhausted or MAX_ROWS is reached. */
+export async function fetchAllRows(
+  makeQuery: () => Builder,
+  maxRows = MAX_ROWS,
+): Promise<{ rows: Row[]; error: { message: string } | null; truncated: boolean }> {
+  const rows: Row[] = [];
+  for (let from = 0; from < maxRows; from += PAGE_SIZE) {
+    const to = Math.min(from + PAGE_SIZE, maxRows) - 1;
+    const { data, error } = await makeQuery().range(from, to);
+    if (error) return { rows, error, truncated: false };
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < to - from + 1) return { rows, error: null, truncated: false };
+  }
+  return { rows, error: null, truncated: true };
+}
+
+function normalizeSource(src: unknown): SourceKey {
+  const s = String(src ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (!s) return "walk_in";
+  if (s === "walkin") return "walk_in";
+  if (s === "wordofmouth" || s === "referral") return "word_of_mouth";
+  return (SOURCE_KEYS as readonly string[]).includes(s) ? (s as SourceKey) : "other";
+}
+
+function repeatRate(rows: Row[]): number | null {
+  const visits = new Map<string, number>();
+  for (const r of rows) {
+    const id = r.client_id as string | null;
+    if (!id) continue;
+    visits.set(id, (visits.get(id) ?? 0) + 1);
+  }
+  if (visits.size === 0) return null;
+  let repeat = 0;
+  visits.forEach((n) => {
+    if (n >= 2) repeat += 1;
+  });
+  return +((repeat / visits.size) * 100).toFixed(1);
+}
+
+const sum = (rows: Row[]) => rows.reduce((acc, r) => acc + (Number(r.amount) || 0), 0);
+
+export async function getFullAnalytics(
+  supabase: SupabaseClient,
+  shopId: string,
+  period: AnalyticsPeriod,
+  now: Date = new Date(),
+): Promise<AnalyticsData> {
+  // Shop settings drive the period boundaries and money formatting.
+  const { data: shop } = await supabase.from("shops").select("timezone, currency").eq("id", shopId).maybeSingle();
+  const timeZone = (shop as { timezone?: string | null } | null)?.timezone || DEFAULT_TIMEZONE;
+  const currency = (shop as { currency?: string | null } | null)?.currency || "JOD";
+  const range = getPeriodRange(period, timeZone, now);
+  const curr = { from: range.start.toISOString(), to: inclusiveEnd(range.end) };
+  const prev = { from: range.prevStart.toISOString(), to: inclusiveEnd(range.prevEnd) };
+
+  const appts = (r: { from: string; to: string }, cols: string) => () =>
+    supabase
+      .from("appointments")
+      .select(cols)
+      .eq("shop_id", shopId)
+      .neq("status", "cancelled")
+      .gte("start_time", r.from)
+      .lte("start_time", r.to)
+      .order("start_time", { ascending: true }) as unknown as Builder;
+
+  const sales = (r: { from: string; to: string }, cols: string) => () =>
+    supabase
+      .from("daily_sales")
+      .select(cols)
+      .eq("shop_id", shopId)
+      .gte("created_at", r.from)
+      .lte("created_at", r.to)
+      .order("created_at", { ascending: true }) as unknown as Builder;
+
+  const newClients = (r: { from: string; to: string }) =>
+    supabase
+      .from("clients")
+      .select("id", { count: "exact", head: true })
+      .eq("shop_id", shopId)
+      .gte("created_at", r.from)
+      .lte("created_at", r.to);
+
+  const [currAppts, prevAppts, currSales, prevSales, currClients, prevClients] = await Promise.all([
+    fetchAllRows(appts(curr, "id, start_time, source, client_id")),
+    fetchAllRows(appts(prev, "id, client_id")),
+    fetchAllRows(sales(curr, "amount, barber_name, created_at")),
+    fetchAllRows(sales(prev, "amount")),
+    newClients(curr),
+    newClients(prev),
+  ]);
+
+  const firstError =
+    currAppts.error ?? prevAppts.error ?? currSales.error ?? prevSales.error ?? currClients.error ?? prevClients.error;
+  if (firstError) throw new Error(firstError.message);
+
+  // ── Summary ──
+  const revenue = sum(currSales.rows);
+  const prevRevenue = sum(prevSales.rows);
+  const bookings = currAppts.rows.length;
+  const prevBookings = prevAppts.rows.length;
+  const clientsNow = currClients.count ?? 0;
+  const clientsPrev = prevClients.count ?? 0;
+  const rr = repeatRate(currAppts.rows);
+  const rrPrev = repeatRate(prevAppts.rows);
+  const avg = currSales.rows.length ? revenue / currSales.rows.length : 0;
+  const avgPrev = prevSales.rows.length ? prevRevenue / prevSales.rows.length : 0;
+
+  // ── Revenue series (gap-free) ──
+  const series = new Map(range.buckets.map((k) => [k, { key: k, revenue: 0, bookings: 0 }]));
+  for (const s of currSales.rows) {
+    const key = bucketKeyOf(String(s.created_at ?? ""), range.bucket, range.timeZone);
+    const b = key ? series.get(key) : undefined;
+    if (b) b.revenue += Number(s.amount) || 0;
+  }
+  for (const a of currAppts.rows) {
+    const key = bucketKeyOf(String(a.start_time ?? ""), range.bucket, range.timeZone);
+    const b = key ? series.get(key) : undefined;
+    if (b) b.bookings += 1;
+  }
+  const revenueSeries = range.buckets.map((k) => {
+    const b = series.get(k)!;
+    return { key: b.key, revenue: +b.revenue.toFixed(3), bookings: b.bookings };
+  });
+
+  // ── Staff (from the same sales as Revenue) ──
+  const byBarber = new Map<string, { revenue: number; sales: number }>();
+  for (const s of currSales.rows) {
+    const name = String(s.barber_name ?? "").trim();
+    const entry = byBarber.get(name) ?? { revenue: 0, sales: 0 };
+    entry.revenue += Number(s.amount) || 0;
+    entry.sales += 1;
+    byBarber.set(name, entry);
+  }
+  const barbers = [...byBarber.entries()]
+    .map(([name, v]) => ({
+      name: name || null,
+      revenue: +v.revenue.toFixed(3),
+      sales: v.sales,
+      pct: revenue > 0 ? Math.round((v.revenue / revenue) * 100) : 0,
+    }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5);
+
+  // ── Booking sources ──
+  const bySource = new Map<SourceKey, number>();
+  for (const a of currAppts.rows) {
+    const k = normalizeSource(a.source);
+    bySource.set(k, (bySource.get(k) ?? 0) + 1);
+  }
+  const sources = [...bySource.entries()]
+    .map(([source, count]) => ({ source, count, pct: bookings ? Math.round((count / bookings) * 100) : 0 }))
+    .sort((a, b) => b.count - a.count);
+
+  // ── Peak hours (all 7 days; hours span the data, min 9–20) ──
+  const counts: Record<number, number[]> = {};
+  const hourly: { weekday: number; hour: number }[] = [];
+  let minHour = 9;
+  let maxHour = 20;
+  for (const a of currAppts.rows) {
+    const d = new Date(String(a.start_time ?? ""));
+    if (Number.isNaN(d.getTime())) continue;
+    const p = zonedParts(d, range.timeZone);
+    hourly.push({ weekday: p.weekday, hour: p.hour });
+    minHour = Math.min(minHour, p.hour);
+    maxHour = Math.max(maxHour, p.hour);
+  }
+  const hours = Array.from({ length: maxHour - minHour + 1 }, (_, i) => minHour + i);
+  for (let day = 0; day < 7; day++) counts[day] = hours.map(() => 0);
+  let max = 0;
+  for (const { weekday, hour } of hourly) {
+    const v = ++counts[weekday][hour - minHour];
+    if (v > max) max = v;
+  }
+
+  return {
+    period,
+    timeZone: range.timeZone,
+    currency,
+    range: { start: range.start.toISOString(), end: range.end.toISOString() },
+    summary: {
+      revenue: { current: revenue, previous: prevRevenue, change: pctChange(revenue, prevRevenue) },
+      bookings: { current: bookings, previous: prevBookings, change: pctChange(bookings, prevBookings) },
+      newClients: { current: clientsNow, previous: clientsPrev, change: pctChange(clientsNow, clientsPrev) },
+      repeatRate: {
+        current: rr,
+        previous: rrPrev,
+        change: rr !== null && rrPrev !== null ? +(rr - rrPrev).toFixed(1) : null,
+      },
+      averageTicket: { current: avg, previous: avgPrev, change: pctChange(avg, avgPrev) },
+    },
+    revenueSeries,
+    bucket: range.bucket,
+    barbers,
+    sources,
+    heatmap: { hours, counts, max, total: hourly.length },
+    truncated: currAppts.truncated || prevAppts.truncated || currSales.truncated || prevSales.truncated,
+  };
+}
+
+// ─── CSV export ───
+
+export interface ExportRow {
   start_time: string;
-  source: string | null;
+  client_name: string | null;
+  service_name: string | null;
   barber_id: string | null;
-  client_id: string | null;
+  price: number | null;
+  currency: string | null;
+  status: string | null;
+  payment_method: string | null;
+  source: string | null;
 }
 
-interface AnalyticsClientRow {
-  id: string;
+/** Appointments of the selected period with curated columns (paged). */
+export async function getAppointmentsForExport(
+  supabase: SupabaseClient,
+  shopId: string,
+  period: AnalyticsPeriod,
+  timeZone: string,
+  now: Date = new Date(),
+) {
+  const range = getPeriodRange(period, timeZone, now);
+  const result = await fetchAllRows(
+    () =>
+      supabase
+        .from("appointments")
+        .select("start_time, client_name, service_name, barber_id, price, currency, status, payment_method, source")
+        .eq("shop_id", shopId)
+        .gte("start_time", range.start.toISOString())
+        .lte("start_time", inclusiveEnd(range.end))
+        .order("start_time", { ascending: true }) as unknown as Builder,
+  );
+  return { rows: result.rows as unknown as ExportRow[], error: result.error, truncated: result.truncated, range };
 }
 
-interface AnalyticsProfileRow {
-  id: string;
-  full_name: string | null;
+/**
+ * One CSV cell: quoted, quotes doubled, and spreadsheet formulas neutralised
+ * (values starting with = + - @ or a tab/CR get a leading apostrophe), since
+ * client names are user-supplied.
+ */
+export function csvCell(value: unknown): string {
+  let s = value === null || value === undefined ? "" : String(value);
+  if (typeof value === "string" && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+  return `"${s.replace(/"/g, '""')}"`;
 }
 
-export async function getFullAnalytics(supabase: SupabaseClient, shopId: string, period: "week" | "month" | "year") {
-  const today = new Date();
-  let start: string, end: string, prevStart: string, prevEnd: string;
-
-  if (period === "week") {
-    start = format(startOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-    end = format(endOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-    prevStart = format(startOfWeek(subWeeks(today, 1), { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-    prevEnd = format(endOfWeek(subWeeks(today, 1), { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-  } else if (period === "month") {
-    start = format(startOfMonth(today), "yyyy-MM-dd'T'HH:mm:ss");
-    end = format(endOfMonth(today), "yyyy-MM-dd'T'HH:mm:ss");
-    prevStart = format(startOfMonth(subMonths(today, 1)), "yyyy-MM-dd'T'HH:mm:ss");
-    prevEnd = format(endOfMonth(subMonths(today, 1)), "yyyy-MM-dd'T'HH:mm:ss");
-  } else {
-    start = format(startOfYear(today), "yyyy-MM-dd'T'HH:mm:ss");
-    end = format(endOfYear(today), "yyyy-MM-dd'T'HH:mm:ss");
-    prevStart = format(startOfYear(subYears(today, 1)), "yyyy-MM-dd'T'HH:mm:ss");
-    prevEnd = format(endOfYear(subYears(today, 1)), "yyyy-MM-dd'T'HH:mm:ss");
-  }
-
-  // Fetch current period appointments
-  const { data: currApptsRaw } = await supabase
-    .from("appointments")
-    .select("id, price, status, start_time, source, barber_id, client_id")
-    .eq("shop_id", shopId)
-    .gte("start_time", start)
-    .lte("start_time", end);
-
-  // Fetch previous period appointments
-  const { data: prevApptsRaw } = await supabase
-    .from("appointments")
-    .select("id, price, status, client_id")
-    .eq("shop_id", shopId)
-    .gte("start_time", prevStart)
-    .lte("start_time", prevEnd);
-    
-  // Fetch clients for new clients count
-  const { data: currClientsRaw } = await supabase
-    .from("clients")
-    .select("id")
-    .eq("shop_id", shopId)
-    .gte("created_at", start)
-    .lte("created_at", end);
-    
-  const { data: prevClientsRaw } = await supabase
-    .from("clients")
-    .select("id")
-    .eq("shop_id", shopId)
-    .gte("created_at", prevStart)
-    .lte("created_at", prevEnd);
-
-  const currAppts = (currApptsRaw || []) as AnalyticsAppointmentRow[];
-  const prevAppts = (prevApptsRaw || []) as AnalyticsAppointmentRow[];
-  const currClients = (currClientsRaw || []) as AnalyticsClientRow[];
-  const prevClients = (prevClientsRaw || []) as AnalyticsClientRow[];
-
-  // Helper
-  const pct = (curr: number, prev: number) => prev === 0 ? (curr > 0 ? 100 : 0) : +(((curr - prev) / prev) * 100).toFixed(1);
-
-  // 1. Summary Metrics
-  const currCompleted = currAppts.filter(a => a.status === "completed");
-  const prevCompleted = prevAppts.filter(a => a.status === "completed");
-
-  const currRevenue = currCompleted.reduce((sum, a) => sum + (a.price || 0), 0);
-  const prevRevenue = prevCompleted.reduce((sum, a) => sum + (a.price || 0), 0);
-  const revChange = pct(currRevenue, prevRevenue);
-
-  const currBookings = currAppts.length;
-  const prevBookings = prevAppts.length;
-  const bookChange = pct(currBookings, prevBookings);
-
-  const currNewClients = currClients.length;
-  const prevNewClients = prevClients.length;
-  const clientChange = pct(currNewClients, prevNewClients);
-
-  // Retention rate is only meaningful once there's completed-appointment data
-  // to compute it from — with zero completions there is nothing to divide by,
-  // and the rate is "not enough data yet", not a genuine 0%.
-  const hasCurrRetData = currCompleted.length > 0;
-  const hasPrevRetData = prevCompleted.length > 0;
-  const currRet = hasCurrRetData ? Math.max(0, Math.min(100, +((1 - currNewClients / currCompleted.length) * 100).toFixed(1))) : null;
-  const prevRet = hasPrevRetData ? Math.max(0, Math.min(100, +((1 - prevNewClients / prevCompleted.length) * 100).toFixed(1))) : null;
-  const retChange = hasCurrRetData && hasPrevRetData ? +(currRet! - prevRet!).toFixed(1) : null;
-
-  const summary = [
-    { id: "revenue", label: "Revenue", value: `${currRevenue.toLocaleString()} JOD`, sub: `vs. ${prevRevenue.toLocaleString()} JOD last period`, change: revChange, dir: revChange >= 0 ? "up" : "down" },
-    { id: "bookings", label: "Bookings", value: `${currBookings}`, sub: "Total appointments scheduled", change: bookChange, dir: bookChange >= 0 ? "up" : "down" },
-    { id: "clients", label: "New Clients", value: `${currNewClients}`, sub: "First-time visitors this period", change: clientChange, dir: clientChange >= 0 ? "up" : "down" },
-    { id: "retention", label: "Retention Rate", value: hasCurrRetData ? `${currRet}%` : "—", sub: hasCurrRetData ? "Returning client frequency" : "Not enough data yet", change: retChange ?? 0, dir: retChange === null ? "flat" : (retChange >= 0 ? "up" : "down") },
-  ];
-
-  // 2. Revenue Trend (Chart)
-  const groupedRev: Record<string, number> = {};
-  currCompleted.forEach(a => {
-    if (!a.start_time) return;
-    const d = parseISO(a.start_time);
-    let lbl = "";
-    if (period === "week") lbl = format(d, "EEE");
-    else if (period === "month") lbl = format(d, "MMM d");
-    else lbl = format(d, "MMM");
-    groupedRev[lbl] = (groupedRev[lbl] || 0) + (a.price || 0);
-  });
-  const revenueChart = Object.entries(groupedRev).map(([name, revenue]) => ({ name, revenue }));
-
-  // 3. Barbers Performance
-  const { data: profilesRaw } = await supabase.from("profiles").select("id, full_name").eq("shop_id", shopId);
-  const profiles = (profilesRaw || []) as AnalyticsProfileRow[];
-  const nameMap = new Map(profiles.map(p => [p.id, p.full_name]));
-  
-  const bMap: Record<string, number> = {};
-  currCompleted.forEach(a => {
-    const bId = a.barber_id || "unassigned";
-    bMap[bId] = (bMap[bId] || 0) + (a.price || 0);
-  });
-  
-  const barberChart = Object.entries(bMap).map(([id, rev]) => {
-    return { name: id === "unassigned" ? "Unassigned" : nameMap.get(id) || "Unknown", revenue: rev, pct: currRevenue ? Math.round((rev / currRevenue) * 100) : 0 };
-  }).sort((a,b) => b.revenue - a.revenue).slice(0, 5);
-
-  // 4. Acquisition Sources
-  const sMap: Record<string, number> = {};
-  currAppts.forEach(a => {
-    const src = a.source || "Walk-in";
-    sMap[src] = (sMap[src] || 0) + 1;
-  });
-  const colors = ["#000000", "#45464c", "#76777d", "#c6c6cc", "#eceef0"];
-  const totalSrc = currAppts.length || 1;
-  const acquisitionChart = Object.entries(sMap).sort((a,b) => b[1] - a[1]).map(([src, count], i) => {
-    const p = Math.round((count / totalSrc) * 100);
-    return { name: `${src} (${p}%)`, value: p, color: colors[i % colors.length] };
-  });
-  if (acquisitionChart.length === 0) {
-    acquisitionChart.push({ name: "Walk-in (100%)", value: 100, color: "#000000" });
-  }
-
-  // 5. Peak Hours Heatmap (Simplified mapping)
-  // Labels reflect the actual bucket boundaries used below (hr<12, 12-15, 15-18, hr>=18) —
-  // not single points in time — so the heatmap doesn't imply appointments only land exactly on the hour.
-  const peakChart = [
-    { hour: "Before 12", vals: [0, 0, 0, 0, 0, 0, 0] },
-    { hour: "12–3", vals: [0, 0, 0, 0, 0, 0, 0] },
-    { hour: "3–6", vals: [0, 0, 0, 0, 0, 0, 0] },
-    { hour: "After 6", vals: [0, 0, 0, 0, 0, 0, 0] },
-  ];
-  currAppts.forEach(a => {
-    if (!a.start_time) return;
-    const d = parseISO(a.start_time);
-    const day = d.getDay(); // 0 = sun, 1 = mon
-    const mapDay = day === 0 ? 6 : day - 1; // mon=0 ... sun=6
-    const hr = d.getHours();
-    
-    let row = 0;
-    if (hr < 12) row = 0;
-    else if (hr < 15) row = 1;
-    else if (hr < 18) row = 2;
-    else row = 3;
-    
-    peakChart[row].vals[mapDay] += 1;
-  });
-  
-  let maxPeak = 1;
-  peakChart.forEach(r => r.vals.forEach(v => { if (v > maxPeak) maxPeak = v; }));
-  peakChart.forEach(r => {
-    r.vals = r.vals.map(v => +(v / maxPeak).toFixed(2));
-  });
-
-  return { summary, revenueChart, barberChart, acquisitionChart, peakChart };
+export function toCsv(headers: string[], rows: unknown[][]): string {
+  // BOM so Excel opens UTF-8 (Arabic names) correctly.
+  return "﻿" + [headers, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n");
 }

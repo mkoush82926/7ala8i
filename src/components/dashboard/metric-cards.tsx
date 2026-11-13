@@ -1,277 +1,182 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Confetti } from "@/components/ui/confetti";
+import { MetricCardsSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   CalendarDays,
-  DollarSign,
+  Wallet,
   TrendingUp,
-  Target,
   ArrowUpRight,
   ArrowDownRight,
   AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
-import { useWorkspaceStore } from "@/store/workspace-store";
-import { useSupabaseQuery } from "@/hooks/use-supabase-query";
-import { createClient } from "@/lib/supabase/client";
-import { getDashboardMetrics } from "@/lib/queries/analytics";
+import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { useDashboardMetrics } from "@/hooks/use-dashboard-data";
+import { cn } from "@/lib/utils";
 
-interface MetricCardData {
+interface StatCard {
   id: string;
   label: string;
   value: string;
   change: number;
+  comparison: string;
   icon: React.ReactNode;
-  isDark?: boolean;
 }
 
-function AnimatedNumber({ value }: { value: string }) {
-  const [displayed, setDisplayed] = useState("0");
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDisplayed(value), 100);
-    return () => clearTimeout(timer);
-  }, [value]);
-
+function ChangeBadge({ change, comparison }: { change: number; comparison: string }) {
+  const { formatNumber } = useTranslation();
+  const up = change >= 0;
+  const Icon = up ? ArrowUpRight : ArrowDownRight;
+  const pct = `${up ? "+" : "−"}${formatNumber(Math.abs(change), { maximumFractionDigits: 1 })}%`;
   return (
-    <motion.span
-      key={displayed}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-    >
-      {displayed}
-    </motion.span>
+    <p className="m-0 mt-2.5 flex flex-wrap items-center gap-1 text-[12px] font-bold">
+      <span
+        className={cn("inline-flex items-center gap-0.5", up ? "text-[var(--accent-text)]" : "text-[var(--accent-rose)]")}
+      >
+        <Icon size={13} aria-hidden="true" className="rtl:-scale-x-100" />
+        <span dir="ltr">{pct}</span>
+      </span>
+      <span className="font-semibold text-[var(--text-muted)]">{comparison}</span>
+    </p>
   );
 }
 
 export function MetricCards() {
-  const { t, isRTL, FF } = useTranslation();
-  const { shopId } = useWorkspaceStore();
-  const supabase = createClient();
-
-  const { data: metrics, loading, error, refetch } = useSupabaseQuery(
-    async () => {
-      const result = await getDashboardMetrics(supabase, shopId);
-      return { data: result, error: null };
-    },
-    [shopId],
-    { enabled: !!shopId },
-  );
-
-  const m = metrics ?? {
-    todayBookings: 0,
-    todayBookingsChange: 0,
-    todaySales: 0,
-    todaySalesChange: 0,
-    weeklyTrajectory: 0,
-    weeklyTrajectoryChange: 0,
-    monthlyRevenue: 0,
-    monthlyRevenueChange: 0,
-    dailyGoal: 120,
-    dailyProgress: 0,
-  };
+  const { t, isRTL, FFD, formatCurrency, formatNumber } = useTranslation();
+  const { metrics: m, loading, error, refetch } = useDashboardMetrics();
 
   const goalPct = m.dailyGoal > 0 ? Math.min((m.dailyProgress / m.dailyGoal) * 100, 100) : 0;
+  const goalMet = m.dailyGoal > 0 && m.dailyProgress >= m.dailyGoal;
 
-  const cards: MetricCardData[] = [
+  // Fire the confetti once per page view when the goal is reached.
+  const [showConfetti, setShowConfetti] = useState(false);
+  useEffect(() => {
+    if (!goalMet) return;
+    const timer = setTimeout(() => setShowConfetti(true), 800);
+    return () => clearTimeout(timer);
+  }, [goalMet]);
+
+  if (loading) return <MetricCardsSkeleton />;
+
+  if (error) {
+    return (
+      <EmptyState
+        tone="error"
+        size="sm"
+        icon={AlertTriangle}
+        title={t.dashboard.metricsError}
+        description={t.error.message}
+        action={{ label: t.common.retry, onClick: refetch, icon: RefreshCw }}
+      />
+    );
+  }
+
+  const money = (n: number) => formatCurrency(n, m.currency, { maximumFractionDigits: 2, trimZeros: true });
+
+  const cards: StatCard[] = [
     {
       id: "bookings",
       label: t.dashboard.todaysBookings,
-      value: m.todayBookings.toString(),
+      value: formatNumber(m.todayBookings),
       change: m.todayBookingsChange,
-      icon: <CalendarDays size={22} />,
+      comparison: t.dashboard.vsYesterday,
+      icon: <CalendarDays size={22} aria-hidden="true" />,
     },
     {
       id: "sales",
       label: t.dashboard.todaysSales,
-      value: `${m.todaySales.toFixed(1)} ${t.common.jod}`,
+      value: money(m.todaySales),
       change: m.todaySalesChange,
-      icon: <DollarSign size={22} />,
+      comparison: t.dashboard.vsYesterday,
+      icon: <Wallet size={22} aria-hidden="true" />,
     },
     {
       id: "weekly",
       label: t.dashboard.weeklyRevenue,
-      value: `${m.weeklyTrajectory.toFixed(0)} ${t.common.jod}`,
+      value: money(m.weeklyTrajectory),
       change: m.weeklyTrajectoryChange,
-      icon: <TrendingUp size={22} />,
-    },
-    {
-      id: "goal",
-      label: t.dashboard.dailyGoal,
-      value: `${goalPct.toFixed(0)}%`,
-      change: m.monthlyRevenueChange,
-      icon: <Target size={22} />,
-      isDark: true,
+      comparison: t.dashboard.vsLastWeek,
+      icon: <TrendingUp size={22} aria-hidden="true" />,
     },
   ];
 
-  const goalMet = m.dailyProgress >= m.dailyGoal;
-  const [showConfetti, setShowConfetti] = useState(false);
-
-  useEffect(() => {
-    if (goalMet) {
-      const timer = setTimeout(() => setShowConfetti(true), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [goalMet]);
-
-  if (loading) {
-    return (
-      <div className="card-grid-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} style={{
-            padding: 28, borderRadius: 12,
-            border: "1px solid #ede3cd",
-            background: "#fff",
-            minHeight: 152,
-            display: "flex", flexDirection: "column", justifyContent: "space-between",
-          }}>
-            {/* Label + icon row */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ height: 10, width: 80, borderRadius: 9999, background: "#ede3cd" }} />
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: "#ede3cd" }} />
-            </div>
-            {/* Value placeholder */}
-            <div style={{ height: 36, width: 110, borderRadius: 8, background: "#ede3cd" }} />
-            {/* Change badge placeholder */}
-            <div style={{ height: 14, width: 90, borderRadius: 9999, background: "#ede3cd" }} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{
-        padding: 28, borderRadius: 12,
-        border: "1px solid #ede3cd",
-        background: "#fff",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        gap: 16, flexWrap: "wrap",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 12,
-            background: "rgba(186,26,26,0.1)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <AlertTriangle size={20} style={{ color: "#ba1a1a" }} />
-          </div>
-          <div>
-            <p style={{ fontSize: 13, fontWeight: 700, color: "#1c1611", margin: "0 0 2px" }}>
-              Couldn&apos;t load metrics
-            </p>
-            <p style={{ fontSize: 12, color: "#5a5147", margin: 0 }}>{error}</p>
-          </div>
-        </div>
-        <button onClick={refetch} className="btn btn-secondary">Retry</button>
-      </div>
-    );
-  }
+  const labelCls = cn("text-[11px] font-bold leading-normal", !isRTL && "uppercase tracking-[0.14em]");
 
   return (
     <div className="card-grid-4">
-      {cards.map((metric, index) => (
-        <motion.div
-          key={metric.id}
-          initial={{ opacity: 0, y: 20 }}
+      {cards.map((card, index) => (
+        <motion.section
+          key={card.id}
+          aria-label={card.label}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.08, type: "spring", stiffness: 300, damping: 25 }}
-          style={{
-            position: "relative", overflow: "hidden",
-            borderRadius: 12, display: "flex", flexDirection: "column",
-            justifyContent: "space-between",
-            // Practice #3 — 28px padding (7×4 base unit)
-            padding: 28,
-            // Practice #5 — fixed min-height for visual consistency
-            minHeight: 152,
-            background: metric.isDark ? "#1c1611" : "#ffffff",
-            // Practice #1 — every card gets a 1px Frost Border hairline, never a shadow
-            border: "1px solid #ede3cd",
-            // Practice #8 — transitions for interactive states
-            transition: "transform 0.2s ease",
-            cursor: "default",
-          }}
-          // Practice #8 — hover + active states
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLDivElement).style.transform = "";
-          }}
+          transition={{ delay: index * 0.06, type: "spring", stiffness: 300, damping: 25 }}
+          className="relative flex min-h-[152px] flex-col justify-between overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-6 sm:p-7"
         >
-          {metric.id === "goal" && (
-            <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
-          )}
-
-          {/* Top row */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <span style={{
-              fontSize: 9, fontWeight: 800, textTransform: "uppercase",
-              letterSpacing: headingTracking(isRTL, "0.2em"), lineHeight: 1.5,
-              color: metric.isDark ? "rgba(255,255,255,0.6)" : "#5a5147"
-            }}>
-              {metric.label}
+          <div className="flex items-start justify-between gap-3">
+            <h2 className={cn(labelCls, "m-0 text-[var(--text-secondary)]")}>{card.label}</h2>
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-[var(--border-subtle)] text-[var(--text-primary)]">
+              {card.icon}
             </span>
-            {metric.isDark ? (
-              <span style={{ fontSize: 14, fontWeight: 800, color: "#ffffff" }}>
-                {metric.value}
-              </span>
-            ) : (
-              <div style={{
-                width: 40, height: 40, borderRadius: 12,
-                background: "#ffffff", border: "1px solid #ede3cd",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#1c1611",
-              }}>
-                {metric.icon}
-              </div>
-            )}
           </div>
-
-          {/* Value */}
-          <div style={{ marginTop: 32 }}>
-            {!metric.isDark && (
-              <>
-                <div
-                  style={{ fontSize: 36, fontWeight: 800, letterSpacing: headingTracking(isRTL, "0.016em"), color: "#1c1611", lineHeight: 1, fontFamily: FF }}
-                >
-                  <AnimatedNumber value={metric.value} />
-                </div>
-
-                {/* Change badge */}
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4, color: metric.change >= 0 ? "#a67c3d" : "#ba1a1a" }}>
-                    {metric.change >= 0 ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
-                    {metric.change >= 0 ? "+" : ""}{metric.change}% vs yesterday
-                  </span>
-                </div>
-              </>
-            )}
-
-            {/* Goal progress bar (dark card) */}
-            {metric.isDark && (
-              <div style={{ marginTop: 32 }}>
-                <div style={{ width: "100%", height: 3, background: "rgba(255,255,255,0.15)", borderRadius: 9999, overflow: "hidden", marginBottom: 16 }}>
-                  <motion.div
-                    style={{ height: "100%", background: "#ffffff", borderRadius: 9999 }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${goalPct}%` }}
-                    transition={{ delay: 0.5, duration: 1.2, ease: [0.25, 1, 0.5, 1] }}
-                  />
-                </div>
-                <p style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.18em" }}>
-                  {m.dailyProgress.toFixed(1)} of {m.dailyGoal} JOD target
-                </p>
-              </div>
-            )}
+          <div className="mt-6">
+            <p
+              className="m-0 text-[30px] font-extrabold leading-none tabular-nums text-[var(--text-primary)] sm:text-[34px]"
+              style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.012em") }}
+            >
+              {card.value}
+            </p>
+            <ChangeBadge change={card.change} comparison={card.comparison} />
           </div>
-        </motion.div>
+        </motion.section>
       ))}
+
+      {/* Daily goal — inverted brand card */}
+      <motion.section
+        aria-label={t.dashboard.dailyGoal}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: cards.length * 0.06, type: "spring", stiffness: 300, damping: 25 }}
+        className="relative flex min-h-[152px] flex-col justify-between overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--brand-primary)] p-6 text-[var(--brand-on-primary)] sm:p-7"
+      >
+        <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
+        <div className="flex items-start justify-between gap-3">
+          <h2 className={cn(labelCls, "m-0 opacity-75")}>{t.dashboard.dailyGoal}</h2>
+          <span className="text-[15px] font-extrabold tabular-nums">
+            {formatNumber(Math.round(goalPct))}%
+          </span>
+        </div>
+        <div className="mt-8">
+          <div
+            role="progressbar"
+            aria-label={t.dashboard.dailyGoal}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(goalPct)}
+            className="mb-4 h-1 w-full overflow-hidden rounded-full"
+            style={{ background: "color-mix(in srgb, var(--brand-on-primary) 18%, transparent)" }}
+          >
+            <motion.div
+              className="h-full rounded-full bg-[var(--brand-on-primary)]"
+              initial={{ width: 0 }}
+              animate={{ width: `${goalPct}%` }}
+              transition={{ delay: 0.3, duration: 1, ease: [0.25, 1, 0.5, 1] }}
+            />
+          </div>
+          <p className="m-0 text-[12px] font-semibold opacity-80">
+            {goalMet
+              ? t.dashboard.goalReached
+              : interpolate(t.dashboard.goalProgress, {
+                  current: money(m.dailyProgress),
+                  goal: money(m.dailyGoal),
+                })}
+          </p>
+        </div>
+      </motion.section>
     </div>
   );
 }

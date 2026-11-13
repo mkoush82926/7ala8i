@@ -1,20 +1,11 @@
-// /customer/shops/[shopId]/book → redirects to /book/[shopId]
-"use client";
-import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 
-export default function CustomerBookRedirect() {
-  const params = useParams();
-  const router = useRouter();
-  const shopId = params.shopId as string;
-
-  useEffect(() => {
-    if (shopId) router.replace(`/book/${shopId}`);
-  }, [shopId, router]);
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[#ffffff]">
-      <div className="w-8 h-8 border-2 border-[#1c1611] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+// /customer/shops/[shopId]/book → /book/[shopId] (server redirect, no spinner flash).
+export default async function CustomerBookRedirect({
+  params,
+}: {
+  params: Promise<{ locale: string; shopId: string }>;
+}) {
+  const { locale, shopId } = await params;
+  redirect(`/${locale === "ar" ? "ar" : "en"}/book/${encodeURIComponent(shopId)}`);
 }

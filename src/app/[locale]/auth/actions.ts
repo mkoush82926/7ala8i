@@ -1,81 +1,102 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { SignupRoleSchema } from '@/lib/validations'
+import { rateLimit, rateLimitKey, getClientIp } from '@/lib/rate-limit'
+import { authErrorKey, isValidEmail, MIN_PASSWORD_LENGTH, type AuthErrorKey } from './auth-errors'
+import { normalizeAuthLocale, resolveNext } from './safe-next'
 
-export async function login(formData: FormData) {
-    const supabase = await createClient()
+export interface AuthActionResult {
+    /** Key into t.auth.errors — never a raw Supabase message. */
+    error?: AuthErrorKey
+}
 
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
-
-    // basic validation
-    if (!email || !password) {
-        return { error: 'Email and password are required' }
+async function clientIp(): Promise<string> {
+    try {
+        const h = await headers()
+        return getClientIp(new Request('http://local.invalid', { headers: h }))
+    } catch {
+        return 'unknown'
     }
+}
 
-    const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-    })
+export async function login(formData: FormData): Promise<AuthActionResult> {
+    const email = String(formData.get('email') ?? '').trim().toLowerCase()
+    const password = String(formData.get('password') ?? '')
+    const locale = normalizeAuthLocale(formData.get('locale'))
+    // Only same-origin relative paths are followed (see safe-next.ts).
+    const target = resolveNext(formData.get('next'), locale)
+
+    if (!email || !password) return { error: 'missingFields' }
+    if (!isValidEmail(email)) return { error: 'invalidEmail' }
+
+    // Throttle credential stuffing per IP+email before any network call.
+    const rl = await rateLimit(rateLimitKey('login', await clientIp(), email), 10, 300)
+    if (!rl.success) return { error: 'rateLimited' }
+
+    const supabase = await createClient()
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-        return { error: error.message }
+        const key = authErrorKey(error)
+        // Unknown failures are reported as bad credentials — never leak details.
+        return { error: key === 'generic' ? 'invalidCredentials' : key }
     }
 
     revalidatePath('/', 'layout')
-    redirect('/')
+    redirect(target)
 }
 
-export async function signup(formData: FormData) {
+/**
+ * Server-side signup (the signup page uses the browser client, but this
+ * stays available for progressive enhancement). The role is whitelisted to
+ * customer | shop_admin; barbers only ever join through an invite. The
+ * profile row (and, for owners, the shop) is created by the
+ * handle_new_user DB trigger — never from here.
+ */
+export async function signup(formData: FormData): Promise<AuthActionResult> {
+    const email = String(formData.get('email') ?? '').trim().toLowerCase()
+    const password = String(formData.get('password') ?? '')
+    const fullName = String(formData.get('fullName') ?? '').trim()
+    const shopName = String(formData.get('shopName') ?? '').trim()
+    const locale = normalizeAuthLocale(formData.get('locale'))
+    const rawRole = formData.get('role')
+    const role = SignupRoleSchema.parse(rawRole === 'client' ? 'customer' : rawRole)
+
+    if (!email || !password || !fullName) return { error: 'missingFields' }
+    if (!isValidEmail(email)) return { error: 'invalidEmail' }
+    if (password.length < MIN_PASSWORD_LENGTH) return { error: 'weakPassword' }
+
+    const rl = await rateLimit(rateLimitKey('signup', await clientIp()), 5, 600)
+    if (!rl.success) return { error: 'rateLimited' }
+
+    const metadata: Record<string, string> = { full_name: fullName.slice(0, 100), role }
+    if (role === 'shop_admin' && shopName) metadata.shop_name = shopName.slice(0, 100)
+
     const supabase = await createClient()
-
-    const email    = formData.get('email')    as string
-    const password = formData.get('password') as string
-    const fullName = formData.get('fullName') as string
-    // role comes from the role-selection step in the UI
-    const rawRole  = (formData.get('role') as string | null) || 'customer'
-    // Normalise: the UI sends 'client' for customers
-    const role = rawRole === 'client' ? 'customer' : rawRole
-
-    if (!email || !password || !fullName) {
-        return { error: 'All fields are required' }
-    }
-
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-            data: { full_name: fullName, role },
-        },
+        options: { data: metadata },
     })
 
-    if (error) {
-        return { error: error.message }
-    }
-
-    // Also upsert a profile row so the dashboard can read full_name/role immediately
-    if (data.user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from('profiles') as any).upsert({
-            id:        data.user.id,
-            full_name: fullName,
-            role,
-        })
-    }
+    if (error) return { error: authErrorKey(error) }
 
     revalidatePath('/', 'layout')
 
-    // Route to the right starting screen based on role
-    if (role === 'customer') {
-        redirect('/customer')
-    }
-    redirect('/')
+    // No session means email confirmation is pending — the page shows "check your email".
+    if (!data.session) return {}
+
+    redirect(role === 'customer' ? `/${locale}/customer` : `/${locale}`)
 }
 
-export async function logout() {
+export async function logout(formData?: FormData) {
     const supabase = await createClient()
     await supabase.auth.signOut()
-    redirect('/login')
+    const locale = normalizeAuthLocale(formData?.get('locale'))
+    revalidatePath('/', 'layout')
+    redirect(`/${locale}/auth/login`)
 }

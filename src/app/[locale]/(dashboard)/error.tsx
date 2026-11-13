@@ -1,8 +1,15 @@
 "use client";
 
-import React from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import React, { useEffect, useRef } from "react";
+import Link from "next/link";
+import { AlertTriangle, LayoutDashboard, RefreshCw } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
 
+/**
+ * Error boundary for dashboard pages. It renders inside the shell (sidebar
+ * and topbar stay usable), never shows raw `error.message`, and exposes the
+ * digest as a support reference that matches the server log line.
+ */
 export default function DashboardError({
   error,
   reset,
@@ -10,28 +17,50 @@ export default function DashboardError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { t, href } = useTranslation();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    console.error("[ui:dashboard-error]", { digest: error.digest, name: error.name, message: error.message });
+    headingRef.current?.focus();
+  }, [error]);
+
   return (
-    <div className="min-h-[60vh] flex items-center justify-center p-8">
-      <div className="text-center" style={{ maxWidth: 400 }}>
+    <section aria-labelledby="dashboard-error-title" className="flex min-h-[60vh] items-center justify-center p-4 sm:p-8">
+      <div className="fade-slide-up w-full max-w-md text-center">
         <div
-          className="rounded-2xl bg-[var(--accent-rose-muted)] flex items-center justify-center mx-auto"
-          style={{ width: 64, height: 64, marginBottom: 24 }}
+          aria-hidden="true"
+          className="mx-auto mb-6 grid size-16 place-items-center rounded-2xl bg-[var(--accent-rose-muted)]"
         >
           <AlertTriangle size={28} className="text-[var(--accent-rose)]" />
         </div>
-        <h2 className="text-[var(--text-primary)] font-semibold" style={{ fontSize: 20, marginBottom: 8 }}>
-          Something went wrong
-        </h2>
-        <p className="text-[var(--text-tertiary)]" style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
-          {error.message || "An unexpected error occurred. Please try again."}
-        </p>
-        <button
-          onClick={reset}
-          className="inline-flex items-center gap-2 h-11 px-6 rounded bg-[var(--accent-mint)] text-white font-semibold text-[14px] hover:opacity-90 transition-opacity"
+        <h1
+          id="dashboard-error-title"
+          ref={headingRef}
+          tabIndex={-1}
+          className="mb-2 text-[20px] font-bold text-[var(--text-primary)] outline-none"
         >
-          <RefreshCw size={16} /> Try Again
-        </button>
+          {t.error.title}
+        </h1>
+        <p role="alert" className="mb-6 text-[14px] leading-relaxed text-[var(--text-secondary)]">
+          {t.error.message}
+        </p>
+        <div className="flex flex-col-reverse items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+          <Link href={href("/my-day")} className="btn btn-secondary">
+            <LayoutDashboard size={16} aria-hidden="true" />
+            {t.sidebar.myDay}
+          </Link>
+          <button type="button" onClick={reset} className="btn btn-primary">
+            <RefreshCw size={16} aria-hidden="true" />
+            {t.error.tryAgain}
+          </button>
+        </div>
+        {error.digest && (
+          <p className="mt-8 text-[12px] text-[var(--text-muted)]">
+            {t.error.reference}: <code dir="ltr" className="select-all font-mono">{error.digest}</code>
+          </p>
+        )}
       </div>
-    </div>
+    </section>
   );
 }
