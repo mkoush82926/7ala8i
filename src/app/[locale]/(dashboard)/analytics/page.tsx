@@ -105,10 +105,14 @@ export default function AnalyticsPage() {
         case "word_of_mouth": return t.booking.wordOfMouth;
         case "walk_in": return t.booking.walkIn;
         case "whatsapp": return a.sourceWhatsapp;
+        // Branded booking links (WS-1H).
+        case "qr": return t.links.channels.qr;
+        case "facebook": return t.links.channels.fb;
+        case "website": return t.links.channels.web;
         default: return t.booking.other;
       }
     },
-    [a, t.booking],
+    [a, t.booking, t.links.channels],
   );
 
   // ── Revenue series with localized labels ──

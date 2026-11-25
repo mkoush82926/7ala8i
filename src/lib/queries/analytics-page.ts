@@ -32,7 +32,19 @@ export const PAGE_SIZE = 1000;
 export const MAX_ROWS = 20_000;
 
 /** Booking sources (lib/types BOOKING_SOURCES); unknown/legacy values fold into "other". */
-export const SOURCE_KEYS = ["online", "instagram", "google", "word_of_mouth", "walk_in", "whatsapp", "other"] as const;
+export const SOURCE_KEYS = [
+  "online",
+  "instagram",
+  "google",
+  "word_of_mouth",
+  "walk_in",
+  "whatsapp",
+  // Branded booking links (WS-1H, booking_source_category).
+  "qr",
+  "facebook",
+  "website",
+  "other",
+] as const;
 export type SourceKey = (typeof SOURCE_KEYS)[number];
 
 export interface MetricDelta {

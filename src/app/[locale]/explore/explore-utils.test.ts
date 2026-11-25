@@ -1,22 +1,23 @@
-import { describe, it, expect } from "vitest";
-import { filterShops, normalizeSearch } from "./explore-utils";
+import { describe, expect, it } from "vitest";
+import { exploreRobots } from "./explore-utils";
 
-const shops = [
-  { name: "The Gentleman's Chair", address: "Amman, Abdoun", serviceNames: ["Skin Fade", "حلاقة ذقن"] },
-  { name: "صالون الأناقة", address: "إربد", serviceNames: [] },
-];
-
-describe("explore search", () => {
-  it("normalizes Arabic variants", () => {
-    expect(normalizeSearch("  أَربد  ")).toBe("اربد");
-    expect(normalizeSearch("صالةٌ")).toBe("صاله");
+describe("exploreRobots", () => {
+  it("indexes the bare listing and place pages", () => {
+    expect(exploreRobots({})).toEqual({ index: true, follow: true });
+    expect(exploreRobots({ city: "amman" })).toEqual({ index: true, follow: true });
+    expect(exploreRobots({ city: "amman", area: "abdoun" })).toEqual({ index: true, follow: true });
+    expect(exploreRobots({ q: "fade" })).toEqual({ index: true, follow: true });
   });
-  it("matches name, address and services; every term must match", () => {
-    expect(filterShops(shops, "")).toHaveLength(2);
-    expect(filterShops(shops, "fade")).toHaveLength(1);
-    expect(filterShops(shops, "amman chair")).toHaveLength(1);
-    expect(filterShops(shops, "amman irbid")).toHaveLength(0);
-    expect(filterShops(shops, "اربد")).toHaveLength(1);
-    expect(filterShops(shops, "ذقن")).toHaveLength(1);
+
+  it("keeps refinements out of the index", () => {
+    expect(exploreRobots({ when: "today" })).toEqual({ index: false, follow: true });
+    expect(exploreRobots({ city: "amman", f: "kids" })).toEqual({ index: false, follow: true });
+    expect(exploreRobots({ q: "fade", city: "amman" })).toEqual({ index: false, follow: true });
+    expect(exploreRobots({ view: "map" })).toEqual({ index: false, follow: true });
+  });
+
+  it("ignores empty values", () => {
+    expect(exploreRobots({ q: "", sort: undefined })).toEqual({ index: true, follow: true });
+    expect(exploreRobots(null)).toEqual({ index: true, follow: true });
   });
 });

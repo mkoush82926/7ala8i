@@ -9,7 +9,9 @@ import { useWorkspaceStore } from "@/store/workspace-store";
 import { invalidateDashboard } from "@/hooks/use-pos";
 import {
   getAppointmentsByDateRange,
+  CALENDAR_APPOINTMENT_COLUMNS,
   completeAppointmentSale,
+  undoNoShow as undoNoShowRpc,
   createStaffAppointment,
   updateStaffAppointment,
   errorCodeOf,
@@ -40,6 +42,18 @@ export interface CalendarAppointment {
   currency: string;
   notes: string | null;
   source: string | null;
+  /** Front-desk timestamps (WS-1E); null until set. */
+  arrivedAt: string | null;
+  startedAt: string | null;
+  /** 1D service lines (appointment_services), in booking order; empty for legacy rows. */
+  services: AppointmentServiceLine[];
+}
+
+export interface AppointmentServiceLine {
+  serviceId: string | null;
+  name: string;
+  nameAr: string | null;
+  duration: number | null;
 }
 
 /** Thrown by the mutation helpers; `code` is a key of t.error.codes (or null). */
@@ -74,7 +88,27 @@ export function toCalendarAppointment(row: Record<string, unknown>): CalendarApp
     currency: (row.currency as string | null) || "JOD",
     notes: (row.notes as string | null) ?? null,
     source: (row.source as string | null) ?? null,
+    arrivedAt: (row.arrived_at as string | null) ?? null,
+    startedAt: (row.started_at as string | null) ?? null,
+    services: Array.isArray(row.appointment_services)
+      ? (row.appointment_services as Record<string, unknown>[])
+          .slice()
+          .sort((a, b) => (Number(a.sort) || 0) - (Number(b.sort) || 0))
+          .map((l) => ({
+            serviceId: (l.service_id as string | null) ?? null,
+            name: String(l.name ?? ""),
+            nameAr: (l.name_ar as string | null) ?? null,
+            duration: l.duration == null ? null : Number(l.duration),
+          }))
+      : [],
   };
+}
+
+export interface UseAppointmentsOptions {
+  /** Last local day of the range (inclusive); defaults to `date` (one day). */
+  to?: Date;
+  /** Calendar v2 columns (front-desk timestamps + service lines). */
+  detailed?: boolean;
 }
 
 /**
@@ -82,7 +116,7 @@ export function toCalendarAppointment(row: Record<string, unknown>): CalendarApp
  * protection when the date changes quickly, and mutations that throw an
  * AppointmentActionError on failure (so ConfirmDialog stays open).
  */
-export function useAppointments(date: Date) {
+export function useAppointments(date: Date, options: UseAppointmentsOptions = {}) {
   const [appointments, setAppointments] = useState<CalendarAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +128,8 @@ export function useAppointments(date: Date) {
   const requestRef = useRef(0);
 
   const dateStr = format(date, "yyyy-MM-dd");
+  const toStr = options.to ? format(options.to, "yyyy-MM-dd") : dateStr;
+  const detailed = !!options.detailed;
 
   const fetchAppointments = useCallback(
     async (opts: { silent?: boolean } = {}) => {
@@ -102,7 +138,14 @@ export function useAppointments(date: Date) {
       if (!opts.silent) setLoading(true);
       setError(null);
       try {
-        const { data, error: qError } = await getAppointmentsByDateRange(supabase, shopId, dateStr, dateStr);
+        const { data, error: qError } = await getAppointmentsByDateRange(
+          supabase,
+          shopId,
+          dateStr,
+          toStr,
+          undefined,
+          detailed ? CALENDAR_APPOINTMENT_COLUMNS : undefined,
+        );
         if (token !== requestRef.current) return; // superseded by a newer request
         if (qError) {
           setError(errorCodeOf(qError) ?? "LOAD_FAILED");
@@ -118,7 +161,7 @@ export function useAppointments(date: Date) {
         if (token === requestRef.current) setLoading(false);
       }
     },
-    [supabase, shopId, dateStr],
+    [supabase, shopId, dateStr, toStr, detailed],
   );
 
   useEffect(() => {
@@ -206,7 +249,53 @@ export function useAppointments(date: Date) {
     [supabase, fetchAppointments],
   );
 
+  /**
+   * Drag/resize/keyboard move: optimistic, rolled back on failure. The
+   * appointments_no_overlap exclusion constraint still rejects double
+   * bookings (23P01 → SLOT_TAKEN).
+   */
+  const moveAppointment = useCallback(
+    async (appointmentId: string, target: { startTime: string; endTime: string; barberId: string | null }) => {
+      const before = appointments.find((a) => a.id === appointmentId);
+      const durationMinutes = Math.max(
+        0,
+        Math.round((new Date(target.endTime).getTime() - new Date(target.startTime).getTime()) / 60000),
+      );
+      patchLocal(appointmentId, { ...target, durationMinutes });
+      const { error: upError } = await updateStaffAppointment(supabase, appointmentId, {
+        startTime: target.startTime,
+        endTime: target.endTime,
+        barberId: target.barberId,
+      });
+      if (upError) {
+        if (before) {
+          patchLocal(appointmentId, {
+            startTime: before.startTime,
+            endTime: before.endTime,
+            barberId: before.barberId,
+            durationMinutes: before.durationMinutes,
+          });
+        }
+        throw new AppointmentActionError(errorCodeOf(upError));
+      }
+      invalidateDashboard();
+    },
+    [appointments, patchLocal, supabase],
+  );
+
+  /** Reverts a no-show to confirmed (undo_no_show RPC). */
+  const undoNoShow = useCallback(
+    async (appointmentId: string) => {
+      const { error: rpcError } = await undoNoShowRpc(supabase, appointmentId);
+      if (rpcError) throw new AppointmentActionError(errorCodeOf(rpcError));
+      patchLocal(appointmentId, { status: "confirmed" });
+      invalidateDashboard();
+    },
+    [supabase, patchLocal],
+  );
+
   const refetch = useCallback(() => fetchAppointments(), [fetchAppointments]);
+  const refresh = useCallback(() => fetchAppointments({ silent: true }), [fetchAppointments]);
 
   return {
     appointments,
@@ -215,7 +304,10 @@ export function useAppointments(date: Date) {
     error,
     loadedDate,
     refetch,
+    refresh,
     updateStatus,
+    moveAppointment,
+    undoNoShow,
     markPaid,
     createAppointment,
     updateAppointment,

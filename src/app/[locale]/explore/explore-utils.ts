@@ -1,37 +1,20 @@
-export interface ExploreShop {
-  id: string;
-  name: string;
-  address: string | null;
-  currency: string;
-  rating: { avg: number; count: number } | null;
-  cheapest: { price: number; duration: number } | null;
-  /** Active service names (English + Arabic) for search. */
-  serviceNames: string[];
-  slug?: string | null;
-  slug_ar?: string | null;
-  /** First shop photo (shops.cover_url), shown on the card when set. */
-  coverUrl?: string | null;
-}
+import type { Metadata } from "next";
 
-/** Lower-cases, strips Arabic diacritics/tatweel and unifies alef/ya/ta-marbuta forms. */
-export function normalizeSearch(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[̀-ًͯ-ٰٟـ]/g, "")
-    .replace(/[أإآ]/g, "ا")
-    .replace(/ى/g, "ي")
-    .replace(/ة/g, "ه")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+type QueryRecord = Record<string, string | string[] | undefined>;
 
-/** Every whitespace-separated term must match the name, address or a service. */
-export function filterShops<T extends Pick<ExploreShop, "name" | "address" | "serviceNames">>(shops: readonly T[], query: string): T[] {
-  const terms = normalizeSearch(query).split(" ").filter(Boolean);
-  if (terms.length === 0) return [...shops];
-  return shops.filter((shop) => {
-    const haystack = normalizeSearch([shop.name, shop.address ?? "", ...shop.serviceNames].join(" "));
-    return terms.every((term) => haystack.includes(term));
+/** Query keys that make a page a distinct, index-worthy listing. */
+const INDEXABLE_KEYS = new Set(["city", "area", "q"]);
+
+/**
+ * Plain listings (/explore, ?city=amman, ?city=amman&area=abdoun, ?q=fade)
+ * are indexable; anything with time, filters, sort, paging or view state is
+ * a personal refinement and stays out of the index (but is still followed).
+ */
+export function exploreRobots(query: QueryRecord | null | undefined): Metadata["robots"] {
+  const keys = Object.keys(query ?? {}).filter((k) => {
+    const v = query?.[k];
+    return v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0);
   });
+  const indexable = keys.every((k) => INDEXABLE_KEYS.has(k)) && !(keys.includes("q") && keys.length > 1);
+  return indexable ? { index: true, follow: true } : { index: false, follow: true };
 }

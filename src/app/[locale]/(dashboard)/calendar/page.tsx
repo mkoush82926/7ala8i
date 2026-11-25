@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import { motion } from "framer-motion";
-import { TimelineView } from "@/components/calendar/timeline-view";
+import { CalendarView } from "@/components/calendar/calendar-view";
 
 export default function CalendarPage() {
   return (
@@ -11,9 +11,9 @@ export default function CalendarPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
     >
-      {/* TimelineView reads deep-link params via useSearchParams, which needs a Suspense boundary. */}
+      {/* CalendarView reads deep-link params via useSearchParams, which needs a Suspense boundary. */}
       <Suspense fallback={null}>
-        <TimelineView />
+        <CalendarView />
       </Suspense>
     </motion.div>
   );

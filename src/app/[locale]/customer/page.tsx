@@ -107,7 +107,7 @@ export default function CustomerDashboard() {
         data: { user: authUser },
       } = await supabase.auth.getUser();
       if (!authUser) {
-        router.replace(href("/auth/login"));
+        router.replace(href("/customer/login"));
         return;
       }
 
@@ -129,9 +129,12 @@ export default function CustomerDashboard() {
       const phone = ownPhone || "";
       setUser({ id: authUser.id, full_name: fullName, email: authUser.email || "", phone });
 
-      // Links client rows matching the account's CONFIRMED email/phone. Ownership
-      // is clients.auth_user_id only; failures here are not fatal.
-      await supabase.rpc("link_customer_client");
+      // Links client rows (any shop) matching the account's VERIFIED phone or
+      // email. Ownership is clients.auth_user_id only; failures are not fatal.
+      // Falls back to the legacy RPC until migration 002900 is applied.
+      const rpc = supabase as unknown as { rpc: (fn: string) => PromiseLike<{ error: unknown }> };
+      const claim = await rpc.rpc("claim_customer_identity");
+      if (claim.error) await supabase.rpc("link_customer_client");
 
       const { data, error } = await supabase.rpc("get_my_appointments");
       if (error) {
@@ -305,7 +308,7 @@ export default function CustomerDashboard() {
     const { error } = await supabase.auth.signOut();
     if (error) throw new Error(t.error.message);
     toast.success(t.customer.signedOut);
-    router.replace(href("/auth/login"));
+    router.replace(href("/customer/login"));
   }
 
   // ─── Rendering helpers ───
@@ -389,10 +392,10 @@ export default function CustomerDashboard() {
             <Compass size={19} aria-hidden="true" />
             {t.customer.discoverShops}
           </Link>
-          <button type="button" onClick={openEditProfile} disabled={!user} className="portal-nav-item">
+          <Link href={href("/customer/account")} className="portal-nav-item">
             <UserRound size={19} aria-hidden="true" />
-            {t.customer.editProfile}
-          </button>
+            {t.customerAccount.navLabel}
+          </Link>
         </nav>
 
         <div className="px-2.5 pt-3 pb-5">
@@ -717,15 +720,13 @@ export default function CustomerDashboard() {
           </span>
           {t.explore.navBookings}
         </Link>
-        <button
-          type="button"
-          onClick={openEditProfile}
-          disabled={!user}
-          className="flex flex-col items-center gap-1 min-w-[64px] py-1 text-[11px] font-bold text-[var(--text-secondary)] rounded-[8px] disabled:opacity-50"
+        <Link
+          href={href("/customer/account")}
+          className="flex flex-col items-center gap-1 min-w-[64px] py-1 text-[11px] font-bold text-[var(--text-secondary)] rounded-[8px]"
         >
           <UserRound size={21} aria-hidden="true" />
           {t.explore.navAccount}
-        </button>
+        </Link>
       </nav>
 
       {/* ── Edit profile ── */}

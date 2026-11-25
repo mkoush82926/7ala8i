@@ -36,6 +36,8 @@ export interface AppointmentFormDefaults {
   /** Prefill for "new booking for this client" (clients drawer deep link). */
   clientName?: string;
   clientPhone?: string;
+  /** "Walk-in now": the client is here (status arrived); the name is optional. */
+  walkIn?: boolean;
 }
 
 interface AppointmentFormDialogProps {
@@ -185,7 +187,9 @@ function AppointmentForm({
   const start = day && time ? combineDayAndTime(day, time) : null;
   const end = start ? new Date(start.getTime() + duration * 60000) : null;
 
-  const nameMissing = clientName.trim().length === 0;
+  // Walk-ins can be saved without a name (WS-1E).
+  const nameOptional = isEdit ? appointment?.source === "walk_in" || !appointment?.clientName : source === "walk_in";
+  const nameMissing = !nameOptional && clientName.trim().length === 0;
   const servicesMissing = !keepOriginal && chosen.length === 0;
 
   const toggleService = (id: string) => {
@@ -228,7 +232,7 @@ function AppointmentForm({
       const serviceName = chosen.map(serviceLabel).join(" + ");
       if (isEdit && appointment) {
         await onUpdate(appointment.id, {
-          clientName: clientName.trim(),
+          clientName: clientName.trim() || null,
           barberId: resolvedBarber,
           startTime: start.toISOString(),
           endTime: end.toISOString(),
@@ -243,7 +247,7 @@ function AppointmentForm({
         let clientId: string | null = null;
         if (phone.trim()) {
           try {
-            const { data } = await upsertClient(supabase, shopId, { name: clientName.trim(), phone: phone.trim() });
+            const { data } = await upsertClient(supabase, shopId, { name: clientName.trim() || t.calendar.walkIn, phone: phone.trim() });
             clientId = (data as { id?: string } | null)?.id ?? null;
           } catch {
             clientId = null;
@@ -252,7 +256,7 @@ function AppointmentForm({
         await onCreate({
           barberId: resolvedBarber,
           clientId,
-          clientName: clientName.trim(),
+          clientName: clientName.trim() || null,
           serviceIds: chosen.map((s) => s.id),
           serviceName,
           startTime: start.toISOString(),
@@ -260,7 +264,7 @@ function AppointmentForm({
           price: total,
           notes: notes.trim() || null,
           source,
-          status: "confirmed",
+          status: defaults.walkIn ? "arrived" : "confirmed",
         });
         onSaved("create");
       }
@@ -299,7 +303,8 @@ function AppointmentForm({
             onChange={(e) => setClientName(e.target.value)}
             autoComplete="off"
             maxLength={120}
-            required
+            required={!nameOptional}
+            placeholder={nameOptional ? t.calendar.walkInNamePlaceholder : undefined}
             aria-invalid={submitted && nameMissing}
             aria-describedby={submitted && nameMissing ? `${ids.name}-err` : undefined}
           />

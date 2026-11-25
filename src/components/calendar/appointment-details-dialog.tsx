@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Banknote, CalendarClock, Check, CreditCard, Loader2, UserX, XCircle } from "lucide-react";
+import { Armchair, Banknote, CalendarClock, Check, CreditCard, DoorOpen, Loader2, Move, Undo2, UserX, XCircle } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import { useTranslation } from "@/hooks/use-translation";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { APPOINTMENT_STATUS_TRANSITIONS, type PaymentMethod } from "@/lib/types";
 import type { CalendarAppointment } from "@/hooks/use-appointments";
-import { STATUS_STYLES } from "./calendar-utils";
-import { useStatusLabel } from "./status-label";
+import { StatusPill } from "./status-pill";
+import { canMarkNoShow, isMovable } from "./calendar-model";
 
 interface AppointmentDetailsDialogProps {
   appointment: CalendarAppointment | null;
@@ -19,6 +18,15 @@ interface AppointmentDetailsDialogProps {
   onEdit: (a: CalendarAppointment) => void;
   onNoShow: (a: CalendarAppointment) => void;
   onCancel: (a: CalendarAppointment) => void;
+  /** Front desk (WS-1E): checked in / in the chair. */
+  onStatus?: (a: CalendarAppointment, status: "arrived" | "in_chair") => Promise<void>;
+  /** Reverts a no-show (undo_no_show). */
+  onUndoNoShow?: (a: CalendarAppointment) => Promise<void>;
+  /** Starts the arrow-key move mode on the calendar. */
+  onMoveMode?: (a: CalendarAppointment) => void;
+  /** Whether the signed-in member may change this appointment. */
+  canEdit?: boolean;
+  now?: Date;
 }
 
 /** Click/keyboard-accessible replacement for the old hover-only tooltip. */
@@ -31,16 +39,24 @@ export function AppointmentDetailsDialog({
   onEdit,
   onNoShow,
   onCancel,
+  onStatus,
+  onUndoNoShow,
+  onMoveMode,
+  canEdit = true,
+  now = new Date(),
 }: AppointmentDetailsDialogProps) {
-  const { t, formatTime, formatDate, formatDuration, formatCurrency } = useTranslation();
-  const statusLabel = useStatusLabel();
-  const [busy, setBusy] = useState<null | "confirm" | PaymentMethod>(null);
+  const { t, locale, formatTime, formatDate, formatDuration, formatCurrency } = useTranslation();
+  const [busy, setBusy] = useState<null | "confirm" | "arrived" | "in_chair" | "undo" | PaymentMethod>(null);
 
   const a = appointment;
   const allowed = a ? APPOINTMENT_STATUS_TRANSITIONS[a.status] : [];
-  const active = a ? a.status === "pending" || a.status === "confirmed" : false;
+  const active = a ? ["pending", "confirmed", "arrived", "in_chair", "awaiting_deposit"].includes(a.status) && canEdit : false;
+  const noShowAllowed = a ? canMarkNoShow(a, now) : false;
+  const services = a?.services?.length
+    ? a.services.map((l) => (locale === "ar" && l.nameAr ? l.nameAr : l.name)).join(" + ")
+    : a?.serviceName;
 
-  const run = async (kind: "confirm" | PaymentMethod, fn: () => Promise<void>) => {
+  const run = async (kind: NonNullable<typeof busy>, fn: () => Promise<void>) => {
     setBusy(kind);
     try {
       await fn();
@@ -55,7 +71,7 @@ export function AppointmentDetailsDialog({
       onClose={() => {
         if (!busy) onClose();
       }}
-      title={a?.clientName || t.calendar.appointmentDetails}
+      title={a ? a.clientName || t.calendar.walkIn : t.calendar.appointmentDetails}
       description={
         a
           ? `${formatDate(a.startTime, "weekdayDay")} · ${formatTime(a.startTime)} – ${formatTime(a.endTime)}`
@@ -69,18 +85,7 @@ export function AppointmentDetailsDialog({
             <div>
               <dt className="text-[12px] text-[var(--text-muted)]">{t.calendar.status}</dt>
               <dd className="mt-1">
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-medium",
-                    STATUS_STYLES[a.status].bg,
-                    STATUS_STYLES[a.status].border,
-                    STATUS_STYLES[a.status].text,
-                    "no-underline",
-                  )}
-                >
-                  <span className={cn("h-1.5 w-1.5 rounded-full", STATUS_STYLES[a.status].dot)} aria-hidden="true" />
-                  {statusLabel(a.status)}
-                </span>
+                <StatusPill status={a.status} />
               </dd>
             </div>
             <div>
@@ -89,7 +94,7 @@ export function AppointmentDetailsDialog({
             </div>
             <div>
               <dt className="text-[12px] text-[var(--text-muted)]">{t.calendar.service}</dt>
-              <dd className="mt-1 text-[var(--text-primary)]">{a.serviceName || "—"}</dd>
+              <dd className="mt-1 text-[var(--text-primary)]">{services || "—"}</dd>
             </div>
             <div>
               <dt className="text-[12px] text-[var(--text-muted)]">{t.calendar.duration}</dt>
@@ -101,6 +106,12 @@ export function AppointmentDetailsDialog({
                 {formatCurrency(a.price, a.currency)}
               </dd>
             </div>
+            {(a.arrivedAt || a.startedAt) && (
+              <div className="col-span-2 flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-[var(--text-secondary)]">
+                {a.arrivedAt && <span>{interpolate(t.calendar.arrivedAt, { time: formatTime(a.arrivedAt) })}</span>}
+                {a.startedAt && <span>{interpolate(t.calendar.startedAt, { time: formatTime(a.startedAt) })}</span>}
+              </div>
+            )}
             {a.notes && (
               <div className="col-span-2">
                 <dt className="text-[12px] text-[var(--text-muted)]">{t.calendar.notes}</dt>
@@ -109,8 +120,53 @@ export function AppointmentDetailsDialog({
             )}
           </dl>
 
+          {a.status === "no_show" && canEdit && onUndoNoShow && (
+            <div className="border-t border-[var(--border-subtle)] pt-4">
+              <button
+                type="button"
+                className="btn btn-secondary w-full"
+                disabled={!!busy}
+                aria-busy={busy === "undo"}
+                onClick={() => run("undo", () => onUndoNoShow(a))}
+              >
+                {busy === "undo" ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Undo2 size={16} aria-hidden="true" />}
+                {t.calendar.undoNoShow}
+              </button>
+            </div>
+          )}
+
           {active && (
             <div className="space-y-3 border-t border-[var(--border-subtle)] pt-4">
+              {/* Front desk: check in, then seat */}
+              {onStatus && (allowed.includes("arrived") || allowed.includes("in_chair")) && (
+                <div className="grid grid-cols-2 gap-2">
+                  {allowed.includes("arrived") && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={!!busy}
+                      aria-busy={busy === "arrived"}
+                      onClick={() => run("arrived", () => onStatus(a, "arrived"))}
+                    >
+                      {busy === "arrived" ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <DoorOpen size={16} aria-hidden="true" />}
+                      {t.calendar.checkIn}
+                    </button>
+                  )}
+                  {allowed.includes("in_chair") && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={!!busy}
+                      aria-busy={busy === "in_chair"}
+                      onClick={() => run("in_chair", () => onStatus(a, "in_chair"))}
+                    >
+                      {busy === "in_chair" ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Armchair size={16} aria-hidden="true" />}
+                      {t.calendar.startService}
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* Primary: take payment */}
               {allowed.includes("completed") && (
                 <div>
@@ -160,8 +216,20 @@ export function AppointmentDetailsDialog({
                   <CalendarClock size={16} aria-hidden="true" />
                   {t.calendar.reschedule}
                 </button>
+                {onMoveMode && isMovable(a.status) && (
+                  <button type="button" className="btn btn-secondary" disabled={!!busy} onClick={() => onMoveMode(a)}>
+                    <Move size={16} aria-hidden="true" />
+                    {t.calendar.moveWithKeys}
+                  </button>
+                )}
                 {allowed.includes("no_show") && (
-                  <button type="button" className="btn btn-secondary" disabled={!!busy} onClick={() => onNoShow(a)}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={!!busy || !noShowAllowed}
+                    aria-describedby={!noShowAllowed ? "no-show-too-early" : undefined}
+                    onClick={() => onNoShow(a)}
+                  >
                     <UserX size={16} aria-hidden="true" />
                     {t.calendar.markNoShow}
                   </button>
@@ -178,6 +246,11 @@ export function AppointmentDetailsDialog({
                   </button>
                 )}
               </div>
+              {allowed.includes("no_show") && !noShowAllowed && (
+                <p id="no-show-too-early" className="text-[12px] text-[var(--text-muted)]">
+                  {t.calendar.noShowTooEarly}
+                </p>
+              )}
             </div>
           )}
         </div>

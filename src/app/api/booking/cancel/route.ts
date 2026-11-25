@@ -11,6 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit, rateLimitKey, getClientIp } from "@/lib/rate-limit";
 import { callRpc } from "../rpc";
+import { schedulePushDispatch } from "@/lib/push/kick";
 
 /**
  * POST /api/booking/cancel — a signed-in customer cancels their own booking.
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
     }
     if (!data) return apiErrorCode("APPT_NOT_FOUND");
 
+    schedulePushDispatch();
     return apiResponse(data);
   } catch (err) {
     return serverError("booking.cancel", err);

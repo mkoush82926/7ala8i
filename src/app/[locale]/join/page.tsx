@@ -262,7 +262,7 @@ function JoinContent() {
           {status === "error" && (
             <>
               <AuthHeader icon={AlertCircle} tone="error" align="center" title={t.auth.inviteErrorTitle} subtitle={errorText(errorCode)} />
-              <Link href={href("/landing")} className="btn btn-secondary" style={{ width: "100%", minHeight: 48 }}>
+              <Link href={href("/for-business")} className="btn btn-secondary" style={{ width: "100%", minHeight: 48 }}>
                 {t.auth.backHome}
               </Link>
             </>

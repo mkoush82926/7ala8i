@@ -14,6 +14,9 @@ export type LegalSlug = "privacy" | "terms" | "policy";
 /** Date the legal copy was last revised (YYYY-MM-DD). */
 export const LEGAL_LAST_UPDATED = "2026-11-12";
 
+/** The privacy notice was revised separately for the PDPL (Law No. 24 of 2023). */
+export const PRIVACY_LAST_UPDATED = "2026-11-13";
+
 export function resolveLegalLocale(raw: string | undefined): { locale: LegalLocale; t: TranslationKeys } {
   const locale: LegalLocale = raw === "ar" ? "ar" : "en";
   return { locale, t: locale === "ar" ? ar : en };
@@ -40,6 +43,11 @@ export interface LegalSection {
   body: string;
 }
 
+export interface LegalAction {
+  label: string;
+  href: string;
+}
+
 export function LegalPage({
   locale,
   t,
@@ -49,6 +57,9 @@ export function LegalPage({
   intro,
   sections,
   closing,
+  lastUpdated = LEGAL_LAST_UPDATED,
+  actions,
+  actionsTitle,
 }: {
   locale: LegalLocale;
   t: TranslationKeys;
@@ -58,6 +69,11 @@ export function LegalPage({
   intro: string;
   sections: LegalSection[];
   closing?: string;
+  /** YYYY-MM-DD shown under the title. */
+  lastUpdated?: string;
+  /** Self-service links shown after the sections (e.g. export / delete). */
+  actions?: LegalAction[];
+  actionsTitle?: string;
 }) {
   const isRTL = locale === "ar";
   const other: LegalLocale = isRTL ? "en" : "ar";
@@ -125,7 +141,7 @@ export function LegalPage({
           </h1>
           <p className="mb-10 text-[14px] text-[var(--text-muted)]">
             {t.legal.lastUpdated}{" "}
-            <time dateTime={LEGAL_LAST_UPDATED}>{formatDate(LEGAL_LAST_UPDATED, locale, "long")}</time>
+            <time dateTime={lastUpdated}>{formatDate(lastUpdated, locale, "long")}</time>
           </p>
 
           <p className="mb-10 text-[17px] leading-[1.8] text-[var(--text-secondary)]">{intro}</p>
@@ -140,6 +156,25 @@ export function LegalPage({
               </section>
             ))}
           </div>
+
+          {actions && actions.length > 0 && (
+            <section aria-labelledby="legal-actions" className="mt-12">
+              {actionsTitle && (
+                <h2 id="legal-actions" className="mb-4 text-[17px] font-bold text-[var(--text-primary)]">
+                  {actionsTitle}
+                </h2>
+              )}
+              <ul className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                {actions.map((action) => (
+                  <li key={action.href}>
+                    <Link href={action.href} className="btn btn-secondary w-full sm:w-auto" style={{ minHeight: 44 }}>
+                      {action.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {closing && (
             <section aria-labelledby="legal-questions" className="mt-12 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-6">

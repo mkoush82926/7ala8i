@@ -24,6 +24,9 @@ import {
   Users,
   X,
   AlertTriangle,
+  QrCode,
+  MessageCircle,
+  Bell,
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useWorkspaceStore } from "@/store/workspace-store";
@@ -430,6 +433,9 @@ export function SettingsPage() {
     { href: href("/settings/hours"), label: t.settingsPages.hours, description: t.shifts.hoursPageSubtitle, icon: CalendarClock },
     { href: href("/settings/payments"), label: t.settingsPages.payments, description: t.paymentSettings.pageSubtitle, icon: Wallet },
     { href: href("/settings/tax"), label: t.settingsPages.tax, description: t.taxSettings.pageSubtitle, icon: Receipt },
+    { href: href("/settings/links"), label: t.links.settings.pageTitle, description: t.links.settings.pageSubtitle, icon: QrCode },
+    { href: href("/settings/messaging"), label: t.messaging.navLabel, description: t.messaging.navHint, icon: MessageCircle },
+    { href: href("/settings/notifications"), label: t.notificationSettings.title, description: t.notificationSettings.subtitle, icon: Bell },
   ];
 
   const errorText = (field: ShopField, code: FieldError | undefined) => {

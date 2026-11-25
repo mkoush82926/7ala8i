@@ -16,6 +16,7 @@ import { parseIdempotencyKey, runIdempotent } from "./idempotency";
 import { callRpc, callRpcLoose } from "./rpc";
 import { CreateBookingV2Schema, toRpcArgs } from "./schema";
 import { bookingDbError, bookingError } from "./errors";
+import { schedulePushDispatch } from "@/lib/push/kick";
 
 // Public columns only: anon may not select("*") on shops/profiles.
 const SHOP_COLUMNS = "id, name, address, currency, timezone, cancellation_policy_hours";
@@ -168,6 +169,7 @@ export async function POST(req: NextRequest) {
       : { result: await create(), replayed: false };
 
     if (!result.ok) return bookingDbError("booking.create", result.error);
+    if (!replayed) schedulePushDispatch();
 
     return NextResponse.json(
       { success: true, appointment_id: result.booking.appointment_id, booking: result.booking },

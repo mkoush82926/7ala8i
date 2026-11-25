@@ -10,6 +10,7 @@ import { getSeed } from "../helpers";
 const PUBLIC_PAGES: Array<{ name: string; path: (seed: ReturnType<typeof getSeed>) => string }> = [
   { name: "landing", path: () => "/" },
   { name: "explore", path: () => "/explore" },
+  { name: "for-business", path: () => "/for-business" },
   { name: "shop", path: (s) => `/shop/${s.shopId}` },
   { name: "booking", path: (s) => `/book/${s.shopId}` },
   { name: "login", path: () => "/auth/login" },

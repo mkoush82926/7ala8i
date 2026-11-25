@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Globe, ChevronDown, Menu, Users, Sun, Moon, Settings, LogOut, Search, Loader2, Check } from "lucide-react";
+import { Globe, ChevronDown, Menu, Users, Sun, Moon, Settings, LogOut, Search, Loader2, Check, Bell, Compass } from "lucide-react";
 import { format } from "date-fns";
 import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
@@ -492,6 +492,16 @@ export function Topbar() {
                   {t.sidebar.settings}
                 </Link>
               )}
+              {(role === "shop_admin" || role === "barber") && (
+                <Link role="menuitem" href={href("/settings/notifications")} onClick={closeUserMenu} className={menuItem}>
+                  <Bell size={15} aria-hidden="true" />
+                  {t.notificationSettings.title}
+                </Link>
+              )}
+              <Link role="menuitem" href={href("/explore")} onClick={closeUserMenu} className={menuItem}>
+                <Compass size={15} aria-hidden="true" />
+                {t.search.exploreCta}
+              </Link>
 
               {/* Phones: language and theme live in the menu to keep the bar from overflowing */}
               <button

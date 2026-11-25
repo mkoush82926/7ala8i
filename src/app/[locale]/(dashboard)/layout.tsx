@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useTranslation } from "@/hooks/use-translation";
 import { canAccessPath, homePathFor, stripLocale } from "@/components/layout/nav-config";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 /*
  * Dashboard shell. Theme, dir and lang are owned by the root ThemeProvider
@@ -60,7 +61,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               action={{ label: t.common.retry, onClick: () => void refreshWorkspace() }}
             />
           ) : allowed ? (
-            children
+            <>
+              {/* WS-1K: offer the app install where staff start their day. Renders nothing once installed or snoozed. */}
+              {(path === "/my-day" || path === "/calendar") && <InstallPrompt variant="compact" className="mb-4" />}
+              {children}
+            </>
           ) : (
             <DashboardSkeleton />
           )}

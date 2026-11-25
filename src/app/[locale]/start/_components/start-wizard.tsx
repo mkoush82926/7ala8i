@@ -98,7 +98,7 @@ function Frame({
       <header className="sticky top-0 z-20 border-b" style={{ background: "var(--bg-primary)", borderColor: "var(--border-subtle)" }}>
         <div className="mx-auto flex h-14 w-full max-w-xl items-center justify-between gap-3 px-4">
           <Link
-            href={href("/landing")}
+            href={href("/for-business")}
             className="text-[18px] font-extrabold"
             style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "-0.01em"), color: "var(--text-primary)" }}
           >

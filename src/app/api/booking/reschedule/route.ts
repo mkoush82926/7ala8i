@@ -5,6 +5,7 @@ import { getClientIp, rateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { callRpcLoose } from "../rpc";
 import { RescheduleSchema } from "../schema";
 import { bookingDbError } from "../errors";
+import { schedulePushDispatch } from "@/lib/push/kick";
 
 /**
  * POST /api/booking/reschedule { appointmentId, date: "yyyy-MM-dd", time: "HH:mm", barberId? }
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
       p_barber_id: barberId,
     });
     if (error || !data) return bookingDbError("booking.reschedule", error ?? new Error("no data"));
+    schedulePushDispatch();
     return NextResponse.json({ success: true, booking: data });
   } catch (err) {
     return serverError("booking.reschedule", err);

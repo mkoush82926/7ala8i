@@ -36,11 +36,28 @@ export const PUBLIC_ROUTES = [
   "/barber",
   "/b",
   "/start",
+  // Owner marketing page (WS-1B), token-based manage-booking page (WS-1C) and
+  // the phone-first customer sign-in (WS-1J).
+  "/for-business",
+  "/m",
+  "/customer/login",
 ] as const;
 
 /** Where a signed-in customer may go (everything else sends them to /customer). */
 // "/start" lets a signed-in customer see the wizard's "use an owner account" screen.
-export const CUSTOMER_ROUTES = ["/customer", "/explore", "/book", "/shop", "/barber", "/b", "/auth", "/join", "/start"] as const;
+export const CUSTOMER_ROUTES = [
+  "/customer",
+  "/explore",
+  "/book",
+  "/shop",
+  "/barber",
+  "/b",
+  "/auth",
+  "/join",
+  "/start",
+  "/for-business",
+  "/m",
+] as const;
 
 /** Staff pages only a shop_admin may open; barbers are sent to their day view. */
 // Keep in sync with the ADMIN entries in src/components/layout/nav-config.ts.
@@ -48,7 +65,8 @@ export const CUSTOMER_ROUTES = ["/customer", "/explore", "/book", "/shop", "/bar
 export const ADMIN_ONLY_ROUTES = ["/settings", "/services", "/team", "/analytics", "/leads"] as const;
 
 /** Pages below an admin-only route that barbers may still open (they edit their own card there). */
-export const STAFF_ALLOWED_ROUTES = ["/settings/profile"] as const;
+// Keep in sync with STAFF_PATHS in src/components/layout/nav-config.ts.
+export const STAFF_ALLOWED_ROUTES = ["/settings/profile", "/settings/notifications"] as const;
 
 type AppRole = "shop_admin" | "barber" | "customer";
 
@@ -108,6 +126,10 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
+    // Platform admin console (WS-1I) is not localised; its server layout
+    // returns notFound() for anyone without a platform_role.
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
     pathname === "/favicon.ico" ||
     /\.[a-z0-9]+$/i.test(pathname)
   ) {
@@ -175,6 +197,10 @@ export async function middleware(request: NextRequest) {
     url.search = "";
     if (path === "/") {
       url.pathname = `/${currentLocale}/landing`;
+    } else if (matchesRoute(path, "/customer")) {
+      // Customers sign in with their phone first (WS-1J).
+      url.pathname = `/${currentLocale}/customer/login`;
+      url.searchParams.set("next", path + (request.nextUrl.search || ""));
     } else {
       url.pathname = `/${currentLocale}/auth/login`;
       url.searchParams.set("next", path + (request.nextUrl.search || ""));

@@ -67,7 +67,7 @@ export default function BookingDetailPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        router.replace(href("/auth/login"));
+        router.replace(href("/customer/login"));
         return;
       }
 

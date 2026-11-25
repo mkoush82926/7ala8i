@@ -31,6 +31,9 @@ describe("isPublicPath", () => {
     "/terms",
     "/privacy",
     "/policy",
+    "/for-business",
+    "/m/abc123",
+    "/customer/login",
   ])("%s is public", (p) => {
     expect(isPublicPath(p)).toBe(true);
   });
@@ -48,6 +51,9 @@ describe("isPublicPath", () => {
     "/shop-settings",
     "/policy-editor",
     "/joinx",
+    "/customer/account",
+    "/for-businessx",
+    "/mx",
   ])("%s is protected", (p) => {
     expect(isPublicPath(p)).toBe(false);
   });
@@ -84,6 +90,18 @@ describe("roleRedirect", () => {
     expect(roleRedirect("/settings/profile", null)).toBeNull();
     expect(roleRedirect("/settings/payments", "barber")).toBe("/my-day");
     expect(roleRedirect("/settings/profilex", "barber")).toBe("/my-day");
+  });
+
+  it("lets barbers manage their own notification settings", () => {
+    expect(roleRedirect("/settings/notifications", "barber")).toBeNull();
+    expect(roleRedirect("/settings/messaging", "barber")).toBe("/my-day");
+    expect(roleRedirect("/settings/links", "barber")).toBe("/my-day");
+  });
+
+  it("lets signed-in customers open the owner page and manage links", () => {
+    for (const p of ["/for-business", "/m/tok", "/customer/account"]) {
+      expect(roleRedirect(p, "customer")).toBeNull();
+    }
   });
 
   it("lets customers open public barber pages and the owner wizard", () => {

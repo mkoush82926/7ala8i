@@ -39,6 +39,10 @@ export const DB_ERROR_CODES = [
   "INVITE_USED",
   "INVITE_EXPIRED",
   "LAST_ADMIN",
+  // Gate 1b: calendar (WS-1E) and trust & safety (WS-1I).
+  "NO_SHOW_TOO_EARLY",
+  "ACCOUNT_BANNED",
+  "SHOP_SUSPENDED",
 ] as const;
 export type DbErrorCode = (typeof DB_ERROR_CODES)[number];
 
@@ -79,6 +83,9 @@ const ERROR_TABLE: Record<ApiErrorCode, { status: number; message: string }> = {
   INVITE_USED: { status: 409, message: "This invite has already been used." },
   INVITE_EXPIRED: { status: 410, message: "This invite has expired. Ask the shop for a new link." },
   LAST_ADMIN: { status: 409, message: "A shop must keep at least one admin." },
+  NO_SHOW_TOO_EARLY: { status: 409, message: "The appointment hasn't started yet, so it can't be a no-show." },
+  ACCOUNT_BANNED: { status: 403, message: "This account can't make bookings. Please contact Halaqy support." },
+  SHOP_SUSPENDED: { status: 409, message: "This shop isn't taking online bookings right now." },
   // api
   VALIDATION_FAILED: { status: 400, message: "Some of the details are invalid. Please check and try again." },
   UNAUTHORIZED: { status: 401, message: "Please sign in to continue." },

@@ -135,6 +135,35 @@ class MockQueryBuilder implements PromiseLike<Result<Row[] | Row>> {
     return this;
   }
 
+  lt(column: string, value: string) {
+    this.rows = this.rows.filter((r) => String(getAtPath(r, column) ?? "") < value);
+    return this;
+  }
+
+  gt(column: string, value: string) {
+    this.rows = this.rows.filter((r) => String(getAtPath(r, column) ?? "") > value);
+    return this;
+  }
+
+  like(column: string, pattern: string) {
+    return this.ilike(column, pattern);
+  }
+
+  match(query: Record<string, unknown>) {
+    for (const [column, value] of Object.entries(query)) this.eq(column, value);
+    return this;
+  }
+
+  // Filters the preview data has no use for (array/range operators, negation,
+  // full-text): accepted so chains don't crash, rows are left unfiltered.
+  not(_column: string, _operator: string, _value: unknown) { return this; }
+  contains(_column: string, _value: unknown) { return this; }
+  overlaps(_column: string, _value: unknown) { return this; }
+  filter(_column: string, _operator: string, _value: unknown) { return this; }
+  textSearch(_column: string, _query: string) { return this; }
+  returns() { return this; }
+  throwOnError() { return this; }
+
   order(column: string, opts?: { ascending?: boolean }) {
     const dir = opts?.ascending === false ? -1 : 1;
     this.rows = [...this.rows].sort((a, b) => {

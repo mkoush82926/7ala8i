@@ -97,6 +97,8 @@ const eslintConfig = defineConfig([
     "videoassets/**",
     "stitch-designs/**",
     "*.tsbuildinfo",
+    // Vendored third-party bundles (maplibre-gl worker).
+    "public/vendor/**",
     // Supabase CLI scratch (generated edge-runtime bundle).
     "supabase/.temp/**",
   ]),

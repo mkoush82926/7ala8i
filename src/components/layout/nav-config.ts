@@ -8,6 +8,7 @@ import {
   Scissors,
   IdCard,
   Sun,
+  Footprints,
   type LucideIcon,
 } from "lucide-react";
 import type { TranslationKeys } from "@/i18n/en";
@@ -27,6 +28,7 @@ export type NavId =
   | "dashboard"
   | "my-day"
   | "calendar"
+  | "queue"
   | "leads"
   | "clients"
   | "services"
@@ -52,6 +54,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { id: "dashboard", icon: LayoutDashboard, href: "/", roles: ADMIN },
   { id: "my-day", icon: Sun, href: "/my-day", roles: STAFF },
   { id: "calendar", icon: Calendar, href: "/calendar", roles: STAFF },
+  { id: "queue", icon: Footprints, href: "/queue", roles: STAFF },
   // Leads RLS is shop_admin-only (SELECT included), so barbers never see the board.
   { id: "leads", icon: Kanban, href: "/leads", roles: ADMIN },
   { id: "clients", icon: Users, href: "/clients", roles: STAFF },
@@ -71,13 +74,13 @@ export interface RailGroup {
 }
 
 /** Sub-pages of an admin-only item that every staff role may open. */
-export const STAFF_PATHS: readonly string[] = ["/settings/profile"];
+export const STAFF_PATHS: readonly string[] = ["/settings/profile", "/settings/notifications"];
 
 const byId = (id: NavId) => NAV_ITEMS.find((i) => i.id === id)!;
 
 export const RAIL_GROUPS: readonly RailGroup[] = [
   { id: "dashboard", icon: LayoutDashboard, labelId: "dashboard", items: [byId("dashboard")] },
-  { id: "calendar", icon: Calendar, labelId: "calendar", items: [byId("my-day"), byId("calendar")] },
+  { id: "calendar", icon: Calendar, labelId: "calendar", items: [byId("my-day"), byId("calendar"), byId("queue")] },
   { id: "clients", icon: Users, labelId: "clients", items: [byId("clients"), byId("leads")] },
   { id: "services", icon: Scissors, labelId: "services", items: [byId("services")] },
   { id: "team", icon: IdCard, labelId: "team", items: [byId("team")] },

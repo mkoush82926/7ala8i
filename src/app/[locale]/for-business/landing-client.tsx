@@ -160,7 +160,7 @@ export function LandingNav() {
 
   const languageLink = (className: string) => (
     <Link
-      href={switchLocale(pathname || `/${locale}/landing`, otherLocale)}
+      href={switchLocale(pathname || `/${locale}/for-business`, otherLocale)}
       hrefLang={otherLocale}
       lang={otherLocale}
       aria-label={t.landing.switchLanguage}

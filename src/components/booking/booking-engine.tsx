@@ -88,10 +88,13 @@ export function BookingEngine({
   shopId,
   security = OTP_DISABLED,
   rescheduleAppointmentId,
+  shopHref: shopHrefProp,
 }: {
   shopId: string;
   security?: PublicBookingSecurity;
   rescheduleAppointmentId?: string;
+  /** "Back to shop" target; the branded /b/{slug} page keeps clients inside it. */
+  shopHref?: string;
 }) {
   const [supabase] = useState(() => createClient());
   const rpcClient = supabase as unknown as RpcClient;
@@ -500,7 +503,7 @@ export function BookingEngine({
   const policyText = policyHours > 0
     ? interpolate(t.booking.freeCancellationHours, { hours: String(policyHours) })
     : t.booking.freeCancellation;
-  const shopHref = href(`/shop/${shopId}`);
+  const shopHref = shopHrefProp ?? href(`/shop/${shopId}`);
   const slideX = isRTL ? -24 : 24;
   const motionProps = {
     initial: { opacity: 0, x: slideX },

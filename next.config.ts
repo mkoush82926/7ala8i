@@ -35,7 +35,12 @@ const localSupabase = isDev
   ? ["http://127.0.0.1:54321", "http://localhost:54321", "ws://127.0.0.1:54321", "ws://localhost:54321"]
   : [];
 
-const csp = [
+// Map tiles for the search results map (WS-1B): keyless OpenStreetMap raster
+// tiles by default, MapTiler when NEXT_PUBLIC_MAPTILER_KEY is set.
+const mapOrigins = ["https://tile.openstreetmap.org", "https://api.maptiler.com"];
+
+function buildCsp(frameAncestors: string): string {
+  return [
   "default-src 'self'",
   // Next.js injects inline bootstrap scripts (and the layout's no-flash theme
   // script), so 'unsafe-inline' stays until a nonce-based CSP is adopted.
@@ -45,8 +50,8 @@ const csp = [
   "font-src 'self' data:",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob:",
-  `connect-src ${["'self'", ...supa.http, ...supa.ws, ...localSupabase].join(" ")}`,
-  "frame-ancestors 'none'",
+  `connect-src ${["'self'", ...supa.http, ...supa.ws, ...localSupabase, ...mapOrigins].join(" ")}`,
+  `frame-ancestors ${frameAncestors}`,
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",
@@ -55,14 +60,13 @@ const csp = [
   // Only upgrade when the backend itself is HTTPS — a production build run
   // against local Supabase (e2e) must keep plain-http requests working.
   ...(!isDev && supa.secure ? ["upgrade-insecure-requests"] : []),
-].join("; ");
+  ].join("; ");
+}
 
-const securityHeaders = [
-  { key: "Content-Security-Policy", value: csp },
-  { key: "X-Frame-Options", value: "DENY" },
+const sharedHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(), usb=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "X-DNS-Prefetch-Control", value: "on" },
   // Browsers ignore HSTS over plain http, so this is safe for local
@@ -72,6 +76,17 @@ const securityHeaders = [
     ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }]
     : []),
 ];
+
+const securityHeaders = [
+  { key: "Content-Security-Policy", value: buildCsp("'none'") },
+  { key: "X-Frame-Options", value: "DENY" },
+  ...sharedHeaders,
+];
+
+// Branded booking pages (WS-1H) may be embedded on a shop's own website, so
+// they allow any HTTPS ancestor and drop X-Frame-Options. Every other route
+// keeps DENY.
+const embeddableHeaders = [{ key: "Content-Security-Policy", value: buildCsp("https: 'self'") }, ...sharedHeaders];
 
 function supabaseImagePatterns(): NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]> {
   const patterns: NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]> = [
@@ -106,8 +121,21 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/:path*",
+        source: "/:locale(en|ar)/b/:slug*",
+        headers: embeddableHeaders,
+      },
+      {
+        // Everything except /{locale}/b/** (above).
+        source: "/:path((?!(?:en|ar)/b(?:/|$)).*)",
         headers: securityHeaders,
+      },
+      {
+        // Service worker updates must roll out immediately (WS-1K).
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
       },
       {
         // Ambient landing videos and their posters never change in place.

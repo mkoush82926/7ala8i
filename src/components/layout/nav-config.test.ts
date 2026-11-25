@@ -35,8 +35,8 @@ describe("nav-config", () => {
 
   it("hides admin pages from barbers", () => {
     const ids = visibleNavItems("barber").map((i) => i.id);
-    expect(ids).toEqual(["my-day", "calendar", "clients"]);
-    expect(visibleNavItems("shop_admin")).toHaveLength(9);
+    expect(ids).toEqual(["my-day", "calendar", "queue", "clients"]);
+    expect(visibleNavItems("shop_admin")).toHaveLength(10);
     expect(visibleNavItems(null).map((i) => i.id)).toEqual(ids);
   });
 
@@ -51,6 +51,9 @@ describe("nav-config", () => {
     expect(canAccessPath("barber", "/settings/profile")).toBe(true);
     expect(canAccessPath("barber", "/settings/payments")).toBe(false);
     expect(canAccessPath(null, "/settings/profile")).toBe(false);
+    expect(canAccessPath("barber", "/settings/notifications")).toBe(true);
+    expect(canAccessPath("barber", "/settings/messaging")).toBe(false);
+    expect(canAccessPath("barber", "/queue")).toBe(true);
     expect(homePathFor("barber")).toBe("/my-day");
     expect(homePathFor("shop_admin")).toBe("/");
   });

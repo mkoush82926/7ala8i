@@ -12,6 +12,7 @@ const LOCALES = ["en", "ar"] as const;
 const STATIC_PAGES: { path: string; priority: number; changeFrequency: "daily" | "weekly" | "monthly" | "yearly" }[] = [
   { path: "/landing", priority: 1, changeFrequency: "weekly" },
   { path: "/explore", priority: 0.9, changeFrequency: "daily" },
+  { path: "/for-business", priority: 0.7, changeFrequency: "monthly" },
   { path: "/auth/signup", priority: 0.5, changeFrequency: "yearly" },
   { path: "/policy", priority: 0.3, changeFrequency: "monthly" },
   { path: "/privacy", priority: 0.2, changeFrequency: "yearly" },
