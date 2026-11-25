@@ -238,6 +238,14 @@ BEGIN
       INSERT INTO _chg VALUES (r.tablename, 'TABLE DROPPED', '', n);
       CONTINUE;
     END IF;
+    -- Row-level diff needs an "id" key on both sides (e.g. rate_limits is
+    -- keyed by "key"); otherwise fall back to comparing row counts.
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'rehearsal_before' AND table_name = r.tablename AND column_name = 'id')
+       OR NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = r.tablename AND column_name = 'id') THEN
+      EXECUTE format('SELECT (SELECT count(*) FROM rehearsal_before.%1$I) - (SELECT count(*) FROM public.%1$I)', r.tablename) INTO n;
+      IF n > 0 THEN INSERT INTO _chg VALUES (r.tablename, 'rows removed (count only, no id key)', '', n); END IF;
+      CONTINUE;
+    END IF;
     EXECUTE format('SELECT count(*) FROM rehearsal_before.%1$I b WHERE NOT EXISTS (SELECT 1 FROM public.%1$I a WHERE a.id = b.id)', r.tablename) INTO n;
     IF n > 0 THEN INSERT INTO _chg VALUES (r.tablename, 'rows removed', '', n); END IF;
     FOR c IN SELECT b.column_name FROM information_schema.columns b
