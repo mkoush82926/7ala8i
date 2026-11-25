@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { fetchBookAgain, localName, type BookAgainItem, type SearchRpcClient } from "@/lib/search";
 
 export function BookAgainRail({ className }: { className?: string }) {
-  const { t, locale, formatDate } = useTranslation();
+  const { t, locale, formatLocalDate: formatDate } = useTranslation();
   const S = t.search;
   const [items, setItems] = useState<BookAgainItem[]>([]);
 

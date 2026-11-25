@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
+import { cn, nameInitials } from "@/lib/utils";
 import { photoScrimClasses } from "./recipes";
 
 /**
@@ -64,11 +64,9 @@ export function placeholderFill(seed: string | null | undefined): PlaceholderFil
   return PLACEHOLDER_FILLS[hashString(seed || "") % PLACEHOLDER_FILLS.length];
 }
 
-/** Up to two initials (grapheme-safe for Arabic): "Gentleman's Chair" → "GC". */
+/** Up to two letter initials: "The Gentleman's Chair" → "GC", "Mohammad (Mo)" → "MM". */
 export function placeholderInitials(name: string | null | undefined): string {
-  const words = (name ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 2);
-  const initials = words.map((w) => Array.from(w)[0] ?? "").join("").toUpperCase();
-  return initials || "·";
+  return nameInitials(name, "·");
 }
 
 export interface BrandedPlaceholderProps {

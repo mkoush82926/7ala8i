@@ -53,6 +53,10 @@ export interface MockShop {
   slug: string | null;
   slug_ar: string | null;
   cover_url: string | null;
+  /** Preview-only: neighbourhood slug (matches the seeded areas) + pin. */
+  area_slug: string;
+  lat: number;
+  lng: number;
 }
 
 const SHOP_DEFAULTS = {
@@ -79,6 +83,7 @@ export const MOCK_SHOPS: MockShop[] = [
     instagram: "gentlemanschair",
     google_maps_url: "https://maps.google.com/?q=Abdoun+Amman",
     whatsapp: "+962791234567",
+    area_slug: "abdoun", lat: 31.9452, lng: 35.8829,
     ...SHOP_DEFAULTS,
   },
   {
@@ -90,6 +95,7 @@ export const MOCK_SHOPS: MockShop[] = [
     instagram: "classicrazor.jo",
     google_maps_url: "https://maps.google.com/?q=Al+Weibdeh+Amman",
     whatsapp: "+962789876543",
+    area_slug: "weibdeh", lat: 31.9612, lng: 35.9236,
     ...SHOP_DEFAULTS,
   },
   {
@@ -101,6 +107,7 @@ export const MOCK_SHOPS: MockShop[] = [
     instagram: "urbanclippers",
     google_maps_url: "https://maps.google.com/?q=Sweifieh+Amman",
     whatsapp: "+962771112222",
+    area_slug: "sweifieh", lat: 31.9561, lng: 35.8612,
     ...SHOP_DEFAULTS,
   },
 ];
@@ -148,7 +155,8 @@ export interface MockBarber {
   id: string;
   shop_id: string;
   full_name: string;
-  avatar_url: string;
+  /** null → the branded-initials placeholder (no stock portraits in previews). */
+  avatar_url: string | null;
   role: "barber";
   barber_services: { service_id: string }[];
 }
@@ -156,22 +164,22 @@ export interface MockBarber {
 export const MOCK_BARBERS: MockBarber[] = [
   {
     id: "b-gc-1", shop_id: MOCK_SHOP_IDS.gentlemansChair, full_name: "Sami FadeMaster",
-    avatar_url: "https://i.pravatar.cc/150?u=b-gc-1", role: "barber",
+    avatar_url: null, role: "barber",
     barber_services: MOCK_SERVICES.filter(s => s.shop_id === MOCK_SHOP_IDS.gentlemansChair).map(s => ({ service_id: s.id })),
   },
   {
     id: "b-gc-2", shop_id: MOCK_SHOP_IDS.gentlemansChair, full_name: "Khaled Scissors",
-    avatar_url: "https://i.pravatar.cc/150?u=b-gc-2", role: "barber",
+    avatar_url: null, role: "barber",
     barber_services: MOCK_SERVICES.filter(s => s.shop_id === MOCK_SHOP_IDS.gentlemansChair).map(s => ({ service_id: s.id })),
   },
   {
     id: "b-cr-1", shop_id: MOCK_SHOP_IDS.classicRazor, full_name: "Omar Styling",
-    avatar_url: "https://i.pravatar.cc/150?u=b-cr-1", role: "barber",
+    avatar_url: null, role: "barber",
     barber_services: MOCK_SERVICES.filter(s => s.shop_id === MOCK_SHOP_IDS.classicRazor).map(s => ({ service_id: s.id })),
   },
   {
     id: "b-uc-1", shop_id: MOCK_SHOP_IDS.urbanClippers, full_name: "Rami The Classic",
-    avatar_url: "https://i.pravatar.cc/150?u=b-uc-1", role: "barber",
+    avatar_url: null, role: "barber",
     barber_services: MOCK_SERVICES.filter(s => s.shop_id === MOCK_SHOP_IDS.urbanClippers).map(s => ({ service_id: s.id })),
   },
 ];
@@ -215,7 +223,9 @@ export const MOCK_ADMIN_PROFILE: MockAdminProfile = {
   shop_id: MOCK_SHOP_IDS.gentlemansChair,
   full_name: "Mohammad (Preview)",
   avatar_url: null,
-  role: "shop_admin",
+  // A customer preview session must read as a customer (the portal sends
+  // staff away), so the role follows the opt-in mock session.
+  role: MOCK_AUTH_ROLE === "customer" ? "customer" : "shop_admin",
 };
 
 // Every row the mock client's "profiles" table serves — dashboard queries

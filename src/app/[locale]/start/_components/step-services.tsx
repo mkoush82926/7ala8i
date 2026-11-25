@@ -14,7 +14,7 @@ import type { StepProps } from "./step-shop";
 import { StepHeader, cardClass } from "./ui";
 
 export function StepServices({ draft, update, errors }: StepProps) {
-  const { t, locale, formatDuration } = useTranslation();
+  const { t, locale, formatLocalDuration: formatDuration } = useTranslation();
   const s = t.start;
   const [open, setOpen] = useState<string | null>(null);
   const selected = draft.services.filter((x) => x.selected);

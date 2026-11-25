@@ -33,7 +33,7 @@ export function Lightbox({
   onClose: () => void;
   label?: string;
 }) {
-  const { t, isRTL, formatNumber } = useTranslation();
+  const { t, isRTL, formatLocalNumber: formatNumber } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const open = index !== null && images.length > 0;

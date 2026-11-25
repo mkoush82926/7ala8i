@@ -63,7 +63,7 @@ export function BarberCard({ barber, showDistance = false, src }: BarberCardProp
                 {barber.fullName}
               </Link>
             </h3>
-            {price && <Price amount={price.amount} from className="shrink-0 text-sm" />}
+            {price && <Price amount={price.amount} from trimZeros className="shrink-0 text-sm" />}
           </div>
           <MetaLine
             locale={locale}

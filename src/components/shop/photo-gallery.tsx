@@ -28,7 +28,7 @@ export function PhotoGallery({
   className?: string;
   mobileOverlay?: React.ReactNode;
 }) {
-  const { t, locale, formatNumber } = useTranslation();
+  const { t, locale, formatLocalNumber: formatNumber } = useTranslation();
   const [open, setOpen] = useState<number | null>(null);
   const [current, setCurrent] = useState(0);
   const trackRef = useRef<HTMLUListElement>(null);

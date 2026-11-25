@@ -15,7 +15,8 @@ import {
 
 describe("shop-utils", () => {
   it("builds initials safely", () => {
-    expect(shopInitials("The Gentleman's Chair")).toBe("TG");
+    expect(shopInitials("The Gentleman's Chair")).toBe("GC");
+    expect(shopInitials("Mohammad (Mo)")).toBe("MM");
     expect(shopInitials("  ")).toBe("?");
     expect(shopInitials(null)).toBe("?");
     expect(shopInitials("صالون الأناقة")).toBe("صا");

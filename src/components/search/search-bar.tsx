@@ -180,14 +180,14 @@ export function SearchBar({ initial, cities, categories = [], variant = "hero", 
         onSubmit={submit}
         className={cn(
           "max-w-none flex-col gap-1 rounded-2xl p-2 md:flex-row md:items-stretch md:gap-0 md:rounded-full md:p-1.5",
-          hero ? "md:max-w-4xl" : "shadow-xs md:max-w-none",
+          hero ? "md:max-w-5xl" : "shadow-xs md:max-w-none",
           collapsible ? (expanded ? "mt-2 flex md:mt-0" : "hidden md:flex") : "flex",
         )}
       >
         {/* What */}
         <SearchSegment
           asContainer
-          className={cn(segmentCls, "md:flex-[1.15]")}
+          className={cn(segmentCls, "md:flex-[1.3]")}
           icon={<Search />}
           label={
             <label htmlFor={ids.q} className={labelCls}>
@@ -241,7 +241,7 @@ export function SearchBar({ initial, cities, categories = [], variant = "hero", 
         {/* Where */}
         <SearchSegment
           asContainer
-          className={segmentCls}
+          className={cn(segmentCls, "md:flex-[1.3]")}
           icon={place === "near" ? <LocateFixed /> : <MapPin />}
           label={
             <label htmlFor={ids.place} className={labelCls}>
@@ -270,7 +270,7 @@ export function SearchBar({ initial, cities, categories = [], variant = "hero", 
         {/* When */}
         <SearchSegment
           asContainer
-          className={cn(segmentCls, "md:flex-[1.45]")}
+          className={cn(segmentCls, "md:flex-1")}
           icon={<CalendarDays />}
           label={
             <label htmlFor={ids.when} className={labelCls}>
@@ -312,28 +312,36 @@ export function SearchBar({ initial, cities, categories = [], variant = "hero", 
                 />
               </>
             )}
-            {when !== "now" && (
-              <span className="flex shrink-0 items-center gap-1 border-s border-line ps-2">
-                <Clock size={14} aria-hidden="true" className="shrink-0 text-ink-muted" />
-                <label htmlFor={ids.time} className="sr-only">
-                  {S.timeLabel}
-                </label>
-                <select
-                  id={ids.time}
-                  value={time}
-                  onChange={(e) => setTime(e.target.value as TimeWindow | "")}
-                  className={cn(selectCls, "w-auto max-w-[7.5rem]")}
-                >
-                  <option value="">{S.anyHour}</option>
-                  {TIME_WINDOWS.map((w) => (
-                    <option key={w} value={w}>
-                      {S[w]}
-                    </option>
-                  ))}
-                </select>
-              </span>
-            )}
           </span>
+        </SearchSegment>
+
+        <SearchDivider className="hidden md:block" />
+
+        {/* Time of day — its own segment, same rhythm as the other three */}
+        <SearchSegment
+          asContainer
+          className={cn(segmentCls, "md:flex-1", when === "now" && "opacity-60")}
+          icon={<Clock />}
+          label={
+            <label htmlFor={ids.time} className={labelCls}>
+              {S.timeShort}
+            </label>
+          }
+        >
+          <select
+            id={ids.time}
+            value={when === "now" ? "" : time}
+            disabled={when === "now"}
+            onChange={(e) => setTime(e.target.value as TimeWindow | "")}
+            className={cn(selectCls, "disabled:cursor-not-allowed")}
+          >
+            <option value="">{S.anyHour}</option>
+            {TIME_WINDOWS.map((w) => (
+              <option key={w} value={w}>
+                {S[w]}
+              </option>
+            ))}
+          </select>
         </SearchSegment>
 
         <button

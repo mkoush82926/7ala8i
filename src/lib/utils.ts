@@ -317,15 +317,33 @@ export function formatDuration(minutes: number, locale: string = "en"): string {
 
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function getInitials(name: string): string {
-  return (name ?? "")
+const LEADING_ARTICLES = new Set(["the", "al", "el", "ال"]);
+
+/**
+ * Up to two initials from a display name, letters/digits only:
+ *   "The Gentleman's Chair" → "GC"   (leading article skipped)
+ *   "Mohammad (Mo)"         → "MM"   (punctuation never becomes an initial)
+ *   "صالون الأمير"          → "صا"
+ * Returns `fallback` when nothing usable remains.
+ */
+export function nameInitials(name: string | null | undefined, fallback = ""): string {
+  const words = (name ?? "")
+    .replace(/['\u2019\u02BC]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim()
     .split(/\s+/)
-    .filter(Boolean)
-    .map((n) => n[0])
+    .filter((w) => /[\p{L}\p{N}]/u.test(w));
+  if (words.length > 1 && LEADING_ARTICLES.has(words[0].toLowerCase())) words.shift();
+  const initials = words
+    .slice(0, 2)
+    .map((w) => w.match(/[\p{L}\p{N}]/u)?.[0] ?? "")
     .join("")
-    .toUpperCase()
-    .slice(0, 2);
+    .toUpperCase();
+  return initials || fallback;
+}
+
+export function getInitials(name: string): string {
+  return nameInitials(name, "");
 }
 
 /**

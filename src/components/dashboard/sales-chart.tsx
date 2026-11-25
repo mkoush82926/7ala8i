@@ -164,8 +164,8 @@ export function SalesChart() {
   return (
     <Panel
       aria-labelledby="sales-chart-title"
-      className="flex h-full flex-col"
-      bodyClassName="flex flex-1 flex-col gap-4"
+      className="flex flex-col"
+      bodyClassName="flex flex-col gap-4"
       title={<span id="sales-chart-title">{t.dashboard.revenueOverview}</span>}
       description={
         hasData ? (
@@ -199,7 +199,7 @@ export function SalesChart() {
       />
 
       <div
-        className={cn("min-h-[240px] flex-1 transition-opacity duration-200 motion-reduce:transition-none", refreshing && "opacity-60")}
+        className={cn("grid min-h-[240px] [&>*]:self-center transition-opacity duration-200 motion-reduce:transition-none", refreshing && "opacity-60")}
         aria-busy={refreshing || undefined}
       >
         {initialLoading ? (

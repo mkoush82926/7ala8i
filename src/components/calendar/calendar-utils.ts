@@ -1,4 +1,5 @@
 import type { AppointmentStatus } from "@/lib/types";
+import { nameInitials } from "@/lib/utils";
 
 /** Visual tokens per canonical status (keys mirror APPOINTMENT_STATUSES) — §5.12 chip recipes. */
 export const STATUS_STYLES: Record<AppointmentStatus, { bg: string; border: string; text: string; dot: string }> = {
@@ -157,13 +158,7 @@ export function combineDayAndTime(day: string, time: string): Date {
   return new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0, 0, 0);
 }
 
-/** Initials that never crash on empty / double-spaced names. */
+/** Initials that never crash on empty / double-spaced / punctuated names. */
 export function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  return parts
-    .slice(0, 2)
-    .map((p) => Array.from(p)[0])
-    .join("")
-    .toUpperCase();
+  return nameInitials(name, "?");
 }

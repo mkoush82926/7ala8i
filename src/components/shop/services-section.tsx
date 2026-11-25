@@ -34,7 +34,7 @@ export function ServicesSection({
   barberId?: string | null;
   currency?: string;
 }) {
-  const { t, locale, formatDuration, formatCurrency, formatNumber } = useTranslation();
+  const { t, locale, formatLocalDuration: formatDuration, formatCurrency, formatLocalNumber: formatNumber } = useTranslation();
   const groups = useMemo(() => groupServicesByCategory(services, categories), [services, categories]);
   const tabs = useMemo(
     () => [

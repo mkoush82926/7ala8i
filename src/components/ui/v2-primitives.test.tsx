@@ -142,6 +142,8 @@ describe("PhotoFrame", () => {
     expect(PLACEHOLDER_FILLS).toHaveLength(4);
     expect(placeholderInitials("صالون الأمير")).toBe("صا");
     expect(placeholderInitials("")).toBe("·");
+    expect(placeholderInitials("The Gentleman's Chair")).toBe("GC");
+    expect(placeholderInitials("Mohammad (Mo)")).toBe("MM");
   });
 });
 

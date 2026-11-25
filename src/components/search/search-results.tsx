@@ -16,7 +16,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, CalendarClock, List, LocateOff, Map as MapIcon, MapPin, SearchX, Store, UserRound } from "lucide-react";
-import { useTranslation, interpolate } from "@/hooks/use-translation";
+import { useTranslation, interpolate, localizeHref } from "@/hooks/use-translation";
+import { pluralLabel } from "@/components/ui/booking-cta";
 import { EmptyState, type EmptyStateAction } from "@/components/ui/empty-state";
 import { ShopCardSkeleton } from "@/components/ui/skeleton";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -280,12 +281,25 @@ export function SearchResults({ cities, categories, initial }: SearchResultsProp
   const city = findCity(cities, state.city);
   const cityName = city ? (locale === "ar" ? city.nameAr : city.nameEn) : "";
   const fmtCount = (n: number) => formatLocalizedNumber(n, locale);
+  const shownCount = total ?? items.length;
+  // Hidden at zero: the empty state already says so (and "٠" reads like the meta dot).
   const countText =
-    status !== "ok"
+    status !== "ok" || shownCount === 0
       ? ""
-      : total !== null
-        ? interpolate(S.resultsCount, { count: fmtCount(total) })
-        : interpolate(hasMore ? S.resultsMany : S.resultsCount, { count: fmtCount(items.length) });
+      : total === null && hasMore
+        ? interpolate(S.resultsMany, { count: fmtCount(items.length) })
+        : pluralLabel(S.resultsCountForms, shownCount, locale, fmtCount(shownCount));
+  // Nothing narrows the query: zero results means the marketplace itself is empty here.
+  const unfiltered =
+    !state.q &&
+    !state.area &&
+    !state.city &&
+    !state.near &&
+    !state.when &&
+    !state.time &&
+    state.filters.length === 0 &&
+    state.priceMin === null &&
+    state.priceMax === null;
 
   const emptyActions: EmptyStateAction[] = [];
   if (state.area && city)
@@ -311,6 +325,7 @@ export function SearchResults({ cities, categories, initial }: SearchResultsProp
     emptyActions.push({ label: S.clearAll, onClick: () => navigate({ ...state, filters: [], priceMin: null, priceMax: null }) });
   }
   if (emptyActions.length === 0 && state.q) emptyActions.push({ label: S.clearQueryAction, onClick: () => navigate({ ...state, q: "" }) });
+  if (unfiltered) emptyActions.push({ label: S.listYourShop, href: localizeHref("/for-business", locale), icon: Store });
 
   const tabs = [
     { value: "shops" as const, label: S.tabShops, icon: <Store /> },
@@ -361,9 +376,9 @@ export function SearchResults({ cities, categories, initial }: SearchResultsProp
         />
       ) : items.length === 0 ? (
         <EmptyState
-          icon={SearchX}
-          title={S.noResultsTitle}
-          description={S.noResultsDesc}
+          icon={unfiltered ? Store : SearchX}
+          title={unfiltered ? S.noShopsYetTitle : S.noResultsTitle}
+          description={unfiltered ? S.noShopsYetDesc : S.noResultsDesc}
           action={emptyActions[0]}
           secondaryAction={emptyActions[1]}
           headingLevel={2}

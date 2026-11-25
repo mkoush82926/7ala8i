@@ -221,6 +221,14 @@ describe("getInitials", () => {
     expect(getInitials("  Ahmad   Hassan ")).toBe("AH");
     expect(getInitials("")).toBe("");
   });
+
+  it("skips punctuation and a leading article", () => {
+    expect(getInitials("Mohammad (Preview)")).toBe("MP");
+    expect(getInitials("Mohammad (Mo)")).toBe("MM");
+    expect(getInitials("The Gentleman's Chair")).toBe("GC");
+    expect(getInitials("Al-Noor Barbers")).toBe("NB");
+    expect(getInitials("(  )")).toBe("");
+  });
 });
 
 describe("getDayPeriod / getGreeting", () => {

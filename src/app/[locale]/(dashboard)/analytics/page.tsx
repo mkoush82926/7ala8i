@@ -265,7 +265,7 @@ export default function AnalyticsPage() {
 
   const dayOrder = DAY_ORDER[locale === "ar" ? "ar" : "en"];
   // 2026-01-04 is a Sunday → index = weekday
-  const dayName = (wd: number, style: "short" | "long") => formatDate(new Date(2026, 0, 4 + wd, 12), { weekday: style });
+  const dayName = (wd: number, style: "narrow" | "short" | "long") => formatDate(new Date(2026, 0, 4 + wd, 12), { weekday: style });
   const hourLabel = (h: number) => formatTime(`${String(h).padStart(2, "0")}:00`, { hour: "numeric" });
   const heat = data.heatmap;
   const topSources = data.sources.slice(0, 6);
@@ -497,15 +497,24 @@ export default function AnalyticsPage() {
               <EmptyState bare size="sm" title={a.noBookings} />
             ) : (
               <div className="-mx-1 overflow-x-auto px-1">
-                <table className="w-full min-w-[320px] border-separate" style={{ borderSpacing: 4 }}>
+                {/* table-fixed + colgroup: seven equal day columns regardless of label length */}
+                <table className="w-full min-w-[300px] table-fixed border-separate" style={{ borderSpacing: 4 }}>
                   <caption className="sr-only">{a.peakHoursCaption}</caption>
+                  <colgroup>
+                    <col className="w-14" />
+                    {dayOrder.map((wd) => (
+                      <col key={wd} />
+                    ))}
+                  </colgroup>
                   <thead>
                     <tr>
                       <td />
                       {dayOrder.map((wd) => (
-                        <th key={wd} scope="col" className="pb-1 text-center text-xs font-semibold text-ink-muted">
+                        <th key={wd} scope="col" className="overflow-hidden pb-1 text-center text-xs font-semibold text-ink-muted">
                           <abbr title={dayName(wd, "long")} className="no-underline">
-                            {dayName(wd, "short")}
+                            {/* Phones: one letter (Arabic short names are full words) */}
+                            <span className="sm:hidden">{dayName(wd, "narrow")}</span>
+                            <span className="hidden sm:inline">{dayName(wd, "short")}</span>
                           </abbr>
                         </th>
                       ))}

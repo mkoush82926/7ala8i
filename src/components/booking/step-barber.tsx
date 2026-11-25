@@ -29,7 +29,7 @@ export function StepBarber({
   today: string;
   tomorrow: string;
 }) {
-  const { t, locale, formatDate, formatTime } = useTranslation();
+  const { t, locale, formatLocalDate: formatDate, formatLocalTime: formatTime } = useTranslation();
   const f = t.bookingFlow;
   const serviceIds = useMemo(() => lines.map((l) => l.serviceId), [lines]);
   const itemsKey = serviceIds.join(",");

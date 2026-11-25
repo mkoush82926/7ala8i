@@ -151,24 +151,33 @@ export function formatJODRange(min: number, max: number, options: FormatJODOptio
   return options.hideCurrency ? range : `${range} ${JOD_LABELS[toFormatLocale(options.locale)]}`;
 }
 
-/** "30–45 min" / "٣٠–٤٥ د" — single value when min === max. */
+/**
+ * The marketplace duration formatter (one style everywhere): "30 min",
+ * "30–45 min", "1 h 30 min" / "٣٠ دقيقة", "١ ساعة ٣٠ دقيقة" — digits follow the
+ * preference. Single value when min === max (or max is omitted).
+ */
 export function formatMinutesRange(
   min: number,
   max?: number | null,
   locale?: string | null,
   pref: DigitPreference = "auto",
 ): string {
-  const lo = Math.max(0, Math.round(min));
-  const hi = max == null ? lo : Math.max(lo, Math.round(max));
-  const nf = new Intl.NumberFormat(numberIntlLocale(locale, pref), {
-    style: "unit",
-    unit: "minute",
-    unitDisplay: "short",
-  });
-  if (lo === hi) return nf.format(lo);
-  const withRange = nf as Intl.NumberFormat & { formatRange?: (a: number, b: number) => string };
-  if (typeof withRange.formatRange === "function") return withRange.formatRange(lo, hi);
-  return `${formatLocalizedNumber(lo, locale, pref)}–${nf.format(hi)}`;
+  const lo = Math.max(0, Math.round(Number.isFinite(min) ? min : 0));
+  const hi = max == null || !Number.isFinite(max) ? lo : Math.max(lo, Math.round(max));
+  const ar = toFormatLocale(locale) === "ar";
+  const hLabel = ar ? "ساعة" : "h";
+  const mLabel = ar ? "دقيقة" : "min";
+  const n = (v: number) => formatLocalizedNumber(v, locale, pref);
+  const one = (v: number) => {
+    const h = Math.floor(v / 60);
+    const m = v % 60;
+    if (h === 0) return `${n(m)} ${mLabel}`;
+    if (m === 0) return `${n(h)} ${hLabel}`;
+    return `${n(h)} ${hLabel} ${n(m)} ${mLabel}`;
+  };
+  if (lo === hi) return one(lo);
+  if (hi < 60) return `${n(lo)}–${n(hi)} ${mLabel}`;
+  return `${one(lo)}–${one(hi)}`;
 }
 
 /** Joins non-empty parts with the house middle dot: "4.9 (312) · Khalda". */

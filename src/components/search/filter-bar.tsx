@@ -82,6 +82,26 @@ export function FilterBar({ state, onChange, className }: FilterBarProps) {
           aria-label={S.filtersLabel}
           className="no-scrollbar -mx-4 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto px-4 py-0.5 sm:-mx-6 sm:px-6 md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
         >
+          {/* Phones: sort leads the chip scroller instead of taking its own row */}
+          <div className="relative flex shrink-0 items-center md:hidden">
+            <label htmlFor={`${sortId}-m`} className="sr-only">
+              {S.sortLabel}
+            </label>
+            <ArrowUpDown size={15} aria-hidden="true" className="pointer-events-none absolute start-3.5 text-ink-muted" />
+            <select
+              id={`${sortId}-m`}
+              value={state.sort}
+              onChange={(e) => onChange({ ...state, sort: e.target.value as SearchSort })}
+              className={sortSelect}
+            >
+              {SEARCH_SORTS.map((s) => (
+                <option key={s} value={s}>
+                  {sortLabel[s]}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={14} aria-hidden="true" className="pointer-events-none absolute end-3 text-ink-muted" />
+          </div>
           {SEARCH_FILTERS.map((f) => {
             const on = state.filters.includes(f);
             return (
@@ -105,29 +125,6 @@ export function FilterBar({ state, onChange, className }: FilterBarProps) {
           <ArrowUpDown size={15} aria-hidden="true" className="pointer-events-none absolute start-6.5 text-ink-muted" />
           <select
             id={sortId}
-            value={state.sort}
-            onChange={(e) => onChange({ ...state, sort: e.target.value as SearchSort })}
-            className={sortSelect}
-          >
-            {SEARCH_SORTS.map((s) => (
-              <option key={s} value={s}>
-                {sortLabel[s]}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={14} aria-hidden="true" className="pointer-events-none absolute end-3 text-ink-muted" />
-        </div>
-      </div>
-
-      {/* Phones: sort on its own row so chips can scroll */}
-      <div className="flex items-center justify-between gap-2 md:hidden">
-        <div className="relative flex items-center">
-          <label htmlFor={`${sortId}-m`} className="sr-only">
-            {S.sortLabel}
-          </label>
-          <ArrowUpDown size={15} aria-hidden="true" className="pointer-events-none absolute start-3.5 text-ink-muted" />
-          <select
-            id={`${sortId}-m`}
             value={state.sort}
             onChange={(e) => onChange({ ...state, sort: e.target.value as SearchSort })}
             className={sortSelect}

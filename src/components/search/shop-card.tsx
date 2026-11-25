@@ -31,7 +31,7 @@ export interface ShopCardProps {
 }
 
 export function ShopCard({ shop, showDistance = false, active = false, src, priority = false, onHover }: ShopCardProps) {
-  const { t, locale, formatTime } = useTranslation();
+  const { t, locale, formatLocalTime: formatTime } = useTranslation();
   const name = localName({ en: shop.name, ar: shop.nameAr }, locale) || shop.name;
   const href = shopPath(shop, locale);
   const bookKey = shop.slug || shop.id;
@@ -81,7 +81,7 @@ export function ShopCard({ shop, showDistance = false, active = false, src, prio
                 : null,
             ]}
           />
-          {price && <Price amount={price.amount} from={moreCount > 1 || price.from} className="shrink-0 text-sm" />}
+          {price && <Price amount={price.amount} from={moreCount > 1 || price.from} trimZeros className="shrink-0 text-sm" />}
         </div>
       }
       footer={

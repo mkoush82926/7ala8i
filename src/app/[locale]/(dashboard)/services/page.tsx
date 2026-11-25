@@ -21,7 +21,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Plus, Search, Clock, GripVertical, Pencil, Trash2, Sparkles, SlidersHorizontal, Home, EyeOff, Layers, Scissors } from "lucide-react";
+import { Plus, Search, Clock, GripVertical, Pencil, Trash2, Sparkles, SlidersHorizontal, Home, EyeOff, Layers, MoreVertical } from "lucide-react";
+import { Popover, PopoverMenuItem } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { useServices, type ServiceItem } from "@/hooks/use-services";
@@ -32,7 +33,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Pill } from "@/components/ui/pill";
 import { focusRing, inputClasses, fieldIconClasses } from "@/components/ui/recipes";
-import { joinMeta, formatJOD, formatMinutesRange } from "@/lib/format";
+import { joinMeta, formatMinutesRange } from "@/lib/format";
 import type { ServiceWrite, VariantDraft } from "@/lib/queries/services";
 import { ServiceEditor } from "./service-editor";
 import { BookingRulesDialog } from "./booking-rules-dialog";
@@ -75,21 +76,24 @@ export default function ServicesPage() {
 
   const displayName = (s: ServiceItem) => (isRTL && s.name_ar ? s.name_ar : s.name);
 
-  const money = (n: number) =>
-    (currency || "JOD").toUpperCase() === "JOD" ? formatJOD(n, { locale, trimZeros: true }) : formatCurrency(n, currency);
+  // Back office: one money/number style everywhere (Latin digits, "8 JOD"),
+  // the same formatter the dashboard, clients and analytics use.
+  const money = (n: number) => formatCurrency(n, currency || "JOD", { trimZeros: true });
 
-  /** "30–45 min · from 5 JD · 3 options" */
-  const metaFor = (s: ServiceItem) => {
-    const durations = s.variants.length ? s.variants.map((v) => v.duration) : [s.duration];
+  /** "from 5 JOD" / "8 JOD" / "Free" — its own column, never truncated. */
+  const priceFor = (s: ServiceItem) => {
     const prices = s.variants.length ? s.variants.map((v) => v.price) : [s.price];
     const min = Math.min(...prices);
-    const priceLabel =
-      s.price_type === "free" ? svc.priceFree
+    return s.price_type === "free" ? svc.priceFree
       : s.price_type === "from" || min !== Math.max(...prices) ? interpolate(svc.fromPriceShort, { price: money(min) })
       : money(min);
+  };
+
+  /** "30–45 min · 3 options" */
+  const metaFor = (s: ServiceItem) => {
+    const durations = s.variants.length ? s.variants.map((v) => v.duration) : [s.duration];
     return joinMeta([
-      formatMinutesRange(Math.min(...durations), Math.max(...durations), locale),
-      priceLabel,
+      formatMinutesRange(Math.min(...durations), Math.max(...durations), locale, "latn"),
       s.variants.length ? interpolate(svc.optionsCount, { count: s.variants.length }) : null,
     ]);
   };
@@ -158,6 +162,7 @@ export default function ServicesPage() {
       title={displayName(service)}
       subtitle={service.name_ar ? (isRTL ? service.name : service.name_ar) : null}
       meta={metaFor(service)}
+      price={priceFor(service)}
       badges={{
         home: service.location_type === "home" ? svc.locationHome : null,
         hidden: service.is_active && !service.online_bookable ? svc.hiddenOnline : null,
@@ -171,6 +176,9 @@ export default function ServicesPage() {
         inactive: svc.inactive,
         durationLabel: svc.duration,
         variants: svc.sectionVariants,
+        more: interpolate(svc.moreActions, { name: displayName(service) }),
+        editShort: svc.editShort,
+        removeShort: t.common.delete,
       }}
       onEdit={() => openEdit(service)}
       onDelete={() => setPendingDelete(service)}
@@ -323,6 +331,7 @@ interface ServiceRowProps {
   title: string;
   subtitle: string | null;
   meta: string;
+  price: string;
   badges: { home: string | null; hidden: string | null };
   fontFamily: string;
   labels: {
@@ -333,6 +342,9 @@ interface ServiceRowProps {
     inactive: string;
     durationLabel: string;
     variants: string;
+    more: string;
+    editShort: string;
+    removeShort: string;
   };
   onEdit: () => void;
   onDelete: () => void;
@@ -372,7 +384,7 @@ function SortableServiceRow(props: ServiceRowProps) {
 }
 
 function ServiceRowBody({
-  service, isAdmin, title, subtitle, meta, badges, fontFamily, labels,
+  service, isAdmin, title, subtitle, meta, price, badges, fontFamily, labels,
   onEdit, onDelete, onToggle, rowRef, style, dragging, handle,
 }: ServiceRowProps & {
   rowRef?: (el: HTMLElement | null) => void;
@@ -391,19 +403,22 @@ function ServiceRowBody({
     >
       {handle}
 
-      <div
-        className={cn(
-          "hidden size-11 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-lg text-brand-text min-[420px]:flex",
-          !service.is_active && "opacity-60",
-        )}
-        aria-hidden
-      >
-        {service.icon || <Scissors size={18} />}
-      </div>
+      {/* Only a shop-chosen icon earns a tile; no identical scissors on every row. */}
+      {service.icon && (
+        <div
+          className={cn(
+            "hidden size-11 shrink-0 items-center justify-center rounded-lg bg-sunken text-lg min-[420px]:flex",
+            !service.is_active && "opacity-60",
+          )}
+          aria-hidden
+        >
+          {service.icon}
+        </div>
+      )}
 
       <div className={cn("min-w-0 flex-1", !service.is_active && "opacity-70")}>
-        <div className="flex min-w-0 items-center gap-2">
-          <p className="text-title truncate text-ink" style={{ fontFamily }}>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="text-title line-clamp-2 min-w-0 break-words text-ink" style={{ fontFamily }}>
             {title}
           </p>
           {!service.is_active && (
@@ -424,9 +439,13 @@ function ServiceRowBody({
         </p>
       </div>
 
+      <p className={cn("shrink-0 whitespace-nowrap text-[15px] font-semibold tabular-nums text-ink", !service.is_active && "opacity-70")}>
+        <bdi>{price}</bdi>
+      </p>
+
       {isAdmin && (
-        // Always visible below lg (touch); revealed on hover/focus on desktop.
-        <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
+        <div className="flex shrink-0 items-center gap-0.5">
+          {/* The online-booking switch is always visible; edit/delete fade in on desktop hover. */}
           <button
             type="button"
             role="switch"
@@ -451,18 +470,43 @@ function ServiceRowBody({
               />
             </span>
           </button>
-          <button type="button" onClick={onEdit} aria-label={labels.edit} title={labels.edit} className={iconBtn}>
-            <Pencil size={15} aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            aria-label={labels.remove}
-            title={labels.remove}
-            className={cn(iconBtn, "hover:bg-danger-soft hover:text-danger-text")}
+          <div className="hidden items-center gap-0.5 transition-opacity sm:flex lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
+            <button type="button" onClick={onEdit} aria-label={labels.edit} title={labels.edit} className={iconBtn}>
+              <Pencil size={15} aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              aria-label={labels.remove}
+              title={labels.remove}
+              className={cn(iconBtn, "hover:bg-danger-soft hover:text-danger-text")}
+            >
+              <Trash2 size={15} aria-hidden />
+            </button>
+          </div>
+          {/* Phones: edit / delete behind one kebab so the name and price keep their room. */}
+          <Popover
+            kind="menu"
+            label={labels.more}
+            className="sm:hidden"
+            panelClassName="min-w-44"
+            trigger={(p) => (
+              <button type="button" {...p} aria-label={labels.more} className={iconBtn}>
+                <MoreVertical size={16} aria-hidden />
+              </button>
+            )}
           >
-            <Trash2 size={15} aria-hidden />
-          </button>
+            {(close) => (
+              <>
+                <PopoverMenuItem icon={<Pencil aria-hidden />} onClick={() => { close(); onEdit(); }}>
+                  {labels.editShort}
+                </PopoverMenuItem>
+                <PopoverMenuItem tone="danger" icon={<Trash2 aria-hidden />} onClick={() => { close(); onDelete(); }}>
+                  {labels.removeShort}
+                </PopoverMenuItem>
+              </>
+            )}
+          </Popover>
         </div>
       )}
     </li>

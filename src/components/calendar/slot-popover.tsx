@@ -114,7 +114,7 @@ export function CreateFab({ onPick }: { onPick: (kind: CreateKind) => void }) {
   }, [open]);
 
   return (
-    <div ref={ref} className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] end-4 z-40 flex flex-col items-end gap-2 lg:bottom-8 lg:end-8">
+    <div ref={ref} className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] end-4 z-40 flex flex-col items-end gap-2 lg:hidden">
       {open && (
         <div role="menu" aria-label={t.calendar.create} className="flex flex-col items-end gap-2">
           {items.map(({ kind, label, icon: Icon }) => (

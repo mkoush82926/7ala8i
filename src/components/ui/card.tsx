@@ -103,24 +103,29 @@ export function StatCard({ label, value, icon, delta, footer, className, ...rest
     !delta || delta.direction === "flat" ? "text-ink-muted" : good ? "text-success-text" : "text-danger-text";
   return (
     <div className={cardClasses({ className: cn("flex flex-col gap-2 p-4 lg:p-5", className) })} {...rest}>
-      <p className="flex items-center gap-2 text-sm font-medium text-ink-muted">
+      {/* Phones: icon tile above the label so the label gets the full width;
+          one line everywhere so values in a row line up. */}
+      <p
+        className="flex min-w-0 flex-col items-start gap-2 text-sm font-medium text-ink-muted sm:flex-row sm:items-center"
+        title={typeof label === "string" ? label : undefined}
+      >
         {icon && (
           <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand-text [&_svg]:size-4">
             {icon}
           </span>
         )}
-        <span className="min-w-0 leading-snug line-clamp-2">{label}</span>
+        <span className="block min-h-5 w-full min-w-0 truncate leading-5 sm:w-auto">{label}</span>
       </p>
       <p className="text-stat text-ink">
         <bdi>{value}</bdi>
       </p>
       {delta && (
-        <p className={cn("flex flex-wrap items-center gap-x-1.5 text-xs font-semibold", deltaTone)}>
+        <p className={cn("flex min-w-0 flex-nowrap items-center gap-x-1.5 text-xs font-semibold", deltaTone)}>
           {delta.direction !== "flat" && (
             <span aria-hidden="true">{delta.direction === "up" ? "▲" : "▼"}</span>
           )}
-          <bdi className="tabular-nums">{delta.value}</bdi>
-          {delta.caption && <span className="font-normal text-ink-muted">{delta.caption}</span>}
+          <bdi className="shrink-0 tabular-nums">{delta.value}</bdi>
+          {delta.caption && <span className="min-w-0 truncate font-normal text-ink-muted">{delta.caption}</span>}
         </p>
       )}
       {footer}

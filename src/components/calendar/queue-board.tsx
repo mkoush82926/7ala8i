@@ -2,7 +2,7 @@
 
 import React, { useId, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Armchair, CalendarDays, Check, CheckCheck, Clock, LogOut, MonitorPlay, RotateCcw, UserPlus, Users } from "lucide-react";
+import { AlertTriangle, Armchair, CalendarDays, Check, CheckCheck, Clock, LogOut, MonitorPlay, RotateCcw, UserPlus } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { FilterChip, Pill } from "@/components/ui/pill";
@@ -133,7 +133,7 @@ export function QueueBoard() {
           <p className="mt-1 max-w-[65ch] text-meta text-ink-muted">{t.queue.subtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ButtonLink href={href("/calendar")} variant="ghost" size="sm" icon={<CalendarDays aria-hidden="true" />}>
+          <ButtonLink href={href("/calendar")} variant="secondary" size="sm" icon={<CalendarDays aria-hidden="true" />}>
             {t.calendar.title}
           </ButtonLink>
           <ButtonLink href={href("/queue/display")} variant="secondary" size="sm" icon={<MonitorPlay aria-hidden="true" />}>
@@ -216,7 +216,14 @@ export function QueueBoard() {
             <label htmlFor={`${id}-note`} className="field-label">
               {t.calendar.notes}
             </label>
-            <input id={`${id}-note`} className="field-input" value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} />
+            <textarea
+              id={`${id}-note`}
+              className="field-input min-h-20 resize-y"
+              rows={3}
+              value={note}
+              maxLength={300}
+              onChange={(e) => setNote(e.target.value)}
+            />
           </div>
           <Button type="submit" size="lg" fullWidth loading={saving} icon={<UserPlus aria-hidden="true" />}>
             {t.queue.addToQueue}
@@ -235,13 +242,12 @@ export function QueueBoard() {
             className="lg:hidden"
           />
 
-          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          <div className="grid items-start gap-4 xl:grid-cols-2">
             {/* Waiting */}
             <section aria-labelledby={`${id}-waiting`} className={cn("rounded-xl bg-sunken p-3", laneClass("waiting"))}>
-              <h2 id={`${id}-waiting`} className="mb-3 flex items-center gap-2 px-1 text-sm font-semibold text-ink">
-                <Clock size={16} aria-hidden="true" className="text-ink-muted" />
-                {interpolate(t.queue.waitingCount, { n: formatNumber(q.waiting.length) })}
-              </h2>
+              <LaneHeading id={`${id}-waiting`} icon={<Clock size={16} />} count={formatNumber(q.waiting.length)}>
+                {t.queue.waitingTitle}
+              </LaneHeading>
 
               {q.loading && (
                 <SkeletonGroup className="space-y-2">
@@ -254,7 +260,7 @@ export function QueueBoard() {
                 <EmptyState icon={AlertTriangle} tone="error" size="sm" title={t.queue.loadError} description={errorText(t, q.error)} action={{ label: t.common.retry, onClick: q.reload }} />
               )}
               {!q.loading && !q.error && q.waiting.length === 0 && (
-                <EmptyState icon={Users} size="sm" title={t.queue.emptyTitle} description={t.queue.emptyDescription} />
+                <LaneEmpty title={t.queue.emptyTitle} description={t.queue.emptyDescription} />
               )}
 
               {!q.loading && !q.error && q.waiting.length > 0 && (
@@ -278,7 +284,9 @@ export function QueueBoard() {
                             {formatNumber(e.ticketNo)}
                           </span>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-title text-ink">{label(e)}</p>
+                            <p className="truncate text-title text-ink">
+                              <bdi>{label(e)}</bdi>
+                            </p>
                             {meta.length > 0 && <p className="mt-0.5 line-clamp-2 text-meta text-ink-muted">{meta.join(" · ")}</p>}
                           </div>
                           <div className="shrink-0 text-end">
@@ -330,13 +338,11 @@ export function QueueBoard() {
             <div className="space-y-4">
               {/* In the chair */}
               <section aria-labelledby={`${id}-serving`} className={cn("rounded-xl bg-sunken p-3", laneClass("serving"))}>
-                <h2 id={`${id}-serving`} className="mb-3 flex items-center gap-2 px-1 text-sm font-semibold text-ink">
-                  <Armchair size={16} aria-hidden="true" className="text-ink-muted" />
+                <LaneHeading id={`${id}-serving`} icon={<Armchair size={16} />} count={formatNumber(q.serving.length)}>
                   {t.queue.serving}
-                  <span className="ms-auto rounded-full bg-card px-2 py-0.5 text-xs font-semibold tabular-nums text-ink-soft">{formatNumber(q.serving.length)}</span>
-                </h2>
+                </LaneHeading>
                 {q.serving.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-line-strong/50 px-4 py-6 text-center text-meta text-ink-muted">{t.queue.displayNobodyServing}</p>
+                  <LaneEmpty title={t.queue.displayNobodyServing} />
                 ) : (
                   <ul className="space-y-2">
                     {q.serving.map((e) => (
@@ -361,12 +367,11 @@ export function QueueBoard() {
 
               {/* Done today */}
               <section aria-labelledby={`${id}-done`} className={cn("rounded-xl bg-sunken p-3", laneClass("done"))}>
-                <h2 id={`${id}-done`} className="mb-3 flex items-center gap-2 px-1 text-sm font-semibold text-ink">
-                  <CheckCheck size={16} aria-hidden="true" className="text-ink-muted" />
-                  {interpolate(t.queue.finishedToday, { n: formatNumber(q.finished.length) })}
-                </h2>
+                <LaneHeading id={`${id}-done`} icon={<CheckCheck size={16} />} count={formatNumber(q.finished.length)}>
+                  {t.queue.finishedTitle}
+                </LaneHeading>
                 {q.finished.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-line-strong/50 px-4 py-6 text-center text-meta text-ink-muted">{tq.finishedEmpty ?? t.common.noData}</p>
+                  <LaneEmpty title={tq.finishedEmpty ?? t.common.noData} />
                 ) : (
                   <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-card">
                     {q.finished.map((e) => (
@@ -405,6 +410,29 @@ export function QueueBoard() {
         confirmLabel={t.queue.left}
         destructive
       />
+    </div>
+  );
+}
+
+/** One lane header recipe: icon · title · count pill. */
+function LaneHeading({ id, icon, count, children }: { id: string; icon: React.ReactNode; count: string; children: React.ReactNode }) {
+  return (
+    <h2 id={id} className="mb-3 flex items-center gap-2 px-1 text-sm font-semibold text-ink">
+      <span aria-hidden="true" className="text-ink-muted">
+        {icon}
+      </span>
+      {children}
+      <span className="ms-auto rounded-full bg-card px-2 py-0.5 text-xs font-semibold tabular-nums text-ink-soft">{count}</span>
+    </h2>
+  );
+}
+
+/** One empty-lane recipe: a dashed inline note (no nested cards). */
+function LaneEmpty({ title, description }: { title: string; description?: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-line-strong/60 px-4 py-6 text-center">
+      <p className="text-sm font-semibold text-ink-soft">{title}</p>
+      {description && <p className="mx-auto mt-1 max-w-[40ch] text-meta text-ink-muted">{description}</p>}
     </div>
   );
 }

@@ -20,7 +20,7 @@ export function PortfolioGrid({
   services?: readonly Pick<ServiceData, "id" | "name" | "name_ar">[];
   limit?: number;
 }) {
-  const { t, locale, formatNumber } = useTranslation();
+  const { t, locale, formatLocalNumber: formatNumber } = useTranslation();
   const [open, setOpen] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
   if (items.length === 0) return null;

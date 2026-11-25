@@ -6,6 +6,7 @@
  */
 
 import { placeholderFill } from "@/components/ui/photo-frame";
+import { nameInitials } from "@/lib/utils";
 
 // ─── Cover tile (honest per-shop stand-in until shops have real photos) ───
 
@@ -33,15 +34,7 @@ export function coverForShop(id: string): ShopCover {
 
 /** "The Gentleman's Chair" → "TG"; Arabic names keep their first letters. */
 export function shopInitials(name: string | null | undefined): string {
-  const initials = (name ?? "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => Array.from(w)[0] ?? "")
-    .join("")
-    .toUpperCase();
-  return initials || "?";
+  return nameInitials(name, "?");
 }
 
 // ─── Links ───

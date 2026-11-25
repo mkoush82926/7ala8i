@@ -7,7 +7,8 @@
 import React from "react";
 import Link from "next/link";
 import { CalendarDays, Compass, LogOut, UserRound } from "lucide-react";
-import { useTranslation, FONT_EN_DISPLAY } from "@/hooks/use-translation";
+import { useTranslation } from "@/hooks/use-translation";
+import { Wordmark } from "@/components/search/site-footer";
 import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
 import { buttonClasses, focusRing } from "@/components/ui/recipes";
 import { cn } from "@/lib/utils";
@@ -66,13 +67,8 @@ export function PortalShell({
 
       <header className="sticky top-0 z-40 h-16 border-b border-line bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75">
         <div className="mx-auto flex h-full w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-          <Link
-            href={href("/landing")}
-            dir="ltr"
-            className={cn("rounded-md text-xl font-extrabold tracking-tight text-ink no-underline", focusRing)}
-            style={{ fontFamily: FONT_EN_DISPLAY }}
-          >
-            Halaqy<span className="text-brand-text">.</span>
+          <Link href={href("/landing")} className={cn("rounded-md no-underline", focusRing)}>
+            <Wordmark />
           </Link>
           <div className="flex items-center gap-2">
             <Link href={href("/explore")} className={buttonClasses({ variant: "primary", size: "sm" })}>

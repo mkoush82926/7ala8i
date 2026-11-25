@@ -5,7 +5,7 @@
 // /for-business.
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CalendarCheck, MapPin, Search, Star, Store } from "lucide-react";
+import { ArrowLeft, ArrowRight, MapPin, Star } from "lucide-react";
 import en, { type TranslationKeys } from "@/i18n/en";
 import ar from "@/i18n/ar";
 import { formatLocalizedNumber } from "@/lib/format";
@@ -108,7 +108,7 @@ function StatsBand({ stats, locale, t }: { stats: PublicStats; locale: string; t
         <h2 id="home-stats" className="sr-only">
           {S.statsTitle}
         </h2>
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4">
+        <dl className={cn("grid grid-cols-2 gap-x-6 gap-y-8", items.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4")}>
           {items.map((it) => (
             <div
               key={it.key}
@@ -141,7 +141,7 @@ function AreaChips({ city, locale, label }: { city: SearchCity; locale: string; 
   const areas = popularAreas(city, 8);
   if (areas.length === 0) return null;
   return (
-    <nav aria-label={label} className="mt-6">
+    <nav aria-label={label} className="mt-5">
       <p aria-hidden="true" className="mb-3 text-meta font-medium text-ink-muted">
         {label}
       </p>
@@ -189,9 +189,9 @@ export default async function HomePage({ params }: Props) {
   };
 
   const steps = [
-    { icon: Search, title: S.howStep1Title, body: S.howStep1Body },
-    { icon: CalendarCheck, title: S.howStep2Title, body: S.howStep2Body },
-    { icon: Store, title: S.howStep3Title, body: S.howStep3Body },
+    { title: S.howStep1Title, body: S.howStep1Body },
+    { title: S.howStep2Title, body: S.howStep2Body },
+    { title: S.howStep3Title, body: S.howStep3Body },
   ];
 
   return (
@@ -207,15 +207,16 @@ export default async function HomePage({ params }: Props) {
 
       <main id="main-content">
         {/* ── Hero + search ─────────────────────────────────────────────── */}
-        <section aria-labelledby="home-hero" className={cn(containerClasses, "pb-12 pt-10 text-center md:pb-20 md:pt-20")}>
+        <section aria-labelledby="home-hero" className={cn(containerClasses, "pb-8 pt-10 text-center md:pb-12 md:pt-20")}>
           <p className="eyebrow fade-slide-up mb-4">{S.heroEyebrow}</p>
           <h1 id="home-hero" className="text-display fade-slide-up fade-slide-up-delay-1 mx-auto max-w-[18ch] text-balance text-ink">
             {S.heroTitle}
           </h1>
           <p className="text-body-lg fade-slide-up fade-slide-up-delay-2 mx-auto mt-4 max-w-2xl text-ink-soft">{S.heroSubtitle}</p>
 
-          <div className="fade-slide-up fade-slide-up-delay-3 mx-auto mt-8 max-w-4xl text-start md:mt-10">
-            <SearchBar cities={data.cities} categories={data.categories} variant="hero" collapsible={false} />
+          <div className="fade-slide-up fade-slide-up-delay-3 mx-auto mt-8 max-w-5xl text-start md:mt-10">
+            {/* Phones get the one-tap summary pill (§5.3); md+ the full segmented bar. */}
+            <SearchBar cities={data.cities} categories={data.categories} variant="hero" />
           </div>
 
           {data.defaultCity && <AreaChips city={data.defaultCity} locale={locale} label={S.popularAreas} />}
@@ -282,7 +283,6 @@ export default async function HomePage({ params }: Props) {
           <SectionTitle id="home-how" title={S.howTitle} />
           <ol className="grid gap-4 md:grid-cols-3 md:gap-6">
             {steps.map((step, i) => {
-              const Icon = step.icon;
               return (
                 <li
                   key={i}
@@ -291,15 +291,12 @@ export default async function HomePage({ params }: Props) {
                     className: "relative flex flex-col gap-3 p-5 md:p-6",
                   })}
                 >
-                  <div className="flex items-center justify-between">
-                    <span
-                      aria-hidden="true"
-                      className="grid size-10 place-items-center rounded-full bg-brand-soft font-bold tabular-nums text-brand-text"
-                    >
-                      {formatLocalizedNumber(i + 1, locale)}
-                    </span>
-                    <Icon aria-hidden="true" className="size-5 text-ink-muted" />
-                  </div>
+                  <span
+                    aria-hidden="true"
+                    className="grid size-10 place-items-center rounded-full bg-brand-soft font-bold tabular-nums text-brand-text"
+                  >
+                    {formatLocalizedNumber(i + 1, locale)}
+                  </span>
                   <h3 className="text-h3 mt-1 text-ink">{step.title}</h3>
                   <p className="text-body text-ink-muted">{step.body}</p>
                 </li>
@@ -307,7 +304,8 @@ export default async function HomePage({ params }: Props) {
             })}
           </ol>
           <div className="mt-8 flex justify-center">
-            <ButtonLink href={searchHref(locale)} size="lg" iconEnd={<Forward />}>
+            {/* Secondary: the hero search is this page's one primary. */}
+            <ButtonLink href={searchHref(locale)} variant="secondary" size="lg" iconEnd={<Forward />}>
               {S.exploreCta}
             </ButtonLink>
           </div>

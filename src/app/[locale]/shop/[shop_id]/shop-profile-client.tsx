@@ -30,6 +30,7 @@ import { MetaLine } from "@/components/ui/meta-line";
 import { Pill } from "@/components/ui/pill";
 import { BookingCta, pluralLabel } from "@/components/ui/booking-cta";
 import { placeholderFill, placeholderInitials } from "@/components/ui/photo-frame";
+import { SiteFooter } from "@/components/search/site-footer";
 import {
   buttonClasses,
   cardClasses,
@@ -68,12 +69,12 @@ import { loadShopProfile, type ShopProfileData } from "./shop-data";
 
 // ─── Small presentational pieces ───
 
-function RatingBar({ star, count, total }: { star: number; count: number; total: number }) {
+function RatingBar({ star, count, total, fmt }: { star: number; count: number; total: number; fmt: (n: number) => string }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
     <div className="flex items-center gap-3 text-sm">
       <span className="inline-flex w-7 shrink-0 items-center justify-end gap-0.5 text-xs font-semibold tabular-nums text-ink-soft">
-        {star}
+        {fmt(star)}
         <Star aria-hidden="true" className="size-3 fill-accent text-accent" />
       </span>
       <div aria-hidden="true" className="h-2 flex-1 overflow-hidden rounded-full bg-sunken">
@@ -82,7 +83,7 @@ function RatingBar({ star, count, total }: { star: number; count: number; total:
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="w-8 shrink-0 text-end text-xs tabular-nums text-ink-muted">{count}</span>
+      <span className="w-8 shrink-0 text-end text-xs tabular-nums text-ink-muted">{fmt(count)}</span>
     </div>
   );
 }
@@ -136,7 +137,7 @@ export default function ShopProfileClient({
   src?: string | null;
 }) {
   const router = useRouter();
-  const { t, dir, isRTL, FF, href, locale, formatCurrency, formatDate, formatTime, formatNumber } = useTranslation();
+  const { t, dir, isRTL, FF, href, locale, formatCurrency, formatLocalDate: formatDate, formatLocalTime: formatTime, formatLocalNumber: formatNumber } = useTranslation();
 
   const [data, setData] = useState<ShopProfileData | null>(initialData);
   const [status, setStatus] = useState<"loading" | "ok" | "not_found" | "error">(initialData ? "ok" : "loading");
@@ -242,6 +243,7 @@ export default function ShopProfileClient({
   const { shop, services, categories, reviews, barbers, photos, portfolio, amenities, preview } = data;
   const shopName = (isRTL && shop.name_ar) || shop.name;
   const description = localizedText(locale, shop.description, shop.description_ar);
+  const hasAbout = !!description || amenities.length > 0;
   const landmark = localizedText(locale, shop.landmark_en, shop.landmark_ar);
   const placeLine = [data.area, data.city]
     .filter(Boolean)
@@ -249,6 +251,7 @@ export default function ShopProfileClient({
     .join(isRTL ? "، " : ", ");
   const currency = shop.currency || "JOD";
   const cover = coverForShop(shop.id);
+  const coverFill = placeholderFill(shop.id);
   const avgRating = ratingSummary.average;
   const numReviews = ratingSummary.count;
   const startingPrice = minPrice(services);
@@ -258,7 +261,7 @@ export default function ShopProfileClient({
   const directionsHref = mapsUrl(shop.google_maps_url, [shop.address, placeLine].filter(Boolean).join(", "));
   const policyHours = shop.cancellation_policy_hours ?? 0;
   const cancelText =
-    policyHours > 0 ? interpolate(t.shopPage.freeCancellationHours, { hours: policyHours }) : t.shopPage.freeCancellation;
+    policyHours > 0 ? interpolate(t.shopPage.freeCancellationHours, { hours: formatNumber(policyHours) }) : t.shopPage.freeCancellation;
   // CLDR plurals (Arabic dual "تقييمان") with localised digits.
   const reviewCountText = pluralLabel(t.primitives.reviewsCount, numReviews, locale, formatNumber(numReviews));
   const ratingValue = formatNumber(avgRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -307,7 +310,7 @@ export default function ShopProfileClient({
     barbers.length > 0 && { id: "team", label: t.shopProfile.tabTeam },
     { id: "reviews", label: t.shopProfile.tabReviews },
     portfolio.length > 0 && { id: "portfolio", label: t.shopProfile.tabPortfolio },
-    { id: "about", label: t.shopProfile.tabAbout },
+    { id: "about", label: hasAbout ? t.shopPage.about : t.shopProfile.location },
   ].filter(Boolean) as { id: string; label: string }[];
 
   const hoursCardProps = {
@@ -345,7 +348,7 @@ export default function ShopProfileClient({
             <span>{t.common.back}</span>
           </button>
           <p className="min-w-0 flex-1 truncate text-center text-[15px] font-semibold text-ink" aria-hidden="true">
-            {shopName}
+            <bdi>{shopName}</bdi>
           </p>
           <button
             type="button"
@@ -391,7 +394,7 @@ export default function ShopProfileClient({
               <ChevronRight className="size-3.5 rtl:rotate-180" />
             </li>
             <li className="max-w-[60vw] shrink-0 truncate font-medium text-ink" aria-current="page">
-              {shopName}
+              <bdi>{shopName}</bdi>
             </li>
           </ol>
         </nav>
@@ -401,18 +404,17 @@ export default function ShopProfileClient({
           {photos.length > 0 ? (
             <PhotoGallery photos={photos} shopName={shopName} mobileOverlay={photoButtons} />
           ) : (
+            // No photos yet: a short branded band (initials + faint hatch) so the
+            // header block, not an empty slab, leads the page.
             <div
-              className="relative isolate grid aspect-[16/10] place-items-center overflow-hidden md:aspect-auto md:h-[320px] md:rounded-2xl"
-              style={{ background: cover.bg }}
+              className="relative isolate grid aspect-[2/1] place-items-center overflow-hidden md:aspect-auto md:h-[200px] md:rounded-2xl"
+              style={{
+                backgroundImage: `repeating-linear-gradient(135deg, ${coverFill.hatch} 0 2px, transparent 2px 12px), ${cover.bg}`,
+              }}
             >
-              <span aria-hidden="true" className="text-[56px] leading-none font-extrabold md:text-[72px]" style={{ color: cover.fg }}>
+              <span aria-hidden="true" className="text-[48px] leading-none font-extrabold md:text-[56px]" style={{ color: cover.fg }}>
                 {shopInitials(shopName)}
               </span>
-              <Scissors
-                aria-hidden="true"
-                className="absolute -bottom-8 -end-6 size-48 opacity-[0.08] md:size-64"
-                style={{ color: cover.fg }}
-              />
               {photoButtons}
             </div>
           )}
@@ -428,7 +430,9 @@ export default function ShopProfileClient({
                 </Pill>
               </div>
             )}
-            <h1 className="text-h1 break-words text-ink">{shopName}</h1>
+            <h1 className="text-h1 break-words text-ink">
+              <bdi>{shopName}</bdi>
+            </h1>
             <MetaLine items={headerMeta} className="mt-2 text-[15px]" />
 
             {/* Quick actions (mobile/tablet; desktop has them in the booking card) */}
@@ -465,7 +469,7 @@ export default function ShopProfileClient({
 
       <ScrollSpyTabs tabs={tabs} label={t.shopProfile.tabsLabel} top={64} stickyClassName="top-0 md:top-16" />
 
-      <main className="pb-28 lg:pb-20">
+      <main className="pb-16 lg:pb-20">
         <div className={cn(containerClasses, "pt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-12")}>
           <div className="min-w-0 space-y-14">
             {/* Upcoming closures / special hours (renders nothing when there are none). */}
@@ -513,7 +517,7 @@ export default function ShopProfileClient({
                     </div>
                     <div className="min-w-0 space-y-2">
                       {ratingSummary.distribution.map(({ star, count }) => (
-                        <RatingBar key={star} star={star} count={count} total={numReviews} />
+                        <RatingBar key={star} star={star} count={count} total={numReviews} fmt={(n) => formatNumber(n)} />
                       ))}
                     </div>
                   </div>
@@ -533,15 +537,19 @@ export default function ShopProfileClient({
                               {placeholderInitials(name).slice(0, 1)}
                             </span>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-ink">{name}</p>
+                              <p className="truncate text-sm font-semibold text-ink">
+                                <bdi>{name}</bdi>
+                              </p>
                               <time dateTime={review.created_at} className="text-meta text-ink-muted">
                                 {formatDate(review.created_at, "medium")}
                               </time>
                             </div>
                           </div>
-                          <RatingStars rating={review.rating} size="sm" label={interpolate(t.shopPage.ratingLabel, { rating: review.rating })} />
+                          <RatingStars rating={review.rating} size="sm" label={interpolate(t.shopPage.ratingLabel, { rating: formatNumber(review.rating) })} />
                           {review.comment && (
-                            <p className="line-clamp-4 break-words text-[15px] leading-6 text-ink-soft">{review.comment}</p>
+                            <p dir="auto" className="line-clamp-4 break-words text-start text-[15px] leading-6 text-ink-soft">
+                              {review.comment}
+                            </p>
                           )}
                         </li>
                       );
@@ -570,14 +578,17 @@ export default function ShopProfileClient({
               </section>
             )}
 
-            {/* ── About: description, amenities, hours (mobile), location, contact ── */}
-            <section id="about" aria-labelledby="about-heading" className="scroll-mt-32 space-y-10">
-              <div>
-                <SectionHeading id="about-heading">{t.shopPage.about}</SectionHeading>
-                {description ? (
-                  <p className="max-w-[65ch] whitespace-pre-line text-[15px] leading-7 text-ink-soft">{description}</p>
-                ) : null}
-              </div>
+            {/* ── About: description, amenities, hours (mobile), location, contact ──
+                The "About" heading only renders when there is something to say;
+                otherwise Location leads the section. */}
+            <section id="about" aria-labelledby={hasAbout ? "about-heading" : "location-heading"} className="scroll-mt-32 space-y-10">
+              {description && (
+                <div>
+                  <SectionHeading id="about-heading">{t.shopPage.about}</SectionHeading>
+                  <p dir="auto" className="max-w-[65ch] whitespace-pre-line text-start text-[15px] leading-7 text-ink-soft">{description}</p>
+                </div>
+              )}
+              {!description && amenities.length > 0 && <h2 id="about-heading" className="sr-only">{t.shopPage.about}</h2>}
 
               {amenities.length > 0 && (
                 <div>
@@ -623,7 +634,9 @@ export default function ShopProfileClient({
           <aside className="hidden space-y-5 lg:sticky lg:top-[136px] lg:block" aria-label={t.shopPage.bookingBar}>
             <div className={cardClasses({ elevation: "raised", className: "space-y-5 rounded-2xl p-6" })}>
               <div className="space-y-1.5">
-                <p className="text-h3 text-ink">{shopName}</p>
+                <p className="text-h3 text-ink">
+                  <bdi>{shopName}</bdi>
+                </p>
                 {numReviews > 0 && (
                   <RatingStars
                     rating={avgRating}
@@ -642,7 +655,7 @@ export default function ShopProfileClient({
                 {(placeLine || shop.address) && (
                   <p className="text-meta flex items-start gap-1.5 text-ink-muted">
                     <MapPin aria-hidden="true" className="mt-px size-4 shrink-0" />
-                    <span className="min-w-0">{placeLine || shop.address}</span>
+                    <bdi className="min-w-0">{placeLine || shop.address}</bdi>
                   </p>
                 )}
               </div>
@@ -687,6 +700,8 @@ export default function ShopProfileClient({
           </aside>
         </div>
       </main>
+
+      <SiteFooter locale={locale === "ar" ? "ar" : "en"} t={t} className="pb-28 lg:pb-0" />
 
       {/* ── Mobile sticky booking bar ── */}
       <BookingCta

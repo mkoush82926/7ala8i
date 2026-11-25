@@ -25,7 +25,7 @@ export function StepPublish({
   onEdit: (step: WizardStep) => void;
   publishError: string | null;
 }) {
-  const { t, locale, formatTime } = useTranslation();
+  const { t, locale, formatLocalTime: formatTime, formatLocalNumber } = useTranslation();
   const s = t.start;
   const name = (locale === "ar" ? draft.shop.nameAr || draft.shop.nameEn : draft.shop.nameEn || draft.shop.nameAr) || "";
   const city = cities.find((c) => c.id === draft.location.cityId);
@@ -53,7 +53,7 @@ export function StepPublish({
     {
       step: "services",
       icon: Scissors,
-      title: interpolate(s.publish.servicesCount, { count: services.length }),
+      title: interpolate(s.publish.servicesCount, { count: formatLocalNumber(services.length) }),
       detail: services.length ? interpolate(s.publish.fromPrice, { price: formatJOD(minPrice, { locale, trimZeros: true }) }) : null,
     },
     {
@@ -65,7 +65,7 @@ export function StepPublish({
     {
       step: "hours",
       icon: Clock,
-      title: interpolate(s.publish.openDays, { count: openDays.length }),
+      title: interpolate(s.publish.openDays, { count: formatLocalNumber(openDays.length) }),
       detail: firstOpen ? (
         <MetaLine
           locale={locale}

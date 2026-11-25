@@ -2,7 +2,8 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { BookingEngine } from "@/components/booking/booking-engine";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buttonClasses } from "@/components/ui/recipes";
@@ -18,8 +19,10 @@ import type { PublicBookingSecurity } from "@/lib/otp/config";
 export function BookingShell({
   shopId, shopName, security,
 }: { shopId: string; shopName: string | null; security?: PublicBookingSecurity }) {
-  const { t, FF, dir, href } = useTranslation();
+  const { t, FF, dir, href, isRTL } = useTranslation();
+  const router = useRouter();
   const shopHref = href(`/shop/${shopId}`);
+  const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
   return (
     <div dir={dir} className="min-h-dvh bg-page text-ink" style={{ fontFamily: FF }}>
@@ -27,11 +30,21 @@ export function BookingShell({
 
       <header className="sticky top-0 z-50 h-16 border-b border-line bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
         <div className="mx-auto grid h-full w-full max-w-6xl grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2 px-4 sm:px-6">
-          {/* Symmetry spacer: the in-flow step header owns "back"; this bar only exits. */}
-          <span aria-hidden="true" />
+          {/* Back (start) returns to where the visitor came from; close (end) exits to the shop. */}
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) router.back();
+              else router.push(shopHref);
+            }}
+            aria-label={t.common.back}
+            className={buttonClasses({ variant: "ghost", size: "icon" })}
+          >
+            <BackIcon aria-hidden="true" />
+          </button>
 
           <div className="flex min-w-0 flex-col items-center text-center">
-            <span className="max-w-full truncate text-[15px] font-semibold text-ink">
+            <span dir="auto" className="max-w-full truncate text-[15px] font-semibold text-ink">
               {shopName || t.booking.bookAppointment}
             </span>
             {shopName && <span className="text-meta text-ink-muted">{t.booking.bookAppointment}</span>}

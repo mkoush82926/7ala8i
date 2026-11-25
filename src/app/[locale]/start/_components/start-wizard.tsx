@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Wordmark } from "@/components/search/site-footer";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { Button } from "@/components/ui/button";
 import { buttonClasses, focusRing } from "@/components/ui/recipes";
@@ -93,7 +94,7 @@ function Frame({
   saveStatus?: React.ReactNode;
   footer?: React.ReactNode;
 }) {
-  const { t, dir, FF, href } = useTranslation();
+  const { t, dir, FF, href, formatLocalNumber } = useTranslation();
   const s = t.start;
   return (
     <div dir={dir} className="flex min-h-[100dvh] flex-col bg-page text-ink" style={{ fontFamily: FF }}>
@@ -102,11 +103,8 @@ function Frame({
       </a>
       <header className="sticky top-0 z-30 border-b border-line bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75">
         <div className="mx-auto flex h-16 w-full max-w-xl items-center justify-between gap-3 px-4 sm:px-6">
-          <Link
-            href={href("/for-business")}
-            className={cn("rounded-md text-xl font-extrabold tracking-tight text-ink no-underline rtl:tracking-normal", focusRing)}
-          >
-            {s.brand}
+          <Link href={href("/for-business")} aria-label={s.brand} className={cn("rounded-md no-underline", focusRing)}>
+            <Wordmark />
           </Link>
           <div className="text-[13px] text-ink-muted" aria-live="polite">
             {saveStatus}
@@ -117,7 +115,7 @@ function Frame({
             <div className="mb-2 flex justify-between gap-3 text-xs font-semibold">
               <span className="truncate text-ink">{progress.label}</span>
               <span className="shrink-0 tabular-nums text-ink-muted">
-                {interpolate(s.stepOf, { current: progress.index + 1, total: progress.total })}
+                {interpolate(s.stepOf, { current: formatLocalNumber(progress.index + 1), total: formatLocalNumber(progress.total) })}
               </span>
             </div>
             <div

@@ -2,11 +2,13 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, CalendarClock, ChevronLeft, ChevronRight, Footprints, Lock, Moon, Plus, Users } from "lucide-react";
+import { AlertTriangle, CalendarClock, ChevronLeft, ChevronRight, Footprints, Lock, Moon, Plus, SlidersHorizontal, Users } from "lucide-react";
+import { Popover, PopoverMenuItem } from "@/components/ui/popover";
+import { pluralLabel } from "@/components/ui/booking-cta";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { filterChipClasses, checkboxClasses } from "@/components/ui/recipes";
+import { checkboxClasses } from "@/components/ui/recipes";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
@@ -478,37 +480,106 @@ export function CalendarView() {
   const showSkeleton = !prefsLoaded || (loading && appointments.length === 0);
   const teamLabel = prefs.teamMode === "scheduled" ? t.calendar.teamScheduled : prefs.teamMode === "all" ? t.calendar.teamAll : t.calendar.teamCustom;
 
+  // Secondary tools live in one "View options" panel instead of a loose row.
+  const viewOptions = (
+    <Popover
+      label={t.calendar.viewOptions}
+      trigger={(p) => (
+        <Button {...p} variant="secondary" size="sm" icon={<SlidersHorizontal aria-hidden="true" />}>
+          <span className="max-sm:sr-only">{t.calendar.viewOptions}</span>
+        </Button>
+      )}
+      panelClassName="w-72 space-y-1"
+    >
+      {(close) => (
+        <>
+          {currentView === "master" && (
+            <PopoverMenuItem icon={<Users aria-hidden="true" />} onClick={() => { close(); setTeamOpen(true); }}>
+              {teamLabel}
+            </PopoverMenuItem>
+          )}
+          <label className="flex min-h-11 items-center justify-between gap-3 px-3 text-sm font-medium text-ink">
+            <span>{t.calendar.colorBy}</span>
+            <select
+              className="select-native h-9 cursor-pointer rounded-full border border-line-strong bg-card ps-3 text-sm font-medium text-ink hover:border-ink-soft focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15"
+              value={prefs.colorSource}
+              onChange={(e) => updatePrefs({ colorSource: e.target.value as ColorSource })}
+            >
+              {COLOR_SOURCES.map((c) => (
+                <option key={c} value={c}>
+                  {colorLabels[c]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 px-3 text-sm font-medium text-ink">
+            <input type="checkbox" className={checkboxClasses} checked={prefs.showHijri} onChange={(e) => updatePrefs({ showHijri: e.target.checked })} />
+            {t.calendar.showHijri}
+          </label>
+          <label className="flex min-h-11 items-center justify-between gap-3 px-3 text-sm font-medium text-ink sm:hidden">
+            <span>{t.calendar.jumpAhead}</span>
+            <select
+              className="select-native h-9 cursor-pointer rounded-full border border-line-strong bg-card ps-3 text-sm font-medium text-ink"
+              value=""
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                if (n > 0) { setAnchor(addDaysLocal(new Date(), n * 7)); close(); }
+              }}
+            >
+              <option value="" disabled>—</option>
+              {JUMP_WEEKS.map((n) => (
+                <option key={n} value={n}>
+                  {pluralLabel(t.calendar.weeksAhead, n, locale, String(n))}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="my-1 border-t border-line" />
+          <PopoverMenuItem icon={<Lock aria-hidden="true" />} onClick={() => { close(); openCreate("block"); }}>
+            {t.calendar.blockTime}
+          </PopoverMenuItem>
+          {isAdmin && (
+            <PopoverMenuItem icon={<Moon aria-hidden="true" />} onClick={() => { close(); setPrayerOpen(true); }}>
+              {t.calendar.prayerSettings}
+            </PopoverMenuItem>
+          )}
+        </>
+      )}
+    </Popover>
+  );
+
   return (
     <div className="space-y-4 pb-28 lg:space-y-5 lg:pb-8">
-      {/* Page header (§6.13): title + range on the start, Queue / New on the end */}
+      {/* Page header (§6.13): the topbar already names the page, so the visible
+          heading is the range; Queue + New booking on the end. */}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-h2 text-ink">{t.calendar.title}</h1>
-          <p className="mt-1 text-meta text-ink-muted" aria-live="polite">
-            <span className="font-medium text-ink-soft">{rangeLabel}</span>
-            {hijriLabel && <span className="ms-1.5">· {hijriLabel}</span>}
+          <h1 className="sr-only">{t.calendar.title}</h1>
+          <p className="text-h3 text-ink" aria-live="polite">
+            {rangeLabel}
           </p>
+          {hijriLabel && <p className="mt-0.5 text-meta text-ink-muted">{hijriLabel}</p>}
         </div>
         <div className="flex items-center gap-2">
           <ButtonLink href={href("/queue")} variant="secondary" size="sm" icon={<Footprints aria-hidden="true" />}>
             {t.queue.title}
           </ButtonLink>
-          <Button size="sm" className="hidden sm:inline-flex" icon={<Plus aria-hidden="true" />} onClick={() => openCreate("appointment")}>
+          <Button size="sm" className="hidden lg:inline-flex" icon={<Plus aria-hidden="true" />} onClick={() => openCreate("appointment")}>
             {t.calendar.newBooking}
           </Button>
         </div>
       </header>
 
-      {/* Toolbar: Today · prev/next · date · view switch */}
-      <div className="flex flex-col gap-3 rounded-xl border border-line bg-card p-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-1">
+      {/* One toolbar (§6.13): Today · prev/next · date · jump … team · view options · range */}
+      <div className="flex flex-col gap-2 rounded-xl border border-line bg-card p-2 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-center gap-1">
           <Button variant="secondary" size="sm" onClick={() => setAnchor(new Date())} disabled={inRange}>
             {t.common.today}
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setAnchor((d) => shiftAnchor(mode, d, -1))} aria-label={t.calendar.previous}>
+          <Button variant="ghost" size="icon-sm" onClick={() => setAnchor((d) => shiftAnchor(mode, d, -1))} aria-label={t.calendar.previous}>
             <ChevronLeft className="rtl:-scale-x-100" aria-hidden="true" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setAnchor((d) => shiftAnchor(mode, d, 1))} aria-label={t.calendar.next}>
+          <Button variant="ghost" size="icon-sm" onClick={() => setAnchor((d) => shiftAnchor(mode, d, 1))} aria-label={t.calendar.next}>
             <ChevronRight className="rtl:-scale-x-100" aria-hidden="true" />
           </Button>
           <label className="min-w-0 flex-1 sm:flex-none">
@@ -523,58 +594,39 @@ export function CalendarView() {
               className="h-9 w-full min-w-0 cursor-pointer rounded-full border border-line-strong bg-card px-3.5 text-sm font-medium tabular-nums text-ink transition-[border-color,box-shadow] duration-150 hover:border-ink-soft focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15 sm:w-auto"
             />
           </label>
-        </div>
-        <SegmentedControl
-          ariaLabel={t.calendar.viewMode}
-          value={mode}
-          onChange={(m) => updatePrefs({ mode: m })}
-          options={RANGE_MODES.map((m) => ({ value: m, label: modeLabels[m] }))}
-          fullWidth
-          className="sm:w-auto"
-        />
-      </div>
-
-      {/* Secondary tools: jump ahead, team, colours, Hijri, blocks, prayer */}
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-        <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 lg:mx-0 lg:px-0" role="group" aria-label={t.calendar.jumpAhead}>
-          {JUMP_WEEKS.map((n) => (
-            <button key={n} type="button" onClick={() => setAnchor(addDaysLocal(new Date(), n * 7))} className={cn(filterChipClasses, "h-8 px-3 text-[13px]")}>
-              {interpolate(t.calendar.inWeeks, { n })}
-            </button>
-          ))}
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {currentView === "master" && (
-            <Button variant="ghost" size="sm" icon={<Users aria-hidden="true" />} onClick={() => setTeamOpen(true)} aria-haspopup="dialog">
-              {teamLabel}
-            </Button>
-          )}
-          <label className="flex h-9 items-center gap-2 rounded-full ps-3 text-sm text-ink-muted">
-            <span>{t.calendar.colorBy}</span>
+          <label className="hidden shrink-0 sm:block">
+            <span className="sr-only">{t.calendar.jumpAhead}</span>
             <select
-              className="h-9 cursor-pointer rounded-full border border-line-strong bg-card px-3 text-sm font-medium text-ink hover:border-ink-soft focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15"
-              value={prefs.colorSource}
-              onChange={(e) => updatePrefs({ colorSource: e.target.value as ColorSource })}
+              className="select-native h-9 cursor-pointer rounded-full border border-line-strong bg-card ps-3.5 text-sm font-medium text-ink hover:border-ink-soft focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15"
+              value=""
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                if (n > 0) setAnchor(addDaysLocal(new Date(), n * 7));
+              }}
             >
-              {COLOR_SOURCES.map((c) => (
-                <option key={c} value={c}>
-                  {colorLabels[c]}
+              <option value="" disabled>
+                {t.calendar.jumpAhead}
+              </option>
+              {JUMP_WEEKS.map((n) => (
+                <option key={n} value={n}>
+                  {pluralLabel(t.calendar.weeksAhead, n, locale, String(n))}
                 </option>
               ))}
             </select>
           </label>
-          <label className="flex h-11 cursor-pointer items-center gap-2 px-2 text-sm font-medium text-ink-soft">
-            <input type="checkbox" className={checkboxClasses} checked={prefs.showHijri} onChange={(e) => updatePrefs({ showHijri: e.target.checked })} />
-            {t.calendar.showHijri}
-          </label>
-          <Button variant="ghost" size="sm" icon={<Lock aria-hidden="true" />} onClick={() => openCreate("block")}>
-            {t.calendar.blockTime}
-          </Button>
-          {isAdmin && (
-            <Button variant="ghost" size="sm" icon={<Moon aria-hidden="true" />} onClick={() => setPrayerOpen(true)} aria-haspopup="dialog">
-              {t.calendar.prayerSettings}
-            </Button>
-          )}
+          <div className="ms-auto lg:hidden">{viewOptions}</div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {/* Team selection lives in View options too, keeping this one row. */}
+          <div className="hidden lg:block">{viewOptions}</div>
+          <SegmentedControl
+            ariaLabel={t.calendar.viewMode}
+            value={mode}
+            onChange={(m) => updatePrefs({ mode: m })}
+            options={RANGE_MODES.map((m) => ({ value: m, label: modeLabels[m] }))}
+            fullWidth
+            className="lg:w-auto"
+          />
         </div>
       </div>
 

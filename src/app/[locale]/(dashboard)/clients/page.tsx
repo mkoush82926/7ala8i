@@ -88,7 +88,7 @@ export default function ClientsPage() {
 }
 
 function ClientsView() {
-  const { t, formatCurrency, href } = useTranslation();
+  const { t, formatCurrency, formatDate, href } = useTranslation();
   const shopId = useWorkspaceStore((s) => s.shopId);
   const currency = useWorkspaceStore((s) => s.currency);
   const hydrated = useWorkspaceStore((s) => s.hydrated);
@@ -328,8 +328,10 @@ function ClientsView() {
             aria-hidden="true"
             className="hidden items-center gap-2 border-b border-line bg-sunken/60 py-2.5 ps-6 pe-6 text-xs font-semibold text-ink-muted sm:flex"
           >
-            <span className="flex-1 ps-14">{t.clients.name}</span>
-            <span className="w-32 text-end">{t.clients.totalSpent}</span>
+            <span className="min-w-0 flex-1 ps-14">{t.clients.name}</span>
+            <span className="hidden w-56 shrink-0 md:block">{t.clients.contactColumn}</span>
+            <span className="hidden w-36 shrink-0 lg:block">{t.clients.sinceColumn}</span>
+            <span className="w-32 shrink-0 text-end">{t.clients.totalSpent}</span>
             <span className="w-11 shrink-0 lg:w-9" />
           </div>
           <ul className="divide-y divide-line" aria-label={t.sidebar.clients}>
@@ -345,6 +347,7 @@ function ClientsView() {
                 openLabel={interpolate(t.clients.openProfile, { name: client.name })}
                 emailLabel={t.clients.emailOnFile}
                 noContact={t.clients.noContact}
+                since={client.created_at ? formatDate(client.created_at, "medium") : "—"}
               />
             ))}
           </ul>
@@ -436,7 +439,7 @@ function ClientsView() {
 // ─── Row ──────────────────────────────────────────────────────────────────────
 
 function ClientListItem({
-  client, tone, onOpen, spent, spentLabel, callLabel, openLabel, emailLabel, noContact,
+  client, tone, onOpen, spent, spentLabel, callLabel, openLabel, emailLabel, noContact, since,
 }: {
   client: ClientRow;
   tone: string;
@@ -447,8 +450,17 @@ function ClientListItem({
   openLabel: string;
   emailLabel: string;
   noContact: string;
+  since: string;
 }) {
-  const contact = client.phone || client.email || noContact;
+  // Phone numbers are isolated LTR runs (<bdi dir="ltr">) so "+962 79 …" never
+  // reorders inside an RTL row, truncated or not.
+  const contactNode = client.phone ? (
+    <bdi dir="ltr" className="truncate tabular-nums">{client.phone}</bdi>
+  ) : client.email ? (
+    <bdi className="truncate">{client.email}</bdi>
+  ) : (
+    <span className="truncate">{noContact}</span>
+  );
   return (
     <li className="group flex items-center gap-2 pe-3 transition-colors duration-150 hover:bg-sunken/60 focus-within:bg-sunken/60 active:bg-sunken sm:pe-6">
       <button
@@ -468,22 +480,30 @@ function ClientListItem({
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[15px] font-semibold leading-5 text-ink">
-            {client.name}
+            <bdi>{client.name}</bdi>
           </span>
-          <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] text-ink-muted">
-            <span className="truncate tabular-nums" dir={client.phone ? "ltr" : undefined}>{contact}</span>
+          {/* Contact sits under the name until it gets its own column (md+) */}
+          <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] text-ink-muted md:hidden">
+            {contactNode}
             {client.email && client.phone && (
               <Mail size={12} className="shrink-0 text-brand-text" aria-label={emailLabel} role="img" />
             )}
           </span>
           {/* Spend on phones sits under the contact line */}
           <span className="mt-0.5 block text-xs text-ink-muted sm:hidden">
-            {spentLabel}: <span className="font-semibold text-ink-soft tabular-nums">{spent}</span>
+            {spentLabel}: <bdi className="font-semibold text-ink-soft tabular-nums">{spent}</bdi>
           </span>
         </span>
+        <span className="hidden w-56 min-w-0 shrink-0 items-center gap-1.5 text-sm text-ink-soft md:flex">
+          {contactNode}
+          {client.email && client.phone && (
+            <Mail size={13} className="shrink-0 text-brand-text" aria-label={emailLabel} role="img" />
+          )}
+        </span>
+        <span className="hidden w-36 shrink-0 text-sm tabular-nums text-ink-muted lg:block">{since}</span>
         <span className="hidden w-32 shrink-0 text-end sm:block">
           <span className="sr-only">{spentLabel}: </span>
-          <span className="text-[15px] font-semibold text-ink tabular-nums">{spent}</span>
+          <bdi className="text-[15px] font-semibold text-ink tabular-nums">{spent}</bdi>
         </span>
       </button>
 

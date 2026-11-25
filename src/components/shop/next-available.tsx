@@ -24,7 +24,7 @@ export function NextAvailable({
   timeZone: string;
   className?: string;
 }) {
-  const { t, formatDate, formatTime } = useTranslation();
+  const { t, formatLocalDate: formatDate, formatLocalTime: formatTime } = useTranslation();
   const [state, setState] = useState<{ status: "loading" | "ok" | "none" | "error"; slot?: AvailableSlot }>({ status: "loading" });
 
   useEffect(() => {

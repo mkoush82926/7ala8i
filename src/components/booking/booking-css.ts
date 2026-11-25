@@ -16,9 +16,14 @@ export const BOOKING_CSS = `
 /* ── Layout: content + summary aside (wide containers only) ── */
 .bk-layout { display: block; }
 .bk-aside { display: none; }
+.bk-aside-cta { display: none; }
 @container bk (min-width: 960px) {
   .bk-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 40px; align-items: start; }
   .bk-aside { display: block; position: sticky; top: 88px; }
+  /* The summary aside owns the total + Continue on wide screens: no floating
+     mobile bar over the list, no duplicate shop card above it. */
+  .bk-layout .bk-bottom-bar, .bk-layout .bk-shop-card { display: none !important; }
+  .bk-aside-cta { display: flex; width: 100%; }
 }
 .bk-summary-card {
   background: var(--color-card); border: 1px solid var(--color-line); border-radius: 20px; padding: 24px;
@@ -104,10 +109,19 @@ export const BOOKING_CSS = `
 .bk-bottom-bar {
   position: sticky; bottom: 0; z-index: 10; margin: 24px -16px 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  background: color-mix(in srgb, var(--color-card) 94%, transparent); border-top: 1px solid var(--color-line);
-  box-shadow: ${SH_BAR}; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  /* Solid, not translucent: list rows scrolling underneath must never show
+     through the bar (prices and "+" buttons read as overlapping the total). */
+  background: var(--color-card); border-top: 1px solid var(--color-line);
+  box-shadow: ${SH_BAR};
+}
+/* Clip anything scrolling under the bar on phones, and keep the last row
+   fully visible above it when scrolled to the end. */
+.bk-bottom-bar::before {
+  content: ""; position: absolute; inset-inline: 0; bottom: 100%; height: 16px; pointer-events: none;
+  background: linear-gradient(to top, var(--color-page), transparent);
 }
 @container bk (min-width: 640px) {
+  .bk-bottom-bar::before { display: none; }
   .bk-bottom-bar { margin: 24px 0 0; border: 1px solid var(--color-line); border-radius: 20px; padding: 12px 12px 12px 20px; padding-inline: 20px 12px; bottom: 16px; box-shadow: ${SH_RAISED}; }
 }
 
@@ -120,7 +134,7 @@ export const BOOKING_CSS = `
 }
 .bk-cta:hover:not(:disabled) { background: var(--color-brand-hover); }
 .bk-cta:active:not(:disabled) { background: var(--color-brand-pressed); transform: scale(0.98); }
-.bk-cta:disabled { background: var(--color-sunken-2); color: var(--color-ink-muted); cursor: not-allowed; box-shadow: none; }
+.bk-cta:disabled { background: var(--color-brand); color: var(--color-on-brand); opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 .bk-cta-pill { flex-shrink: 0; }
 .bk-btn-secondary, .bk-btn-ghost {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px;
@@ -171,7 +185,8 @@ export const BOOKING_CSS = `
 }
 
 /* ── Services list (§5.4 selectable service row) ── */
-.bk-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 8px 2px 12px; margin: 0 0 4px; scrollbar-width: none; position: sticky; top: 64px; z-index: 5; background: var(--color-page); }
+.bk-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px 12px; margin: 0 -16px 4px; scroll-padding-inline: 16px; scrollbar-width: none; position: sticky; top: 64px; z-index: 5; background: var(--color-page); }
+@container bk (min-width: 640px) { .bk-tabs { padding-inline: 2px; margin-inline: 0; scroll-padding-inline: 0; } }
 .bk-tabs::-webkit-scrollbar, .bk-date-strip::-webkit-scrollbar, .bk-pill-row::-webkit-scrollbar { display: none; }
 .bk-section-title { font-size: 13px; font-weight: 700; color: var(--color-ink-muted); margin: 18px 0 10px; }
 .bk-list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }

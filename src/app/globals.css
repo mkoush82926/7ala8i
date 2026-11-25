@@ -660,11 +660,16 @@ body {
   font-feature-settings: 'kern' 1, 'liga' 1;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-headline);
-  letter-spacing: var(--ls-headline);
-  font-weight: 600;
-  line-height: 1.25;
+/* Heading defaults live in @layer base so the type-scale utilities
+   (text-display / text-h1… / font-bold / leading-*) win on real h1–h6 tags.
+   Unlayered, these beat every Tailwind utility. */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-headline);
+    letter-spacing: var(--ls-headline);
+    font-weight: 600;
+    line-height: 1.25;
+  }
 }
 
 /* Arabic RTL — switch to Cairo automatically */
@@ -834,6 +839,30 @@ h1, h2, h3, h4, h5, h6 {
 .auth-input.has-icon { padding-inline-start: 44px; }
 .field-input.has-action,
 .auth-input.has-action { padding-inline-end: 48px; }
+/* LTR values (email, phone, password) inside an RTL page: the input's own
+   dir="ltr" flips the logical paddings, but the icon/action follow the page.
+   Pin the paddings physically so the icon (right) and toggle (left) never
+   overlap typed text. */
+[dir="rtl"] .field-input[dir="ltr"].has-icon,
+[dir="rtl"] .auth-input[dir="ltr"].has-icon { padding-left: 16px; padding-right: 44px; }
+[dir="rtl"] .field-input[dir="ltr"].has-action,
+[dir="rtl"] .auth-input[dir="ltr"].has-action { padding-left: 48px; }
+[dir="rtl"] .field-input[dir="ltr"].has-icon.has-action,
+[dir="rtl"] .auth-input[dir="ltr"].has-icon.has-action { padding-left: 48px; padding-right: 44px; }
+[dir="rtl"] .field-input[dir="ltr"].has-action:not(.has-icon),
+[dir="rtl"] .auth-input[dir="ltr"].has-action:not(.has-icon) { padding-right: 16px; }
+
+/* Native selects: reserve end space for the forms-plugin chevron and mirror
+   it in RTL (the plugin pins it to the right). */
+select.field-input,
+select.auth-input,
+select.select-native {
+  padding-inline-end: 44px;
+  background-position: right 14px center;
+}
+[dir="rtl"] select.field-input,
+[dir="rtl"] select.auth-input,
+[dir="rtl"] select.select-native { background-position: left 14px center; }
 .field-icon {
   position: absolute;
   inset-inline-start: 14px;

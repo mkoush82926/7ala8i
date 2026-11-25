@@ -12,7 +12,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { AlertCircle, CalendarCheck, CalendarClock, MapPin, RefreshCw, Scissors, ShieldCheck, Star, Store, User, Wallet } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, CalendarClock, MapPin, RefreshCw, Scissors, ShieldCheck, Star, Store, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { MOCK_DATA_ENABLED } from "@/lib/mock-data";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
@@ -101,7 +101,7 @@ export function BookingEngine({
 }) {
   const [supabase] = useState(() => createClient());
   const rpcClient = supabase as unknown as RpcClient;
-  const { t, locale, dir, isRTL, FF, href, formatDuration, formatNumber, formatDate, formatTime } = useTranslation();
+  const { t, locale, dir, isRTL, FF, href, formatLocalDuration: formatDuration, formatLocalNumber: formatNumber, formatLocalDate: formatDate, formatLocalTime: formatTime } = useTranslation();
   const f = t.bookingFlow;
   const reduceMotion = useReducedMotion();
   const searchParams = useSearchParams();
@@ -504,11 +504,11 @@ export function BookingEngine({
     ? pluralLabel(t.primitives.servicesCount, lines.length, locale, formatNumber(lines.length))
     : null;
   const metaLabel = [countLabel, total.duration ? formatDuration(total.duration) : null].filter(Boolean).join(" · ") || null;
-  const stepLabel = (i: number, label: string) =>
-    `${t.booking.step} ${formatNumber(i + 1)} ${t.booking.of} ${formatNumber(STEPS.length)} · ${label}`;
+  // The H1 already names the step, so the eyebrow is just the position.
+  const stepLabel = (i: number) => `${t.booking.step} ${formatNumber(i + 1)} ${t.booking.of} ${formatNumber(STEPS.length)}`;
   const ratingText = (avg: number) => formatNumber(avg, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const policyText = policyHours > 0
-    ? interpolate(t.booking.freeCancellationHours, { hours: String(policyHours) })
+    ? interpolate(t.booking.freeCancellationHours, { hours: formatNumber(policyHours) })
     : t.booking.freeCancellation;
   const shopHref = shopHrefProp ?? href(`/shop/${shopId}`);
   const slideX = isRTL ? -12 : 12;
@@ -558,7 +558,7 @@ export function BookingEngine({
   const stepIndex = STEPS.indexOf(step);
   const header = (title: string, onBack?: () => void) => (
     <StepHeader
-      stepIndex={stepIndex} title={title} label={stepLabel(stepIndex, title)} isRTL={isRTL} FF={FF}
+      stepIndex={stepIndex} title={title} label={stepLabel(stepIndex)} isRTL={isRTL} FF={FF}
       headingRef={headingRef} onBack={onBack} backLabel={t.common.back} progressLabel={t.booking.progress}
       stepLabels={[t.booking.services, t.booking.barber, t.booking.timeLabel, t.common.confirm]}
     />
@@ -568,6 +568,18 @@ export function BookingEngine({
   const rating = data?.rating ?? { avg: 0, count: 0 };
   const shopFill = placeholderFill(shop.id);
   const showAside = !booked && step !== "review";
+  // Desktop: the summary aside carries the step's primary action (§6.5).
+  const asideAction: { onClick: () => void; disabled: boolean } | null =
+    step === "services"
+      ? { onClick: goFromServices, disabled: lines.length === 0 }
+      : step === "barber"
+        ? {
+            onClick: () => { if (barber) chooseBarber(barber); },
+            disabled: !barber || (barber !== "any" && !eligibleBarbers.some((b) => b.id === barber)),
+          }
+        : step === "time"
+          ? { onClick: () => { if (slot) setStep("review"); }, disabled: !slot }
+          : null;
 
   // Desktop summary (≥ 960px container): what's chosen so far, live.
   const summaryAside = (
@@ -585,9 +597,9 @@ export function BookingEngine({
             {placeholderInitials(shopName)}
           </span>
           <div style={{ minWidth: 0 }}>
-            <p className="text-title" style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shopName}</p>
+            <p className="text-title" dir="auto" style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "start" }}>{shopName}</p>
             {shop.address && (
-              <p className="text-meta" style={{ color: "var(--color-ink-muted)", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shop.address}</p>
+              <p className="text-meta" dir="auto" style={{ color: "var(--color-ink-muted)", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "start" }}>{shop.address}</p>
             )}
           </div>
         </div>
@@ -635,8 +647,23 @@ export function BookingEngine({
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingTop: 16, borderTop: "1px solid var(--color-line)" }}>
           <span style={{ fontSize: 15, fontWeight: 600 }}>{t.booking.total}</span>
-          <span style={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{lines.length ? amountLabel : "—"}</span>
+          {lines.length ? (
+            <span style={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{amountLabel}</span>
+          ) : (
+            <span className="text-meta" style={{ color: "var(--color-ink-muted)", textAlign: "end" }}>{f.selectAtLeastOne}</span>
+          )}
         </div>
+        {asideAction && (
+          <button
+            type="button"
+            onClick={asideAction.onClick}
+            disabled={asideAction.disabled}
+            className="bk-cta bk-aside-cta"
+          >
+            {f.continue}
+            {isRTL ? <ArrowLeft size={18} aria-hidden="true" /> : <ArrowRight size={18} aria-hidden="true" />}
+          </button>
+        )}
         <p className="text-meta" style={{ margin: 0, display: "flex", alignItems: "flex-start", gap: 6, color: "var(--color-ink-muted)" }}>
           <ShieldCheck size={16} aria-hidden="true" style={{ flexShrink: 0, color: "var(--color-success)" }} />
           <span>{t.booking.payInShop} · {policyText}</span>
@@ -665,7 +692,7 @@ export function BookingEngine({
           </motion.div>
         ) : step === "services" ? (
           <motion.section key="services" {...motionProps}>
-            <div className="bk-card" style={{ padding: 16, marginBottom: 24, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="bk-card bk-shop-card" style={{ padding: 16, marginBottom: 24, display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                 <span
                   aria-hidden="true"
@@ -678,11 +705,11 @@ export function BookingEngine({
                   {placeholderInitials(shopName)}
                 </span>
                 <div style={{ minWidth: 0 }}>
-                  <p className="text-title" style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shopName}</p>
+                  <p className="text-title" dir="auto" style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "start" }}>{shopName}</p>
                   {shop.address && (
                     <p className="text-meta" style={{ color: "var(--color-ink-muted)", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
                       <MapPin size={13} aria-hidden="true" style={{ flexShrink: 0 }} />
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shop.address}</span>
+                      <bdi style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shop.address}</bdi>
                     </p>
                   )}
                 </div>
@@ -697,11 +724,10 @@ export function BookingEngine({
                   </span>
                 )}
               </div>
-              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {[{ icon: Wallet, text: t.booking.payInShop }, { icon: CalendarCheck, text: policyText }].map(({ icon: Icon, text }) => (
-                  <li key={text} className="bk-pill-info"><Icon size={14} aria-hidden="true" /> {text}</li>
-                ))}
-              </ul>
+              <p className="text-meta" style={{ margin: 0, display: "flex", alignItems: "flex-start", gap: 6, color: "var(--color-ink-muted)" }}>
+                <ShieldCheck size={15} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2, color: "var(--color-success)" }} />
+                <span>{t.booking.payInShop} · {policyText}</span>
+              </p>
             </div>
 
             {header(t.booking.selectServices)}

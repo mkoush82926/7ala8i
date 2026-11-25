@@ -28,7 +28,7 @@ function samePreset(a: DayHours[], b: DayHours[]): boolean {
 }
 
 export function StepHours({ draft, update, errors }: StepProps) {
-  const { t, intlLocale, formatTime } = useTranslation();
+  const { t, intlLocale, formatLocalTime: formatTime } = useTranslation();
   const s = t.start;
 
   const dayName = useMemo(() => {

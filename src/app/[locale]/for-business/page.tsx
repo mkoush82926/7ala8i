@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
-  CalendarCheck,
   CalendarDays,
   Check,
   Link2,
@@ -15,19 +14,18 @@ import {
   Search,
   ShieldCheck,
   Star,
-  TrendingUp,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
 import en, { type TranslationKeys } from "@/i18n/en";
 import ar from "@/i18n/ar";
-import { cn, formatCurrency } from "@/lib/utils";
-import { formatLocalizedNumber } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { formatLocalizedNumber, JOD_LABELS, localizeDigits } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/button";
-import { BrandedPlaceholder, PhotoFrame } from "@/components/ui/photo-frame";
-import { cardClasses, containerClasses } from "@/components/ui/recipes";
+import { PhotoFrame } from "@/components/ui/photo-frame";
+import { containerClasses } from "@/components/ui/recipes";
 import { SiteFooter } from "@/components/search/site-footer";
-import { BackgroundVideo, LandingNav, LandingShell } from "./landing-client";
+import { LandingNav, LandingShell } from "./landing-client";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -70,7 +68,7 @@ function SectionHeading({
   align = "center",
 }: {
   id: string;
-  eyebrow: string;
+  eyebrow?: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   align?: "center" | "start";
@@ -78,7 +76,7 @@ function SectionHeading({
   return (
     <Reveal>
       <div className={cn("mb-10 max-w-2xl md:mb-14", align === "center" ? "mx-auto text-center" : "text-start")}>
-        <p className="eyebrow mb-3">{eyebrow}</p>
+        {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
         <h2 id={id} className="text-h1 text-balance text-ink">
           {title}
         </h2>
@@ -100,85 +98,102 @@ function Headline({ template, accent }: { template: string; accent: string }) {
   );
 }
 
+type PreviewCopy = TranslationKeys["landing"]["preview"];
+
 /**
- * Product preview built from tokens (no screenshots, no illustrations): a
- * team-calendar card and a phone booking card, slightly overlapping, on a
- * brand-soft backdrop. Decorative — the copy beside it says the same thing.
+ * Product preview built from real product UI: a day-view calendar with named
+ * barbers and booked services, and the phone shop page a client books from.
+ * Decorative (aria-hidden) — the copy beside it says the same thing.
  */
-function ProductPreview({ calendarLabel, bookLabel, locale }: { calendarLabel: string; bookLabel: string; locale: string }) {
-  const cols: { tone: string; top: number; h: number }[][] = [
-    [
-      { tone: "bg-brand-soft border-brand", top: 6, h: 22 },
-      { tone: "bg-success-soft border-success", top: 34, h: 16 },
-      { tone: "bg-brand text-on-brand border-brand-pressed", top: 58, h: 24 },
-    ],
-    [
-      { tone: "bg-warning-soft border-warning border-dashed", top: 14, h: 18 },
-      { tone: "bg-brand-soft border-brand", top: 40, h: 26 },
-    ],
-    [
-      { tone: "bg-brand-soft border-brand", top: 4, h: 16 },
-      { tone: "bg-sunken border-line-strong", top: 26, h: 20 },
-      { tone: "bg-brand-soft border-brand", top: 54, h: 20 },
-    ],
+function ProductPreview({ p, bookLabel, locale }: { p: PreviewCopy; bookLabel: string; locale: string }) {
+  const time = (h: number, m = 0) => localizeDigits(`${h}:${String(m).padStart(2, "0")}`, locale);
+  const lanes: { name: string; seed: string; events: { tone: string; top: number; h: number; title: string; at: string }[] }[] = [
+    {
+      name: p.barber1,
+      seed: "b1",
+      events: [
+        { tone: "bg-brand-soft border-brand text-ink", top: 4, h: 22, title: p.svcFade, at: time(9, 30) },
+        { tone: "bg-success-soft border-success text-ink", top: 30, h: 16, title: p.svcBeard, at: time(10, 30) },
+        { tone: "bg-brand text-on-brand border-brand-pressed", top: 58, h: 30, title: p.svcCombo, at: time(11, 30) },
+      ],
+    },
+    {
+      name: p.barber2,
+      seed: "b2",
+      events: [
+        { tone: "bg-warning-soft border-warning border-dashed text-ink", top: 12, h: 20, title: p.svcCut, at: time(10) },
+        { tone: "bg-brand-soft border-brand text-ink", top: 42, h: 26, title: p.svcFade, at: time(11) },
+      ],
+    },
+    {
+      name: p.barber3,
+      seed: "b3",
+      events: [
+        { tone: "bg-brand-soft border-brand text-ink", top: 2, h: 18, title: p.svcKids, at: time(9, 15) },
+        { tone: "bg-sunken border-line-strong text-ink-soft", top: 26, h: 22, title: p.svcBreak, at: time(10, 15) },
+        { tone: "bg-brand-soft border-brand text-ink", top: 54, h: 22, title: p.svcCut, at: time(11, 15) },
+      ],
+    },
   ];
   const hours = [9, 10, 11, 12];
-  const slots = ["10:00", "10:30", "11:15", "12:00", "13:30", "16:45"];
+  const slots = [time(10), time(10, 30), time(11, 15), time(12), time(13, 30), time(16, 45)];
   return (
     <div aria-hidden="true" className="relative">
       <div className="relative overflow-hidden rounded-3xl bg-brand-soft p-5 sm:p-8 lg:p-10">
         <div className="bg-hatch-ink absolute inset-0 opacity-60" />
-        {/* Calendar card */}
+        {/* Calendar day view */}
         <div className="relative w-full rounded-2xl border border-line bg-card p-4 shadow-float sm:w-[88%]">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-semibold text-ink">{calendarLabel}</span>
-            <span className="flex gap-1">
-              <span className="size-2 rounded-full bg-line-strong" />
-              <span className="size-2 rounded-full bg-line" />
-              <span className="size-2 rounded-full bg-line" />
-            </span>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <span className="text-sm font-semibold text-ink">{p.calendarTitle}</span>
+            <span className="rounded-full bg-sunken px-2.5 py-1 text-[11px] font-semibold text-ink-soft">{p.today}</span>
           </div>
-          <div className="grid grid-cols-[28px_repeat(3,minmax(0,1fr))] gap-2">
-            <div className="flex flex-col justify-between py-1 text-[10px] tabular-nums text-ink-muted" dir="ltr">
+          <div className="grid grid-cols-[32px_repeat(3,minmax(0,1fr))] gap-2">
+            <span />
+            {lanes.map((lane) => (
+              <span key={lane.seed} className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold text-ink">
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand-soft text-[9px] font-bold text-brand-text">
+                  {Array.from(lane.name)[0]}
+                </span>
+                <span className="truncate">{lane.name}</span>
+              </span>
+            ))}
+            <div className="flex flex-col justify-between py-1 text-[10px] text-ink-muted">
               {hours.map((h) => (
-                <span key={h}>{formatLocalizedNumber(h, locale)}</span>
+                <span key={h}>{time(h)}</span>
               ))}
             </div>
-            {cols.map((col, i) => (
-              <div key={i} className="relative h-44 rounded-lg bg-sunken/60">
-                <span className="absolute inset-x-1 top-[32%] h-px bg-danger/60" />
-                {col.map((ev, j) => (
+            {lanes.map((lane) => (
+              <div key={lane.seed} className="relative h-48 rounded-lg bg-sunken/60">
+                <span className="absolute inset-x-1 top-[36%] h-px bg-danger/60" />
+                {lane.events.map((ev, j) => (
                   <span
                     key={j}
-                    className={cn("absolute inset-x-1 rounded-xs border-s-[3px] p-1.5 shadow-xs", ev.tone)}
+                    className={cn("absolute inset-x-1 overflow-hidden rounded-xs border-s-[3px] px-1.5 py-1 shadow-xs", ev.tone)}
                     style={{ top: `${ev.top}%`, height: `${ev.h}%` }}
                   >
-                    <span className="block h-1.5 w-3/4 rounded-full bg-current opacity-30" />
-                    <span className="mt-1 block h-1.5 w-1/2 rounded-full bg-current opacity-20" />
+                    <span className="block truncate text-[10px] font-semibold leading-tight">{ev.title}</span>
+                    <span className="block truncate text-[9px] leading-tight opacity-80">{ev.at}</span>
                   </span>
                 ))}
               </div>
             ))}
           </div>
         </div>
-        {/* Phone booking card */}
+        {/* Phone: the shop page a client books from */}
         <div className="relative -mt-10 ms-auto w-[64%] max-w-[260px] rounded-[28px] border border-line bg-card p-3 shadow-float sm:-mt-24">
-          <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-2xl">
-            <BrandedPlaceholder name="Halaqy" fill="teal" />
+          <PhotoFrame src="/videos/1-poster.jpg" alt="" ratio="4/3" rounded="2xl" sizes="260px" fallbackName={p.shopName} className="mb-3" />
+          <p className="truncate text-[13px] font-bold text-ink">{p.shopName}</p>
+          <div className="mb-3 mt-0.5 flex items-center gap-1 text-[10px] text-ink-muted">
+            <Star className="size-3 fill-accent text-accent" />
+            <span className="font-semibold text-ink">{localizeDigits("4.9", locale)}</span>
+            <span>· {p.area}</span>
           </div>
-          <div className="mb-1 h-2.5 w-2/3 rounded-full bg-ink/80" />
-          <div className="mb-3 flex items-center gap-1">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className="size-3 fill-accent text-accent" />
-            ))}
-            <span className="ms-1 h-1.5 w-10 rounded-full bg-line" />
-          </div>
-          <div className="mb-3 grid grid-cols-3 gap-1.5" dir="ltr">
+          <div className="mb-3 grid grid-cols-3 gap-1.5">
             {slots.map((slot, i) => (
               <span
                 key={slot}
                 className={cn(
-                  "grid h-7 place-items-center rounded-full border text-[10px] font-semibold tabular-nums",
+                  "grid h-7 place-items-center rounded-full border text-[10px] font-semibold",
                   i === 2 ? "border-brand bg-brand text-on-brand" : "border-line-strong text-ink",
                 )}
               >
@@ -204,12 +219,6 @@ export default async function ForBusinessPage({ params }: Props) {
   const ownerSignup = href("/start");
   const otherLocale = locale === "ar" ? "en" : "ar";
 
-  const pillars: { icon: LucideIcon; title: string; desc: string }[] = [
-    { icon: CalendarDays, title: L.pillarManage, desc: L.pillarManageDesc },
-    { icon: CalendarCheck, title: L.pillarBook, desc: L.pillarBookDesc },
-    { icon: TrendingUp, title: L.pillarGrow, desc: L.pillarGrowDesc },
-  ];
-
   const features: { icon: LucideIcon; title: string; desc: string }[] = [
     { icon: CalendarDays, title: L.featureCalendar, desc: L.featCalendarDesc },
     { icon: Workflow, title: L.featureCrm, desc: L.featCrmDesc },
@@ -219,6 +228,7 @@ export default async function ForBusinessPage({ params }: Props) {
     { icon: MonitorSmartphone, title: L.featAnyDevice, desc: L.featAnyDeviceDesc },
   ];
 
+  // "How it works" carries the Manage / Book / Grow story (no separate trio).
   const steps = [
     { title: L.stepSetupTitle, desc: L.stepSetupDesc },
     { title: L.stepShareTitle, desc: L.stepShareDesc },
@@ -243,7 +253,7 @@ export default async function ForBusinessPage({ params }: Props) {
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px] bg-[radial-gradient(55%_50%_at_10%_0%,var(--color-brand-soft),transparent)] rtl:bg-[radial-gradient(55%_50%_at_90%_0%,var(--color-brand-soft),transparent)]"
           />
-          <div className={cn(containerClasses, "grid items-center gap-12 py-12 md:py-16 lg:grid-cols-2 lg:gap-16 lg:py-24")}>
+          <div className={cn(containerClasses, "grid items-center gap-12 py-10 md:py-14 lg:grid-cols-2 lg:gap-16 lg:py-16")}>
             <div className="fade-slide-up text-center lg:text-start">
               <p className="eyebrow mb-4">{L.heroEyebrow}</p>
               <h1 id="hero-title" className="text-display text-balance text-ink">
@@ -272,40 +282,15 @@ export default async function ForBusinessPage({ params }: Props) {
             </div>
 
             <div className="fade-slide-up fade-slide-up-delay-2 mx-auto w-full max-w-xl lg:max-w-none">
-              <ProductPreview calendarLabel={L.featureCalendar} bookLabel={t.primitives.bookNow} locale={locale} />
+              <ProductPreview p={L.preview} bookLabel={t.primitives.bookNow} locale={locale} />
             </div>
           </div>
         </section>
 
-        {/* ═══ VALUE PILLARS ═══ */}
-        <section id="why" aria-labelledby="why-title" className="scroll-mt-20 py-16 md:py-24">
-          <div className={containerClasses}>
-            <SectionHeading id="why-title" eyebrow={L.whyEyebrow} title={L.whyTitle} />
-            <ul className="grid gap-4 md:grid-cols-3 md:gap-6">
-              {pillars.map((p, i) => {
-                const Icon = p.icon;
-                return (
-                  <li key={p.title}>
-                    <Reveal delay={i * 0.04} className="h-full">
-                      <div className={cardClasses({ elevation: "card", className: "flex h-full flex-col gap-3 p-6 md:p-8" })}>
-                        <span aria-hidden="true" className="grid size-12 place-items-center rounded-2xl bg-brand-soft text-brand-text">
-                          <Icon size={22} />
-                        </span>
-                        <h3 className="text-h3 mt-2 text-ink">{p.title}</h3>
-                        <p className="text-body text-ink-muted">{p.desc}</p>
-                      </div>
-                    </Reveal>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </section>
-
         {/* ═══ FEATURES ═══ */}
-        <section id="features" aria-labelledby="features-title" className="scroll-mt-20 border-y border-line bg-card py-16 md:py-24">
+        <section id="features" aria-labelledby="features-title" className="scroll-mt-20 border-y border-line bg-card py-14 md:py-20">
           <div className={containerClasses}>
-            <SectionHeading id="features-title" eyebrow={L.navFeatures} title={L.featuresHeading} subtitle={L.featuresLead} />
+            <SectionHeading id="features-title" title={L.featuresHeading} subtitle={L.featuresLead} />
             <ul className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
               {features.map((f, i) => {
                 const Icon = f.icon;
@@ -330,42 +315,35 @@ export default async function ForBusinessPage({ params }: Props) {
           </div>
         </section>
 
-        {/* ═══ MISSION / APPROACH — alternating photo ↔ copy rows ═══ */}
-        <section aria-labelledby="mission-title" className="py-16 md:py-24">
-          <h2 id="mission-title" className="sr-only">
-            {L.missionEyebrow}
-          </h2>
-          <div className={cn(containerClasses, "flex flex-col gap-16 md:gap-24")}>
-            {[
-              { eyebrow: L.missionEyebrow, title: L.missionTitle, body: L.missionBody, src: "/videos/1-poster.jpg" },
-              { eyebrow: L.approachEyebrow, title: L.approachTitle, body: L.approachBody, src: "/videos/2-poster.jpg" },
-            ].map((row, i) => (
-              <Reveal key={row.title}>
-                <div className="grid items-center gap-8 md:grid-cols-2 md:gap-16">
-                  <PhotoFrame
-                    src={row.src}
-                    alt=""
-                    ratio="4/3"
-                    rounded="2xl"
-                    sizes="(min-width: 768px) 600px, 100vw"
-                    fallbackName="Halaqy"
-                    className={cn("shadow-raised", i % 2 === 1 && "md:order-2")}
-                  />
-                  <div>
-                    <p className="eyebrow mb-3">{row.eyebrow}</p>
-                    <h3 className="text-h1 text-balance text-ink">{row.title}</h3>
-                    <p className="text-body-lg mt-4 text-ink-muted">{row.body}</p>
-                  </div>
+        {/* ═══ MISSION — one photo ↔ copy row ═══ */}
+        <section aria-labelledby="mission-title" className="py-14 md:py-20">
+          <div className={containerClasses}>
+            <Reveal>
+              <div className="grid items-center gap-8 md:grid-cols-2 md:gap-16">
+                <PhotoFrame
+                  src="/videos/1-poster.jpg"
+                  alt=""
+                  ratio="4/3"
+                  rounded="2xl"
+                  sizes="(min-width: 768px) 600px, 100vw"
+                  fallbackName="Halaqy"
+                  className="shadow-raised"
+                />
+                <div>
+                  <h2 id="mission-title" className="text-h1 text-balance text-ink">
+                    {L.missionTitle}
+                  </h2>
+                  <p className="text-body-lg mt-4 text-ink-muted">{L.missionBody}</p>
                 </div>
-              </Reveal>
-            ))}
+              </div>
+            </Reveal>
           </div>
         </section>
 
         {/* ═══ HOW IT WORKS ═══ */}
-        <section aria-labelledby="how-title" className="border-y border-line bg-card py-16 md:py-24">
+        <section aria-labelledby="how-title" className="border-y border-line bg-card py-14 md:py-20">
           <div className={containerClasses}>
-            <SectionHeading id="how-title" eyebrow={L.howEyebrow} title={L.howHeading} subtitle={L.howLead} />
+            <SectionHeading id="how-title" title={L.howHeading} subtitle={L.howLead} />
             <ol className="grid gap-4 md:grid-cols-3 md:gap-6">
               {steps.map((step, i) => (
                 <li key={step.title}>
@@ -388,9 +366,9 @@ export default async function ForBusinessPage({ params }: Props) {
         </section>
 
         {/* ═══ PRICING ═══ */}
-        <section id="pricing" aria-labelledby="pricing-title" className="scroll-mt-20 py-16 md:py-24">
+        <section id="pricing" aria-labelledby="pricing-title" className="scroll-mt-20 py-14 md:py-20">
           <div className={containerClasses}>
-            <SectionHeading id="pricing-title" eyebrow={L.navPricing} title={L.pricingHeading} subtitle={L.pricingLead} />
+            <SectionHeading id="pricing-title" title={L.pricingHeading} subtitle={L.pricingLead} />
 
             <Reveal delay={0.04}>
               <div className="mx-auto max-w-2xl rounded-2xl border border-line bg-card p-6 shadow-raised sm:p-10">
@@ -401,7 +379,8 @@ export default async function ForBusinessPage({ params }: Props) {
                   </div>
                   <div className="text-start sm:text-end">
                     <p className="text-[40px] font-bold leading-none tabular-nums text-ink">
-                      {formatCurrency(PRICE_PER_BARBER, locale, "JOD", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+                      {formatLocalizedNumber(PRICE_PER_BARBER, locale, "auto", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}{" "}
+                      <span className="text-2xl">{JOD_LABELS[locale]}</span>
                     </p>
                     <p className="mt-2 text-sm font-medium text-ink-muted">{L.pricingPerBarber}</p>
                   </div>
@@ -434,11 +413,7 @@ export default async function ForBusinessPage({ params }: Props) {
         <section aria-labelledby="contact-title" className={cn(containerClasses, "pb-4")}>
           <Reveal>
             <div className="relative isolate overflow-hidden rounded-3xl bg-[#0B1514] px-6 py-14 text-center text-white sm:px-10 md:py-20">
-              <BackgroundVideo
-                src="/videos/2.mp4"
-                poster="/videos/2-poster.jpg"
-                overlay="linear-gradient(180deg, rgba(11,21,20,0.80) 0%, rgba(11,21,20,0.86) 55%, rgba(11,21,20,0.92) 100%)"
-              />
+              <div aria-hidden="true" className="bg-hatch-ink absolute inset-0 -z-10 opacity-40" />
               <div className="relative z-[1] mx-auto max-w-2xl">
                 <p className="mb-3 text-sm font-semibold text-[#5EEAD4]">{L.contactEyebrow}</p>
                 <h2 id="contact-title" className="text-h1 text-balance">

@@ -12,9 +12,20 @@
  *   npx next start -p 3100 &
  *   node scripts/design-shots.mjs            # or BASE_URL=http://127.0.0.1:3100
  *
+ * The customer portal needs a customer session, and NEXT_PUBLIC_* flags are
+ * inlined at build time, so it is a second pass on a second build:
+ *
+ *   NEXT_PUBLIC_USE_MOCK_DATA=true NEXT_PUBLIC_MOCK_AUTH_ROLE=customer \
+ *   NEXT_PUBLIC_ALLOW_MOCK_IN_PROD=true npm run build
+ *   npx next start -p 3100 &
+ *   PASS=customer node scripts/design-shots.mjs
+ *
  * Output: design-shots/<route>-<locale>-<width>.png (git-ignored).
+ * Every page is also checked for horizontal overflow (page wider than the
+ * viewport, e.g. a control pushed outside its card at 375px); offenders are
+ * listed at the end and fail the run.
  * Options (env): BASE_URL, OUT_DIR, ROUTES (comma-separated), LOCALES, SHOP_ID,
- * COLOR_SCHEME (light | dark).
+ * COLOR_SCHEME (light | dark), PASS (staff | customer).
  */
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
@@ -28,12 +39,15 @@ const SHOP_ID = process.env.SHOP_ID || "11111111-1111-1111-1111-111111111111";
 const LOCALES = (process.env.LOCALES || "en,ar").split(",").map((s) => s.trim()).filter(Boolean);
 const COLOR_SCHEME = process.env.COLOR_SCHEME === "dark" ? "dark" : "light";
 
-const DEFAULT_ROUTES = [
+const PASS = process.env.PASS === "customer" ? "customer" : "staff";
+
+// Staff pass (shop_admin session). /customer is not here: the middleware
+// sends staff away from it, so it would capture the dashboard instead.
+const STAFF_ROUTES = [
   "/landing",
   "/explore",
   `/shop/${SHOP_ID}`,
   `/book/${SHOP_ID}`,
-  "/customer",
   "/auth/login",
   "/for-business",
   "/start",
@@ -46,6 +60,11 @@ const DEFAULT_ROUTES = [
   "/analytics",
   "/settings",
 ];
+// Customer pass (customer session): the portal (§6.9).
+// (/customer/bookings and /customer/profile redirect to these two.)
+const CUSTOMER_ROUTES = ["/customer", "/customer/account"];
+
+const DEFAULT_ROUTES = PASS === "customer" ? CUSTOMER_ROUTES : STAFF_ROUTES;
 const ROUTES = process.env.ROUTES ? process.env.ROUTES.split(",").map((s) => s.trim()).filter(Boolean) : DEFAULT_ROUTES;
 
 const VIEWPORTS = [
@@ -83,6 +102,7 @@ async function main() {
   const browser = await chromium.launch();
   const written = [];
   const failed = [];
+  const overflowed = [];
   try {
     for (const vp of VIEWPORTS) {
       const context = await browser.newContext({
@@ -101,6 +121,10 @@ async function main() {
           try {
             const res = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
             await settle(page);
+            const overflow = await page
+              .evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+              .catch(() => 0);
+            if (overflow > 1) overflowed.push(`${url} @${vp.width}px (+${overflow}px)`);
             await page.screenshot({ path: file, fullPage: true, animations: "disabled", caret: "hide" });
             const finalPath = new URL(page.url()).pathname;
             written.push(file);
@@ -119,7 +143,10 @@ async function main() {
     await browser.close();
   }
   console.log(`\n${written.length} screenshots in ${OUT_DIR}${failed.length ? `, ${failed.length} failed` : ""}`);
-  if (failed.length) process.exitCode = 1;
+  if (overflowed.length) {
+    console.error(`\nHorizontal overflow (page wider than the viewport):\n  ${overflowed.join("\n  ")}`);
+  }
+  if (failed.length || overflowed.length) process.exitCode = 1;
 }
 
 main().catch((err) => {

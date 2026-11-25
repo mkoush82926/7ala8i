@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Pill } from "@/components/ui/pill";
 import { PhotoFrame } from "@/components/ui/photo-frame";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { buttonClasses, checkboxClasses, fieldIconClasses, inputClasses } from "@/components/ui/recipes";
+import { buttonClasses, checkboxClasses, fieldIconClasses, focusRing, inputClasses } from "@/components/ui/recipes";
 
 interface TeamMember {
   id: string;
@@ -310,11 +310,10 @@ export default function TeamPage() {
                   />
 
                   <div className="min-w-0 flex-1 pt-0.5">
-                    <p className="flex min-w-0 items-center gap-2">
-                      <span className="text-title truncate text-ink">{name}</span>
-                      {isSelf && <Pill tone="neutral" size="sm">{t.team.you}</Pill>}
+                    <p className="text-title line-clamp-2 break-words text-ink">
+                      <bdi>{name}</bdi>
                     </p>
-                    <div className="mt-1.5">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <Pill
                         tone={isAdminRole ? "ink" : "brand"}
                         size="sm"
@@ -322,6 +321,7 @@ export default function TeamPage() {
                       >
                         {roleLabel(t, member.role)}
                       </Pill>
+                      {isSelf && <Pill tone="neutral" size="sm">{t.team.you}</Pill>}
                     </div>
                   </div>
 
@@ -338,12 +338,27 @@ export default function TeamPage() {
                 </div>
 
                 <p className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13px] text-ink-muted">
-                  <span className={cn("inline-flex items-center gap-1", serviceCount === 0 && "text-warning-text")}>
-                    <Scissors size={13} aria-hidden="true" />
-                    {serviceCount > 0
-                      ? interpolate(t.team.servicesCount, { count: serviceCount })
-                      : t.team.noServicesAssigned}
-                  </span>
+                  {serviceCount > 0 || !isAdmin ? (
+                    <span className={cn("inline-flex items-center gap-1", serviceCount === 0 && "text-warning-text")}>
+                      <Scissors size={13} aria-hidden="true" />
+                      {serviceCount > 0
+                        ? interpolate(t.team.servicesCount, { count: serviceCount })
+                        : t.team.noServicesAssigned}
+                    </span>
+                  ) : (
+                    // Actionable: opens member settings on the Services tab.
+                    <button
+                      type="button"
+                      onClick={() => setEditing(member)}
+                      className={cn(
+                        "inline-flex cursor-pointer items-center gap-1 rounded-sm font-semibold text-warning-text underline-offset-4 hover:underline",
+                        focusRing,
+                      )}
+                    >
+                      <Scissors size={13} aria-hidden="true" />
+                      {t.team.assignServices}
+                    </button>
+                  )}
                   {member.created_at && (
                     <>
                       <span aria-hidden="true" className="text-ink-disabled">·</span>
@@ -357,8 +372,7 @@ export default function TeamPage() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      fullWidth
-                      className="max-lg:h-11"
+                      className="min-w-0 flex-1 max-lg:h-11"
                       icon={<Settings2 aria-hidden="true" />}
                       onClick={() => setEditing(member)}
                       aria-label={interpolate(t.team.manage, { name })}

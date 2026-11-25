@@ -19,6 +19,7 @@ import {
   type DatePreset,
   type FormatCurrencyOptions,
 } from "@/lib/utils";
+import { formatLocalizedNumber, formatMinutesRange, localizeDigits } from "@/lib/format";
 
 const translations: Record<string, TranslationKeys> = { en, ar };
 
@@ -123,6 +124,22 @@ export function useTranslation() {
         fmtRelative(date, locale, now),
       /** "1 h 30 min" / "1 ساعة 30 دقيقة" */
       formatDuration: (minutes: number) => fmtDuration(minutes, locale),
+      // ── Marketplace (customer-facing) formatters: digits follow the digit
+      // preference ("auto" → Arabic-Indic in Arabic), matching formatJOD, so a
+      // public screen never mixes numeral systems. Back-office screens keep
+      // the Latin-digit helpers above.
+      /** "12" / "١٢" */
+      formatLocalNumber: (num: number, options?: Intl.NumberFormatOptions) => formatLocalizedNumber(num, locale, "auto", options),
+      /** "45 min" / "٤٥ دقيقة" (same style as service durations everywhere) */
+      formatLocalDuration: (minutes: number) => formatMinutesRange(minutes, null, locale),
+      /** "2:05 PM" / "٢:٠٥ م" */
+      formatLocalTime: (time: DateInput | null | undefined, options?: Intl.DateTimeFormatOptions) =>
+        localizeDigits(fmtTime(time, locale, options), locale),
+      /** "Mon 12 Nov" / "الإثنين ١٢ نوفمبر" */
+      formatLocalDate: (date: DateInput | null | undefined, format?: DatePreset | Intl.DateTimeFormatOptions) =>
+        localizeDigits(fmtDate(date, locale, format), locale),
+      /** Re-renders digits inside an already-built string. */
+      localDigits: (text: string) => localizeDigits(text, locale),
     }),
     [locale],
   );

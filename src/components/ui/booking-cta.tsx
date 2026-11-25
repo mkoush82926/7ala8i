@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useTranslation } from "@/hooks/use-translation";
 import { cn } from "@/lib/utils";
-import { formatJOD, formatLocalizedNumber, META_SEPARATOR, type DigitPreference } from "@/lib/format";
+import { formatJOD, formatLocalizedNumber, type DigitPreference } from "@/lib/format";
 import { buttonClasses } from "./recipes";
 import { StickyBar } from "./sticky-bar";
 
@@ -151,35 +151,21 @@ export function BookingCta({
   // Sticky mobile bar (hidden ≥ lg, where the sticky side card takes over).
   const count = summary?.count ?? 0;
   const countText = formatLocalizedNumber(count, locale, digits);
-  const parts: string[] = [];
-  if (count > 0) parts.push(servicesCountLabel(t.primitives.servicesCount, count, locale, countText));
-  if (summary?.fromPrice != null && summary.fromPrice > 0) {
-    parts.push(
-      t.primitives.fromPrice.replace("{price}", formatJOD(summary.fromPrice, { locale, digits, trimZeros: true })),
-    );
-  }
+  const countLabel = count > 0 ? servicesCountLabel(t.primitives.servicesCount, count, locale, countText) : null;
+  const fromLabel =
+    summary?.fromPrice != null && summary.fromPrice > 0
+      ? t.primitives.fromPrice.replace("{price}", formatJOD(summary.fromPrice, { locale, digits, trimZeros: true }))
+      : null;
 
+  // Two lines (§5.8): the price is the headline and never shares a truncating
+  // line with the count.
   return (
     <StickyBar
       label={t.primitives.bookingSummaryLabel}
       className={className}
       action={button}
-      title={
-        parts.length > 0 ? (
-          <>
-            {parts.map((part, i) => (
-              <React.Fragment key={i}>
-                {i > 0 && (
-                  <span aria-hidden="true" className="mx-1.5 text-ink-disabled">
-                    {META_SEPARATOR}
-                  </span>
-                )}
-                <bdi>{part}</bdi>
-              </React.Fragment>
-            ))}
-          </>
-        ) : undefined
-      }
+      title={fromLabel ? <bdi>{fromLabel}</bdi> : countLabel ? <bdi>{countLabel}</bdi> : undefined}
+      subtitle={fromLabel && countLabel ? <bdi>{countLabel}</bdi> : undefined}
     />
   );
 }

@@ -234,9 +234,11 @@ function UpcomingAppointments() {
                   {getInitials(a.client || "?")}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="m-0 truncate text-[15px] font-semibold text-ink">{a.client}</p>
+                  <p className="m-0 truncate text-[15px] font-semibold text-ink">
+                    <bdi>{a.client}</bdi>
+                  </p>
                   <p className="text-meta m-0 truncate text-ink-muted">
-                    {serviceName(a)} · {barberName(a.barberId)}
+                    <bdi>{serviceName(a)}</bdi> · <bdi>{barberName(a.barberId)}</bdi>
                   </p>
                 </div>
                 <bdi className="shrink-0 text-[15px] font-semibold tabular-nums text-ink">{formatCurrency(a.price, currency)}</bdi>
@@ -317,7 +319,7 @@ export default function DashboardPage() {
                 <span aria-hidden="true" className="mx-1.5 text-ink-disabled">
                   ·
                 </span>
-                <span className="font-medium text-ink-soft">{shopName}</span>
+                <bdi className="whitespace-nowrap font-medium text-ink-soft">{shopName}</bdi>
               </>
             )}
           </p>
@@ -330,7 +332,7 @@ export default function DashboardPage() {
 
       <MetricCards />
 
-      <div className="grid gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid items-start gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
           <UpcomingAppointments />
           <SalesChart />

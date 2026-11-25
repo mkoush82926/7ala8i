@@ -47,6 +47,9 @@ export function CategoryTiles({
   // Phones: a two-row horizontal scroller (one row when there are few);
   // from lg a plain six-column grid.
   const rows = categories.length > 6 ? "grid-rows-2" : "grid-rows-1";
+  // lg: a column count that divides the list, so no row ends with orphans.
+  const n = categories.length;
+  const lgCols = n % 8 === 0 ? "lg:grid-cols-8" : n % 6 === 0 ? "lg:grid-cols-6" : n % 5 === 0 ? "lg:grid-cols-5" : n % 4 === 0 ? "lg:grid-cols-4" : "lg:grid-cols-6";
   return (
     <ul
       aria-label={label}
@@ -55,7 +58,8 @@ export function CategoryTiles({
         cn(
           "no-scrollbar -mx-4 grid snap-x snap-mandatory scroll-px-4 auto-cols-[40%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 pt-1",
           "sm:-mx-6 sm:scroll-px-6 sm:auto-cols-[23%] sm:px-6",
-          "lg:mx-0 lg:grid-flow-row lg:grid-cols-6 lg:grid-rows-none lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0",
+          "lg:mx-0 lg:grid-flow-row lg:grid-rows-none lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0",
+          lgCols,
           rows,
         )
       }

@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   CalendarClock,
+  CalendarX,
   Check,
   ChevronRight,
   Clock,
@@ -438,7 +439,7 @@ export function SettingsPage() {
   // Dedicated pages (WS-1A public profile, WS-1F business settings).
   const pageLinks: { href: string; label: string; description: string; icon: typeof Store; group: HubGroup }[] = [
     { href: href("/settings/profile"), label: t.publicProfile.pageTitle, description: t.publicProfile.pageDesc, icon: Globe, group: "shop" },
-    { href: href("/settings/hours"), label: t.settingsPages.hours, description: t.shifts.hoursPageSubtitle, icon: CalendarClock, group: "booking" },
+    { href: href("/settings/hours"), label: t.settingsPages.hours, description: t.shifts.hoursPageSubtitle, icon: CalendarX, group: "booking" },
     { href: href("/settings/payments"), label: t.settingsPages.payments, description: t.paymentSettings.pageSubtitle, icon: Wallet, group: "booking" },
     { href: href("/settings/tax"), label: t.settingsPages.tax, description: t.taxSettings.pageSubtitle, icon: Receipt, group: "booking" },
     { href: href("/settings/links"), label: t.links.settings.pageTitle, description: t.links.settings.pageSubtitle, icon: QrCode, group: "shop" },
@@ -565,24 +566,21 @@ export function SettingsPage() {
         )}
       </header>
 
-      {/* ── Hub: grouped cards ── */}
+      {/* ── Hub: one panel of list rows per group (no ragged card grid) ── */}
       {!activeTab && (
-        <nav aria-label={st.title} className="flex flex-col gap-8">
+        <nav aria-label={st.title} className="flex max-w-3xl flex-col gap-8">
           {hubGroups.map((group) => {
             const groupTabs = tabs.filter((tb) => tb.group === group.id);
             const groupLinks = pageLinks.filter((l) => l.group === group.id);
             const tile = (Icon: typeof Store) => (
-              <span aria-hidden className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand-text">
-                <Icon size={20} aria-hidden />
+              <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand-text">
+                <Icon size={18} aria-hidden />
               </span>
             );
-            const itemClass = cardClasses({
-              interactive: true,
-              className: cn(
-                "group flex h-full w-full cursor-pointer items-start gap-4 p-4 text-start no-underline hover:border-ink-soft/40 lg:p-5",
-                focusRing,
-              ),
-            });
+            const itemClass = cn(
+              "group flex w-full cursor-pointer items-center gap-4 px-4 py-3.5 text-start no-underline transition-colors duration-150 hover:bg-sunken/60 motion-reduce:transition-none lg:px-5",
+              "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus",
+            );
             const body = (label: string, description: string) => (
               <>
                 <span className="min-w-0 flex-1">
@@ -592,16 +590,16 @@ export function SettingsPage() {
                 <ChevronRight
                   size={18}
                   aria-hidden
-                  className="mt-0.5 shrink-0 text-ink-muted transition-transform duration-150 group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5 motion-reduce:transform-none"
+                  className="shrink-0 text-ink-muted transition-transform duration-150 group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5 motion-reduce:transform-none"
                 />
               </>
             );
             return (
               <section key={group.id} aria-labelledby={fieldId(`hub-${group.id}`)} className="flex flex-col gap-3">
-                <h2 id={fieldId(`hub-${group.id}`)} className="text-micro text-ink-muted">
+                <h2 id={fieldId(`hub-${group.id}`)} className="text-sm font-semibold text-ink">
                   {group.label}
                 </h2>
-                <ul role="list" className="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3">
+                <ul role="list" className={cardClasses({ className: "m-0 list-none divide-y divide-line overflow-hidden p-0" })}>
                   {groupTabs.map((tab) => (
                     <li key={tab.id}>
                       <button type="button" onClick={() => goTo(tab.id)} className={itemClass}>

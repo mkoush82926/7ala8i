@@ -129,15 +129,20 @@ export interface SearchPillProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   icon?: React.ReactNode;
 }
 
-/** Mobile / compact trigger: one pill that opens the full search sheet. */
+/**
+ * Mobile / compact trigger: one pill that opens the full search sheet. Two
+ * lines so nothing truncates into "All servi… · Anywhere in Jor…": the first
+ * fact (what) is the title, the rest (where · when) a meta line.
+ */
 export function SearchPill({ ariaLabel, summary, compact = false, icon, className, type = "button", ...rest }: SearchPillProps) {
   const items = summary.filter((s) => s !== null && s !== undefined && s !== false && s !== "");
+  const [first, ...rest2] = items;
   return (
     <button
       type={type}
       className={cn(
         "flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-full border border-line bg-card text-start",
-        compact ? "h-11 px-4 shadow-xs" : "h-14 px-5 shadow-search",
+        compact ? "min-h-12 px-4 py-1.5 shadow-xs" : "min-h-14 px-5 py-2 shadow-search",
         focusRing,
         pressable,
         className,
@@ -147,21 +152,24 @@ export function SearchPill({ ariaLabel, summary, compact = false, icon, classNam
       <span aria-hidden="true" className="shrink-0 text-ink [&_svg]:size-5">
         {icon ?? <Search />}
       </span>
-      <span className="flex min-w-0 flex-1 items-center gap-x-1.5 truncate text-sm text-ink-muted">
+      <span className="flex min-w-0 flex-1 flex-col">
         <span className="sr-only">{ariaLabel}: </span>
-        {items.map((item, i) => (
-          <React.Fragment key={i}>
-            {i > 0 && (
-              <>
-                <span aria-hidden="true" className="text-ink-disabled">
-                  ·
-                </span>
+        {first !== undefined && <bdi className="truncate text-sm font-semibold leading-5 text-ink">{first}</bdi>}
+        {rest2.length > 0 && (
+          <span className="truncate text-meta leading-4 text-ink-muted">
+            {rest2.map((item, i) => (
+              <React.Fragment key={i}>
                 <span className="sr-only">, </span>
-              </>
-            )}
-            <bdi className={cn("truncate", i === 0 && "font-semibold text-ink")}>{item}</bdi>
-          </React.Fragment>
-        ))}
+                {i > 0 && (
+                  <span aria-hidden="true" className="mx-1 text-ink-disabled">
+                    ·
+                  </span>
+                )}
+                <bdi>{item}</bdi>
+              </React.Fragment>
+            ))}
+          </span>
+        )}
       </span>
     </button>
   );

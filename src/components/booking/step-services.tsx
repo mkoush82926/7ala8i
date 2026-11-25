@@ -28,7 +28,7 @@ export function StepServices({
   onToggle: (serviceId: string, variantId?: string | null) => void;
   shopHref: string;
 }) {
-  const { t, locale, isRTL } = useTranslation();
+  const { t, locale, isRTL, formatLocalNumber } = useTranslation();
   const f = t.bookingFlow;
   const [tab, setTab] = useState("all");
   const [variantFor, setVariantFor] = useState<ServiceRow | null>(null);
@@ -123,7 +123,7 @@ export function StepServices({
                     {joinMeta([
                       variant ? serviceDurationLabel({ duration: variant.duration, variants: [] }, locale) : serviceDurationLabel(s, locale),
                       variantName,
-                      s.variants.length && !variant ? interpolate(f.optionsCount, { count: s.variants.length }) : null,
+                      s.variants.length && !variant ? interpolate(f.optionsCount, { count: formatLocalNumber(s.variants.length) }) : null,
                     ])}
                   </span>
                   {desc && <span className="bk-row-desc">{desc}</span>}

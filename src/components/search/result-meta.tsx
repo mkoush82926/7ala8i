@@ -52,7 +52,7 @@ export function DistanceChip({ km, onPhoto = false }: { km: number | null; onPho
 
 /** "Next: today 6:30 pm" with a clock icon; muted copy when nothing is free soon. */
 export function NextSlotText({ slot, className }: { slot: NextSlot | null; className?: string }) {
-  const { t, locale, formatTime } = useTranslation();
+  const { t, locale, formatLocalTime: formatTime } = useTranslation();
   if (!slot) {
     return (
       <span data-dynamic className={cn("text-meta text-ink-muted", className)}>
@@ -148,7 +148,7 @@ export function ServiceRows({
   staff?: string | null;
   src?: string | null;
 }) {
-  const { t, locale, formatDuration } = useTranslation();
+  const { t, locale, formatLocalDuration: formatDuration } = useTranslation();
   if (services.length === 0) return null;
   return (
     <ul className="divide-y divide-line">
@@ -165,7 +165,7 @@ export function ServiceRows({
                     ·
                   </span>
                 )}
-                <Price amount={s.price} from={s.priceType === "from"} className="text-[13px] text-ink-soft" />
+                <Price amount={s.price} from={s.priceType === "from"} trimZeros className="text-[13px] text-ink-soft" />
               </p>
             </div>
             <BookingCta

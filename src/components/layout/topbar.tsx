@@ -440,7 +440,8 @@ export function Topbar() {
 
         <SearchBox variant="icon" />
 
-        {role && (
+        {/* On the calendar itself the page header owns "New booking". */}
+        {role && navItem?.id !== "calendar" && (
           <ButtonLink
             href={href("/calendar")}
             size="sm"

@@ -51,7 +51,7 @@ export function StepTime({
   waHref: string | null;
   refreshKey: number;
 }) {
-  const { t, formatDate, formatTime } = useTranslation();
+  const { t, formatLocalDate: formatDate, formatLocalTime: formatTime } = useTranslation();
   const f = t.bookingFlow;
   const [rangeStart, setRangeStart] = useState(today);
   const [slots, setSlots] = useState<AvailableSlot[] | null>(null);

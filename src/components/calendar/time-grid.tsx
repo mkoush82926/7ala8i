@@ -17,6 +17,7 @@ import {
   minutesOfDay,
   moveBy,
   resizeBy,
+  STATUS_COLORS,
   tint,
   verticalPlacement,
   type KeyboardMoveState,
@@ -544,7 +545,8 @@ export function TimeGrid({
                             borderInlineStartWidth: 3,
                             borderInlineStartStyle: "solid",
                             touchAction: drag?.active ? "none" : "pan-x pan-y",
-                            background: cancelled ? undefined : tint(color, live ? 26 : 14, "var(--color-card)"),
+                            // Body = status fill (§5.12); the barber/category colour stays on the 3px rail.
+                            background: cancelled ? undefined : tint(STATUS_COLORS[a.status] ?? color, live ? 24 : 12, "var(--color-card)"),
                           }}
                         >
                           <button
@@ -576,15 +578,19 @@ export function TimeGrid({
                           >
                             <span className="flex min-w-0 items-center gap-1">
                               <StatusIcon status={a.status} size={12} />
-                              <span className={cn("truncate font-semibold", cancelled && "line-through")}>{name}</span>
+                              <bdi className={cn("min-w-0 truncate font-semibold", cancelled && "line-through")}>{name}</bdi>
+                              {/* Short chips (< 44px) can't fit two 16px lines: start time rides on the name line. */}
+                              {p.height < 44 && (
+                                <span className="shrink-0 tabular-nums opacity-80">· {formatTime(a.startTime)}</span>
+                              )}
                             </span>
-                            {p.height >= 34 && (
+                            {p.height >= 44 && (
                               <span className="truncate text-[11px] tabular-nums opacity-80">
                                 {formatTime(a.startTime)}–{formatTime(a.endTime)}
-                                {services && p.height < 54 ? ` · ${services}` : ""}
+                                {services && p.height < 60 ? <> · <bdi>{services}</bdi></> : null}
                               </span>
                             )}
-                            {services && p.height >= 54 && <span className="truncate text-[11px] opacity-80">{services}</span>}
+                            {services && p.height >= 60 && <bdi className="truncate text-[11px] opacity-80">{services}</bdi>}
                           </button>
                           {editable && isResizable(a.status) && p.height >= 24 && (
                             <span

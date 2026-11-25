@@ -10,7 +10,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, Globe, Info, type LucideIcon } from "lucide-react";
-import { useTranslation, FONT_EN_DISPLAY } from "@/hooks/use-translation";
+import { useTranslation } from "@/hooks/use-translation";
+import { Wordmark } from "@/components/search/site-footer";
 import { cn } from "@/lib/utils";
 import {
   buttonClasses,
@@ -64,13 +65,8 @@ export function AuthShell({ children, navLink, width = "sm" }: AuthShellProps) {
           aria-label={t.auth.navLabel}
           className="sticky top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-line bg-card/90 px-4 backdrop-blur supports-[backdrop-filter]:bg-card/75 sm:px-6 lg:static lg:border-transparent lg:bg-card lg:px-10 lg:backdrop-blur-none"
         >
-          <Link
-            href={href("/landing")}
-            dir="ltr"
-            className={cn("rounded-md text-xl font-extrabold tracking-tight text-ink no-underline", focusRing)}
-            style={{ fontFamily: FONT_EN_DISPLAY }}
-          >
-            Halaqy<span className="text-brand-text">.</span>
+          <Link href={href("/landing")} className={cn("rounded-md no-underline", focusRing)}>
+            <Wordmark />
           </Link>
           <div className="flex items-center gap-1 sm:gap-2">
             <Link

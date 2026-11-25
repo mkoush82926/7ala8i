@@ -21,10 +21,11 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import {
-  MOCK_SHOPS, MOCK_SERVICES, MOCK_PROFILES, MOCK_REVIEWS, MOCK_WORKING_HOURS, MOCK_APPOINTMENTS,
+  MOCK_SHOPS, MOCK_SERVICES, MOCK_PROFILES, MOCK_BARBERS, MOCK_REVIEWS, MOCK_WORKING_HOURS, MOCK_APPOINTMENTS,
   MOCK_AUTH_ROLE, MOCK_ADMIN_ID, MOCK_ADMIN_PROFILE, MOCK_CLIENTS, type MockAppointment,
 } from "@/lib/mock-data";
 import type { BookingResult, BusySlot, CancelBookingResult } from "@/lib/supabase/database.types";
+import { FALLBACK_CITY } from "@/lib/search/fallback";
 
 type Row = Record<string, unknown>;
 
@@ -281,8 +282,99 @@ function localDay(iso: string): string {
 
 const ACTIVE = new Set(["pending", "confirmed"]);
 
+/** Shop rows shaped like the search_shops RPC (preview fixtures only). */
+function mockSearchShops(args: Record<string, unknown>): Row[] {
+  const q = String(args.p_q ?? "").trim().toLowerCase();
+  const areaId = typeof args.p_area_id === "string" ? args.p_area_id : null;
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowIso = localDay(tomorrow.toISOString());
+  const rows = MOCK_SHOPS.filter((shop) => shop.is_published && shop.marketplace_visible)
+    .map((shop, i) => {
+      const area = FALLBACK_CITY.areas.find((a) => a.slug === shop.area_slug);
+      if (areaId && area?.id !== areaId) return null;
+      const services = MOCK_SERVICES.filter((sv) => sv.shop_id === shop.id && sv.is_active);
+      const matched = q ? services.filter((sv) => sv.name.toLowerCase().includes(q) || sv.name_ar.includes(q)) : [];
+      if (q && matched.length === 0 && !shop.name.toLowerCase().includes(q)) return null;
+      const reviews = MOCK_REVIEWS.filter((r) => r.shop_id === shop.id);
+      const avg = reviews.length ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length : null;
+      const time = ["10:30", "12:00", "16:30"][i % 3];
+      return {
+        id: shop.id,
+        slug: shop.slug,
+        slug_ar: shop.slug_ar,
+        name: shop.name,
+        name_ar: null,
+        cover_url: shop.cover_url,
+        logo_url: null,
+        is_verified: i === 0,
+        area_name_en: area?.nameEn ?? null,
+        area_name_ar: area?.nameAr ?? null,
+        city_name_en: FALLBACK_CITY.nameEn,
+        city_name_ar: FALLBACK_CITY.nameAr,
+        lat: shop.lat,
+        lng: shop.lng,
+        distance_km: null,
+        rating_avg: avg,
+        rating_count: reviews.length,
+        min_price: services.length ? Math.min(...services.map((sv) => sv.price)) : null,
+        currency: shop.currency,
+        services_count: services.length,
+        matched_services: matched.slice(0, 3).map((sv) => ({ id: sv.id, name: sv.name, name_ar: sv.name_ar, price: sv.price, price_type: "fixed", duration: sv.duration })),
+        next_slot_start: `${tomorrowIso}T${time}:00`,
+        next_slot_local_date: tomorrowIso,
+        next_slot_local_time: time,
+        open_now: false,
+        open_until: null,
+        badges: [],
+        score: 1 - i * 0.1,
+      } as Row;
+    })
+    .filter((r): r is Row => r !== null);
+  return rows.map((r) => ({ ...r, total_count: rows.length }));
+}
+
+function mockSearchBarbers(): Row[] {
+  const rows = MOCK_BARBERS.map((b) => {
+    const shop = MOCK_SHOPS.find((s) => s.id === b.shop_id);
+    const area = FALLBACK_CITY.areas.find((a) => a.slug === shop?.area_slug);
+    const services = MOCK_SERVICES.filter((sv) => sv.shop_id === b.shop_id);
+    return {
+      id: b.id,
+      handle: b.id,
+      full_name: b.full_name,
+      avatar_url: b.avatar_url,
+      title_en: "Barber",
+      title_ar: "حلاق",
+      years_experience: null,
+      languages: [],
+      shop_id: b.shop_id,
+      shop_slug: null,
+      shop_slug_ar: null,
+      shop_name: shop?.name ?? "",
+      shop_name_ar: null,
+      shop_is_verified: false,
+      area_name_en: area?.nameEn ?? null,
+      area_name_ar: area?.nameAr ?? null,
+      city_name_en: FALLBACK_CITY.nameEn,
+      city_name_ar: FALLBACK_CITY.nameAr,
+      lat: shop?.lat ?? null,
+      lng: shop?.lng ?? null,
+      min_price: services.length ? Math.min(...services.map((sv) => sv.price)) : null,
+      currency: "JOD",
+      matched_services: [],
+      score: 1,
+    } as Row;
+  });
+  return rows.map((r) => ({ ...r, total_count: rows.length }));
+}
+
 function mockRpc(fn: string, args: Record<string, unknown>): RpcResult {
   switch (fn) {
+    case "search_shops":
+      return { data: mockSearchShops(args), error: null };
+    case "search_barbers":
+      return { data: mockSearchBarbers(), error: null };
     case "get_busy_slots": {
       const shopId = String(args.p_shop_id ?? "");
       const day = String(args.p_day ?? "");

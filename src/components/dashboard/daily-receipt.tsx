@@ -84,8 +84,8 @@ export function DailyReceipt() {
   const panelProps = {
     title: <span id="daily-receipt-title">{t.dashboard.dailySummaryTitle}</span>,
     description: formatDate(new Date(), "weekdayDay"),
-    className: "flex h-full flex-col",
-    bodyClassName: "flex flex-1 flex-col",
+    className: "flex flex-col",
+    bodyClassName: "flex flex-col",
   };
 
   if (loading) {
@@ -170,7 +170,9 @@ export function DailyReceipt() {
           {sales.map((sale) => (
             <li key={sale.id} className="flex items-center justify-between gap-3 border-b border-line py-2.5 last:border-b-0">
               <div className="min-w-0">
-                <p className="m-0 truncate text-sm font-medium text-ink">{sale.clientName || sale.service}</p>
+                <p className="m-0 truncate text-sm font-medium text-ink">
+                  <bdi>{sale.clientName || sale.service}</bdi>
+                </p>
                 <p className="m-0 text-xs tabular-nums text-ink-muted">
                   {formatTime(sale.soldAt)} · {methodLabel(sale.paymentMethod)}
                 </p>
@@ -181,10 +183,11 @@ export function DailyReceipt() {
         </ul>
       )}
 
-      <div className="mt-auto pt-4">
+      <div className="pt-4">
         <div className="flex items-end justify-between gap-3 border-t border-line pt-4">
           <p className="m-0 text-sm font-medium text-ink-muted">{t.dashboard.totalVolume}</p>
-          <bdi className="text-stat text-ink">{money(total)}</bdi>
+          {/* text-h3, not text-stat: the KPI row stays the loudest numbers on the page */}
+          <bdi className="text-h3 tabular-nums text-ink">{money(total)}</bdi>
         </div>
       </div>
     </Panel>

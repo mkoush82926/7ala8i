@@ -55,7 +55,7 @@ export interface ReviewProps {
 }
 
 export function StepReview(p: ReviewProps) {
-  const { t, locale, isRTL, formatDate, formatTime, formatDuration, href } = useTranslation();
+  const { t, locale, isRTL, formatLocalDate: formatDate, formatLocalTime: formatTime, formatLocalDuration: formatDuration, href } = useTranslation();
   const f = t.bookingFlow;
   const nameId = useId();
   const phoneId = useId();

@@ -36,7 +36,7 @@ export function StepSuccess({
   rescheduled: boolean;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
 }) {
-  const { t, locale, isRTL, href, formatDate, formatTime } = useTranslation();
+  const { t, locale, isRTL, href, formatLocalDate: formatDate, formatLocalTime: formatTime, formatLocalNumber } = useTranslation();
   const f = t.bookingFlow;
 
   const s = useMemo(() => {
@@ -66,7 +66,7 @@ export function StepSuccess({
     : null;
   const telHref = shop.phone ? `tel:${normalizePhone(shop.phone)}` : null;
   const policyText = policyHours > 0
-    ? interpolate(t.booking.freeCancellationHours, { hours: String(policyHours) })
+    ? interpolate(t.booking.freeCancellationHours, { hours: formatLocalNumber(policyHours) })
     : t.booking.freeCancellation;
 
   const downloadIcs = () => {

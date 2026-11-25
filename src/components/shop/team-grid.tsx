@@ -60,11 +60,17 @@ export function BarberAvatar({
  * phones, a 4-up grid from lg.
  */
 export function TeamGrid({ barbers, shopId, src }: { barbers: readonly BarberData[]; shopId: string; src?: string | null }) {
-  const { t, locale, formatNumber } = useTranslation();
+  const { t, locale, formatLocalNumber: formatNumber } = useTranslation();
   return (
-    <ul className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0">
+    <ul
+      className={cn(
+        "no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:grid lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0",
+        // Small teams fill the row instead of leaving empty columns.
+        barbers.length <= 3 ? "lg:grid-cols-3" : "lg:grid-cols-4",
+      )}
+    >
       {barbers.map((barber) => {
-        const title = localizedText(locale, barber.title_en, barber.title_ar, "");
+        const title = localizedText(locale, barber.title_en, barber.title_ar, "") || t.topbar.roleBarber;
         const rated = barber.rating_count > 0 && barber.rating_avg != null;
         const ratingValue = rated ? formatNumber(barber.rating_avg!, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : null;
         const profileHref = barber.handle ? barberPath(barber.handle, locale) : null;
@@ -105,22 +111,26 @@ export function TeamGrid({ barbers, shopId, src }: { barbers: readonly BarberDat
               {profileHref ? (
                 <Link
                   href={profileHref}
-                  className="focus-ring text-title line-clamp-1 rounded-sm text-ink after:absolute after:inset-0 after:content-['']"
+                  className="focus-ring text-title line-clamp-2 rounded-sm text-ink after:absolute after:inset-0 after:content-['']"
                 >
-                  {barber.full_name}
+                  <bdi>{barber.full_name}</bdi>
                 </Link>
               ) : (
-                <p className="text-title line-clamp-1 text-ink">{barber.full_name}</p>
+                <p className="text-title line-clamp-2 text-ink">
+                  <bdi>{barber.full_name}</bdi>
+                </p>
               )}
-              <p className="text-meta line-clamp-1 min-h-[18px] text-ink-muted">{title}</p>
-              <Link
-                href={bookHref}
-                prefetch={false}
-                aria-label={interpolate(t.barberPage.bookWith, { name: barber.full_name })}
-                className={buttonClasses({ variant: "soft", size: "sm", fullWidth: true, className: "relative z-10 mt-3" })}
-              >
-                {t.primitives.book}
-              </Link>
+              <p className="text-meta line-clamp-1 text-ink-muted">{title}</p>
+              <div className="mt-auto pt-3">
+                <Link
+                  href={bookHref}
+                  prefetch={false}
+                  aria-label={interpolate(t.barberPage.bookWith, { name: barber.full_name })}
+                  className={buttonClasses({ variant: "soft", size: "sm", fullWidth: true, className: "relative z-10" })}
+                >
+                  {t.primitives.book}
+                </Link>
+              </div>
             </div>
           </li>
         );
