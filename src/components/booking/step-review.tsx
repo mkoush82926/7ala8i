@@ -12,6 +12,7 @@ import type { PublicBookingSecurity } from "@/lib/otp/config";
 import { InlineAlert, renderTemplate } from "./booking-ui";
 import { appendChip, freeCancellationUntil, lineQuote, NOTE_CHIPS, type BarberServiceRow, type Line, type ServiceRow } from "./booking-state";
 import { money } from "./booking-format";
+import { latinDigits } from "./booking-utils";
 import { OtpPanel, type OtpState } from "./otp-panel";
 import { TurnstileWidget } from "./turnstile-widget";
 import type { ChosenSlot } from "./step-time";
@@ -189,7 +190,7 @@ export function StepReview(p: ReviewProps) {
                 <input
                   id={phoneId} name="tel" type="tel" className="field-input" autoComplete="tel" inputMode="tel" dir="ltr"
                   required maxLength={20} placeholder={t.booking.phonePlaceholder} value={p.phone}
-                  onChange={(e) => p.setPhone(e.target.value)} onBlur={() => setPhoneTouched(true)}
+                  onChange={(e) => p.setPhone(latinDigits(e.target.value))} onBlur={() => setPhoneTouched(true)}
                   aria-invalid={phoneShowsError || undefined}
                   aria-describedby={`${phoneId}-help${phoneShowsError ? ` ${phoneId}-err` : ""}`}
                   style={{ textAlign: isRTL ? "right" : "left" }}

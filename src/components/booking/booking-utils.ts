@@ -346,16 +346,24 @@ export function toWhatsAppNumber(raw: string | null | undefined): string | null 
   return digits;
 }
 
-/** Same rule as the server: 7–15 digits, optional leading +. */
+/** Arabic-Indic (٠-٩) and Persian (۰-۹) digits → Latin. */
+export function latinDigits(raw: string): string {
+  return raw
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
+}
+
+/** Same rule as the server: 7–15 digits, optional leading +. Arabic-Indic digits count. */
 export function isValidPhone(raw: string): boolean {
-  const trimmed = raw.trim();
+  const trimmed = latinDigits(raw).trim();
   if (!/^\+?[0-9\s\-()]{7,20}$/.test(trimmed)) return false;
   const digits = trimmed.replace(/\D/g, "");
   return digits.length >= 7 && digits.length <= 15;
 }
 
+/** Latin digits, no spaces / dashes / brackets (keeps a leading +). */
 export function normalizePhone(raw: string): string {
-  return raw.trim().replace(/[\s\-()]/g, "");
+  return latinDigits(raw).trim().replace(/[\s\-()]/g, "");
 }
 
 /** Short human reference for an appointment id. */

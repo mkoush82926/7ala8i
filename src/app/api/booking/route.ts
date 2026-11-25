@@ -17,6 +17,7 @@ import { callRpc, callRpcLoose } from "./rpc";
 import { CreateBookingV2Schema, toRpcArgs } from "./schema";
 import { bookingDbError, bookingError } from "./errors";
 import { schedulePushDispatch } from "@/lib/push/kick";
+import { bookingGatewayClient, gatewayArgs } from "./gateway";
 
 // Public columns only: anon may not select("*") on shops/profiles.
 const SHOP_COLUMNS = "id, name, address, currency, timezone, cancellation_policy_hours";
@@ -90,21 +91,26 @@ type CreateOutcome =
  *              consumes it), or a signed-in user whose phone is confirmed.
  *   supabase → a signed-in user whose confirmed phone matches.
  */
-async function phoneGate(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+type SessionUser = { id?: string; phone?: string | null; phone_confirmed_at?: string | null } | null;
+
+async function currentUser(supabase: Awaited<ReturnType<typeof createClient>>): Promise<SessionUser> {
+  try {
+    const { data } = await supabase.auth.getUser();
+    return (data?.user as SessionUser | undefined) ?? null;
+  } catch {
+    return null; // treated as signed out / not verified
+  }
+}
+
+function phoneGate(
   mode: ReturnType<typeof publicBookingSecurity>["otpMode"],
   phone: string,
   otpToken: string | undefined,
-): Promise<"ok" | "required"> {
+  user: SessionUser,
+): "ok" | "required" {
   if (mode === "off") return "ok";
   if (mode === "hook" && otpToken) return "ok";
-  try {
-    const { data } = await supabase.auth.getUser();
-    const user = data?.user as { phone?: string | null; phone_confirmed_at?: string | null } | null | undefined;
-    if (user?.phone_confirmed_at && samePhone(user.phone, phone)) return "ok";
-  } catch {
-    // treated as not verified
-  }
+  if (user?.phone_confirmed_at && samePhone(user.phone, phone)) return "ok";
   return "required";
 }
 
@@ -152,13 +158,21 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createClient();
 
-    if ((await phoneGate(supabase, security.otpMode, input.clientPhone, input.otpToken)) === "required") {
+    const gateway = bookingGatewayClient();
+    const needUser = !!gateway || security.otpMode !== "off";
+    const user = needUser ? await currentUser(supabase) : null;
+
+    if (phoneGate(security.otpMode, input.clientPhone, input.otpToken, user) === "required") {
       return bookingError("OTP_REQUIRED");
     }
 
     const args = toRpcArgs(input);
     const create = async (): Promise<CreateOutcome> => {
-      const { data, error } = await callRpcLoose<BookingResult>(supabase, "create_public_booking", args);
+      // Trusted gateway (service role) when configured: the checks above are
+      // the gate, and the client IP feeds the SQL per-IP limit.
+      const { data, error } = gateway
+        ? await callRpcLoose<BookingResult>(gateway, "create_public_booking_gateway", gatewayArgs(args, user?.id, ip))
+        : await callRpcLoose<BookingResult>(supabase, "create_public_booking", args);
       if (error || !data) return { ok: false, error: error ?? new Error("create_public_booking returned no data") };
       return { ok: true, booking: data };
     };

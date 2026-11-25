@@ -377,6 +377,7 @@ const en = {
     conflictUnavailable: "Outside this barber's bookable hours",
     notifyWhatsapp: "Notify client on WhatsApp",
     notifyNoPhone: "No phone number on file",
+    notifyAutomatic: "The client gets the automatic “booking moved” message.",
     notifyBody: "Hi {name}, your appointment at {shop} is now on {time}. Reply if this doesn't suit you.",
     notifyQueued: "Client will be notified",
     notifyFallback: "Send the update on WhatsApp",
@@ -1548,6 +1549,14 @@ const en = {
       many: "{count} services",
       other: "{count} services",
     },
+    reviewsCount: {
+      zero: "{count} reviews",
+      one: "{count} review",
+      two: "{count} reviews",
+      few: "{count} reviews",
+      many: "{count} reviews",
+      other: "{count} reviews",
+    },
   },
   shopProfile: {
     allCategories: "All",
@@ -1844,6 +1853,7 @@ const en = {
     otpTooMany: "Too many wrong codes. Ask for a new one.",
     otpRateLimited: "Too many codes requested. Wait a few minutes and try again.",
     otpSendFailed: "We couldn't send the code. Please try again.",
+    otpPhoneNotSupported: "Phone verification works with Jordanian mobile numbers (07…) only.",
     captchaFailed: "Please complete the security check and try again.",
   },
   settingsPages: {

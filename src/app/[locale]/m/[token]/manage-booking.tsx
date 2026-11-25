@@ -555,7 +555,7 @@ function RescheduleDialog({
                   className={cn(
                     "focus-ring flex min-h-14 min-w-14 shrink-0 flex-col items-center justify-center rounded-xl border px-2 text-xs transition-colors",
                     on
-                      ? "border-[var(--accent-brass)] bg-[var(--accent-brass)] text-[var(--on-accent)]"
+                      ? "border-[var(--cta-bg)] bg-[var(--cta-bg)] text-[var(--cta-fg)]"
                       : "border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)]",
                   )}
                 >
@@ -598,7 +598,7 @@ function RescheduleDialog({
                     className={cn(
                       "focus-ring min-h-11 rounded-xl border text-sm font-semibold transition-colors",
                       on
-                        ? "border-[var(--accent-brass)] bg-[var(--accent-brass)] text-[var(--on-accent)]"
+                        ? "border-[var(--cta-bg)] bg-[var(--cta-bg)] text-[var(--cta-fg)]"
                         : "border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]",
                     )}
                   >

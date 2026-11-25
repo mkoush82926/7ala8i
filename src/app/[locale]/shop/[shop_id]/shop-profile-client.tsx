@@ -23,7 +23,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
 import { MetaLine } from "@/components/ui/meta-line";
 import { Pill } from "@/components/ui/pill";
-import { BookingCta } from "@/components/ui/booking-cta";
+import { BookingCta, pluralLabel } from "@/components/ui/booking-cta";
 import { PhotoGallery } from "@/components/shop/photo-gallery";
 import { ScrollSpyTabs } from "@/components/shop/scroll-spy-tabs";
 import { ServicesSection } from "@/components/shop/services-section";
@@ -235,9 +235,11 @@ export default function ShopProfileClient({
   const policyHours = shop.cancellation_policy_hours ?? 0;
   const cancelText =
     policyHours > 0 ? interpolate(t.shopPage.freeCancellationHours, { hours: policyHours }) : t.shopPage.freeCancellation;
-  const reviewCountText =
-    numReviews === 1 ? t.shopPage.reviewOne : interpolate(t.shopPage.reviewsCount, { count: formatNumber(numReviews) });
-  const ratingLabel = interpolate(t.shopPage.ratingLabel, { rating: avgRating.toFixed(1) });
+  // CLDR plurals (Arabic dual "تقييمان") with localised digits.
+  const reviewCountText = pluralLabel(t.primitives.reviewsCount, numReviews, locale, formatNumber(numReviews));
+  const ratingLabel = interpolate(t.shopPage.ratingLabel, {
+    rating: formatNumber(avgRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+  });
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
   const visibleReviews = showAllReviews ? reviews : reviews.slice(0, 6);
   const hasHours = weeklyHours.some((h) => h.open);

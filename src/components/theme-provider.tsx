@@ -21,6 +21,8 @@ export const THEMED_SEGMENTS = [
   "clients",
   "leads",
   "my-day",
+  // Walk-in queue; queue/display (the wall screen) follows the staff theme too.
+  "queue",
   "services",
   "settings",
   "team",

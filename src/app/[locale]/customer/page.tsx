@@ -32,6 +32,7 @@ import {
   classifyAppointment,
   errorMessageFor,
   isValidOptionalPhone,
+  normalizeOptionalPhone,
   rebookingNudge,
   rpcErrorCode,
   statusOf,
@@ -215,7 +216,7 @@ export default function CustomerDashboard() {
     e?.preventDefault();
     if (!user) return;
     const name = editName.trim().replace(/\s+/g, " ");
-    const phone = editPhone.trim();
+    const phone = normalizeOptionalPhone(editPhone);
     const errors: { name?: string; phone?: string } = {};
     if (name.length < 2 || name.length > 80) errors.name = t.customer.nameRequired;
     if (!isValidOptionalPhone(phone)) errors.phone = t.customer.phoneInvalid;

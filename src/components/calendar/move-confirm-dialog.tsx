@@ -44,6 +44,9 @@ export function MoveConfirmDialog({ request, appointments, blocks, barberName, b
   const [checking, setChecking] = useState(false);
   const [phone, setPhone] = useState<string | null>(null);
   const [notify, setNotify] = useState(true);
+  // Automatic messaging on: the DB sends the 'rescheduled' message itself, so
+  // the manual WhatsApp checkbox would only send a second one.
+  const [autoMessaging, setAutoMessaging] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [forKey, setForKey] = useState<string | null>(null);
@@ -76,6 +79,23 @@ export function MoveConfirmDialog({ request, appointments, blocks, barberName, b
       .then((ok) => !cancelled && setServerOk(ok))
       .catch(() => !cancelled && setServerOk(null))
       .finally(() => !cancelled && setChecking(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [request, supabase, shopId]);
+
+  useEffect(() => {
+    if (!request || !shopId) return;
+    let cancelled = false;
+    const query = supabase.from("shops").select("messaging_enabled").eq("id", shopId).maybeSingle() as unknown as PromiseLike<{
+      data: { messaging_enabled?: boolean | null } | null;
+    }>;
+    query.then(
+      ({ data }) => {
+        if (!cancelled) setAutoMessaging(data ? data.messaging_enabled !== false : null);
+      },
+      () => undefined,
+    );
     return () => {
       cancelled = true;
     };
@@ -118,7 +138,7 @@ export function MoveConfirmDialog({ request, appointments, blocks, barberName, b
     setBusy(true);
     setError(null);
     try {
-      await onConfirm(request, timeChanged && notify && phone ? phone : null);
+      await onConfirm(request, timeChanged && autoMessaging === false && notify && phone ? phone : null);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.error.message);
     } finally {
@@ -180,7 +200,14 @@ export function MoveConfirmDialog({ request, appointments, blocks, barberName, b
             </div>
           )}
 
-          {timeChanged && (
+          {timeChanged && autoMessaging === true && (
+            <p className="flex items-center gap-3 text-[13px] text-[var(--text-secondary)]">
+              <MessageCircle size={16} aria-hidden="true" className="shrink-0 text-[var(--text-muted)]" />
+              <span>{phone ? t.calendar.notifyAutomatic : t.calendar.notifyNoPhone}</span>
+            </p>
+          )}
+
+          {timeChanged && autoMessaging === false && (
             <label htmlFor={notifyId} className="flex min-h-[44px] cursor-pointer items-center gap-3">
               <input
                 id={notifyId}

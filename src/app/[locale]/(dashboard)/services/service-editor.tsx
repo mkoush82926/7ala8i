@@ -28,7 +28,7 @@ const segBtn = (on: boolean) =>
     "min-h-11 flex-1 rounded-[var(--radius-buttons)] border px-3 text-sm font-bold transition-colors cursor-pointer",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-brass)]",
     on
-      ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--on-accent)]"
+      ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-on-primary)]"
       : "border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:border-[var(--border-primary)]",
   );
 

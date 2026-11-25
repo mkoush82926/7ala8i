@@ -12,6 +12,7 @@ export const BOOKING_V2_ERRORS = {
   OTP_TOO_MANY_ATTEMPTS: { status: 429, message: "Too many wrong codes. Ask for a new one." },
   OTP_UNAVAILABLE: { status: 503, message: "Phone verification is not available right now." },
   OTP_SEND_FAILED: { status: 502, message: "We couldn't send the code. Please try again." },
+  PHONE_NOT_SUPPORTED: { status: 422, message: "Phone verification works with Jordanian mobile numbers only." },
   CAPTCHA_FAILED: { status: 403, message: "Please complete the security check and try again." },
 } as const;
 

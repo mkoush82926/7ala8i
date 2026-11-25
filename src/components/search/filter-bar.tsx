@@ -4,10 +4,11 @@
 // Pure presentation over SearchState: every change calls onChange with the
 // next state and the results page writes it to the URL.
 
-import React, { useEffect, useId, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowUpDown, Check, ChevronDown, X } from "lucide-react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { cn } from "@/lib/utils";
+import { Dialog } from "@/components/ui/dialog";
 import { formatJOD } from "@/lib/format";
 import {
   activeFilterCount,
@@ -201,7 +202,30 @@ function RemovableChip({ label, removeLabel, onRemove }: { label: string; remove
   );
 }
 
-/** Price chip with a small popover holding min/max inputs. */
+const DESKTOP_QUERY = "(min-width: 768px)";
+
+function subscribeDesktop(cb: () => void) {
+  if (typeof window === "undefined" || !window.matchMedia) return () => {};
+  const mq = window.matchMedia(DESKTOP_QUERY);
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+
+/** md+ viewport (false on the server and in old browsers). */
+function useIsDesktop(): boolean {
+  return useSyncExternalStore(
+    subscribeDesktop,
+    () => (typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(DESKTOP_QUERY).matches),
+    () => false,
+  );
+}
+
+/**
+ * Price chip. md+: an anchored popover with min/max inputs. Below md the same
+ * form opens in the shared <Dialog> (bottom sheet, portalled, focus trap):
+ * the chip row scrolls horizontally and the results bar uses backdrop-filter,
+ * so an inline fixed panel would be clipped there.
+ */
 function PriceChip({ state, onChange }: { state: SearchState; onChange: (next: SearchState) => void }) {
   const { t, locale } = useTranslation();
   const S = t.search;
@@ -212,12 +236,15 @@ function PriceChip({ state, onChange }: { state: SearchState; onChange: (next: S
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const active = state.priceMin !== null || state.priceMax !== null;
+  const isDesktop = useIsDesktop();
 
   useEffect(() => {
     if (!open) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMin(state.priceMin?.toString() ?? "");
     setMax(state.priceMax?.toString() ?? "");
+    // The mobile sheet (<Dialog>) handles Escape, outside clicks and focus itself.
+    if (!isDesktop) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setOpen(false);
@@ -235,7 +262,7 @@ function PriceChip({ state, onChange }: { state: SearchState; onChange: (next: S
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onDown);
     };
-  }, [open, state.priceMin, state.priceMax]);
+  }, [open, state.priceMin, state.priceMax, isDesktop]);
 
   const parse = (v: string): number | null => {
     if (v.trim() === "") return null;
@@ -253,75 +280,90 @@ function PriceChip({ state, onChange }: { state: SearchState; onChange: (next: S
     btnRef.current?.focus();
   }
 
+  const close = () => {
+    setOpen(false);
+    btnRef.current?.focus();
+  };
+
+  const form = (
+    <form onSubmit={apply} className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <label className="space-y-1 text-[12px] font-semibold text-[var(--text-secondary)]">
+          <span>{S.priceMin}</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            max={MAX_PRICE}
+            step="0.5"
+            value={min}
+            onChange={(e) => setMin(e.target.value)}
+            className="field-input !h-10 w-full"
+            dir="ltr"
+          />
+        </label>
+        <label className="space-y-1 text-[12px] font-semibold text-[var(--text-secondary)]">
+          <span>{S.priceMax}</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            max={MAX_PRICE}
+            step="0.5"
+            value={max}
+            onChange={(e) => setMax(e.target.value)}
+            className="field-input !h-10 w-full"
+            dir="ltr"
+          />
+        </label>
+      </div>
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            onChange({ ...state, priceMin: null, priceMax: null });
+            close();
+          }}
+          className="btn btn-ghost !min-h-[40px] !text-[14px]"
+        >
+          {S.priceAny}
+        </button>
+        <button type="submit" className="btn btn-primary !min-h-[40px] !text-[14px]">
+          {S.applyPrice}
+        </button>
+      </div>
+    </form>
+  );
+
   return (
     <div className="relative shrink-0">
       <button
         ref={btnRef}
         type="button"
         aria-expanded={open}
-        aria-controls={panelId}
+        aria-controls={open && isDesktop ? panelId : undefined}
+        aria-haspopup="dialog"
         onClick={() => setOpen((v) => !v)}
         className={cn(chipBase, active ? chipOn : chipOff)}
       >
         {active ? priceText(state, locale, S) : S.filterPrice}
         <ChevronDown size={14} aria-hidden="true" />
       </button>
-      {open && (
+      {open && isDesktop && (
         <div
           id={panelId}
           ref={panelRef}
           role="dialog"
           aria-label={S.filterPrice}
-          className="fixed inset-x-4 top-1/3 z-50 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 shadow-[0_24px_60px_-20px_rgba(28,22,17,0.35)] md:absolute md:inset-x-auto md:top-11 md:start-0 md:w-72"
+          className="absolute top-11 start-0 z-50 w-72 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 shadow-[0_24px_60px_-20px_rgba(28,22,17,0.35)]"
         >
-          <form onSubmit={apply} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <label className="space-y-1 text-[12px] font-semibold text-[var(--text-secondary)]">
-                <span>{S.priceMin}</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  max={MAX_PRICE}
-                  step="0.5"
-                  value={min}
-                  onChange={(e) => setMin(e.target.value)}
-                  className="field-input !h-10 w-full"
-                  dir="ltr"
-                />
-              </label>
-              <label className="space-y-1 text-[12px] font-semibold text-[var(--text-secondary)]">
-                <span>{S.priceMax}</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  max={MAX_PRICE}
-                  step="0.5"
-                  value={max}
-                  onChange={(e) => setMax(e.target.value)}
-                  className="field-input !h-10 w-full"
-                  dir="ltr"
-                />
-              </label>
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  onChange({ ...state, priceMin: null, priceMax: null });
-                  setOpen(false);
-                }}
-                className="btn btn-ghost !min-h-[40px] !text-[14px]"
-              >
-                {S.priceAny}
-              </button>
-              <button type="submit" className="btn btn-primary !min-h-[40px] !text-[14px]">
-                {S.applyPrice}
-              </button>
-            </div>
-          </form>
+          {form}
         </div>
+      )}
+      {!isDesktop && (
+        <Dialog open={open} onClose={close} title={S.filterPrice} size="sm">
+          {form}
+        </Dialog>
       )}
     </div>
   );

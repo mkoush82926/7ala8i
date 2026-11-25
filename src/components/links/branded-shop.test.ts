@@ -82,3 +82,25 @@ describe("toBrandedShop", () => {
     expect(shopLandmark({ landmark_en: null, landmark_ar: null, address: "Khalda" }, "en")).toBe("Khalda");
   });
 });
+
+describe("loadBrandedShop · unpublished shops", () => {
+  it("is not found publicly, but staff of the shop may preview it", async () => {
+    const draft = { id: ID, name: "Draft", is_published: false };
+    const anon = fakeClient([{ data: draft, error: null }]);
+    expect(await loadBrandedShop(anon.client, ID)).toEqual({ status: "not_found" });
+    expect(anon.calls[0].columns).toContain("is_published");
+
+    const staff = fakeClient([{ data: draft, error: null }]);
+    const isStaff = vi.fn(async () => true);
+    const res = await loadBrandedShop(staff.client, ID, { isStaff });
+    expect(res.status).toBe("ok");
+    expect(isStaff).toHaveBeenCalledWith(ID);
+
+    const other = fakeClient([{ data: draft, error: null }]);
+    expect(await loadBrandedShop(other.client, ID, { isStaff: async () => false })).toEqual({ status: "not_found" });
+  });
+
+  it("treats legacy rows without the column as published", () => {
+    expect(toBrandedShop({ id: ID, name: "Old" }).is_published).toBe(true);
+  });
+});

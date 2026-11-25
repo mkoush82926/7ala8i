@@ -139,7 +139,7 @@ export function CreateFab({ onPick }: { onPick: (kind: CreateKind) => void }) {
         aria-label={open ? t.common.close : t.calendar.create}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent-brass)] text-[var(--text-primary)] shadow-[0_12px_28px_-10px_rgba(28,22,17,0.55)] transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-brass)]",
+          "flex h-14 w-14 items-center justify-center rounded-full bg-[var(--cta-bg)] text-[var(--cta-fg)] shadow-[0_12px_28px_-10px_rgba(28,22,17,0.55)] transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-brass)]",
           open && "rotate-90",
         )}
       >

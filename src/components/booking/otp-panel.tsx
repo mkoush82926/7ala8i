@@ -9,7 +9,7 @@ import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import type { PublicBookingSecurity } from "@/lib/otp/config";
-import { maskForDisplay, samePhone, toE164Digits } from "@/lib/otp/phone";
+import { maskForDisplay, samePhone, toJordanMobile, toLatinDigits } from "@/lib/otp/phone";
 import { InlineAlert } from "./booking-ui";
 
 export interface OtpState {
@@ -70,17 +70,23 @@ export function OtpPanel({
       OTP_TOO_MANY_ATTEMPTS: f.otpTooMany,
       RATE_LIMITED: f.otpRateLimited,
       CAPTCHA_FAILED: f.captchaFailed,
+      PHONE_NOT_SUPPORTED: f.otpPhoneNotSupported,
     };
     return (code && map[code]) || f.otpSendFailed;
   };
 
   const send = async () => {
     if (!phoneValid || busy) return;
-    setBusy("send");
     setError(null);
+    // Codes go to Jordanian mobiles only (the server enforces the same rule).
+    const e164 = toJordanMobile(phone);
+    if (!e164) {
+      setError(f.otpPhoneNotSupported);
+      return;
+    }
+    setBusy("send");
     try {
       if (security.otpMode === "supabase") {
-        const e164 = toE164Digits(phone);
         const { error: err } = await (client as AuthClient).auth.signInWithOtp({
           phone: `+${e164}`,
           options: { channel: security.otpChannel, data: { locale } },
@@ -110,13 +116,13 @@ export function OtpPanel({
 
   const verify = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    const value = code.replace(/\D/g, "");
+    const value = toLatinDigits(code).replace(/\D/g, "");
     if (value.length !== 6 || busy) return;
     setBusy("verify");
     setError(null);
     try {
       if (security.otpMode === "supabase") {
-        const e164 = toE164Digits(phone);
+        const e164 = toJordanMobile(phone);
         const { error: err } = await (client as AuthClient).auth.verifyOtp({ phone: `+${e164}`, token: value, type: "sms" });
         if (err) throw Object.assign(new Error("verify"), { code: "OTP_INVALID" });
         onChange({ phone, token: null, sentAt: otp?.sentAt ?? null, verifiedAt: Date.now() });
@@ -178,7 +184,8 @@ export function OtpPanel({
             dir="ltr"
             value={code}
             onChange={(e) => {
-              const v = e.target.value.replace(/\D/g, "").slice(0, 6);
+              // Arabic-Indic / Persian digits from Arabic keyboards count.
+              const v = toLatinDigits(e.target.value).replace(/\D/g, "").slice(0, 6);
               setCode(v);
               setError(null);
             }}

@@ -16,6 +16,7 @@ import { AlertCircle, CalendarCheck, MapPin, RefreshCw, Scissors, Star, Store, W
 import { createClient } from "@/lib/supabase/client";
 import { MOCK_DATA_ENABLED } from "@/lib/mock-data";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
+import { pluralLabel } from "@/components/ui/booking-cta";
 import { toast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -98,7 +99,7 @@ export function BookingEngine({
 }) {
   const [supabase] = useState(() => createClient());
   const rpcClient = supabase as unknown as RpcClient;
-  const { t, locale, dir, isRTL, FF, href, formatDuration } = useTranslation();
+  const { t, locale, dir, isRTL, FF, href, formatDuration, formatNumber } = useTranslation();
   const f = t.bookingFlow;
   const searchParams = useSearchParams();
   const entry = useMemo(() => parseEntryParams(searchParams), [searchParams]);
@@ -495,11 +496,14 @@ export function BookingEngine({
   // ─── Labels ───
   const amountBase = money(total.price, currency, locale);
   const amountLabel = total.isFrom ? interpolate(f.fromPrice, { price: amountBase }) : amountBase;
+  // CLDR plurals + localised digits (Arabic: "خدمتان", Arabic-Indic digits like the price).
   const countLabel = lines.length
-    ? `${lines.length} ${lines.length === 1 ? t.booking.service : t.booking.servicesPlural}`
+    ? pluralLabel(t.primitives.servicesCount, lines.length, locale, formatNumber(lines.length))
     : null;
   const metaLabel = [countLabel, total.duration ? formatDuration(total.duration) : null].filter(Boolean).join(" · ") || null;
-  const stepLabel = (i: number, label: string) => `${t.booking.step} ${i + 1} ${t.booking.of} ${STEPS.length} · ${label}`;
+  const stepLabel = (i: number, label: string) =>
+    `${t.booking.step} ${formatNumber(i + 1)} ${t.booking.of} ${formatNumber(STEPS.length)} · ${label}`;
+  const ratingText = (avg: number) => formatNumber(avg, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const policyText = policyHours > 0
     ? interpolate(t.booking.freeCancellationHours, { hours: String(policyHours) })
     : t.booking.freeCancellation;
@@ -593,11 +597,11 @@ export function BookingEngine({
                 {rating.count > 0 && (
                   <span
                     style={{ marginInlineStart: "auto", display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 800, flexShrink: 0 }}
-                    aria-label={`${rating.avg.toFixed(1)} / 5 · ${rating.count} ${rating.count === 1 ? t.booking.review : t.booking.reviews}`}
+                    aria-label={`${interpolate(t.shopPage.ratingLabel, { rating: ratingText(rating.avg) })} · ${pluralLabel(t.primitives.reviewsCount, rating.count, locale, formatNumber(rating.count))}`}
                   >
                     <Star size={14} aria-hidden="true" style={{ color: "var(--accent-brass)", fill: "var(--accent-brass)" }} />
-                    {rating.avg.toFixed(1)}
-                    <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-secondary)" }}>({rating.count})</span>
+                    {ratingText(rating.avg)}
+                    <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-secondary)" }}>({formatNumber(rating.count)})</span>
                   </span>
                 )}
               </div>

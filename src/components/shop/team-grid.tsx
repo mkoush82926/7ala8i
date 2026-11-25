@@ -42,7 +42,9 @@ export function TeamGrid({ barbers, shopId, src }: { barbers: readonly BarberDat
                 key: "rating",
                 icon: <Star size={12} aria-hidden="true" style={{ color: "var(--accent-brass)", fill: "var(--accent-brass)" }} />,
                 label: `${formatNumber(barber.rating_avg, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${formatNumber(barber.rating_count)})`,
-                title: interpolate(t.shopPage.ratingLabel, { rating: barber.rating_avg.toFixed(1) }),
+                title: interpolate(t.shopPage.ratingLabel, {
+                  rating: formatNumber(barber.rating_avg, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+                }),
               }
             : null,
           title || null,

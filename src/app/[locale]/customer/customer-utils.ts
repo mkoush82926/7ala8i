@@ -110,8 +110,16 @@ export function rebookingNudge(
 }
 
 /** 7–15 digits, optional leading +; empty is allowed (phone is optional). */
+/** Trimmed, with Arabic-Indic (٠-٩) / Persian (۰-۹) digits turned into Latin ones. */
+export function normalizeOptionalPhone(value: string): string {
+  return value
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .trim();
+}
+
 export function isValidOptionalPhone(value: string): boolean {
-  const trimmed = value.trim();
+  const trimmed = normalizeOptionalPhone(value);
   if (!trimmed) return true;
   if (!/^\+?[\d\s\-().]+$/.test(trimmed)) return false;
   const digits = trimmed.replace(/\D/g, "");

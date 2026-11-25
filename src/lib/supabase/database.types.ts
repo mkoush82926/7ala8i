@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════
 // Database schema types — GENERATED from the local stack after
-// 20250101003200_gate1b_integration.sql:
+// 20250101003300_phase1_review_fixes.sql:
 //   npx supabase gen types typescript --local > src/lib/supabase/database.types.ts
 // then re-append the "Convenience aliases" block at the bottom (hand-written).
 // ═══════════════════════════════════════════════════════
@@ -4111,6 +4111,25 @@ export type Database = {
         }
         Returns: Json
       }
+      create_public_booking_gateway: {
+        Args: {
+          p_actor: string
+          p_barber_id?: string
+          p_captcha_token?: string
+          p_client_ip: string
+          p_client_name: string
+          p_client_phone: string
+          p_entry?: string
+          p_items?: Json
+          p_notes?: string
+          p_otp_token?: string
+          p_service_ids?: string[]
+          p_shop_id: string
+          p_source?: string
+          p_start_time?: string
+        }
+        Returns: Json
+      }
       create_shop_from_wizard: { Args: { payload: Json }; Returns: Json }
       current_platform_role: { Args: never; Returns: string }
       current_profile_shop_and_role: {
@@ -4303,6 +4322,7 @@ export type Database = {
         Returns: boolean
       }
       is_staff_of_shop: { Args: { p_shop_id: string }; Returns: boolean }
+      jo_mobile_e164: { Args: { p_phone: string }; Returns: string }
       link_channel: { Args: { p_src: string }; Returns: string }
       link_customer_client: { Args: never; Returns: string }
       mark_message_sent_manually: { Args: { p_id: string }; Returns: Json }
@@ -4345,6 +4365,7 @@ export type Database = {
         }
         Returns: string
       }
+      messaging_fallback_sweep: { Args: never; Returns: Json }
       messaging_handle_inbound: {
         Args: {
           p_body?: string
@@ -4527,6 +4548,10 @@ export type Database = {
         Args: { p_jd: number }
         Returns: Record<string, unknown>
       }
+      privacy_export_ops_tables: {
+        Args: { p_appts: string[]; p_clients: string[]; p_keys: string[] }
+        Returns: Json
+      }
       privacy_is_synthetic_email: {
         Args: { p_email: string }
         Returns: boolean
@@ -4541,6 +4566,10 @@ export type Database = {
       }
       privacy_outbox_where: { Args: never; Returns: string }
       privacy_phone_key: { Args: { p_phone: string }; Returns: string }
+      privacy_scrub_ops_tables: {
+        Args: { p_appts: string[]; p_clients: string[]; p_keys: string[] }
+        Returns: undefined
+      }
       privacy_store_verified_phone: {
         Args: { p_method: string; p_phone: string; p_profile_id: string }
         Returns: string
@@ -4623,6 +4652,7 @@ export type Database = {
         }
         Returns: Json
       }
+      safe_timezone: { Args: { p_tz: string }; Returns: string }
       sale_receipt_json: { Args: { p_sale_id: string }; Returns: Json }
       save_calendar_team: { Args: { p_items: Json }; Returns: number }
       save_onboarding_progress: {

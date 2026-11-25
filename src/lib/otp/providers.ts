@@ -4,7 +4,7 @@
 // provider (refused in production by resolveOtpProvider).
 // ═══════════════════════════════════════════════════════
 import { resolveOtpProvider, type OtpEnv, type OtpProviderName } from "./config";
-import { toE164Digits } from "./phone";
+import { toJordanMobile } from "./phone";
 
 export interface OtpMessage {
   phone: string;
@@ -76,7 +76,8 @@ export async function sendOtpMessage(
 ): Promise<OtpSendResult> {
   const provider = resolveOtpProvider(env);
   if (!provider) return { ok: false, provider: null, reason: "NOT_CONFIGURED" };
-  const to = toE164Digits(msg.phone);
+  // Jordanian mobiles only: no paid sends to international (premium) ranges.
+  const to = toJordanMobile(msg.phone);
   if (!to || !/^\d{6}$/.test(msg.code)) return { ok: false, provider, reason: "INVALID_PHONE" };
 
   try {

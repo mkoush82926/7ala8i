@@ -154,9 +154,22 @@ export function statusTone(status: OutboxStatus): StatusTone {
   }
 }
 
-/** Rows staff can still send by hand through wa.me. */
-export function needsManualSend(row: Pick<OutboxRow, "status" | "to_phone">): boolean {
-  return (row.status === "fallback" || row.status === "failed") && !!row.to_phone;
+/**
+ * Rows staff can still send by hand through wa.me: fallbacks and failures,
+ * plus due 'queued' rows when no provider is live (nothing else will send
+ * them; the no-provider sweep turns them into fallbacks when it runs).
+ */
+export function needsManualSend(
+  row: Pick<OutboxRow, "status" | "to_phone"> & { scheduled_for?: string | null },
+  opts: { live?: boolean; now?: number } = {},
+): boolean {
+  if (!row.to_phone) return false;
+  if (row.status === "fallback" || row.status === "failed") return true;
+  if (row.status === "queued" && opts.live === false) {
+    const due = row.scheduled_for ? Date.parse(row.scheduled_for) : NaN;
+    return Number.isFinite(due) && due <= (opts.now ?? Date.now());
+  }
+  return false;
 }
 
 /** Text of a stored message (rendered from its snapshot when no body). */

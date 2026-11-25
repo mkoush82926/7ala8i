@@ -213,7 +213,7 @@ export function MessagingSettingsForm() {
                 className={cn(
                   "focus-ring min-h-11 rounded-full border px-4 text-sm font-medium transition-colors disabled:opacity-40",
                   on
-                    ? "border-[var(--accent-brass)] bg-[var(--accent-brass)] text-[var(--on-accent)]"
+                    ? "border-[var(--cta-bg)] bg-[var(--cta-bg)] text-[var(--cta-fg)]"
                     : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
                 )}
               >

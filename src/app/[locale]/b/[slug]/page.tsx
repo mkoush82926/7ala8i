@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { publicBookingSecurity } from "@/lib/otp/config";
 import { parseShopKey } from "@/components/shop/lib/slug";
 import { BrandedBooking } from "@/components/links/branded-booking";
+import { viewerIsStaff } from "@/app/[locale]/shop/[shop_id]/shop-data";
 import { loadBrandedShop, shopDisplayName, toBrandedShop, type BrandedShopResult } from "@/components/links/branded-shop";
 import { ensureLinkEntry, forwardQuery, linkSegment, normalizeToken, welcomeFor } from "@/components/links/link-utils";
 
@@ -31,7 +32,7 @@ const getShop = cache(async (slug: string): Promise<BrandedShopResult> => {
   }
   try {
     const supabase = await createClient();
-    return await loadBrandedShop(supabase as never, slug);
+    return await loadBrandedShop(supabase as never, slug, { isStaff: (id) => viewerIsStaff(supabase as never, id) });
   } catch {
     return { status: "error" };
   }

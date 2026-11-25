@@ -8,7 +8,9 @@ vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
 }));
 
-import { ThemeProvider, isThemedPath, themeInitScript } from "./theme-provider";
+import fs from "node:fs";
+import path from "node:path";
+import { ThemeProvider, isThemedPath, themeInitScript, THEMED_SEGMENTS } from "./theme-provider";
 import { useThemeStore } from "@/store/theme-store";
 
 describe("isThemedPath", () => {
@@ -56,5 +58,19 @@ describe("ThemeProvider", () => {
     render(<ThemeProvider><div /></ThemeProvider>);
     expect(document.documentElement.classList.contains("dark")).toBe(false);
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+  });
+});
+
+describe("THEMED_SEGMENTS", () => {
+  it("lists every (dashboard) route segment, so no shell page renders light", () => {
+    const dir = path.join(process.cwd(), "src/app/[locale]/(dashboard)");
+    const segments = fs
+      .readdirSync(dir, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && !d.name.startsWith("(") && !d.name.startsWith("_") && !d.name.startsWith("["))
+      .map((d) => d.name);
+    expect(segments.length).toBeGreaterThan(0);
+    for (const s of segments) expect(THEMED_SEGMENTS as readonly string[]).toContain(s);
+    expect(isThemedPath("/en/queue")).toBe(true);
+    expect(isThemedPath("/ar/queue/display")).toBe(true);
   });
 });

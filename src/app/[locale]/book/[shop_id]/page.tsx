@@ -6,6 +6,7 @@ import ar from "@/i18n/ar";
 import { MOCK_DATA_ENABLED } from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/server";
 import { publicBookingSecurity } from "@/lib/otp/config";
+import { viewerIsStaff } from "@/app/[locale]/shop/[shop_id]/shop-data";
 import { BookingShell } from "./booking-shell";
 
 type Params = Promise<{ locale: string; shop_id: string }>;
@@ -15,6 +16,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const SLUG_RE = /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u;
 
 type ShopRef = { id: string; name: string; name_ar: string | null };
+type ShopRow = ShopRef & { is_published?: boolean | null };
 
 /**
  * Shop for the header and metadata, by id or readable slug. `undefined` =
@@ -29,9 +31,9 @@ const getShop = cache(async (ref: string): Promise<ShopRef | null | undefined> =
   try {
     const supabase = await createClient();
     // Public column subset only (anon has column grants on shops).
-    const base = supabase.from("shops").select("id, name, name_ar");
+    const base = supabase.from("shops").select("id, name, name_ar, is_published");
     const query = isId ? base.eq("id", value) : base.or(`slug.eq.${value.toLowerCase()},slug_ar.eq.${value}`);
-    const { data, error } = (await query.limit(1).maybeSingle()) as { data: ShopRef | null; error: unknown };
+    const { data, error } = (await query.limit(1).maybeSingle()) as { data: ShopRow | null; error: unknown };
     if (error) {
       if (!isId) return null;
       // Older database without name_ar: fall back to the name only.
@@ -42,7 +44,10 @@ const getShop = cache(async (ref: string): Promise<ShopRef | null | undefined> =
       if (legacy.error) return undefined;
       return legacy.data ? { ...legacy.data, name_ar: null } : null;
     }
-    return data ?? null;
+    if (!data) return null;
+    // Draft / unpublished shops are not publicly bookable; their staff may preview.
+    if (data.is_published === false && !(await viewerIsStaff(supabase as never, data.id))) return null;
+    return { id: data.id, name: data.name, name_ar: data.name_ar };
   } catch {
     return isId ? undefined : null;
   }

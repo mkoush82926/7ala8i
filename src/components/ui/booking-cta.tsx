@@ -59,15 +59,20 @@ export function buildBookingHref({ locale, shop, entry, src, services, staff }: 
   return `/${loc}/book/${encodeURIComponent(shop)}?${params.toString()}`;
 }
 
-/** Arabic needs dual/few/many forms; English one/other. */
-export function servicesCountLabel(
-  forms: Record<"zero" | "one" | "two" | "few" | "many" | "other", string>,
-  count: number,
-  locale: string,
-  countText: string,
-): string {
-  const rule = new Intl.PluralRules(locale === "ar" ? "ar" : "en").select(count) as keyof typeof forms;
+export type PluralForms = Record<"zero" | "one" | "two" | "few" | "many" | "other", string>;
+
+/**
+ * CLDR plural label: Arabic needs zero/one/two/few/many forms, English
+ * one/other. `countText` is the already-localised number (digit preference).
+ */
+export function pluralLabel(forms: PluralForms, count: number, locale: string, countText: string): string {
+  const rule = new Intl.PluralRules(locale === "ar" ? "ar" : "en").select(count) as keyof PluralForms;
   return (forms[rule] ?? forms.other).replace("{count}", countText);
+}
+
+/** Arabic needs dual/few/many forms; English one/other. */
+export function servicesCountLabel(forms: PluralForms, count: number, locale: string, countText: string): string {
+  return pluralLabel(forms, count, locale, countText);
 }
 
 export type BookingCtaVariant = "button" | "inline" | "bar";

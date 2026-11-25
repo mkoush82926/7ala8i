@@ -18,6 +18,8 @@ export interface BrandedShop {
   landmark_en: string | null;
   landmark_ar: string | null;
   address: string | null;
+  /** false = draft / unpublished (staff preview only). Legacy rows count as published. */
+  is_published: boolean;
   theme: BookingLinkTheme;
 }
 
@@ -27,10 +29,10 @@ export type BrandedShopResult =
   | { status: "error" };
 
 const FULL_COLUMNS =
-  "id, name, name_ar, slug, slug_ar, phone, whatsapp, logo_url, cover_url, landmark_en, landmark_ar, address, booking_link_theme";
+  "id, name, name_ar, slug, slug_ar, phone, whatsapp, logo_url, cover_url, landmark_en, landmark_ar, address, is_published, booking_link_theme";
 /** Before the 1H migration: same row without the theme column. */
 const BASE_COLUMNS =
-  "id, name, name_ar, slug, slug_ar, phone, whatsapp, logo_url, cover_url, landmark_en, landmark_ar, address";
+  "id, name, name_ar, slug, slug_ar, phone, whatsapp, logo_url, cover_url, landmark_en, landmark_ar, address, is_published";
 /** Before the marketplace spine: legacy columns only. */
 const LEGACY_COLUMNS = "id, name, phone, whatsapp, address";
 
@@ -72,11 +74,20 @@ export function toBrandedShop(row: Record<string, unknown>): BrandedShop {
     landmark_en: str(row.landmark_en),
     landmark_ar: str(row.landmark_ar),
     address: str(row.address),
+    is_published: row.is_published !== false,
     theme: parseLinkTheme(row.booking_link_theme),
   };
 }
 
-export async function loadBrandedShop(client: ShopQueryClient, rawKey: string): Promise<BrandedShopResult> {
+/**
+ * Loads the shop behind a branded link. An unpublished shop is not found
+ * publicly; `isStaff` lets its own staff preview it.
+ */
+export async function loadBrandedShop(
+  client: ShopQueryClient,
+  rawKey: string,
+  opts: { isStaff?: (shopId: string) => Promise<boolean> } = {},
+): Promise<BrandedShopResult> {
   const key = parseShopKey(rawKey);
   if (key.kind === "invalid") return { status: "not_found" };
   const column = key.kind === "id" ? "id" : key.kind;
@@ -85,7 +96,11 @@ export async function loadBrandedShop(client: ShopQueryClient, rawKey: string): 
     // A legacy database only has ids; slugs cannot match there.
     if (columns === LEGACY_COLUMNS && column !== "id") return { status: "not_found" };
     const { data, error } = await client.from("shops").select(columns).eq(column, key.value).limit(1).maybeSingle();
-    if (!error) return data ? { status: "ok", shop: toBrandedShop(data) } : { status: "not_found" };
+    if (error) continue;
+    if (!data) return { status: "not_found" };
+    const shop = toBrandedShop(data);
+    if (!shop.is_published && !(opts.isStaff && (await opts.isStaff(shop.id)))) return { status: "not_found" };
+    return { status: "ok", shop };
   }
   return { status: "error" };
 }

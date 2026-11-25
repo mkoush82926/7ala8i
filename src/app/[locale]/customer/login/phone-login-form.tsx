@@ -14,7 +14,7 @@ import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
 import { TurnstileWidget } from "@/components/booking/turnstile-widget";
 import type { PublicBookingSecurity } from "@/lib/otp/config";
-import { maskForDisplay, toE164Digits } from "@/lib/otp/phone";
+import { maskForDisplay, toJordanMobile } from "@/lib/otp/phone";
 import {
   normalizeFullName,
   normalizeOtpCode,
@@ -53,7 +53,7 @@ export function PhoneLoginForm({ security, next }: { security: PublicBookingSecu
   const codeRef = useRef<HTMLInputElement | null>(null);
 
   const enabled = phoneLoginEnabled(security.otpMode);
-  const e164 = useMemo(() => toE164Digits(phone), [phone]);
+  const e164 = useMemo(() => toJordanMobile(phone), [phone]);
   const wait = sentAt ? Math.max(0, RESEND_AFTER_SEC - Math.floor((now - sentAt) / 1000)) : 0;
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
   const emailLogin = href(`/auth/login${next ? `?next=${encodeURIComponent(next)}` : ""}`);

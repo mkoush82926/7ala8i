@@ -379,6 +379,7 @@ const ar: TranslationKeys = {
     conflictUnavailable: "خارج ساعات الحجز لهذا الحلاق",
     notifyWhatsapp: "إبلاغ الزبون عبر واتساب",
     notifyNoPhone: "لا يوجد رقم هاتف مسجّل",
+    notifyAutomatic: "سيتلقى الزبون رسالة «تم نقل الموعد» تلقائياً.",
     notifyBody: "مرحبًا {name}، تم تغيير موعدك في {shop} إلى {time}. يُرجى الرد إذا لم يناسبك الموعد.",
     notifyQueued: "سيتم إبلاغ الزبون",
     notifyFallback: "أرسل التحديث عبر واتساب",
@@ -1531,6 +1532,14 @@ const ar: TranslationKeys = {
       many: "{count} خدمة",
       other: "{count} خدمة",
     },
+    reviewsCount: {
+      zero: "لا تقييمات",
+      one: "تقييم واحد",
+      two: "تقييمان",
+      few: "{count} تقييمات",
+      many: "{count} تقييماً",
+      other: "{count} تقييم",
+    },
   },
   shopProfile: {
     allCategories: "الكل",
@@ -1827,6 +1836,7 @@ const ar: TranslationKeys = {
     otpTooMany: "محاولات خاطئة كثيرة. اطلب رمزاً جديداً.",
     otpRateLimited: "طلبت رموزاً كثيرة. انتظر بضع دقائق ثم حاول مجدداً.",
     otpSendFailed: "تعذّر إرسال الرمز. حاول مجدداً.",
+    otpPhoneNotSupported: "التحقق متاح لأرقام الهواتف المحمولة الأردنية (07…) فقط.",
     captchaFailed: "يرجى إكمال التحقق الأمني ثم المحاولة مجدداً.",
   },
   settingsPages: {

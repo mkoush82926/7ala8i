@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { apiErrorCode, apiValidationError, serverError } from "@/lib/api-helpers";
 import { getClientIp, rateLimit, rateLimitKey, RATE_LIMITS } from "@/lib/rate-limit";
 import { publicBookingSecurity, readOtpEnv } from "@/lib/otp/config";
-import { nationalKey } from "@/lib/otp/phone";
+import { nationalKey, toJordanMobile } from "@/lib/otp/phone";
 import { sendOtpMessage } from "@/lib/otp/providers";
 import { verifyCaptcha } from "@/lib/otp/turnstile";
 import { otpStore } from "@/lib/otp/admin";
@@ -35,6 +35,8 @@ export async function POST(req: Request) {
   const env = readOtpEnv();
   const security = publicBookingSecurity(env);
   if (security.otpMode !== "hook") return bookingError("OTP_UNAVAILABLE");
+  // Codes go to Jordanian mobiles only (SMS pumping guard; the SQL agrees).
+  if (!toJordanMobile(phone)) return bookingError("PHONE_NOT_SUPPORTED");
 
   const phoneRl = await rateLimit(
     rateLimitKey("otp", "phone", nationalKey(phone)),

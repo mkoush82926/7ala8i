@@ -80,18 +80,24 @@ export function MessagingActivity() {
     { enabled: !!shopId, retryCount: 0 },
   );
 
+  // No live provider: due 'queued' rows also need a manual (wa.me) send.
+  const manualQueued = status.data ? !status.data.live : false;
   const log = useSupabaseQuery<OutboxRow[]>(
     async () => {
       let q = supabase
         .from("message_outbox" as never)
         .select(OUTBOX_COLUMNS)
         .eq("shop_id", shopId);
-      if (filter === "action") q = q.in("status", ["fallback", "failed"]);
+      if (filter === "action") {
+        q = manualQueued
+          ? q.or(`status.in.(fallback,failed),and(status.eq.queued,scheduled_for.lte.${new Date().toISOString()})`)
+          : q.in("status", ["fallback", "failed"]);
+      }
       if (filter === "scheduled") q = q.in("status", ["queued", "sending"]);
       const res = await q.order(filter === "scheduled" ? "scheduled_for" : "created_at", { ascending: filter === "scheduled" }).limit(50);
       return { data: (res.data ?? []) as unknown as OutboxRow[], error: res.error ? { message: res.error.message } : null };
     },
-    [supabase, shopId, filter],
+    [supabase, shopId, filter, manualQueued],
     { enabled: !!shopId, retryCount: 0 },
   );
 
@@ -270,7 +276,7 @@ export function MessagingActivity() {
           <ul role="list" className="m-0 flex list-none flex-col divide-y divide-[var(--border-subtle)] p-0">
             {log.data.map((row) => {
               const name = recipientName(row);
-              const wa = needsManualSend(row) ? fallbackWaLink(row, siteUrl) : null;
+              const wa = needsManualSend(row, { live: status.data ? status.data.live : undefined }) ? fallbackWaLink(row, siteUrl) : null;
               const templateLabel = (tm.templates as Record<string, string>)[row.template] ?? row.template;
               const statusLabel = (tm.statuses as Record<string, string>)[row.status] ?? row.status;
               const when = row.status === "queued" ? row.scheduled_for : row.sent_at ?? row.created_at;

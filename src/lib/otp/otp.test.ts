@@ -106,6 +106,17 @@ describe("sendOtpMessage", () => {
     expect(JSON.stringify(body)).toContain("654321");
   });
 
+  it("never sends to non-Jordanian numbers (SMS pumping guard)", async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 200 }));
+    const r = await sendOtpMessage(
+      { phone: "+9647791234567", code: "123456", locale: "en" },
+      { OTP_PROVIDER: "unifonic", UNIFONIC_APP_SID: "sid" },
+      fetchMock,
+    );
+    expect(r).toEqual({ ok: false, provider: "unifonic", reason: "INVALID_PHONE" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("reports provider failures without throwing", async () => {
     const r = await sendOtpMessage(
       { phone: "0791234567", code: "123456", locale: "en" },

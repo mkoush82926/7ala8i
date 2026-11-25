@@ -47,7 +47,7 @@ import {
   type NotifyChannel,
   type PreferredLanguage,
 } from "@/lib/privacy";
-import { isValidOptionalPhone } from "../customer-utils";
+import { isValidOptionalPhone, normalizeOptionalPhone } from "../customer-utils";
 import { CustomerBottomNav } from "./account-nav";
 
 type Db = { rpc: (fn: string, args?: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message?: string; code?: string } | null }> };
@@ -228,7 +228,7 @@ export default function CustomerAccountPage() {
     if (!isValidOptionalPhone(phone)) errors.phone = t.customer.phoneInvalid;
     setProfileErrors(errors);
     if (errors.name || errors.phone) return;
-    const patch = diffAccount(account, { fullName: clean, phone });
+    const patch = diffAccount(account, { fullName: clean, phone: normalizeOptionalPhone(phone) });
     if (Object.keys(patch).length === 0) {
       toast.success(t.customer.profileSaved);
       return;

@@ -4,6 +4,7 @@ import {
   classifyAppointment,
   errorMessageFor,
   isValidOptionalPhone,
+  normalizeOptionalPhone,
   rebookingNudge,
   rpcErrorCode,
 } from "./customer-utils";
@@ -72,5 +73,13 @@ describe("isValidOptionalPhone", () => {
     expect(isValidOptionalPhone("+962 79 123 4567")).toBe(true);
     expect(isValidOptionalPhone("12345")).toBe(false);
     expect(isValidOptionalPhone("abc1234567")).toBe(false);
+  });
+});
+
+describe("isValidOptionalPhone · Arabic keyboards", () => {
+  it("accepts Arabic-Indic / Persian digits and normalises them", () => {
+    expect(isValidOptionalPhone("٠٧٩١٢٣٤٥٦٧")).toBe(true);
+    expect(isValidOptionalPhone("۰۷۹ ۱۲۳ ۴۵۶۷")).toBe(true);
+    expect(normalizeOptionalPhone(" ٠٧٩١٢٣٤٥٦٧ ")).toBe("0791234567");
   });
 });

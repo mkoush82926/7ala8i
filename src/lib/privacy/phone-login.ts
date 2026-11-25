@@ -15,7 +15,7 @@
 // ═══════════════════════════════════════════════════════
 import { createClient as createAdminClient, type SupabaseClient } from "@supabase/supabase-js";
 import { publicEnv } from "@/lib/env";
-import { maskForDisplay, toE164Digits } from "@/lib/otp/phone";
+import { maskForDisplay, toJordanMobile } from "@/lib/otp/phone";
 import { syntheticEmailFor } from "./account";
 import { normalizeFullName, type PhoneLoginErrorCode } from "./login";
 
@@ -63,7 +63,7 @@ export async function completePhoneLogin(
   admin: PhoneLoginAdmin,
   input: PhoneLoginInput,
 ): Promise<PhoneLoginResult> {
-  const digits = toE164Digits(input.phone);
+  const digits = toJordanMobile(input.phone);
   if (!digits) return { ok: false, code: "INVALID_PHONE" };
   const token = (input.token ?? "").trim();
   if (!token || token.length > 512) return { ok: false, code: "OTP_INVALID" };

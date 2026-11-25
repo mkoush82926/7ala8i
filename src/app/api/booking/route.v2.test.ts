@@ -12,6 +12,9 @@ const { POST } = await import("./route");
 const { __resetIdempotencyStore } = await import("./idempotency");
 const { __resetRateLimitMemory, __resetRateLimitClient } = await import("@/lib/rate-limit");
 const { toRpcArgs, CreateBookingV2Schema } = await import("./schema");
+// These cases cover the direct RPC path; gateway.test.ts covers the service-role gateway.
+const { __setBookingGatewayClient } = await import("./gateway");
+__setBookingGatewayClient(null);
 
 const SHOP = "11111111-1111-4111-8111-111111111111";
 const SERVICE = "22222222-2222-4222-8222-222222222222";
