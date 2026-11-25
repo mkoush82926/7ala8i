@@ -1468,10 +1468,16 @@ const BOOKING_CSS = `
 .bk-slot.is-selected { background: var(--text-primary); color: var(--on-accent); border-color: var(--text-primary); }
 .bk-slot:disabled { cursor: not-allowed; color: var(--text-muted); background: var(--bg-secondary); text-decoration: line-through; font-weight: 500; }
 .bk-bottom-bar {
-  position: sticky; bottom: 0; z-index: 10; margin-top: 24px; padding: 14px 0 calc(14px + env(safe-area-inset-bottom));
+  position: sticky; bottom: 0; z-index: 10; margin: 24px -16px 0; padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   background: var(--bg-primary); border-top: 1px solid var(--border-subtle);
   box-shadow: 0 -8px 16px -12px rgba(28, 22, 17, 0.25);
+}
+/* Full-bleed on phones and a short fade above, so service rows scrolling
+   underneath never peek out beside or just above the total / Next bar. */
+.bk-bottom-bar::before {
+  content: ""; position: absolute; inset-inline: 0; bottom: 100%; height: 16px; pointer-events: none;
+  background: linear-gradient(to top, var(--bg-primary), transparent);
 }
 .bk-cta {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px;
