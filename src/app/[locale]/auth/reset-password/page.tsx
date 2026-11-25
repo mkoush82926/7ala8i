@@ -7,6 +7,7 @@ import { CheckCircle2, KeyRound, Loader2, Lock, XCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/toast";
 import { useTranslation } from "@/hooks/use-translation";
+import { buttonClasses } from "@/components/ui/recipes";
 import { authErrorKey, MIN_PASSWORD_LENGTH, type AuthErrorKey } from "../auth-errors";
 import { AuthAlert, AuthCard, AuthHeader, AuthShell, PasswordField, SubmitButton } from "../_components/auth-shell";
 
@@ -102,9 +103,9 @@ function ResetPasswordContent() {
     <AuthShell navLink={{ href: loginHref, label: t.auth.backToSignIn }}>
       <AuthCard>
         {linkState === "checking" ? (
-          <div role="status" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "40px 0" }}>
-            <Loader2 size={24} className="animate-spin" aria-hidden="true" style={{ color: "var(--accent-mint)" }} />
-            <p style={{ fontSize: 14, color: "var(--text-secondary)", margin: 0 }}>{t.auth.verifyingLink}</p>
+          <div role="status" className="flex flex-col items-center gap-3 py-10">
+            <Loader2 size={24} className="animate-spin text-brand-text motion-reduce:animate-none" aria-hidden="true" />
+            <p className="m-0 text-sm text-ink-muted">{t.auth.verifyingLink}</p>
           </div>
         ) : success ? (
           <>
@@ -115,7 +116,7 @@ function ResetPasswordContent() {
               title={t.auth.passwordUpdatedTitle}
               subtitle={t.auth.passwordUpdatedBody}
             />
-            <Link href={loginHref} className="btn btn-primary" style={{ width: "100%", minHeight: 52 }}>
+            <Link href={loginHref} className={buttonClasses({ variant: "primary", size: "xl", fullWidth: true })}>
               {t.auth.goToSignIn}
             </Link>
           </>
@@ -128,14 +129,14 @@ function ResetPasswordContent() {
               title={t.auth.invalidLinkTitle}
               subtitle={t.auth.invalidLinkBody}
             />
-            <Link href={href("/auth/forgot-password")} className="btn btn-primary" style={{ width: "100%", minHeight: 52 }}>
+            <Link href={href("/auth/forgot-password")} className={buttonClasses({ variant: "primary", size: "xl", fullWidth: true })}>
               {t.auth.requestNewLink}
             </Link>
           </>
         ) : (
           <>
             <AuthHeader icon={KeyRound} title={t.auth.newPasswordTitle} subtitle={t.auth.newPasswordSubtitle} />
-            <form ref={formRef} onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
               {/* Lets password managers attach the new password to the right account. */}
               <input type="text" name="username" autoComplete="username" hidden readOnly />
               <PasswordField
@@ -169,7 +170,7 @@ function ResetPasswordContent() {
 
               {errorKey && <AuthAlert>{t.auth.errors[errorKey]}</AuthAlert>}
 
-              <SubmitButton loading={loading} loadingLabel={t.auth.updatingPassword} arrow={false} style={{ marginTop: 4 }}>
+              <SubmitButton loading={loading} loadingLabel={t.auth.updatingPassword} arrow={false} className="mt-1">
                 {t.auth.updatePassword}
               </SubmitButton>
             </form>

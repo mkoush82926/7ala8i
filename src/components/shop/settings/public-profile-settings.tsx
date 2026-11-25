@@ -48,19 +48,19 @@ export function PublicProfileSettings() {
   return (
     <div className="mx-auto max-w-5xl pb-24">
       <header className="mb-5">
-        <Link href={href("/settings")} className="focus-ring mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+        <Link href={href("/settings")} className="focus-ring mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted hover:text-ink">
           <ArrowLeft size={16} aria-hidden="true" className={isRTL ? "rotate-180" : undefined} />
           {pp.backToSettings}
         </Link>
-        <h1 className="text-2xl font-black text-[var(--text-primary)]">{pp.pageTitle}</h1>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">{pp.pageDesc}</p>
+        <h1 className="text-h1 text-ink">{pp.pageTitle}</h1>
+        <p className="mt-1 text-sm text-ink-muted">{pp.pageDesc}</p>
       </header>
 
-      <nav aria-label={pp.sectionsLabel} className="sticky top-0 z-10 -mx-4 mb-5 overflow-x-auto border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] px-4">
+      <nav aria-label={pp.sectionsLabel} className="sticky top-0 z-10 -mx-4 mb-5 overflow-x-auto border-b border-line bg-card px-4">
         <ul className="flex gap-1 whitespace-nowrap py-2">
           {SECTIONS.map((id) => (
             <li key={id}>
-              <a href={`#${id}`} className="focus-ring inline-flex min-h-[40px] items-center rounded-full px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]">
+              <a href={`#${id}`} className="focus-ring inline-flex min-h-[40px] items-center rounded-full px-3 text-sm font-semibold text-ink-muted hover:bg-sunken hover:text-ink">
                 {sectionLabel[id]}
               </a>
             </li>
@@ -83,7 +83,7 @@ export function PublicProfileSettings() {
       ) : (
         <div className="grid gap-5">
           {!isAdmin && (
-            <p role="note" className="rounded-lg bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+            <p role="note" className="rounded-lg bg-sunken px-4 py-3 text-sm text-ink-muted">
               {pp.barberNote}
             </p>
           )}

@@ -12,8 +12,8 @@ import { checkClaimForm, type ClaimFieldError, type ClaimFormValues } from "@/li
 import { ReasonDialog } from "./reason-dialog";
 
 const inputCls =
-  "w-full rounded-[var(--radius)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] aria-[invalid=true]:border-[var(--accent-rose)]";
-const labelCls = "mb-1.5 block text-[13px] font-medium text-[var(--text-primary)]";
+  "w-full rounded-lg border border-line-strong bg-card px-4 text-[15px] text-ink placeholder:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus aria-[invalid=true]:border-danger";
+const labelCls = "mb-1.5 block text-[13px] font-medium text-ink";
 
 const EMPTY: ClaimFormValues = { shop_id: "", claimant_name: "", claimant_phone: "", details: "" };
 
@@ -59,7 +59,7 @@ export function NewClaimButton({ defaultShopId = "" }: { defaultShopId?: string 
 
   const fieldError = (key: ClaimFieldError, message: string) =>
     errors.includes(key) ? (
-      <p id={`${id}-${key}-err`} className="mt-1 text-[12px] text-[var(--accent-rose)]">
+      <p id={`${id}-${key}-err`} className="mt-1 text-[12px] text-danger-text">
         {message}
       </p>
     ) : null;
@@ -87,7 +87,7 @@ export function NewClaimButton({ defaultShopId = "" }: { defaultShopId?: string 
               aria-describedby={`${id}-shop-hint`}
               className={`${inputCls} h-11 font-mono text-[13px]`}
             />
-            <p id={`${id}-shop-hint`} className="mt-1 text-[12px] text-[var(--text-muted)]">
+            <p id={`${id}-shop-hint`} className="mt-1 text-[12px] text-ink-muted">
               {c.shopIdHint}
             </p>
             {fieldError("shop_id", c.errors.shopId)}
@@ -141,7 +141,7 @@ export function NewClaimButton({ defaultShopId = "" }: { defaultShopId?: string 
             {fieldError("details", c.errors.details)}
           </div>
           {serverError && (
-            <p role="alert" className="text-[13px] font-medium text-[var(--accent-rose)]">
+            <p role="alert" className="text-[13px] font-medium text-danger-text">
               {serverError}
             </p>
           )}
@@ -185,7 +185,7 @@ export function ResolveClaimButton({ claimId }: { claimId: string }) {
               <label
                 key={d}
                 htmlFor={`${id}-${d}`}
-                className="flex min-h-11 flex-1 cursor-pointer items-center gap-2 rounded-[var(--radius)] border border-[var(--border-subtle)] px-3 text-[14px] has-[:checked]:border-[var(--accent-brass)] has-[:focus-visible]:shadow-[var(--shadow-focus)]"
+                className="flex min-h-11 flex-1 cursor-pointer items-center gap-2 rounded-lg border border-line px-3 text-[14px] has-[:checked]:border-brand has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus"
               >
                 <input
                   id={`${id}-${d}`}
@@ -194,7 +194,7 @@ export function ResolveClaimButton({ claimId }: { claimId: string }) {
                   value={d}
                   checked={decision === d}
                   onChange={() => setDecision(d)}
-                  className="accent-[var(--accent-brass)]"
+                  className="accent-brand"
                 />
                 {c.decisions[d]}
               </label>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { KeyRound, Mail, MailCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTranslation } from "@/hooks/use-translation";
+import { buttonClasses } from "@/components/ui/recipes";
 import { authErrorKey, isValidEmail, type AuthErrorKey } from "../auth-errors";
 import {
   AuthAlert,
@@ -105,7 +106,7 @@ function ForgotPasswordContent() {
             subtitle={
               <>
                 {before}
-                <strong dir="ltr" style={{ color: "var(--text-primary)", wordBreak: "break-all" }}>
+                <strong dir="ltr" className="break-all font-semibold text-ink">
                   {sentTo}
                 </strong>
                 {after}
@@ -113,21 +114,20 @@ function ForgotPasswordContent() {
             }
           />
           {errorKey && (
-            <div style={{ marginBottom: 16 }}>
+            <div className="mb-4">
               <AuthAlert>{t.auth.errors[errorKey]}</AuthAlert>
             </div>
           )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <Link href={loginHref} className="btn btn-primary" style={{ width: "100%", minHeight: 52 }}>
+          <div className="flex flex-col gap-3">
+            <Link href={loginHref} className={buttonClasses({ variant: "primary", size: "xl", fullWidth: true })}>
               {t.auth.backToSignIn}
             </Link>
             <button
               type="button"
-              className="btn btn-secondary"
+              className={buttonClasses({ variant: "secondary", size: "lg", fullWidth: true })}
               onClick={handleResend}
               disabled={loading || cooldown > 0}
               aria-busy={loading || undefined}
-              style={{ width: "100%", minHeight: 48 }}
             >
               {loading
                 ? t.auth.sending
@@ -141,22 +141,12 @@ function ForgotPasswordContent() {
                 setSentTo(null);
                 setErrorKey(null);
               }}
-              style={{
-                background: "none",
-                border: "none",
-                minHeight: 40,
-                color: "var(--text-secondary)",
-                fontSize: 14,
-                fontWeight: 600,
-                textDecoration: "underline",
-                textUnderlineOffset: 3,
-                cursor: "pointer",
-              }}
+              className={buttonClasses({ variant: "ghost", size: "md", fullWidth: true })}
             >
               {t.auth.useDifferentEmail}
             </button>
           </div>
-          <p style={{ marginTop: 16, fontSize: 13, textAlign: "center", color: "var(--text-muted)" }}>{t.auth.checkSpam}</p>
+          <p className="mt-4 text-center text-[13px] text-ink-muted">{t.auth.checkSpam}</p>
         </AuthCard>
       </AuthShell>
     );
@@ -167,7 +157,7 @@ function ForgotPasswordContent() {
       <AuthCard>
         <AuthHeader icon={KeyRound} title={t.auth.resetTitle} subtitle={t.auth.resetSubtitle} />
 
-        <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
           <AuthField
             ref={emailRef}
             id="email"

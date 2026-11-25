@@ -80,6 +80,8 @@ export function StepBarber({
 
   const anyHint = hint(next.any);
 
+  const stack = barbers.slice(0, 3);
+
   return (
     <div className="bk-grid-2" role="group" aria-label={t.booking.chooseBarber}>
       {barbers.length > 1 && (
@@ -89,12 +91,25 @@ export function StepBarber({
           onClick={() => onChoose("any")}
           className={`bk-option${selected === "any" ? " is-selected" : ""}`}
         >
-          <span aria-hidden="true" style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--bg-secondary)", border: "2px dashed var(--border-primary)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}>
-            <Users size={24} />
+          <span aria-hidden="true" style={{ display: "inline-flex", height: 72, alignItems: "center" }}>
+            {stack.length > 1 ? (
+              stack.map((b, i) => (
+                <span
+                  key={b.id}
+                  style={{ marginInlineStart: i === 0 ? 0 : -14, borderRadius: "50%", boxShadow: "0 0 0 3px var(--color-card)", display: "inline-flex" }}
+                >
+                  <BarberAvatar name={b.full_name?.trim() || "?"} url={b.avatar_url} seed={b.id} size={44} />
+                </span>
+              ))
+            ) : (
+              <span style={{ width: 72, height: 72, borderRadius: "50%", background: "var(--color-brand-soft)", color: "var(--color-brand-text)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                <Users size={28} />
+              </span>
+            )}
           </span>
-          <span style={{ display: "block" }}>
-            <span style={{ display: "block", fontSize: 15, fontWeight: 800 }}>{t.booking.anyBarber}</span>
-            <span style={{ display: "block", fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{f.anyBarberHint}</span>
+          <span style={{ display: "block", minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: 16, fontWeight: 600 }}>{t.booking.anyBarber}</span>
+            <span className="text-meta" style={{ display: "block", color: "var(--color-ink-muted)", marginTop: 2 }}>{f.anyBarberHint}</span>
             {anyHint && <span className="bk-barber-next" style={{ display: "block", marginTop: 6 }}>{next.any ? `${f.earliest}: ${anyHint}` : anyHint}</span>}
           </span>
           {selected === "any" && <SelectedMark label={t.booking.selected} />}
@@ -113,13 +128,11 @@ export function StepBarber({
             onClick={() => onChoose(b.id)}
             className={`bk-option${isSelected ? " is-selected" : ""}`}
           >
-            <BarberAvatar name={name} url={b.avatar_url} />
-            <span style={{ display: "block", minWidth: 0 }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 15, fontWeight: 800, overflowWrap: "anywhere" }}>{name}</span>
-                {delta && <span className="bk-surcharge" aria-label={`${f.priceDifference}: ${delta}`}>{delta}</span>}
-              </span>
-              {h && <span className="bk-barber-next" style={{ display: "block", marginTop: 6 }}>{h}</span>}
+            <BarberAvatar name={name} url={b.avatar_url} seed={b.id} size={72} />
+            <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 0, maxWidth: "100%" }}>
+              <span style={{ fontSize: 16, fontWeight: 600, overflowWrap: "anywhere" }}>{name}</span>
+              {delta && <span className="bk-surcharge" aria-label={`${f.priceDifference}: ${delta}`}>{delta}</span>}
+              {h && <span className="bk-barber-next">{h}</span>}
             </span>
             {isSelected && <SelectedMark label={t.booking.selected} />}
           </button>

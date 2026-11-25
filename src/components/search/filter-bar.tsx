@@ -9,6 +9,8 @@ import { ArrowUpDown, Check, ChevronDown, X } from "lucide-react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { cn } from "@/lib/utils";
 import { Dialog } from "@/components/ui/dialog";
+import { FilterChip } from "@/components/ui/pill";
+import { buttonClasses, filterChipClasses, focusRing, inputClasses, labelClasses } from "@/components/ui/recipes";
 import { formatJOD } from "@/lib/format";
 import {
   activeFilterCount,
@@ -29,10 +31,11 @@ export interface FilterBarProps {
   className?: string;
 }
 
-const chipBase =
-  "focus-ring inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13.5px] font-semibold transition-colors";
-const chipOff = "border-[var(--border-primary)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:border-[var(--text-primary)]";
-const chipOn = "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)]";
+/** Sort select styled as an outline pill (§5.5 filter-chip look). */
+const sortSelect = cn(
+  "h-9 cursor-pointer appearance-none rounded-full border border-line-strong bg-card bg-none py-0 ps-9 pe-8 text-sm font-semibold text-ink hover:border-ink focus:border-ink focus:ring-0",
+  focusRing,
+);
 
 export function FilterBar({ state, onChange, className }: FilterBarProps) {
   const { t, locale } = useTranslation();
@@ -77,36 +80,34 @@ export function FilterBar({ state, onChange, className }: FilterBarProps) {
         <div
           role="group"
           aria-label={S.filtersLabel}
-          className="-mx-4 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
+          className="no-scrollbar -mx-4 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto px-4 py-0.5 sm:-mx-6 sm:px-6 md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
         >
           {SEARCH_FILTERS.map((f) => {
             const on = state.filters.includes(f);
             return (
-              <button
+              <FilterChip
                 key={f}
-                type="button"
-                aria-pressed={on}
+                pressed={on}
                 onClick={() => onChange(toggleFilter(state, f))}
-                className={cn(chipBase, on ? chipOn : chipOff)}
+                icon={on ? <Check aria-hidden="true" /> : undefined}
               >
-                {on && <Check size={14} aria-hidden="true" />}
                 {filterLabel[f]}
-              </button>
+              </FilterChip>
             );
           })}
           <PriceChip state={state} onChange={onChange} />
         </div>
 
-        <div className="relative hidden shrink-0 items-center md:flex">
+        <div className="relative hidden shrink-0 items-center border-s border-line ps-3 md:flex">
           <label htmlFor={sortId} className="sr-only">
             {S.sortLabel}
           </label>
-          <ArrowUpDown size={15} aria-hidden="true" className="pointer-events-none absolute start-3 text-[var(--text-secondary)]" />
+          <ArrowUpDown size={15} aria-hidden="true" className="pointer-events-none absolute start-6.5 text-ink-muted" />
           <select
             id={sortId}
             value={state.sort}
             onChange={(e) => onChange({ ...state, sort: e.target.value as SearchSort })}
-            className="focus-ring h-9 cursor-pointer appearance-none rounded-full border border-[var(--border-primary)] bg-[var(--bg-primary)] ps-8 pe-8 text-[13.5px] font-semibold text-[var(--text-primary)]"
+            className={sortSelect}
           >
             {SEARCH_SORTS.map((s) => (
               <option key={s} value={s}>
@@ -114,7 +115,7 @@ export function FilterBar({ state, onChange, className }: FilterBarProps) {
               </option>
             ))}
           </select>
-          <ChevronDown size={14} aria-hidden="true" className="pointer-events-none absolute end-3 text-[var(--text-secondary)]" />
+          <ChevronDown size={14} aria-hidden="true" className="pointer-events-none absolute end-3 text-ink-muted" />
         </div>
       </div>
 
@@ -124,12 +125,12 @@ export function FilterBar({ state, onChange, className }: FilterBarProps) {
           <label htmlFor={`${sortId}-m`} className="sr-only">
             {S.sortLabel}
           </label>
-          <ArrowUpDown size={15} aria-hidden="true" className="pointer-events-none absolute start-3 text-[var(--text-secondary)]" />
+          <ArrowUpDown size={15} aria-hidden="true" className="pointer-events-none absolute start-3.5 text-ink-muted" />
           <select
             id={`${sortId}-m`}
             value={state.sort}
             onChange={(e) => onChange({ ...state, sort: e.target.value as SearchSort })}
-            className="focus-ring h-9 cursor-pointer appearance-none rounded-full border border-[var(--border-primary)] bg-[var(--bg-primary)] ps-8 pe-8 text-[13.5px] font-semibold text-[var(--text-primary)]"
+            className={sortSelect}
           >
             {SEARCH_SORTS.map((s) => (
               <option key={s} value={s}>
@@ -137,7 +138,7 @@ export function FilterBar({ state, onChange, className }: FilterBarProps) {
               </option>
             ))}
           </select>
-          <ChevronDown size={14} aria-hidden="true" className="pointer-events-none absolute end-3 text-[var(--text-secondary)]" />
+          <ChevronDown size={14} aria-hidden="true" className="pointer-events-none absolute end-3 text-ink-muted" />
         </div>
       </div>
 
@@ -168,7 +169,7 @@ export function FilterBar({ state, onChange, className }: FilterBarProps) {
           <button
             type="button"
             onClick={() => onChange(clearFilters(state))}
-            className="focus-ring h-9 rounded-full px-3 text-[13.5px] font-semibold text-[var(--accent-text)] underline-offset-4 hover:underline"
+            className={buttonClasses({ variant: "link", size: "sm", className: "h-9 px-2" })}
           >
             {S.clearAll}
           </button>
@@ -180,7 +181,8 @@ export function FilterBar({ state, onChange, className }: FilterBarProps) {
 
 function priceText(state: SearchState, locale: string, S: { priceRange: string; priceUpTo: string; priceFrom: string }): string {
   const fmt = (n: number) => formatJOD(n, { locale, trimZeros: true });
-  if (state.priceMin !== null && state.priceMax !== null) return interpolate(S.priceRange, { min: fmt(state.priceMin), max: fmt(state.priceMax) });
+  if (state.priceMin !== null && state.priceMax !== null)
+    return interpolate(S.priceRange, { min: fmt(state.priceMin), max: fmt(state.priceMax) });
   if (state.priceMax !== null) return interpolate(S.priceUpTo, { max: fmt(state.priceMax) });
   if (state.priceMin !== null) return interpolate(S.priceFrom, { min: fmt(state.priceMin) });
   return "";
@@ -188,13 +190,13 @@ function priceText(state: SearchState, locale: string, S: { priceRange: string; 
 
 function RemovableChip({ label, removeLabel, onRemove }: { label: string; removeLabel: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex h-9 items-center gap-1 rounded-full border border-[var(--text-primary)] bg-[var(--bg-secondary)] ps-3.5 pe-1 text-[13.5px] font-semibold text-[var(--text-primary)]">
+    <span className="inline-flex h-9 items-center gap-1 rounded-full bg-brand-soft ps-3.5 pe-1 text-sm font-semibold text-brand-pressed">
       <bdi>{label}</bdi>
       <button
         type="button"
         onClick={onRemove}
         aria-label={removeLabel}
-        className="focus-ring flex h-7 w-7 items-center justify-center rounded-full hover:bg-[var(--bg-primary)]"
+        className={cn("grid size-7 cursor-pointer place-items-center rounded-full hover:bg-card", focusRing)}
       >
         <X size={14} aria-hidden="true" />
       </button>
@@ -215,7 +217,7 @@ function subscribeDesktop(cb: () => void) {
 function useIsDesktop(): boolean {
   return useSyncExternalStore(
     subscribeDesktop,
-    () => (typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(DESKTOP_QUERY).matches),
+    () => typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(DESKTOP_QUERY).matches,
     () => false,
   );
 }
@@ -288,8 +290,8 @@ function PriceChip({ state, onChange }: { state: SearchState; onChange: (next: S
   const form = (
     <form onSubmit={apply} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <label className="space-y-1 text-[12px] font-semibold text-[var(--text-secondary)]">
-          <span>{S.priceMin}</span>
+        <label className="block">
+          <span className={labelClasses}>{S.priceMin}</span>
           <input
             type="number"
             inputMode="decimal"
@@ -298,12 +300,12 @@ function PriceChip({ state, onChange }: { state: SearchState; onChange: (next: S
             step="0.5"
             value={min}
             onChange={(e) => setMin(e.target.value)}
-            className="field-input !h-10 w-full"
+            className={inputClasses({ className: "h-11 tabular-nums" })}
             dir="ltr"
           />
         </label>
-        <label className="space-y-1 text-[12px] font-semibold text-[var(--text-secondary)]">
-          <span>{S.priceMax}</span>
+        <label className="block">
+          <span className={labelClasses}>{S.priceMax}</span>
           <input
             type="number"
             inputMode="decimal"
@@ -312,23 +314,23 @@ function PriceChip({ state, onChange }: { state: SearchState; onChange: (next: S
             step="0.5"
             value={max}
             onChange={(e) => setMax(e.target.value)}
-            className="field-input !h-10 w-full"
+            className={inputClasses({ className: "h-11 tabular-nums" })}
             dir="ltr"
           />
         </label>
       </div>
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2 pt-1">
         <button
           type="button"
           onClick={() => {
             onChange({ ...state, priceMin: null, priceMax: null });
             close();
           }}
-          className="btn btn-ghost !min-h-[40px] !text-[14px]"
+          className={buttonClasses({ variant: "ghost", size: "sm", className: "h-10" })}
         >
           {S.priceAny}
         </button>
-        <button type="submit" className="btn btn-primary !min-h-[40px] !text-[14px]">
+        <button type="submit" className={buttonClasses({ variant: "primary", size: "sm", className: "h-10 px-5" })}>
           {S.applyPrice}
         </button>
       </div>
@@ -344,10 +346,13 @@ function PriceChip({ state, onChange }: { state: SearchState; onChange: (next: S
         aria-controls={open && isDesktop ? panelId : undefined}
         aria-haspopup="dialog"
         onClick={() => setOpen((v) => !v)}
-        className={cn(chipBase, active ? chipOn : chipOff)}
+        className={cn(filterChipClasses, active && "border-inverse bg-inverse text-on-inverse hover:border-inverse")}
       >
-        {active ? priceText(state, locale, S) : S.filterPrice}
-        <ChevronDown size={14} aria-hidden="true" />
+        <bdi>{active ? priceText(state, locale, S) : S.filterPrice}</bdi>
+        <ChevronDown
+          aria-hidden="true"
+          className={cn("transition-transform duration-150 motion-reduce:transition-none", open && "rotate-180")}
+        />
       </button>
       {open && isDesktop && (
         <div
@@ -355,7 +360,7 @@ function PriceChip({ state, onChange }: { state: SearchState; onChange: (next: S
           ref={panelRef}
           role="dialog"
           aria-label={S.filterPrice}
-          className="absolute top-11 start-0 z-50 w-72 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 shadow-[0_24px_60px_-20px_rgba(28,22,17,0.35)]"
+          className="fade-slide-up absolute top-11 start-0 z-50 w-80 rounded-2xl border border-line bg-card p-4 shadow-float"
         >
           {form}
         </div>

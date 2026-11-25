@@ -43,10 +43,10 @@ import {
   type ProductDraft,
 } from "./payments-logic";
 
-const card = "flex flex-col gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 sm:p-5";
-const h2 = "m-0 text-base font-bold text-[var(--text-primary)]";
+const card = "flex flex-col gap-5 rounded-xl border border-line bg-card p-4 sm:p-6";
+const h2 = "text-h3 m-0 text-ink";
 const iconBtn =
-  "focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] disabled:opacity-30";
+  "focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-sunken hover:text-ink disabled:opacity-30";
 
 const KIND_ICON: Record<MethodKind, typeof Banknote> = {
   cash: Banknote,
@@ -82,14 +82,14 @@ function Switch({ checked, onChange, label, disabled }: { checked: boolean; onCh
       <span
         aria-hidden="true"
         className={cn(
-          "relative inline-block h-6 w-10 rounded-full transition-colors",
-          checked ? "bg-[var(--accent-brass)]" : "bg-[var(--border-primary)]",
+          "relative inline-block h-6 w-11 rounded-full transition-colors duration-150 motion-reduce:transition-none",
+          checked ? "bg-brand" : "bg-line-strong",
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 size-5 rounded-full bg-[var(--bg-primary)] shadow transition-[inset-inline-start]",
-            checked ? "start-[1.125rem]" : "start-0.5",
+            "absolute top-0.5 size-5 rounded-full bg-white shadow-xs transition-[inset-inline-start] duration-150 motion-reduce:transition-none",
+            checked ? "start-[22px]" : "start-0.5",
           )}
         />
       </span>
@@ -193,7 +193,7 @@ export function PaymentsSettings() {
             <h2 id="pm-title" className={h2}>
               {tp.methodsTitle}
             </h2>
-            <p className="m-0 mt-1 text-sm text-[var(--text-secondary)]">{tp.methodsHelp}</p>
+            <p className="m-0 mt-1 text-sm text-ink-soft">{tp.methodsHelp}</p>
           </div>
           <button type="button" className="btn btn-secondary min-h-11 shrink-0" onClick={() => setEditing("new")}>
             <Plus size={16} aria-hidden="true" />
@@ -214,17 +214,17 @@ export function PaymentsSettings() {
               const Icon = KIND_ICON[m.kind] ?? Wallet;
               const name = methodName(m);
               return (
-                <li key={m.id} className="flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] py-1 pe-1 ps-3">
-                  <Icon size={18} aria-hidden="true" className={m.isActive ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"} />
+                <li key={m.id} className="flex items-center gap-2 rounded-xl border border-line py-1 pe-1 ps-3">
+                  <Icon size={18} aria-hidden="true" className={m.isActive ? "text-ink" : "text-ink-muted"} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className={cn("truncate text-sm font-semibold", m.isActive ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]")}>{name}</span>
+                      <span className={cn("truncate text-sm font-semibold", m.isActive ? "text-ink" : "text-ink-muted")}>{name}</span>
                       <Pill tone="neutral" size="sm">
                         {(tp.kinds as Record<string, string>)[m.kind] ?? m.kind}
                       </Pill>
                     </div>
                     {m.kind === "cliq" && (
-                      <span className="block truncate text-[12px] text-[var(--text-secondary)]">
+                      <span className="block truncate text-[12px] text-ink-soft">
                         {m.cliqAlias ? (
                           <>
                             {tp.cliqAlias}: <span dir="ltr">{m.cliqAlias}</span>
@@ -246,7 +246,7 @@ export function PaymentsSettings() {
                     <Pencil size={16} aria-hidden="true" />
                   </button>
                   {!m.isSystem && (
-                    <button type="button" className={cn(iconBtn, "hover:text-[var(--accent-rose)]")} onClick={() => setDeleting(m)} aria-label={interpolate(tp.deleteMethod, { name })}>
+                    <button type="button" className={cn(iconBtn, "hover:text-danger-text")} onClick={() => setDeleting(m)} aria-label={interpolate(tp.deleteMethod, { name })}>
                       <Trash2 size={16} aria-hidden="true" />
                     </button>
                   )}
@@ -261,7 +261,7 @@ export function PaymentsSettings() {
             })}
           </ul>
         )}
-        <p className="m-0 text-[12px] text-[var(--text-muted)]">{tp.methodsFootnote}</p>
+        <p className="m-0 text-[12px] text-ink-muted">{tp.methodsFootnote}</p>
       </section>
 
       {/* ── Products ── */}
@@ -271,7 +271,7 @@ export function PaymentsSettings() {
             <h2 id="pr-title" className={h2}>
               {tp.productsTitle}
             </h2>
-            <p className="m-0 mt-1 text-sm text-[var(--text-secondary)]">{tp.productsHelp}</p>
+            <p className="m-0 mt-1 text-sm text-ink-soft">{tp.productsHelp}</p>
           </div>
           <button type="button" className="btn btn-secondary min-h-11 shrink-0" onClick={() => setEditingProduct("new")}>
             <Plus size={16} aria-hidden="true" />
@@ -296,11 +296,11 @@ export function PaymentsSettings() {
             {products.data.map((p, i, all) => {
               const name = (locale === "ar" && p.name_ar) || p.name_en;
               return (
-                <li key={p.id} className="flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] py-1 pe-1 ps-3">
-                  <Package size={18} aria-hidden="true" className={p.is_active ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"} />
+                <li key={p.id} className="flex items-center gap-2 rounded-xl border border-line py-1 pe-1 ps-3">
+                  <Package size={18} aria-hidden="true" className={p.is_active ? "text-ink" : "text-ink-muted"} />
                   <div className="min-w-0 flex-1">
-                    <span className={cn("block truncate text-sm font-semibold", p.is_active ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]")}>{name}</span>
-                    <span className="block text-[12px] text-[var(--text-secondary)]">
+                    <span className={cn("block truncate text-sm font-semibold", p.is_active ? "text-ink" : "text-ink-muted")}>{name}</span>
+                    <span className="block text-[12px] text-ink-soft">
                       {formatJOD(Number(p.price), locale)}
                       {p.sku ? (
                         <>
@@ -319,7 +319,7 @@ export function PaymentsSettings() {
                   <button type="button" className={iconBtn} onClick={() => setEditingProduct(p)} aria-label={interpolate(tp.editProduct, { name })}>
                     <Pencil size={16} aria-hidden="true" />
                   </button>
-                  <button type="button" className={cn(iconBtn, "hover:text-[var(--accent-rose)]")} onClick={() => setDeletingProduct(p)} aria-label={interpolate(tp.deleteProduct, { name })}>
+                  <button type="button" className={cn(iconBtn, "hover:text-danger-text")} onClick={() => setDeletingProduct(p)} aria-label={interpolate(tp.deleteProduct, { name })}>
                     <Trash2 size={16} aria-hidden="true" />
                   </button>
                   <Switch checked={p.is_active} disabled={busyId === p.id} label={interpolate(tp.toggleProduct, { name })} onChange={(v) => void toggleProduct(p, v)} />
@@ -509,7 +509,7 @@ function MethodDialog({
             ))}
           </select>
           {kindLocked && (
-            <span id="pm-kind-hint" className="text-[12px] text-[var(--text-muted)]">
+            <span id="pm-kind-hint" className="text-[12px] text-ink-muted">
               {tp.kindLocked}
             </span>
           )}
@@ -521,7 +521,7 @@ function MethodDialog({
                 {draft.kind === "cliq" ? tp.cliqAlias : tp.walletNumber}
               </label>
               <input id="pm-alias" dir="ltr" maxLength={64} value={draft.cliqAlias} onChange={(e) => setDraft({ ...draft, cliqAlias: e.target.value })} className="field-input" aria-describedby="pm-alias-hint" />
-              <span id="pm-alias-hint" className="text-[12px] text-[var(--text-muted)]">
+              <span id="pm-alias-hint" className="text-[12px] text-ink-muted">
                 {tp.aliasHint}
               </span>
             </div>
@@ -649,7 +649,7 @@ function ProductDialog({
             <input id="pr-sku" dir="ltr" maxLength={64} value={draft.sku} onChange={(e) => setDraft({ ...draft, sku: e.target.value })} className="field-input" />
           </div>
         </div>
-        <p className="m-0 text-[12px] text-[var(--text-muted)]">{tp.noStockNote}</p>
+        <p className="m-0 text-[12px] text-ink-muted">{tp.noStockNote}</p>
         {error && (
           <p role="alert" className="field-error m-0">
             {error}

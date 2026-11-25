@@ -22,7 +22,7 @@ import {
   startOfYear,
 } from "date-fns";
 import { TrendingUp, AlertTriangle, RefreshCw } from "lucide-react";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import { useTranslation } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { useDashboardVersion } from "@/hooks/use-pos";
@@ -30,6 +30,8 @@ import { useShopSettings } from "@/hooks/use-dashboard-data";
 import { createClient } from "@/lib/supabase/client";
 import { ChartSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Panel } from "@/components/ui/card";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { cn } from "@/lib/utils";
 
 export type Period = "week" | "month" | "year";
@@ -96,16 +98,16 @@ function ChartTooltip({
 }) {
   if (!active || !payload?.length || !label) return null;
   return (
-    <div className="rounded-xl bg-[var(--brand-primary)] px-4 py-2.5 text-[var(--brand-on-primary)] shadow-lg">
-      <p className="m-0 mb-1 text-[11px] font-semibold opacity-70">{formatLabel(label)}</p>
-      <p className="m-0 text-[15px] font-extrabold tabular-nums">{formatValue(payload[0].value)}</p>
+    <div className="rounded-lg bg-inverse px-3 py-2 text-on-inverse shadow-raised">
+      <p className="m-0 mb-0.5 text-xs text-on-inverse/75">{formatLabel(label)}</p>
+      <p className="m-0 text-[15px] font-semibold tabular-nums">{formatValue(payload[0].value)}</p>
     </div>
   );
 }
 
 export function SalesChart() {
   const [period, setPeriod] = useState<Period>("week");
-  const { t, isRTL, FFD, formatCurrency, formatDate } = useTranslation();
+  const { t, isRTL, formatCurrency, formatDate } = useTranslation();
   const shopId = useWorkspaceStore((s) => s.shopId);
   const version = useDashboardVersion();
   const { currency } = useShopSettings();
@@ -160,55 +162,48 @@ export function SalesChart() {
   ];
 
   return (
-    <section
+    <Panel
       aria-labelledby="sales-chart-title"
-      className="flex h-full flex-col rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5 sm:p-7 lg:px-9 lg:py-8"
+      className="flex h-full flex-col"
+      bodyClassName="flex flex-1 flex-col gap-4"
+      title={<span id="sales-chart-title">{t.dashboard.revenueOverview}</span>}
+      description={
+        hasData ? (
+          <>
+            {t.dashboard.periodTotal}: <bdi className="font-semibold tabular-nums text-ink">{money(total)}</bdi>
+          </>
+        ) : (
+          t.dashboard.revenueSubtitle
+        )
+      }
+      action={
+        <SegmentedControl
+          ariaLabel={t.dashboard.chartPeriod}
+          value={period}
+          onChange={setPeriod}
+          size="sm"
+          options={periods.map((p) => ({ value: p.id, label: p.label }))}
+          className="hidden sm:inline-flex"
+        />
+      }
     >
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h2
-            id="sales-chart-title"
-            className="m-0 mb-1 text-[18px] font-extrabold text-[var(--text-primary)]"
-            style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.01em") }}
-          >
-            {t.dashboard.revenueOverview}
-          </h2>
-          <p className="m-0 text-[13px] text-[var(--text-muted)]">
-            {hasData ? `${t.dashboard.periodTotal}: ${money(total)}` : t.dashboard.revenueSubtitle}
-          </p>
-        </div>
-
-        <div
-          role="group"
-          aria-label={t.dashboard.chartPeriod}
-          className="flex gap-0.5 rounded-lg bg-[var(--bg-secondary)] p-1"
-        >
-          {periods.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              aria-pressed={period === p.id}
-              onClick={() => setPeriod(p.id)}
-              className={cn(
-                "min-h-9 rounded-md px-3.5 text-[12px] font-bold transition-colors",
-                !isRTL && "uppercase tracking-[0.06em]",
-                period === p.id
-                  ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Phones: the period switch gets its own full-width row */}
+      <SegmentedControl
+        ariaLabel={t.dashboard.chartPeriod}
+        value={period}
+        onChange={setPeriod}
+        size="sm"
+        fullWidth
+        options={periods.map((p) => ({ value: p.id, label: p.label }))}
+        className="sm:hidden"
+      />
 
       <div
-        className={cn("min-h-[220px] flex-1 transition-opacity", refreshing && "opacity-60")}
+        className={cn("min-h-[240px] flex-1 transition-opacity duration-200 motion-reduce:transition-none", refreshing && "opacity-60")}
         aria-busy={refreshing || undefined}
       >
         {initialLoading ? (
-          <ChartSkeleton bare height={220} />
+          <ChartSkeleton bare height={240} />
         ) : error ? (
           <EmptyState
             bare
@@ -230,14 +225,14 @@ export function SalesChart() {
         ) : (
           <figure className="m-0 h-[240px] w-full" aria-label={`${t.dashboard.revenueOverview}: ${money(total)}`}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={series} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <AreaChart data={series} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
                 <defs>
                   <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--text-primary)" stopOpacity={0.14} />
-                    <stop offset="100%" stopColor="var(--text-primary)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--color-chart-1)" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="var(--color-chart-1)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+                <CartesianGrid stroke="var(--color-line)" vertical={false} />
                 <XAxis
                   dataKey="key"
                   reversed={isRTL}
@@ -246,7 +241,7 @@ export function SalesChart() {
                   interval="preserveStartEnd"
                   minTickGap={12}
                   tickFormatter={tickLabel}
-                  tick={{ fontSize: 11, fill: "var(--text-secondary)", fontWeight: 600 }}
+                  tick={{ fontSize: 12, fill: "var(--color-ink-muted)" }}
                 />
                 <YAxis
                   orientation={isRTL ? "right" : "left"}
@@ -255,21 +250,21 @@ export function SalesChart() {
                   width={44}
                   allowDecimals={false}
                   tickFormatter={axisMoney}
-                  tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
+                  tick={{ fontSize: 12, fill: "var(--color-ink-muted)" }}
                 />
                 <Tooltip
                   content={<ChartTooltip formatLabel={tooltipLabel} formatValue={money} />}
-                  cursor={{ stroke: "var(--border-primary)", strokeWidth: 1 }}
+                  cursor={{ stroke: "var(--color-line-strong)", strokeWidth: 1, strokeDasharray: "4 4" }}
                 />
                 <Area
                   type="monotone"
                   dataKey="revenue"
                   name={t.dashboard.revenue}
-                  stroke="var(--text-primary)"
+                  stroke="var(--color-chart-1)"
                   strokeWidth={2.5}
                   fill="url(#revenueGrad)"
                   dot={false}
-                  activeDot={{ r: 5, fill: "var(--text-primary)", stroke: "var(--bg-primary)", strokeWidth: 2.5 }}
+                  activeDot={{ r: 5, fill: "var(--color-chart-1)", stroke: "var(--color-card)", strokeWidth: 2.5 }}
                   isAnimationActive={false}
                 />
               </AreaChart>
@@ -277,7 +272,7 @@ export function SalesChart() {
           </figure>
         )}
       </div>
-    </section>
+    </Panel>
   );
 }
 

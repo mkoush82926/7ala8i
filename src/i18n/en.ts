@@ -111,6 +111,12 @@ const en = {
     signedOut: "You have been signed out",
     signOutFailed: "Couldn't sign out. Please try again.",
     queue: "Walk-in queue",
+    groupSchedule: "Schedule",
+    groupBusiness: "Business",
+    collapse: "Collapse sidebar",
+    expand: "Expand sidebar",
+    more: "More",
+    queueShort: "Queue",
   },
 
   // ─── Topbar ───
@@ -209,6 +215,12 @@ const en = {
     quietDay: "Enjoy the quiet — new bookings will show up here.",
     remainingToday: "{count} remaining",
     allDone: "All done for today",
+    kpiBookingsToday: "Bookings today",
+    kpiSalesToday: "Sales today",
+    kpiWeeklyRevenue: "Revenue this week",
+    kpiDailyGoal: "Daily goal",
+    dailySummaryTitle: "Today's takings",
+    upNext: "Up next",
   },
 
   // ─── Calendar ───
@@ -825,6 +837,9 @@ const en = {
     downloadPoster: "Download print kit",
     posterTagline: "Scan to book your next appointment",
     posterInstruction: "No app needed — works with any phone camera",
+    groupShop: "Your shop",
+    groupBooking: "Bookings & payments",
+    groupTeam: "Team & messages",
   },
 
   // ─── Landing Page ───
@@ -961,6 +976,9 @@ const en = {
     contactHeading: "Ready when you are",
     contactLead: "Set up your shop in minutes, or find a barber and book your next cut.",
     cancellationPolicy: "Cancellation policy",
+    trustNoContract: "No contracts",
+    trustBilingual: "Arabic & English",
+    trustSetup: "Set up in minutes",
   },
 
   // ─── Auth ───
@@ -1081,7 +1099,7 @@ const en = {
 
   // ─── Customer Portal ───
   customer: {
-    welcomeBack: "Welcome back 👋",
+    welcomeBack: "Welcome back",
     myAppointments: "My Appointments",
     discoverShops: "Discover Shops",
     bookAppointment: "Book Appointment",
@@ -1331,6 +1349,7 @@ const en = {
     privacyActionsTitle: "Manage your data",
     privacyActionAccount: "Download or delete my data",
     privacyActionPhoneLogin: "Sign in with my phone",
+    onThisPage: "On this page",
   },
 
   // ─── Notifications ───
@@ -1486,6 +1505,7 @@ const en = {
     saveRole: "Save role",
     roleSaved: "Role updated",
     roleFailed: "Couldn't change the role. Try again.",
+    manageShort: "Manage",
   },
 
   // ─── Analytics ───
@@ -1557,6 +1577,11 @@ const en = {
       many: "{count} reviews",
       other: "{count} reviews",
     },
+    ratedOutOf: "Rated {rating} out of 5",
+    starRatingOption: "{count} out of 5 stars",
+    yourRating: "Your rating",
+    searchOpen: "Search barbers and shops",
+    searchSubmit: "Search",
   },
   shopProfile: {
     allCategories: "All",
@@ -2549,6 +2574,9 @@ const en = {
     installIosHint: "Tap Share, then Add to Home Screen.",
     installCta: "Install",
     installDismiss: "Dismiss",
+    footerTagline: "Find trusted barbers across Jordan and book in seconds.",
+    footerCustomers: "For customers",
+    footerLocation: "Made in Amman, Jordan",
   },
   manageBooking: {
     metaTitle: "Manage your booking",
@@ -2768,6 +2796,8 @@ const en = {
     displayMore: "+{n} more waiting",
     fullscreen: "Full screen",
     exitDisplay: "Exit TV view",
+    lanesLabel: "Queue lanes",
+    finishedEmpty: "Clients who finish or leave today show up here.",
   },
   links: {
     page: {
@@ -2883,7 +2913,7 @@ const en = {
       description: "Choose how your booking page looks to clients.",
       accent: "Header colour",
       accentInk: "Ink",
-      accentBrass: "Brass",
+      accentBrass: "Teal",
       accentPaper: "Paper",
       showCover: "Show cover photo",
       showLogo: "Show logo",

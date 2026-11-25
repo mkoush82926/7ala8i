@@ -219,6 +219,9 @@ const MODAL_WIDTH: Record<DialogSize, string> = {
   full: "sm:max-w-[calc(100vw-2rem)]",
 };
 
+const ENTER = { duration: 0.28, ease: [0.05, 0.7, 0.1, 1] as [number, number, number, number] };
+const EXIT = { duration: 0.18, ease: [0.3, 0, 0.8, 0.15] as [number, number, number, number] };
+
 const DRAWER_WIDTH: Record<DialogSize, string> = {
   sm: "max-w-[360px]",
   md: "max-w-[440px]",
@@ -264,12 +267,14 @@ export function Dialog({
   const hidden =
     physical === "bottom" ? { y: "100%" } : physical === "right" ? { x: "100%" } : { x: "-100%" };
 
+  // v2 motion (§7): enter 280ms ease-enter, exit 180ms ease-exit. Reduced
+  // motion is handled globally by <MotionConfig reducedMotion="user">.
   const panelMotion = isDrawer
-    ? { initial: hidden, animate: { x: 0, y: 0 }, exit: hidden }
+    ? { initial: hidden, animate: { x: 0, y: 0 }, exit: { ...hidden, transition: EXIT } }
     : {
-        initial: { opacity: 0, y: 16, scale: 0.98 },
-        animate: { opacity: 1, y: 0, scale: 1 },
-        exit: { opacity: 0, y: 16, scale: 0.98 },
+        initial: { opacity: 0, y: 8 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: 8, transition: EXIT },
       };
 
   const hasHeader = Boolean(title || description);
@@ -282,11 +287,11 @@ export function Dialog({
           <motion.div
             aria-hidden="true"
             data-testid="dialog-backdrop"
-            className="absolute inset-0 bg-[var(--overlay)]"
+            className="absolute inset-0 bg-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
             onClick={closeOnBackdrop ? onClose : undefined}
           />
 
@@ -312,36 +317,39 @@ export function Dialog({
               aria-label={!title ? ariaLabel : undefined}
               tabIndex={-1}
               {...panelMotion}
-              transition={
-                isDrawer
-                  ? { type: "tween", duration: 0.28, ease: [0.25, 1, 0.5, 1] }
-                  : { duration: 0.2, ease: [0.25, 1, 0.5, 1] }
-              }
+              transition={isDrawer ? { type: "tween", ...ENTER } : ENTER}
               className={cn(
                 "pointer-events-auto relative flex flex-col outline-none",
-                "bg-[var(--bg-elevated)] text-[var(--text-primary)]",
-                "border border-[var(--border-subtle)]",
+                "bg-card text-ink shadow-float",
                 isDrawer
                   ? physical === "bottom"
-                    ? "w-full max-h-[90dvh] rounded-t-[var(--radius-lg)] pb-[env(safe-area-inset-bottom)]"
-                    : cn("h-full w-full", DRAWER_WIDTH[size])
+                    ? "w-full max-h-[92dvh] rounded-t-3xl pb-[max(16px,env(safe-area-inset-bottom))]"
+                    : cn("h-full w-full", physical === "right" ? "border-s border-line" : "border-e border-line", DRAWER_WIDTH[size])
                   : cn(
-                      "w-full max-h-[92dvh] rounded-t-[var(--radius-lg)] pb-[env(safe-area-inset-bottom)]",
-                      "sm:max-h-[calc(100dvh-2rem)] sm:rounded-[var(--radius-lg)] sm:pb-0",
+                      // Bottom sheet on phones, centred dialog from 640px
+                      "w-full max-h-[92dvh] rounded-t-3xl pb-[max(16px,env(safe-area-inset-bottom))]",
+                      "sm:max-h-[calc(100dvh-2rem)] sm:rounded-2xl sm:border sm:border-line sm:pb-0",
                       MODAL_WIDTH[size],
                     ),
                 className,
               )}
             >
+              {/* Grab handle (sheet presentation only; decorative) */}
+              {!isDrawer || physical === "bottom" ? (
+                <div
+                  aria-hidden="true"
+                  className={cn("mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-line-strong/60", !isDrawer && "sm:hidden")}
+                />
+              ) : null}
               {hasHeader && (
-                <div className={cn("shrink-0 px-6 pt-6 pb-2", !hideCloseButton && "pe-14", headerClassName)}>
+                <div className={cn("shrink-0 px-6 pt-5 pb-2 sm:pt-6", !hideCloseButton && "pe-14", headerClassName)}>
                   {title && (
-                    <h2 id={titleId} className="text-[17px] font-semibold leading-snug text-[var(--text-primary)]">
+                    <h2 id={titleId} className="text-h3 text-ink">
                       {title}
                     </h2>
                   )}
                   {description && (
-                    <div id={descId} className="mt-1.5 text-[14px] leading-relaxed text-[var(--text-secondary)]">
+                    <div id={descId} className="mt-1.5 text-sm leading-6 text-ink-muted">
                       {description}
                     </div>
                   )}
@@ -354,9 +362,10 @@ export function Dialog({
                   onClick={onClose}
                   aria-label={t.common.close}
                   className={cn(
-                    "absolute top-3 end-3 inline-flex h-10 w-10 items-center justify-center",
-                    "rounded-[var(--radius-buttons)] text-[var(--text-secondary)] cursor-pointer",
-                    "hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] transition-colors",
+                    "absolute top-4 end-3 inline-flex size-10 items-center justify-center sm:top-3",
+                    "cursor-pointer rounded-full text-ink-soft",
+                    "transition-colors hover:bg-sunken hover:text-ink motion-reduce:transition-none",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
                   )}
                 >
                   <X size={18} aria-hidden="true" />
@@ -375,7 +384,7 @@ export function Dialog({
               </div>
 
               {footer && (
-                <div className="shrink-0 border-t border-[var(--border-subtle)] px-6 py-4">{footer}</div>
+                <div className="shrink-0 border-t border-line px-6 py-4">{footer}</div>
               )}
             </motion.div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { buttonClasses } from "@/components/ui/recipes";
 import { LocateFixed, MapPin, Minus, Plus } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import {
@@ -154,7 +155,7 @@ export function PinPicker({ value, onChange }: { value: LatLng | null; onChange:
         onPointerUp={onPointerUp}
         onPointerCancel={() => (drag.current = null)}
         onKeyDown={onKeyDown}
-        className="focus-ring relative overflow-hidden rounded-[12px] bg-[var(--bg-secondary)] touch-none select-none cursor-crosshair"
+        className="focus-ring relative overflow-hidden rounded-xl bg-sunken touch-none select-none cursor-crosshair"
         style={{ height: HEIGHT }}
       >
         {tiles.map((tile) => (
@@ -170,16 +171,16 @@ export function PinPicker({ value, onChange }: { value: LatLng | null; onChange:
         ))}
         {pin && pin.x > -20 && pin.x < width + 20 && pin.y > -40 && pin.y < HEIGHT + 40 && (
           <span aria-hidden="true" className="absolute pointer-events-none -translate-x-1/2 -translate-y-full" style={{ left: pin.x, top: pin.y }}>
-            <MapPin size={36} strokeWidth={2} style={{ color: "var(--cta-bg)", fill: "var(--bg-elevated)" }} className="drop-shadow-md" />
+            <MapPin size={36} strokeWidth={2} className="fill-card text-brand drop-shadow-md" />
           </span>
         )}
         {/* Centre cross for keyboard placement */}
-        <span aria-hidden="true" className="absolute pointer-events-none w-3 h-3 border-2 border-[var(--text-primary)]/50 rounded-full -translate-x-1/2 -translate-y-1/2" style={{ left: "50%", top: "50%" }} />
+        <span aria-hidden="true" className="absolute pointer-events-none w-3 h-3 border-2 border-ink/50 rounded-full -translate-x-1/2 -translate-y-1/2" style={{ left: "50%", top: "50%" }} />
         <div className="absolute top-2 flex flex-col gap-1" style={isRTL ? { left: 8 } : { right: 8 }} onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
-          <button type="button" onClick={() => setZoom((z) => clampZoom(z + 1))} aria-label={t.publicProfile.zoomIn} className="focus-ring w-9 h-9 rounded-[8px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center">
+          <button type="button" onClick={() => setZoom((z) => clampZoom(z + 1))} aria-label={t.publicProfile.zoomIn} className="focus-ring w-9 h-9 rounded-lg bg-card border border-line flex items-center justify-center">
             <Plus size={16} aria-hidden="true" />
           </button>
-          <button type="button" onClick={() => setZoom((z) => clampZoom(z - 1))} aria-label={t.publicProfile.zoomOut} className="focus-ring w-9 h-9 rounded-[8px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex items-center justify-center">
+          <button type="button" onClick={() => setZoom((z) => clampZoom(z - 1))} aria-label={t.publicProfile.zoomOut} className="focus-ring w-9 h-9 rounded-lg bg-card border border-line flex items-center justify-center">
             <Minus size={16} aria-hidden="true" />
           </button>
         </div>
@@ -189,22 +190,22 @@ export function PinPicker({ value, onChange }: { value: LatLng | null; onChange:
           rel="noopener noreferrer"
           onPointerDown={(e) => e.stopPropagation()}
           onPointerUp={(e) => e.stopPropagation()}
-          className="absolute bottom-0 bg-white/85 px-1.5 py-0.5 text-[10px] text-[#3a332b]"
+          className="absolute bottom-0 bg-white/85 px-1.5 py-0.5 text-[10px] text-[#334155]"
           style={{ right: 0 }}
         >
           {source.attribution}
         </a>
       </div>
-      <p id="pin-picker-help" className="text-xs text-[var(--text-secondary)]">
+      <p id="pin-picker-help" className="text-xs text-ink-muted">
         {t.publicProfile.mapPickerHelp}
       </p>
       <div className="flex flex-wrap items-end gap-3">
-        <button type="button" onClick={locate} disabled={locating} className="btn btn-secondary" style={{ minHeight: 40 }}>
+        <button type="button" onClick={locate} disabled={locating} className={buttonClasses({ variant: "secondary", size: "sm" })}>
           <LocateFixed size={16} aria-hidden="true" />
           {locating ? t.publicProfile.locating : t.publicProfile.useMyLocation}
         </button>
         {value && (
-          <button type="button" onClick={() => { onChange(null); setLatText(""); setLngText(""); }} className="btn btn-secondary" style={{ minHeight: 40 }}>
+          <button type="button" onClick={() => { onChange(null); setLatText(""); setLngText(""); }} className={buttonClasses({ variant: "secondary", size: "sm" })}>
             {t.publicProfile.clearPin}
           </button>
         )}

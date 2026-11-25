@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Sidebar, useShellRole } from "@/components/layout/sidebar";
+import { Sidebar, useShellRole, useSidebarWidth } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -12,9 +12,13 @@ import { canAccessPath, homePathFor, stripLocale } from "@/components/layout/nav
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 /*
- * Dashboard shell. Theme, dir and lang are owned by the root ThemeProvider
- * (which also mounts the single ToastContainer), so this layout only wires
- * the workspace, the navigation chrome and the role guard.
+ * Dashboard shell (v2 §5.10). Theme, dir and lang are owned by the root
+ * ThemeProvider (which also mounts the single ToastContainer), so this layout
+ * only wires the workspace, the navigation chrome and the role guard.
+ *
+ * Chrome: 240px labelled sidebar (72px collapsed) from lg, a bottom tab bar
+ * below lg, and a fixed 64px topbar. `--sidebar-width` is set here so the
+ * sidebar, topbar and content offset always agree.
  */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const initializeWorkspace = useWorkspaceStore((s) => s.initializeWorkspace);
@@ -25,6 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const { t, href } = useTranslation();
+  const sidebarWidth = useSidebarWidth();
 
   useEffect(() => {
     initializeWorkspace();
@@ -46,11 +51,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [allowed, hydrated, href, isCustomer, role, router, status]);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased">
+    <div
+      className="min-h-dvh bg-page text-ink antialiased"
+      style={{ "--sidebar-width": sidebarWidth } as React.CSSProperties}
+    >
       <Sidebar />
       <Topbar />
-      <main id="main" tabIndex={-1} className="main-content min-h-screen outline-none">
-        <div className="page-padding pb-24 pt-[92px]">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="min-h-dvh outline-none transition-[margin] duration-200 ease-standard motion-reduce:transition-none lg:ms-[var(--sidebar-width)]"
+      >
+        {/* 64px topbar above; the mobile tab bar (64px + safe area) below */}
+        <div className="mx-auto w-full max-w-[1440px] px-4 pb-[calc(96px+env(safe-area-inset-bottom))] pt-20 sm:px-6 lg:px-8 lg:pb-12 lg:pt-[88px]">
           {loadFailed ? (
             <EmptyState
               tone="error"

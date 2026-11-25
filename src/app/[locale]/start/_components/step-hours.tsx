@@ -1,9 +1,11 @@
 "use client";
 
 import { useId, useMemo } from "react";
-import { Coffee, X } from "lucide-react";
+import { AlertCircle, ChevronDown, Coffee, Copy, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
+import { FilterChip } from "@/components/ui/pill";
+import { buttonClasses, errorTextClasses, labelClasses, selectClasses } from "@/components/ui/recipes";
 import {
   HOURS_PRESETS,
   JUMUAH_BREAK,
@@ -15,7 +17,7 @@ import {
   type HoursPresetId,
 } from "@/lib/templates/barbershop";
 import type { StepProps } from "./step-shop";
-import { StepHeader, Switch, cardClass, cardStyle } from "./ui";
+import { StepHeader, Switch, cardClass } from "./ui";
 
 const TIMES = timeOptions(30);
 /** Closing times also offer "midnight" (stored as 23:59: weekly hours cannot cross midnight). */
@@ -59,33 +61,28 @@ export function StepHours({ draft, update, errors }: StepProps) {
   return (
     <div>
       <StepHeader title={s.hours.title} subtitle={s.hours.subtitle} />
-      <fieldset className="mb-5">
-        <legend className="field-label">{s.hours.presetsLabel}</legend>
+      <fieldset className="mb-6">
+        <legend className={labelClasses}>{s.hours.presetsLabel}</legend>
         <div className="flex flex-wrap gap-2">
           {HOURS_PRESETS.map((id) => (
-            <button
+            <FilterChip
               key={id}
-              type="button"
-              aria-pressed={activePreset === id}
+              pressed={activePreset === id}
               onClick={() => update((d) => ({ ...d, hours: hoursPreset(id) }))}
-              className="rounded-full border px-3.5 py-2 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2"
-              style={{
-                borderColor: activePreset === id ? "var(--text-primary)" : "var(--border-subtle)",
-                background: activePreset === id ? "var(--text-primary)" : "var(--bg-primary)",
-                color: activePreset === id ? "var(--bg-primary)" : "var(--text-primary)",
-              }}
+              className="h-10"
             >
               {presetLabel[id]}
-            </button>
+            </FilterChip>
           ))}
         </div>
       </fieldset>
       {hoursError && (
-        <p className="field-error mb-3" role="alert">
-          {hoursError}
+        <p className={cn(errorTextClasses, "mb-3 mt-0")} role="alert">
+          <AlertCircle aria-hidden="true" />
+          <span>{hoursError}</span>
         </p>
       )}
-      <ul className="flex flex-col gap-2.5">
+      <ul className="flex flex-col gap-3">
         {draft.hours.map((h, i) => (
           <DayRow
             key={h.day}
@@ -130,21 +127,21 @@ function DayRow({
       <label htmlFor={id} className="sr-only">
         {label}
       </label>
-      <select id={id} className="field-input !min-h-[44px] !py-2" value={value} onChange={(e) => set(e.target.value)}>
-        {(options.includes(value) ? options : [...options, value].sort()).map((v) => (
-          <option key={v} value={v}>
-            {v === MIDNIGHT_CLOSE ? s.hours.midnight : formatTime(v)}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select id={id} className={selectClasses({ className: "h-11 pe-9 ps-3 tabular-nums" })} value={value} onChange={(e) => set(e.target.value)}>
+          {(options.includes(value) ? options : [...options, value].sort()).map((v) => (
+            <option key={v} value={v}>
+              {v === MIDNIGHT_CLOSE ? s.hours.midnight : formatTime(v)}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={16} aria-hidden className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-ink-muted" />
+      </div>
     </div>
   );
 
   return (
-    <li
-      className={cn(cardClass, "p-3")}
-      style={{ ...cardStyle, borderColor: error ? "var(--accent-rose)" : cardStyle.borderColor }}
-    >
+    <li className={cn(cardClass, "p-4", error && "border-danger", !h.open && "bg-sunken/60")}>
       <Switch
         checked={h.open}
         onChange={(open) => onChange({ open })}
@@ -155,16 +152,16 @@ function DayRow({
         <div className="mt-3 flex flex-col gap-2">
           <div className="flex items-center gap-2">
             {timeSelect(`${uid}-s`, `${name} ${s.hours.opens}`, h.start, (v) => onChange({ start: v }))}
-            <span aria-hidden style={{ color: "var(--text-muted)" }}>
+            <span aria-hidden className="text-ink-muted">
               –
             </span>
             {timeSelect(`${uid}-e`, `${name} ${s.hours.closes}`, h.end, (v) => onChange({ end: v }), END_TIMES)}
           </div>
           {hasBreak ? (
             <div className="flex items-center gap-2">
-              <Coffee size={16} aria-hidden className="shrink-0" style={{ color: "var(--text-muted)" }} />
+              <Coffee size={16} aria-hidden className="shrink-0 text-ink-muted" />
               {timeSelect(`${uid}-bs`, `${name} ${s.hours.breakStarts}`, h.breakStart as string, (v) => onChange({ breakStart: v }))}
-              <span aria-hidden style={{ color: "var(--text-muted)" }}>
+              <span aria-hidden className="text-ink-muted">
                 –
               </span>
               {timeSelect(`${uid}-be`, `${name} ${s.hours.breakEnds}`, h.breakEnd as string, (v) => onChange({ breakEnd: v }))}
@@ -172,13 +169,13 @@ function DayRow({
                 type="button"
                 onClick={() => onChange({ breakStart: null, breakEnd: null })}
                 aria-label={`${s.hours.removeBreak} · ${name}`}
-                className="btn btn-ghost !min-h-[44px] !w-11 shrink-0 !px-0"
+                className={buttonClasses({ variant: "ghost", size: "icon", className: "shrink-0" })}
               >
-                <X size={16} aria-hidden />
+                <X aria-hidden />
               </button>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <div className="-ms-3.5 flex flex-wrap gap-x-1 gap-y-1">
               <button
                 type="button"
                 onClick={() =>
@@ -188,26 +185,27 @@ function DayRow({
                       : { breakStart: "14:00", breakEnd: "15:00" },
                   )
                 }
-                className="text-[14px] font-medium underline underline-offset-2"
-                style={{ color: "var(--accent-text)" }}
+                className={buttonClasses({ variant: "ghost", size: "sm", className: "text-brand-text" })}
               >
+                <Coffee aria-hidden />
                 {h.day === FRIDAY ? s.hours.addJumuahBreak : s.hours.addBreak}
               </button>
               {isFirst && (
                 <button
                   type="button"
                   onClick={onCopyToAll}
-                  className="text-[14px] font-medium underline underline-offset-2"
-                  style={{ color: "var(--text-secondary)" }}
+                  className={buttonClasses({ variant: "ghost", size: "sm" })}
                 >
+                  <Copy aria-hidden />
                   {s.hours.copyToAll}
                 </button>
               )}
             </div>
           )}
           {error && (
-            <p className="field-error !mt-0" role="alert">
-              {error}
+            <p className={cn(errorTextClasses, "mt-0")} role="alert">
+              <AlertCircle aria-hidden="true" />
+              <span>{error}</span>
             </p>
           )}
         </div>

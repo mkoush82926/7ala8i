@@ -4,7 +4,7 @@
 // grid, and the "important info" shown on the review step (AR/EN).
 
 import React, { useId, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { DEFAULT_BOOKING_RULES, type BookingRules } from "@/lib/queries/services";
@@ -69,11 +69,10 @@ function RulesBody({ open, rules, onClose, onSave }: Parameters<typeof BookingRu
       closeOnEscape={!saving}
       footer={
         <DialogFooter>
-          <button type="button" className="btn btn-secondary" onClick={close} disabled={saving}>{t.common.cancel}</button>
-          <button type="submit" form={formId} className="btn btn-primary font-bold" disabled={saving} aria-busy={saving || undefined}>
-            {saving ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
+          <Button variant="secondary" onClick={close} disabled={saving}>{t.common.cancel}</Button>
+          <Button type="submit" form={formId} loading={saving}>
             {svc.saveChanges}
-          </button>
+          </Button>
         </DialogFooter>
       }
     >
@@ -85,7 +84,7 @@ function RulesBody({ open, rules, onClose, onSave }: Parameters<typeof BookingRu
               <option key={m} value={m}>{m === 0 ? svc.noNotice : formatDuration(m)}</option>
             ))}
           </select>
-          <p id={`${formId}-min_notice_minutes-hint`} className="mt-1 text-xs text-[var(--text-secondary)]">{svc.minNoticeHint}</p>
+          <p id={`${formId}-min_notice_minutes-hint`} className="field-helper">{svc.minNoticeHint}</p>
           {err("min_notice_minutes")}
         </div>
         <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2">
@@ -95,7 +94,7 @@ function RulesBody({ open, rules, onClose, onSave }: Parameters<typeof BookingRu
               {...a11y("booking_window_days")} type="number" inputMode="numeric" min={1} max={365} className="field-input"
               value={form.booking_window_days} onChange={(e) => set("booking_window_days", e.target.value)}
             />
-            <p id={`${formId}-booking_window_days-hint`} className="mt-1 text-xs text-[var(--text-secondary)]">
+            <p id={`${formId}-booking_window_days-hint`} className="field-helper">
               {interpolate(svc.bookingWindowHint, { days: form.booking_window_days || "—" })}
             </p>
             {err("booking_window_days")}
@@ -105,7 +104,7 @@ function RulesBody({ open, rules, onClose, onSave }: Parameters<typeof BookingRu
             <select {...a11y("slot_interval_minutes")} className="field-input" value={form.slot_interval_minutes} onChange={(e) => set("slot_interval_minutes", e.target.value)}>
               {intervalOptions.map((m) => <option key={m} value={m}>{formatDuration(m)}</option>)}
             </select>
-            <p id={`${formId}-slot_interval_minutes-hint`} className="mt-1 text-xs text-[var(--text-secondary)]">{svc.slotIntervalHint}</p>
+            <p id={`${formId}-slot_interval_minutes-hint`} className="field-helper">{svc.slotIntervalHint}</p>
             {err("slot_interval_minutes")}
           </div>
         </div>
@@ -123,7 +122,7 @@ function RulesBody({ open, rules, onClose, onSave }: Parameters<typeof BookingRu
             </div>
           ))}
         </div>
-        <p className="-mt-2 text-xs text-[var(--text-secondary)]">{svc.importantInfoHint}</p>
+        <p className="-mt-2 text-[13px] text-ink-muted">{svc.importantInfoHint}</p>
       </form>
     </Dialog>
   );

@@ -144,7 +144,7 @@ export function TimeOffPanel({ member, onBusy }: { member: ShiftMember; onBusy: 
     s === "approved" ? (
       <Pill tone="success" size="sm">{t.shifts.statusApproved}</Pill>
     ) : s === "pending" ? (
-      <Pill tone="brass" size="sm">{t.shifts.statusPending}</Pill>
+      <Pill tone="warning" size="sm">{t.shifts.statusPending}</Pill>
     ) : (
       <Pill tone="neutral" size="sm">{t.shifts.statusDeclined}</Pill>
     );
@@ -153,10 +153,10 @@ export function TimeOffPanel({ member, onBusy }: { member: ShiftMember; onBusy: 
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="m-0 text-sm text-[var(--text-secondary)]">{t.shifts.timeOffHelp}</p>
+      <p className="m-0 text-sm text-ink-soft">{t.shifts.timeOffHelp}</p>
 
       {canRequest && (
-        <div className="flex flex-col gap-3 rounded-xl border border-[var(--border-subtle)] p-3">
+        <div className="flex flex-col gap-3 rounded-xl border border-line p-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
               <label htmlFor={id("start")} className="field-label">{t.shifts.from}</label>
@@ -167,8 +167,8 @@ export function TimeOffPanel({ member, onBusy }: { member: ShiftMember; onBusy: 
               <input id={id("end")} type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} className="field-input" />
             </div>
           </div>
-          <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm text-[var(--text-primary)]">
-            <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} className="h-4 w-4 accent-[var(--accent-brass)]" />
+          <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm text-ink">
+            <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} className="h-4 w-4 accent-brand" />
             {t.shifts.allDay}
           </label>
           {!allDay && (
@@ -207,7 +207,7 @@ export function TimeOffPanel({ member, onBusy }: { member: ShiftMember; onBusy: 
 
       {lastChange && <AffectedAppointments change={lastChange} />}
 
-      <h4 className="m-0 text-sm font-bold text-[var(--text-primary)]">{t.shifts.upcomingTimeOff}</h4>
+      <h4 className="m-0 text-sm font-bold text-ink">{t.shifts.upcomingTimeOff}</h4>
       {list.initialLoading ? (
         <ListSkeleton rows={2} />
       ) : list.error ? (
@@ -219,13 +219,13 @@ export function TimeOffPanel({ member, onBusy }: { member: ShiftMember; onBusy: 
           {list.data.map((row) => {
             const canDelete = isAdmin || (isSelf && row.status === "pending");
             return (
-              <li key={row.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-[var(--border-subtle)] px-3 py-2">
+              <li key={row.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-line px-3 py-2">
                 <div className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
+                  <span className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
                     {typeLabel[row.type] ?? row.type} {statusPill(row.status)}
                   </span>
-                  <span className="block text-[12px] text-[var(--text-secondary)]">{rangeLabel(row)}</span>
-                  {row.note && <span className="block truncate text-[12px] text-[var(--text-muted)]">{row.note}</span>}
+                  <span className="block text-[12px] text-ink-soft">{rangeLabel(row)}</span>
+                  {row.note && <span className="block truncate text-[12px] text-ink-muted">{row.note}</span>}
                 </div>
                 {isAdmin && row.status === "pending" && (
                   <>
@@ -244,7 +244,7 @@ export function TimeOffPanel({ member, onBusy }: { member: ShiftMember; onBusy: 
                     type="button"
                     onClick={() => setToDelete(row)}
                     aria-label={interpolate(t.shifts.deleteTimeOffFor, { range: rangeLabel(row) })}
-                    className="focus-ring inline-flex size-11 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--accent-rose)]"
+                    className="focus-ring inline-flex size-11 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-sunken hover:text-danger-text"
                   >
                     <Trash2 size={16} aria-hidden="true" />
                   </button>

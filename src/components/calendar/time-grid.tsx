@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Moon, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import type { CalendarAppointment } from "@/hooks/use-appointments";
 import type { BlockedTimeRow } from "@/lib/queries/appointments";
@@ -16,6 +17,7 @@ import {
   minutesOfDay,
   moveBy,
   resizeBy,
+  tint,
   verticalPlacement,
   type KeyboardMoveState,
   type MoveTarget,
@@ -322,7 +324,8 @@ export function TimeGrid({
   // ─── Render helpers ───
   const ticks = Array.from({ length: range.endHour - range.startHour }, (_, i) => range.startHour + i);
   const nowMin = minutesOfDay(now) - range.startHour * 60;
-  const colMinWidth = lanes.length * days.length <= 2 ? 160 : days.length > 1 ? 96 : 132;
+  // §6.13: barber columns ≥180px on the day view; denser for multi-day.
+  const colMinWidth = lanes.length * days.length <= 2 ? 160 : days.length > 1 ? 112 : 180;
 
   const laneNameOf = (barberId: string | null) =>
     lanes.find((l) => l.barberId === barberId)?.name ?? t.calendar.unassigned;
@@ -363,32 +366,31 @@ export function TimeGrid({
       {moving && (
         <div
           role="status"
-          className="sticky top-0 z-40 mb-2 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-sm)] border border-[var(--accent-brass)] bg-[var(--accent-blue-muted)] px-3 py-2 text-[13px] text-[var(--accent-text)]"
+          className="sticky top-[4.5rem] z-40 mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-soft-line bg-brand-soft px-4 py-3 text-sm font-medium text-brand-pressed shadow-raised"
         >
-          <span>{t.calendar.moveModeHint}</span>
+          <span className="min-w-0 flex-1">{t.calendar.moveModeHint}</span>
           <span className="flex gap-2">
-            <button type="button" className="btn btn-ghost h-9 min-h-0 px-3" onClick={() => onMoveModeChange(null)}>
+            <Button variant="ghost" size="sm" onClick={() => onMoveModeChange(null)}>
               {t.common.cancel}
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary h-9 min-h-0 px-3"
+            </Button>
+            <Button
+              size="sm"
               onClick={() => {
                 if (kbdTarget) onMove(moving, kbdTarget, "move");
                 onMoveModeChange(null);
               }}
             >
               {t.calendar.moveHere}
-            </button>
+            </Button>
           </span>
         </div>
       )}
 
-      <div className="overflow-x-auto overscroll-x-contain rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
-        <div style={{ minWidth: 56 + columns.length * colMinWidth }}>
+      <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-line bg-card">
+        <div style={{ minWidth: 64 + columns.length * colMinWidth }}>
           {/* Header */}
-          <div className="sticky top-0 z-30 flex border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]">
-            <div className="sticky start-0 z-10 w-14 shrink-0 bg-[var(--bg-primary)]" aria-hidden="true" />
+          <div className="sticky top-0 z-30 flex border-b border-line bg-card">
+            <div className="sticky start-0 z-10 w-16 shrink-0 bg-card" aria-hidden="true" />
             <div className="flex flex-1 flex-col">
               {days.length > 1 && (
                 <div className="flex">
@@ -396,10 +398,11 @@ export function TimeGrid({
                     <div
                       key={day}
                       className={cn(
-                        "flex-1 border-s border-[var(--border-subtle)] px-2 py-1.5 text-center text-[12px] font-medium",
-                        day === today ? "text-[var(--accent-text)]" : "text-[var(--text-secondary)]",
+                        "flex flex-1 items-center justify-center gap-1.5 border-s border-line px-2 py-2 text-center text-xs font-semibold tabular-nums",
+                        day === today ? "text-brand-text" : "text-ink-soft",
                       )}
                     >
+                      {day === today && <span aria-hidden="true" className="size-1.5 rounded-full bg-brand" />}
                       {formatDate(fromIsoDay(day), "weekdayDay")}
                     </div>
                   ))}
@@ -410,11 +413,11 @@ export function TimeGrid({
                   {columns.map((c) => (
                     <div
                       key={`${c.day}-${c.lane.key}`}
-                      className="flex min-w-0 flex-1 items-center gap-1.5 border-s border-[var(--border-subtle)] px-2 py-2"
-                      style={{ boxShadow: `inset 0 -3px 0 ${c.lane.color}` }}
+                      className="flex min-w-0 flex-1 items-center gap-2 border-s border-line px-2.5 py-2.5"
+                      style={{ boxShadow: `inset 0 -2px 0 ${c.lane.color}` }}
                     >
-                      <LaneAvatar lane={c.lane} />
-                      <span className="truncate text-[12px] text-[var(--text-secondary)]">{c.lane.name}</span>
+                      <LaneAvatar lane={c.lane} size={28} />
+                      <span className="truncate text-[13px] font-semibold text-ink">{c.lane.name}</span>
                     </div>
                   ))}
                 </div>
@@ -424,12 +427,12 @@ export function TimeGrid({
 
           {/* Body */}
           <div className="relative flex">
-            <div className="sticky start-0 z-20 w-14 shrink-0 bg-[var(--bg-primary)]" aria-hidden="true">
+            <div className="sticky start-0 z-20 w-16 shrink-0 border-e border-line bg-card" aria-hidden="true">
               <div className="relative" style={{ height }}>
                 {ticks.map((h) => (
                   <span
                     key={h}
-                    className="absolute end-1.5 -translate-y-1/2 text-[11px] tabular-nums text-[var(--text-muted)]"
+                    className="absolute end-2 -translate-y-1/2 text-xs font-medium tabular-nums text-ink-muted"
                     style={{ top: (h - range.startHour) * 60 * pxPerMinute }}
                   >
                     {h === range.startHour ? "" : formatTime(`${String(h % 24).padStart(2, "0")}:00`, { minute: undefined })}
@@ -451,12 +454,13 @@ export function TimeGrid({
                     role="group"
                     aria-label={`${c.lane.name}, ${formatDate(fromIsoDay(c.day), "weekdayDay")}`}
                     className={cn(
-                      "relative min-w-0 flex-1 cursor-copy border-s border-[var(--border-subtle)]",
-                      ghost?.col === c.index && "bg-[var(--accent-blue-muted)]/40",
+                      "relative min-w-0 flex-1 cursor-copy border-s border-line transition-colors duration-150 first:border-s-0 motion-reduce:transition-none",
+                      ghost?.col === c.index && "bg-brand-soft/60",
                     )}
                     style={{
                       height,
-                      backgroundImage: `repeating-linear-gradient(to bottom, var(--border-subtle) 0, var(--border-subtle) 1px, transparent 1px, transparent ${60 * pxPerMinute}px)`,
+                      // Hour lines solid, half-hour lines faint (§5.12).
+                      backgroundImage: `repeating-linear-gradient(to bottom, var(--color-line) 0 1px, transparent 1px ${30 * pxPerMinute}px, ${tint("var(--color-line)", 55)} ${30 * pxPerMinute}px ${30 * pxPerMinute + 1}px, transparent ${30 * pxPerMinute + 1}px ${60 * pxPerMinute}px)`,
                     }}
                     onClick={(e) => {
                       if (e.target !== e.currentTarget && !(e.target as HTMLElement).dataset.offhours) return;
@@ -472,7 +476,7 @@ export function TimeGrid({
                           key={`${s}-${e}`}
                           data-offhours="1"
                           aria-hidden="true"
-                          className="absolute inset-x-0 bg-[var(--bg-secondary)]/70"
+                          className="absolute inset-x-0 bg-sunken/70"
                           style={{ top: (s - range.startHour * 60) * pxPerMinute, height: (e - s) * pxPerMinute }}
                         />
                       ))}
@@ -491,15 +495,15 @@ export function TimeGrid({
                             onBlockOpen(b);
                           }}
                           aria-label={`${blockLabel(b)}, ${formatTime(b.start_time)} – ${formatTime(b.end_time)}`}
-                          className="absolute inset-x-0.5 z-[5] flex items-start gap-1 overflow-hidden rounded-[4px] border border-dashed border-[var(--border-primary)] px-1.5 py-0.5 text-start text-[11px] text-[var(--text-muted)] focus-visible:z-30"
+                          className="absolute inset-x-0.5 z-[5] flex items-start gap-1.5 overflow-hidden rounded-xs border-s-[3px] border-line-strong px-2 py-1 text-start text-[11px] font-medium leading-4 text-ink-muted transition-colors hover:text-ink focus-visible:z-30 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus"
                           style={{
                             top: p.top,
                             height: p.height,
                             backgroundImage:
-                              "repeating-linear-gradient(135deg, var(--bg-secondary) 0 6px, transparent 6px 12px)",
+                              "repeating-linear-gradient(135deg, var(--color-sunken) 0 6px, var(--color-sunken-2) 6px 12px)",
                           }}
                         >
-                          {prayer ? <Moon size={11} aria-hidden="true" className="mt-0.5 shrink-0" /> : <Lock size={11} aria-hidden="true" className="mt-0.5 shrink-0" />}
+                          {prayer ? <Moon size={12} aria-hidden="true" className="shrink-0" /> : <Lock size={12} aria-hidden="true" className="shrink-0" />}
                           <span className="truncate">{blockLabel(b)}</span>
                         </button>
                       );
@@ -515,25 +519,32 @@ export function TimeGrid({
                       const editable = canEdit(a);
                       const name = a.clientName || t.calendar.walkIn;
                       const services = serviceLabel(a);
+                      const cancelled = a.status === "cancelled";
+                      // §5.12: pending / awaiting deposit read as tentative (dashed outline).
+                      const tentative = a.status === "pending" || a.status === "awaiting_deposit";
+                      const live = a.status === "arrived" || a.status === "in_chair";
                       return (
                         <div
                           key={a.id}
+                          data-status={a.status}
                           className={cn(
-                            "absolute z-[15] overflow-hidden rounded-[6px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] shadow-[0_1px_2px_rgba(28,22,17,0.08)]",
-                            a.status === "cancelled" && "opacity-50",
-                            a.status === "no_show" && "opacity-70",
+                            "group/chip absolute z-[15] overflow-hidden rounded-xs text-ink shadow-xs transition-[box-shadow,opacity] duration-150 hover:z-[16] hover:shadow-card motion-reduce:transition-none",
+                            tentative ? "border border-dashed" : "border-0",
+                            cancelled && "bg-sunken text-ink-muted shadow-none",
+                            a.status === "no_show" && "opacity-80",
                             dragging && "opacity-40",
-                            moveModeId === a.id && "ring-2 ring-[var(--accent-brass)]",
+                            moveModeId === a.id && "z-[16] shadow-float ring-2 ring-brand",
                           )}
                           style={{
                             top: p.top + 1,
                             height: Math.max(18, p.height - 2),
                             insetInlineStart: `calc(${(track / n) * 100}% + 2px)`,
                             width: `calc(${100 / n}% - 4px)`,
-                            borderInlineStartColor: color,
-                            borderInlineStartWidth: 4,
+                            borderColor: cancelled ? "var(--color-line-strong)" : color,
+                            borderInlineStartWidth: 3,
+                            borderInlineStartStyle: "solid",
                             touchAction: drag?.active ? "none" : "pan-x pan-y",
-                            backgroundImage: `linear-gradient(${color}1f, ${color}1f)`,
+                            background: cancelled ? undefined : tint(color, live ? 26 : 14, "var(--color-card)"),
                           }}
                         >
                           <button
@@ -559,22 +570,21 @@ export function TimeGrid({
                             aria-label={`${name}, ${formatTime(a.startTime)} – ${formatTime(a.endTime)}${services ? `, ${services}` : ""}`}
                             aria-describedby={editable && isMovable(a.status) ? "calendar-move-hint" : undefined}
                             className={cn(
-                              "flex h-full w-full select-none flex-col items-stretch px-1.5 py-1 text-start focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--accent-brass)]",
+                              "flex h-full w-full select-none flex-col items-stretch gap-0.5 px-2 py-1 text-start text-xs leading-4 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus",
                               editable && isMovable(a.status) ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
                             )}
                           >
                             <span className="flex min-w-0 items-center gap-1">
-                              <StatusIcon status={a.status} size={11} />
-                              <span className={cn("truncate text-[12px] font-medium text-[var(--text-primary)]", a.status === "cancelled" && "line-through")}>
-                                {name}
-                              </span>
+                              <StatusIcon status={a.status} size={12} />
+                              <span className={cn("truncate font-semibold", cancelled && "line-through")}>{name}</span>
                             </span>
                             {p.height >= 34 && (
-                              <span className="truncate text-[11px] tabular-nums text-[var(--text-muted)]">
-                                {formatTime(a.startTime)}
-                                {services ? ` · ${services}` : ""}
+                              <span className="truncate text-[11px] tabular-nums opacity-80">
+                                {formatTime(a.startTime)}–{formatTime(a.endTime)}
+                                {services && p.height < 54 ? ` · ${services}` : ""}
                               </span>
                             )}
+                            {services && p.height >= 54 && <span className="truncate text-[11px] opacity-80">{services}</span>}
                           </button>
                           {editable && isResizable(a.status) && p.height >= 24 && (
                             <span
@@ -582,7 +592,7 @@ export function TimeGrid({
                               onPointerDown={(e) => startDrag(e, a, "resize", c.index)}
                               className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize touch-none"
                             >
-                              <span className="mx-auto mt-0.5 block h-0.5 w-6 rounded bg-[var(--border-primary)]" />
+                              <span className="mx-auto mt-0.5 block h-0.5 w-6 rounded-full bg-line-strong opacity-0 transition-opacity group-hover/chip:opacity-100 [@media(hover:none)]:opacity-100" />
                             </span>
                           )}
                         </div>
@@ -596,8 +606,8 @@ export function TimeGrid({
                       return (
                         <div
                           aria-hidden="true"
-                          className="pointer-events-none absolute inset-x-1 z-[25] rounded-[6px] border-2 border-dashed px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-[var(--text-primary)]"
-                          style={{ top: p.top, height: p.height, borderColor: ghost.color, background: `${ghost.color}26` }}
+                          className="pointer-events-none absolute inset-x-1 z-[25] rounded-xs border-2 border-dashed px-2 py-1 text-[11px] font-semibold tabular-nums text-ink opacity-95 shadow-float"
+                          style={{ top: p.top, height: p.height, borderColor: ghost.color, background: tint(ghost.color, 20, "var(--color-card)") }}
                         >
                           {formatTime(ghost.startIso)} – {formatTime(ghost.endIso)}
                         </div>
@@ -608,9 +618,11 @@ export function TimeGrid({
                     {c.day === today && nowMin >= 0 && nowMin <= minutesSpan && (
                       <div
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-x-0 z-20 h-px bg-[var(--accent-rose)]"
+                        className="pointer-events-none absolute inset-x-0 z-20 h-0.5 -translate-y-1/2 bg-danger"
                         style={{ top: nowMin * pxPerMinute }}
-                      />
+                      >
+                        <span className="absolute -start-1 top-1/2 size-2.5 -translate-y-1/2 rounded-full bg-danger" />
+                      </div>
                     )}
                   </div>
                 );
@@ -648,14 +660,14 @@ export function LaneAvatar({ lane, size = 24 }: { lane: GridLane; size?: number 
       alt=""
       width={size}
       height={size}
-      className="shrink-0 rounded-full object-cover"
-      style={{ width: size, height: size, boxShadow: `0 0 0 2px ${lane.color}` }}
+      className="shrink-0 rounded-full bg-sunken object-cover"
+      style={{ width: size, height: size, boxShadow: `0 0 0 2px var(--color-card), 0 0 0 3.5px ${lane.color}` }}
     />
   ) : (
     <span
       aria-hidden="true"
-      className="flex shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-[var(--text-primary)]"
-      style={{ width: size, height: size, background: `${lane.color}33`, boxShadow: `0 0 0 2px ${lane.color}` }}
+      className={cn("flex shrink-0 items-center justify-center rounded-full font-bold text-ink", size >= 28 ? "text-[11px]" : "text-[10px]")}
+      style={{ width: size, height: size, background: tint(lane.color, 18, "var(--color-card)"), boxShadow: `0 0 0 2px var(--color-card), 0 0 0 3.5px ${lane.color}` }}
     >
       {lane.barberId === null ? "—" : initialsOf(lane.name)}
     </span>

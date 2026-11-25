@@ -98,10 +98,10 @@ export function DateOverridesPanel({ member, onBusy }: { member: ShiftMember; on
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="m-0 text-sm text-[var(--text-secondary)]">{t.shifts.overridesHelp}</p>
+      <p className="m-0 text-sm text-ink-soft">{t.shifts.overridesHelp}</p>
 
       {isAdmin && (
-        <div className="flex flex-col gap-3 rounded-xl border border-[var(--border-subtle)] p-3">
+        <div className="flex flex-col gap-3 rounded-xl border border-line p-3">
           <div className="flex flex-col gap-1">
             <label htmlFor={`ovr-date-${member.id}`} className="field-label">
               {t.shifts.date}
@@ -114,7 +114,7 @@ export function DateOverridesPanel({ member, onBusy }: { member: ShiftMember; on
               onChange={(e) => setDate(e.target.value)}
               className="field-input"
             />
-            {date && <span className="text-[12px] text-[var(--text-muted)]">{formatHijri(date, locale)}</span>}
+            {date && <span className="text-[12px] text-ink-muted">{formatHijri(date, locale)}</span>}
           </div>
           <SegmentsEditor value={segments} onChange={setSegments} label={date || t.shifts.date} emptyLabel={t.shifts.dayOffOnDate} disabled={saving} />
           <div className="flex flex-col gap-1">
@@ -143,7 +143,7 @@ export function DateOverridesPanel({ member, onBusy }: { member: ShiftMember; on
 
       {lastChange && <AffectedAppointments change={lastChange} />}
 
-      <h4 className="m-0 text-sm font-bold text-[var(--text-primary)]">{t.shifts.upcomingOverrides}</h4>
+      <h4 className="m-0 text-sm font-bold text-ink">{t.shifts.upcomingOverrides}</h4>
       {list.initialLoading ? (
         <ListSkeleton rows={2} />
       ) : list.error ? (
@@ -155,20 +155,20 @@ export function DateOverridesPanel({ member, onBusy }: { member: ShiftMember; on
           {list.data.map((row) => {
             const segs = parseSegments(row.segments);
             return (
-              <li key={row.id} className="flex items-center gap-3 rounded-lg border border-[var(--border-subtle)] px-3 py-2">
+              <li key={row.id} className="flex items-center gap-3 rounded-lg border border-line px-3 py-2">
                 <div className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-[var(--text-primary)]">{dateLabel(row.date)}</span>
-                  <span className="block text-[12px] text-[var(--text-secondary)]" dir="ltr">
+                  <span className="block text-sm font-medium text-ink">{dateLabel(row.date)}</span>
+                  <span className="block text-[12px] text-ink-soft" dir="ltr">
                     {segs.length ? segs.map((s) => `${s.start}–${s.end}`).join(" · ") : t.shifts.dayOff}
                   </span>
-                  {row.note && <span className="block truncate text-[12px] text-[var(--text-muted)]">{row.note}</span>}
+                  {row.note && <span className="block truncate text-[12px] text-ink-muted">{row.note}</span>}
                 </div>
                 {isAdmin && (
                   <button
                     type="button"
                     onClick={() => setToDelete(row)}
                     aria-label={interpolate(t.shifts.deleteOverrideFor, { date: dateLabel(row.date) })}
-                    className="focus-ring inline-flex size-11 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--accent-rose)]"
+                    className="focus-ring inline-flex size-11 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-sunken hover:text-danger-text"
                   >
                     <Trash2 size={16} aria-hidden="true" />
                   </button>

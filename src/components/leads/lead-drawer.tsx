@@ -11,7 +11,7 @@ import { useWorkspaceStore } from "@/store/workspace-store";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { errorText } from "@/components/calendar/error-text";
 import { initialsOf } from "@/components/calendar/calendar-utils";
-import { useStages } from "./stages";
+import { STAGE_COLORS, useStages } from "./stages";
 
 interface LeadForm {
   name: string;
@@ -169,7 +169,7 @@ export function LeadDrawer() {
       {!isCreate && selectedLead ? (
         <button
           type="button"
-          className="btn btn-ghost text-[var(--accent-rose)]"
+          className="btn btn-ghost text-danger-text hover:bg-danger-soft hover:text-danger-text"
           disabled={saving}
           onClick={() => setConfirmDelete({ id: selectedLead.id, name: selectedLead.name })}
         >
@@ -203,10 +203,11 @@ export function LeadDrawer() {
       >
         <form id={formId} onSubmit={handleSubmit} noValidate className="space-y-5">
           {/* Identity */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
             <span
               aria-hidden="true"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[14px] font-medium text-[var(--text-primary)]"
+              className="mt-7 flex size-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-ink ring-1 ring-inset ring-line"
+              style={{ background: `color-mix(in srgb, ${STAGE_COLORS[form.stage]} 16%, var(--color-card))` }}
             >
               {initialsOf(form.name)}
             </span>
@@ -231,7 +232,7 @@ export function LeadDrawer() {
             </div>
           </div>
           {!isCreate && selectedLead && (
-            <p className="text-[12px] text-[var(--text-muted)]">
+            <p className="text-meta text-ink-muted">
               {interpolate(t.leads.createdOn, { date: formatDate(selectedLead.createdAt, "medium") })}
             </p>
           )}
@@ -246,17 +247,12 @@ export function LeadDrawer() {
                   <label
                     key={opt.id}
                     className={cn(
-                      "focus-ring-within inline-flex min-h-[36px] cursor-pointer items-center gap-2 rounded-full border px-3 text-[12px] font-medium transition-colors",
+                      "focus-ring-within inline-flex h-10 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-sm font-medium transition-colors duration-150 motion-reduce:transition-none",
                       checked
-                        ? "border-current"
-                        : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                        ? "border-inverse bg-inverse text-on-inverse"
+                        : "border-line-strong bg-card text-ink hover:border-ink",
                       !canEdit && "cursor-default opacity-80",
                     )}
-                    style={
-                      checked
-                        ? { color: opt.color, backgroundColor: `color-mix(in srgb, ${opt.color} 14%, transparent)` }
-                        : undefined
-                    }
                   >
                     <input
                       type="radio"
@@ -267,7 +263,7 @@ export function LeadDrawer() {
                       onChange={() => set("stage", opt.id)}
                       className="sr-only"
                     />
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: opt.color }} aria-hidden="true" />
+                    <span className="size-2 rounded-full ring-2 ring-card/40" style={{ background: opt.color }} aria-hidden="true" />
                     {opt.label}
                   </label>
                 );
@@ -354,7 +350,7 @@ export function LeadDrawer() {
           {formError && (
             <p
               role="alert"
-              className="rounded-[var(--radius-sm)] border border-[var(--accent-rose)]/40 bg-[var(--accent-rose-muted)] px-4 py-3 text-[13px] text-[var(--accent-rose)]"
+              className="rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-[13px] font-medium text-danger-text"
             >
               {formError}
             </p>

@@ -1,25 +1,15 @@
-// Category tiles for the home page. Server-safe (no hooks): pass the locale
+// Category tiles for the home page (§4: 1:1 icon tile on brand-soft).
+// Server-safe (no hooks): pass the locale
 // and labels. Each tile is a plain link into a search, so it works without
 // JavaScript and is crawlable. "home-service" maps to the Home service
 // filter instead of a text query.
 
 import React from "react";
 import Link from "next/link";
-import {
-  Baby,
-  Brush,
-  Droplet,
-  Gift,
-  House,
-  Layers,
-  Palette,
-  Scissors,
-  Slice,
-  Sparkles,
-  Wind,
-  type LucideIcon,
-} from "lucide-react";
+import { Baby, Brush, Droplet, Gift, House, Layers, Palette, Scissors, Slice, Sparkles, Wind, type LucideIcon } from "lucide-react";
 import { searchHref, type SearchCategory, type SearchState } from "@/lib/search";
+import { cn } from "@/lib/utils";
+import { cardClasses, focusRing } from "@/components/ui/recipes";
 
 const ICONS: Record<string, LucideIcon> = {
   scissors: Scissors,
@@ -54,24 +44,42 @@ export function CategoryTiles({
   className?: string;
 }) {
   if (categories.length === 0) return null;
+  // Phones: a two-row horizontal scroller (one row when there are few);
+  // from lg a plain six-column grid.
+  const rows = categories.length > 6 ? "grid-rows-2" : "grid-rows-1";
   return (
-    <ul aria-label={label} className={className ?? "grid grid-cols-3 gap-2.5 sm:grid-cols-4 lg:grid-cols-6"}>
+    <ul
+      aria-label={label}
+      className={
+        className ??
+        cn(
+          "no-scrollbar -mx-4 grid snap-x snap-mandatory scroll-px-4 auto-cols-[40%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 pt-1",
+          "sm:-mx-6 sm:scroll-px-6 sm:auto-cols-[23%] sm:px-6",
+          "lg:mx-0 lg:grid-flow-row lg:grid-cols-6 lg:grid-rows-none lg:gap-4 lg:overflow-visible lg:px-0 lg:pb-0",
+          rows,
+        )
+      }
+    >
       {categories.map((c) => {
         const Icon = (c.icon && ICONS[c.icon]) || Scissors;
         const name = locale === "ar" ? c.nameAr : c.nameEn;
         return (
-          <li key={c.id}>
+          <li key={c.id} className="snap-start">
             <Link
               href={searchHref(locale, categorySearch(c, locale))}
-              className="focus-ring group flex h-full min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-2 py-3 text-center transition-colors hover:border-[var(--accent-brass)]"
+              className={cn(
+                cardClasses({ elevation: "card", interactive: true }),
+                "group flex aspect-square h-full flex-col items-center justify-center gap-3 p-3 text-center hover:border-brand-soft-line",
+                focusRing,
+              )}
             >
               <span
                 aria-hidden="true"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[var(--accent-text)] transition-colors group-hover:bg-[var(--cta-bg)] group-hover:text-[var(--cta-fg)]"
+                className="grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand-text transition-colors duration-200 ease-standard group-hover:bg-brand group-hover:text-on-brand motion-reduce:transition-none [&_svg]:size-6"
               >
-                <Icon size={19} />
+                <Icon strokeWidth={1.75} />
               </span>
-              <span className="text-[13px] font-semibold leading-tight text-[var(--text-primary)]">{name}</span>
+              <span className="line-clamp-2 text-sm font-semibold leading-5 text-ink">{name}</span>
             </Link>
           </li>
         );

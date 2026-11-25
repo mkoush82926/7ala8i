@@ -15,8 +15,8 @@ import {
 import { cn } from "@/lib/utils";
 
 const inputCls =
-  "w-full rounded-[var(--radius)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 text-[15px] text-[var(--text-primary)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] disabled:bg-[var(--bg-secondary)] disabled:text-[var(--text-secondary)] aria-[invalid=true]:border-[var(--accent-rose)]";
-const labelCls = "mb-1 block text-[12px] font-medium text-[var(--text-secondary)]";
+  "w-full rounded-lg border border-line-strong bg-card px-4 text-[15px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:bg-sunken disabled:text-ink-soft aria-[invalid=true]:border-danger";
+const labelCls = "mb-1 block text-[12px] font-medium text-ink-soft";
 
 const TEXT_FIELDS: Array<{ key: "name" | "name_ar" | "address"; dir?: "rtl"; max: number }> = [
   { key: "name", max: 120 },
@@ -112,7 +112,7 @@ export function SupportProfileForm({
             className={cn(inputCls, "h-11")}
           />
           {invalid(f.key) && (
-            <p id={`${id}-${f.key}-err`} className="mt-1 text-[12px] text-[var(--accent-rose)]">
+            <p id={`${id}-${f.key}-err`} className="mt-1 text-[12px] text-danger-text">
               {ADMIN_COPY.errors.INVALID_INPUT}
             </p>
           )}
@@ -153,7 +153,7 @@ export function SupportProfileForm({
             className={cn(inputCls, "h-11 tabular-nums")}
           />
           {invalid(k) && (
-            <p id={`${id}-${k}-err`} className="mt-1 text-[12px] text-[var(--accent-rose)]">
+            <p id={`${id}-${k}-err`} className="mt-1 text-[12px] text-danger-text">
               {ADMIN_COPY.errors.INVALID_INPUT}
             </p>
           )}
@@ -167,7 +167,7 @@ export function SupportProfileForm({
               checked={values[k]}
               onChange={(e) => set(k, e.target.checked)}
               disabled={disabled}
-              className="h-5 w-5 accent-[var(--accent-brass)]"
+              className="h-5 w-5 accent-brand"
             />
             {c.fields[k]}
           </label>
@@ -225,18 +225,18 @@ export function SupportServiceToggle({
       aria-label={ADMIN_COPY.support.serviceActive(name)}
       onClick={toggle}
       disabled={!canEdit || pending}
-      className="inline-flex shrink-0 items-center rounded-full p-1 focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex shrink-0 items-center rounded-full p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span
         aria-hidden
         className={cn(
           "relative inline-flex h-6 w-11 items-center rounded-full border transition-colors",
-          value ? "border-[var(--accent-mint)] bg-[var(--accent-mint)]" : "border-[var(--border-primary)] bg-[var(--bg-secondary)]",
+          value ? "border-brand bg-brand" : "border-line-strong bg-sunken",
         )}
       >
         <span
           className={cn(
-            "inline-block h-4 w-4 rounded-full bg-[var(--bg-primary)] shadow transition-transform",
+            "inline-block h-4 w-4 rounded-full bg-card shadow transition-transform",
             value ? "translate-x-6 rtl:-translate-x-6" : "translate-x-1 rtl:-translate-x-1",
           )}
         />

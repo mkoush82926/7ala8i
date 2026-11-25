@@ -1,97 +1,313 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 
+/* `dark:` follows the app's theme store (html.dark / [data-theme="dark"],
+   set by theme-provider.tsx), not prefers-color-scheme. */
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
 /* ═══════════════════════════════════════════════════════
-   HALAQY — Design System
-   "Data Observatory on Cloud Paper" (Clearbit reference) —
-   near-achromatic white/lavender canvas, midnight-ink text,
-   one electric-blue accent. Flat, hairline-bordered; the only
-   shadow in the system is a focus ring, never resting elevation.
+   HALAQY — Design System v2 · "Deep Teal & Sand"
+   Spec: docs/DESIGN_SYSTEM_V2.md
+   Warm sand page, crisp white cards, slate-navy ink, one deep-teal
+   action colour and a sparing amber highlight (ratings only).
+   Soft three-step elevation; pill buttons; 16px card radii.
+
+   Three layers:
+   1. Primitive palette (--teal-700, --sand-50 …) — raw hexes, never
+      referenced from components.
+   2. Semantic tokens in `@theme static` → Tailwind utilities
+      (bg-page, bg-card, text-ink, text-ink-muted, bg-brand,
+      text-brand-text, border-line …). Redefined for dark below.
+   3. Legacy aliases (--bg-primary, --text-primary, --accent-brass,
+      --accent-mint, --cta-bg, --color-primary …) kept and re-pointed
+      at the v2 values so untouched pages recolour on day one.
+   New code uses the layer-2 utilities, not bg-[var(--accent-mint)].
    ═══════════════════════════════════════════════════════ */
 
-/* ─── Tailwind v4 Theme ─── */
+/* ─── Layer 2: semantic tokens (light) ─── */
+@theme static {
+  --color-page: #F8F7F4;
+  --color-card: #FFFFFF;
+  --color-sunken: #F1EFEA;
+  --color-sunken-2: #E7E4DD;
+  --color-ink: #0F172A;
+  --color-ink-soft: #334155;
+  --color-ink-muted: #5B6B7F;
+  --color-ink-disabled: #94A3B8;
+  --color-line: #E5E2DA;
+  --color-line-strong: #848EA0;
+  --color-brand: #0F766E;
+  --color-brand-hover: #115E59;
+  --color-brand-pressed: #134E4A;
+  --color-brand-text: #0F766E;
+  --color-brand-soft: #E6F2F0;
+  --color-brand-soft-line: #B7DAD5;
+  --color-on-brand: #FFFFFF;
+  --color-accent: #F59E0B;
+  --color-accent-text: #B45309;
+  --color-accent-soft: #FEF3C7;
+  --color-success: #15803D;
+  --color-success-text: #166534;
+  --color-success-soft: #DCFCE7;
+  --color-warning: #B45309;
+  --color-warning-text: #92400E;
+  --color-warning-soft: #FEF3C7;
+  --color-danger: #B91C1C;
+  --color-danger-text: #991B1B;
+  --color-danger-soft: #FEE2E2;
+  --color-inverse: #0F172A;
+  --color-on-inverse: #F8F7F4;
+  --color-on-inverse-brand: #5EEAD4;
+  --color-on-inverse-danger: #FCA5A5;
+  --color-focus: #0F766E;
+  --color-overlay: rgba(15,23,42,0.48);
+  --color-chart-1: #0F766E;
+  --color-chart-2: #3B6FB6;
+  --color-chart-3: #D97706;
+  --color-chart-4: #BE185D;
+  --color-chart-5: #64748B;
+  --color-chart-grid: #E5E2DA;
+}
+
 @theme {
-  /* ── Core palette ── */
-  --color-primary:               #1c1611;
-  --color-on-primary:            #ffffff;
-  --color-primary-container:     #f7f1e4;
-  --color-on-primary-container:  #1c1611;
-  --color-primary-fixed:         #f7f1e4;
-  --color-primary-fixed-dim:     #ede3cd;
-  --color-on-primary-fixed:      #1c1611;
-  --color-on-primary-fixed-variant: #5a5147;
-  --color-inverse-primary:       #f7f1e4;
+  /* ── Legacy Material-style colour tokens (bg-background, text-on-surface …)
+     re-pointed at the v2 semantic tokens; they follow dark mode through the
+     semantic overrides, so the dark block does not repeat them. ── */
+  --color-primary:               var(--color-ink);
+  --color-on-primary:            var(--color-card);
+  --color-primary-container:     var(--color-sunken);
+  --color-on-primary-container:  var(--color-ink);
+  --color-primary-fixed:         var(--color-sunken);
+  --color-primary-fixed-dim:     var(--color-sunken-2);
+  --color-on-primary-fixed:      var(--color-ink);
+  --color-on-primary-fixed-variant: var(--color-ink-soft);
+  --color-inverse-primary:       var(--color-sunken);
 
-  --color-background:            #ffffff;
-  --color-surface:                #ffffff;
-  --color-surface-bright:        #ffffff;
-  --color-surface-dim:           #f7f1e4;
-  --color-surface-variant:       #f7f1e4;
-  --color-surface-container-lowest:   #ffffff;
-  --color-surface-container-low:      #ffffff;
-  --color-surface-container:          #f7f1e4;
-  --color-surface-container-high:     #ede3cd;
-  --color-surface-container-highest:  #a89e8c;
+  --color-background:            var(--color-page);
+  --color-surface:               var(--color-card);
+  --color-surface-bright:        var(--color-card);
+  --color-surface-dim:           var(--color-sunken);
+  --color-surface-variant:       var(--color-sunken);
+  --color-surface-container-lowest:   var(--color-card);
+  --color-surface-container-low:      var(--color-card);
+  --color-surface-container:          var(--color-sunken);
+  --color-surface-container-high:     var(--color-sunken-2);
+  --color-surface-container-highest:  var(--color-line-strong);
 
-  --color-on-surface:            #1c1611;
-  --color-on-surface-variant:    #5a5147;
-  --color-inverse-surface:       #1c1611;
-  --color-inverse-on-surface:    #ffffff;
+  --color-on-surface:            var(--color-ink);
+  --color-on-surface-variant:    var(--color-ink-soft);
+  --color-inverse-surface:       var(--color-ink);
+  --color-inverse-on-surface:    var(--color-card);
 
-  --color-outline:               #1c1611;
-  --color-outline-variant:       #ede3cd;
+  --color-outline:               var(--color-ink);
+  --color-outline-variant:       var(--color-line);
 
-  --color-secondary:             #5a5147;
-  --color-on-secondary:          #ffffff;
-  --color-secondary-container:   #f7f1e4;
-  --color-on-secondary-container: #5a5147;
-  --color-secondary-fixed:       #f7f1e4;
-  --color-secondary-fixed-dim:   #ede3cd;
-  --color-on-secondary-fixed:    #1c1611;
-  --color-on-secondary-fixed-variant: #5a5147;
+  --color-secondary:             var(--color-ink-soft);
+  --color-on-secondary:          var(--color-card);
+  --color-secondary-container:   var(--color-sunken);
+  --color-on-secondary-container: var(--color-ink-soft);
+  --color-secondary-fixed:       var(--color-sunken);
+  --color-secondary-fixed-dim:   var(--color-sunken-2);
+  --color-on-secondary-fixed:    var(--color-ink);
+  --color-on-secondary-fixed-variant: var(--color-ink-soft);
 
-  --color-tertiary:              #7c4a1e;
-  --color-on-tertiary:           #ffffff;
-  --color-tertiary-container:    #f7f1e4;
-  --color-on-tertiary-container: #a67c3d;
-  --color-tertiary-fixed:        #7c4a1e;
-  --color-tertiary-fixed-dim:    #a67c3d;
-  --color-on-tertiary-fixed:     #ffffff;
-  --color-on-tertiary-fixed-variant: #a67c3d;
+  --color-tertiary:              var(--color-brand);
+  --color-on-tertiary:           var(--color-on-brand);
+  --color-tertiary-container:    var(--color-brand-soft);
+  --color-on-tertiary-container: var(--color-brand-text);
+  --color-tertiary-fixed:        var(--color-brand);
+  --color-tertiary-fixed-dim:    var(--color-brand-text);
+  --color-on-tertiary-fixed:     var(--color-on-brand);
+  --color-on-tertiary-fixed-variant: var(--color-brand-text);
 
-  --color-error:                 #ba1a1a;
-  --color-on-error:              #ffffff;
-  --color-error-container:       #ffdad6;
-  --color-on-error-container:    #93000a;
+  --color-error:                 var(--color-danger);
+  --color-on-error:              #FFFFFF;
+  --color-error-container:       var(--color-danger-soft);
+  --color-on-error-container:    var(--color-danger-text);
 
-  --color-surface-tint:          #1c1611;
+  --color-surface-tint:          var(--color-ink);
 
-  /* Fonts — single-family system, Arabic pairing kept visually close
-     (Cairo — modern, geometric, no serif clash with BDO Grotesk) */
+  /* Fonts — BDO Grotesk (EN) + Cairo (AR, switched under [dir=rtl]) */
   --font-sans:     var(--font-bdo-grotesk), 'Segoe UI', system-ui, sans-serif;
   --font-headline: var(--font-bdo-grotesk), 'Segoe UI', system-ui, sans-serif;
   --font-body:     var(--font-bdo-grotesk), 'Segoe UI', system-ui, sans-serif;
   --font-label:    var(--font-bdo-grotesk), 'Segoe UI', system-ui, sans-serif;
 
-  /* Compatibility alias — many components still reference --font-intervar
-     directly rather than the --font-sans/-body/-label tokens above; keep it
-     resolving to the current English font instead of silently falling back
-     to a generic sans-serif. */
+  /* Compatibility alias — some components still reference --font-intervar. */
   --font-intervar: var(--font-bdo-grotesk);
 
-  /* Border Radius — Clearbit component scale */
-  --radius:      8px;   /* inputs / buttons */
+  /* Radius scale — rounded-xs 6 · sm 8 · md 10 · lg 12 (inputs, images)
+     · xl 16 (cards) · 2xl 20 (dialogs, hero media) · 3xl 28 (sheet tops)
+     · full (buttons, pills, search bar, avatars) */
+  --radius:      8px;
+  --radius-xs:   6px;
   --radius-sm:   8px;
-  --radius-lg:   12px;  /* cards */
-  --radius-xl:   12px;
-  --radius-2xl:  12px;
-  --radius-full: 9999px; /* tags */
+  --radius-md:   10px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  20px;
+  --radius-3xl:  28px;
+  --radius-full: 9999px;
+
+  /* Elevation — colours come from --shadow-c-* (re-tinted for dark below).
+     Level 1 resting marketplace card: shadow-card · Level 2 hover/selected,
+     sticky booking card: shadow-raised · search bar: shadow-search
+     · Level 3 dialog/popover: shadow-float · sticky bottom bar: shadow-bar */
+  --shadow-xs:     0 1px 2px var(--shadow-c-06);
+  --shadow-sm:     0 1px 2px var(--shadow-c-06);
+  --shadow-card:   0 1px 2px var(--shadow-c-04), 0 4px 12px -4px var(--shadow-c-08);
+  --shadow-md:     0 1px 2px var(--shadow-c-04), 0 4px 12px -4px var(--shadow-c-08);
+  --shadow-raised: 0 2px 4px var(--shadow-c-04), 0 12px 28px -10px var(--shadow-c-18);
+  --shadow-lg:     0 2px 4px var(--shadow-c-04), 0 12px 28px -10px var(--shadow-c-18);
+  --shadow-float:  0 4px 8px var(--shadow-c-06), 0 24px 48px -16px var(--shadow-c-28);
+  --shadow-search: 0 2px 4px var(--shadow-c-04), 0 12px 32px -8px var(--shadow-c-14);
+  --shadow-bar:    0 -1px 0 var(--shadow-c-06), 0 -8px 24px -12px var(--shadow-c-16);
+
+  /* Motion — ease-standard / ease-enter / ease-exit utilities */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter:    cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-exit:     cubic-bezier(0.3, 0, 0.8, 0.15);
 
   /* Sidebar */
-  --sidebar-width: 88px;
+  --sidebar-width: 240px;
 }
 
-/* ─── Force-generate all design token utilities ─── */
+/* ─── Typography scale (§3) — color-free; pair with text-ink / text-ink-muted.
+   Arabic gets taller line-heights, one weight step lighter at display
+   sizes, and never any tracking. ─── */
+@utility text-display {
+  font-size: 36px;
+  line-height: 40px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  @media (width >= 48rem) {
+    font-size: 56px;
+    line-height: 60px;
+  }
+  :where([dir="rtl"]) & {
+    font-size: 32px;
+    line-height: 48px;
+    font-weight: 800;
+    letter-spacing: 0;
+    @media (width >= 48rem) {
+      font-size: 48px;
+      line-height: 68px;
+    }
+  }
+}
+@utility text-h1 {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  @media (width >= 48rem) {
+    font-size: 36px;
+    line-height: 44px;
+  }
+  :where([dir="rtl"]) & {
+    font-size: 26px;
+    line-height: 40px;
+    letter-spacing: 0;
+    @media (width >= 48rem) {
+      font-size: 32px;
+      line-height: 48px;
+    }
+  }
+}
+@utility text-h2 {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  @media (width >= 48rem) {
+    font-size: 28px;
+    line-height: 36px;
+    letter-spacing: -0.02em;
+  }
+  :where([dir="rtl"]) & {
+    font-size: 20px;
+    line-height: 32px;
+    letter-spacing: 0;
+    @media (width >= 48rem) {
+      font-size: 26px;
+      line-height: 40px;
+    }
+  }
+}
+@utility text-h3 {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  :where([dir="rtl"]) & {
+    line-height: 28px;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+}
+@utility text-title {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  :where([dir="rtl"]) & {
+    line-height: 26px;
+    font-weight: 700;
+  }
+}
+@utility text-body-lg {
+  font-size: 18px;
+  line-height: 28px;
+  :where([dir="rtl"]) & { line-height: 30px; }
+}
+@utility text-body {
+  font-size: 15px;
+  line-height: 24px;
+  :where([dir="rtl"]) & { line-height: 26px; }
+}
+@utility text-ui {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  :where([dir="rtl"]) & { line-height: 22px; }
+}
+@utility text-meta {
+  font-size: 13px;
+  line-height: 18px;
+  :where([dir="rtl"]) & { line-height: 20px; }
+}
+@utility text-micro {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  :where([dir="rtl"]) & { line-height: 18px; }
+}
+@utility text-stat {
+  font-size: 28px;
+  line-height: 32px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  @media (width >= 64rem) {
+    font-size: 32px;
+    line-height: 36px;
+  }
+}
+@utility text-price {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Sand stripe — the Halaqy motif. Only for image placeholders and
+   empty-state art, never as decoration on content. ─── */
+@utility bg-hatch {
+  background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.06) 0 2px, transparent 2px 12px);
+}
+@utility bg-hatch-ink {
+  background-image: repeating-linear-gradient(135deg, rgb(15 23 42 / 0.04) 0 2px, transparent 2px 12px);
+}
+
+/* ─── Force-generate legacy design token utilities ─── */
 @layer utilities {
   /* ── Text colors ── */
   .text-primary               { color: var(--color-primary); }
@@ -104,9 +320,9 @@
   .text-on-secondary          { color: var(--color-on-secondary); }
   .text-on-secondary-container { color: var(--color-on-secondary-container); }
   .text-on-primary-container  { color: var(--color-on-primary-container); }
-  .text-error                 { color: var(--color-error); }
-  .text-on-tertiary-fixed-variant { color: var(--accent-text); }
-  .text-surface-container-highest { color: var(--text-muted); }
+  .text-error                 { color: var(--color-danger-text); }
+  .text-on-tertiary-fixed-variant { color: var(--color-brand-text); }
+  .text-surface-container-highest { color: var(--color-ink-muted); }
 
   /* ── Background colors ── */
   .bg-primary                  { background-color: var(--color-primary); }
@@ -131,7 +347,7 @@
   .bg-inverse-surface          { background-color: var(--color-inverse-surface); }
 
   /* ── Border colors ── */
-  .border-outline              { border-color: var(--color-outline); }
+  .border-outline              { border-color: var(--color-line-strong); }
   .border-outline-variant      { border-color: var(--color-outline-variant); }
   .border-surface-container    { border-color: var(--color-outline-variant); }
   .border-surface-container-low { border-color: var(--color-outline-variant); }
@@ -139,97 +355,105 @@
   .border-secondary-container  { border-color: var(--color-outline-variant); }
 
   /* ── Ring colors ── */
-  .ring-primary                { --tw-ring-color: var(--accent-brass); }
-  .ring-outline                { --tw-ring-color: var(--accent-brass); }
+  .ring-primary                { --tw-ring-color: var(--color-brand); }
+  .ring-outline                { --tw-ring-color: var(--color-brand); }
 
   /* ── Divide colors ── */
   .divide-surface-container > :not([hidden]) ~ :not([hidden]) { border-color: var(--color-outline-variant); }
   .divide-outline-variant > :not([hidden]) ~ :not([hidden])   { border-color: var(--color-outline-variant); }
 }
 
-/* ─── CSS custom properties (used in JS/inline styles) ─── */
+/* ─── Layer 3: legacy aliases (used in JS / inline styles / arbitrary
+   classes). Hex values mirror the semantic tokens — see §2.6. ─── */
 :root {
   /* Latin tracking — zeroed under RTL below so it never breaks Arabic joining */
   --ls-body:     0.0091em;
-  --ls-headline: 0.016em;
+  --ls-headline: -0.01em;
 
-  /* Paper canvas + lavender-wash section tint — Card sits white on either */
-  --bg-primary:       #ffffff;
-  --bg-secondary:     #f7f1e4;
-  --bg-surface:       #ffffff;
-  --bg-surface-hover: #f7f1e4;
-  --bg-elevated:      #ffffff;
+  --bg-primary:       #FFFFFF;
+  --bg-secondary:     #F1EFEA;
+  --bg-surface:       #FFFFFF;
+  --bg-surface-hover: #F1EFEA;
+  --bg-elevated:      #FFFFFF;
 
-  --text-primary:   #1c1611;
-  --text-secondary: #5a5147;
-  --text-tertiary:  #5a5147;
-  /* WCAG AA: #746a5b ≈ 5.3:1 on #ffffff and ≈ 4.7:1 on --bg-secondary.
-     (#a89e8c was ≈ 2.6:1 — keep that tone for decorative strokes only.) */
-  --text-muted:     #746a5b;
-  --text-disabled:  #a89e8c;
+  --text-primary:   #0F172A;
+  --text-secondary: #334155;
+  --text-tertiary:  #334155;
+  /* WCAG AA: #5B6B7F ≈ 5.45:1 on white, 5.09:1 on sand, 4.74:1 on sunken. */
+  --text-muted:     #5B6B7F;
+  --text-disabled:  #94A3B8;
 
-  /* Text-sized brass: #7c5a26 ≈ 6.3:1 on white. #a67c3d (≈ 3.8:1) is for
-     icons, fills and strokes only — never body/eyebrow text. */
-  --accent-text:    #7c5a26;
-  --accent-brass:   #a67c3d;
-  --on-accent:      #ffffff;
-  /* Primary booking CTA (BookingCta): ≈ 6.3:1 */
-  --cta-bg:         #7c5a26;
-  --cta-fg:         #ffffff;
+  /* Teal text (links, eyebrows) and the single action colour */
+  --accent-text:    #0F766E;
+  --accent-brass:   #0F766E;
+  --on-accent:      #FFFFFF;
+  /* Primary booking CTA (BookingCta): white on #0F766E ≈ 5.47:1 */
+  --cta-bg:         #0F766E;
+  --cta-fg:         #FFFFFF;
 
-  /* Hairline UI borders (≥ 3:1 for meaningful boundaries) and the softer
-     paper divider used by cards/inputs */
-  --border-primary: #8a7f70;
-  --border-subtle:  #ede3cd;
-  --border-hover:   #a67c3d;
+  /* Meaningful boundaries (inputs) ≥ 3:1 and the decorative hairline */
+  --border-primary: #848EA0;
+  --border-subtle:  #E5E2DA;
+  --border-hover:   #0F766E;
 
-  /* Focus ring — 2px brass outline, used by :focus-visible and .focus-ring */
-  --focus-ring:     #7c5a26;
+  /* Focus ring — 2px teal outline, used by :focus-visible and .focus-ring */
+  --focus-ring:     #0F766E;
 
   /* Overlays + loading placeholders */
-  --overlay:            rgba(28,22,17,0.5);
-  --skeleton-base:      #f7f1e4;
-  --skeleton-highlight: #ffffff;
+  --overlay:            rgba(15,23,42,0.48);
+  --skeleton-base:      #F1EFEA;
+  --skeleton-highlight: #FFFFFF;
 
-  --brand-primary:    #1c1611;
-  --brand-on-primary: #ffffff;
+  --brand-primary:    #0F172A;
+  --brand-on-primary: #FFFFFF;
 
-  /* Status colors — chromatic budget is one blue; everything else stays
-     ink/slate/frost except a distinct destructive channel */
-  --accent-mint:          #7c4a1e;
-  --accent-mint-muted:    rgba(124,74,30,0.1);
-  --accent-lavender:      #5a5147;
-  --accent-lavender-muted:rgba(28,22,17,0.06);
-  --accent-blue:          #a67c3d;
-  --accent-blue-muted:    rgba(166,124,61,0.1);
-  --accent-rose:          #ba1a1a;
-  --accent-rose-muted:    rgba(186,26,26,0.1);
-  --accent-amber:         #a67c3d;
-  --accent-amber-muted:   rgba(166,124,61,0.1);
-  --accent-electric:      #a67c3d;
-  --accent-cobalt:        #7c4a1e;
+  /* Status / accent aliases */
+  --accent-mint:          #0F766E;
+  --accent-mint-muted:    #E6F2F0;
+  --accent-lavender:      #334155;
+  --accent-lavender-muted:#F1EFEA;
+  --accent-blue:          #0F766E;
+  --accent-blue-muted:    #E6F2F0;
+  --accent-rose:          #B91C1C;
+  --accent-rose-muted:    #FEE2E2;
+  --accent-amber:         #F59E0B;
+  --accent-amber-muted:   #FEF3C7;
+  --accent-electric:      #0F766E;
+  --accent-cobalt:        #0F766E;
 
-  /* Flat system: no resting-state blur/shadow — the only shadow is the
-     focus ring, defined separately below */
+  /* Solid surfaces — no blur on content */
   --glass-blur: 0px;
-  --glass-bg:   #ffffff;
-  --glass-bg-elevated: #ffffff; /* solid paper surface — no blur/transparency, per flat system */
+  --glass-bg:   #FFFFFF;
+  --glass-bg-elevated: #FFFFFF;
 
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-lg: none;
-  --shadow-focus: 0px 0px 0px 1px rgb(166,124,61), 0px 1px 2px 0px rgba(12,43,100,0.32), 0px 6px 16px 0px rgba(12,43,100,0.32);
+  /* Shadow ink (slate-900 at fixed alphas); the dark theme swaps these
+     for deeper black so the same shadow utilities read on #0B1514. */
+  --shadow-c-04: rgb(15 23 42 / 0.04);
+  --shadow-c-06: rgb(15 23 42 / 0.06);
+  --shadow-c-08: rgb(15 23 42 / 0.08);
+  --shadow-c-14: rgb(15 23 42 / 0.14);
+  --shadow-c-16: rgb(15 23 42 / 0.16);
+  --shadow-c-18: rgb(15 23 42 / 0.18);
+  --shadow-c-28: rgb(15 23 42 / 0.28);
+  --shadow-focus: 0 0 0 3px rgb(15 118 110 / 0.28);
 
-  --transition-fast:   150ms cubic-bezier(0.25,1,0.4,1);
-  --transition-normal: 250ms cubic-bezier(0.25,1,0.4,1);
-  --transition-slow:   400ms cubic-bezier(0.25,1,0.4,1);
+  /* Motion (§7) */
+  --transition-fast:   150ms cubic-bezier(0.2, 0, 0, 1);
+  --transition-normal: 200ms cubic-bezier(0.2, 0, 0, 1);
+  --transition-slow:   400ms cubic-bezier(0.2, 0, 0, 1);
+  --duration-instant: 100ms;
+  --duration-fast:    150ms;
+  --duration-base:    200ms;
+  --duration-enter:   280ms;
+  --duration-exit:    180ms;
+  --duration-slow:    400ms;
 
-  /* Named radii (Clearbit scale) */
+  /* Named radii */
   --radius-tags:    9999px;
-  --radius-cards:   12px;
+  --radius-cards:   16px;
   --radius-images:  12px;
-  --radius-inputs:  8px;
-  --radius-buttons: 8px;
+  --radius-inputs:  12px;
+  --radius-buttons: 9999px;
 
   /* Spacing (4px base grid) */
   --spacing-8:   8px;
@@ -244,116 +468,167 @@
   --spacing-128: 128px;
 
   /* Layout */
-  --sidebar-width: 88px;
+  --sidebar-width: 240px;
+  --nav-h: 64px;
+  /* Lifted by a sticky bottom bar (see [data-sticky-bar] below) */
+  --toast-offset: 0px;
 
   color-scheme: light;
 }
 
+/* ─── Layer 1: primitive palette. Reference only from canvas / PNG / QR /
+   map code that cannot read semantic tokens; components use layer 2. ─── */
+:root {
+  --teal-950: #042F2E;
+  --teal-900: #134E4A;
+  --teal-800: #115E59;
+  --teal-700: #0F766E;
+  --teal-400: #2DD4BF;
+  --teal-300: #5EEAD4;
+  --teal-200: #99F6E4;
+  --teal-50:  #E6F2F0;
+  --sand-50:  #F8F7F4;
+  --sand-100: #F1EFEA;
+  --sand-200: #E7E4DD;
+  --sand-300: #E5E2DA;
+  --slate-900: #0F172A;
+  --slate-800: #1E293B;
+  --slate-700: #334155;
+  --slate-600: #5B6B7F;
+  --slate-500: #64748B;
+  --slate-450: #848EA0;
+  --slate-400: #94A3B8;
+  --amber-500: #F59E0B;
+  --amber-700: #B45309;
+  --amber-800: #92400E;
+  --amber-100: #FEF3C7;
+  --amber-200: #FDE68A;
+}
+
 /* ═══════════════════════════════════════════════════════
-   DARK THEME — "Ink & Brass, after hours"
-   Driven by theme-provider.tsx (sets html.dark + [data-theme="dark"]
-   from useThemeStore, on the authenticated app surfaces only).
-   Contrast (on --bg-primary #14110e): text-primary 16:1, secondary 11:1,
-   muted 6.6:1, accent-text 9:1; white on --accent-mint 4.6:1.
+   DARK THEME — "Deep Teal & Sand, after hours"
+   Driven by theme-provider.tsx (sets html.dark + [data-theme="dark"]).
+   Background #0B1514 (teal-black); surfaces step up in lightness and
+   every elevated surface keeps a 1px border-line. Teal text uses the
+   lighter brand-text (#5EEAD4); brand fills carry dark on-brand ink.
    ═══════════════════════════════════════════════════════ */
 :root.dark,
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg-primary:       #14110e;
-  --bg-secondary:     #1d1814;
-  --bg-surface:       #1a1612;
-  --bg-surface-hover: #241e18;
-  --bg-elevated:      #1f1a15;
+  /* Semantic tokens */
+  --color-page: #0B1514;
+  --color-card: #111E1C;
+  --color-sunken: #172725;
+  --color-sunken-2: #1F3330;
+  --color-ink: #ECF3F1;
+  --color-ink-soft: #B8C7C4;
+  --color-ink-muted: #8FA3A0;
+  --color-ink-disabled: #4B6360;
+  --color-line: #22312F;
+  --color-line-strong: #567370;
+  --color-brand: #2DD4BF;
+  --color-brand-hover: #5EEAD4;
+  --color-brand-pressed: #99F6E4;
+  --color-brand-text: #5EEAD4;
+  --color-brand-soft: #0F2E2B;
+  --color-brand-soft-line: #1D4B46;
+  --color-on-brand: #042F2E;
+  --color-accent: #FBBF24;
+  --color-accent-text: #FCD34D;
+  --color-accent-soft: #2A2210;
+  --color-success: #4ADE80;
+  --color-success-text: #86EFAC;
+  --color-success-soft: #0F2A1A;
+  --color-warning: #FBBF24;
+  --color-warning-text: #FCD34D;
+  --color-warning-soft: #2A2210;
+  --color-danger: #F87171;
+  --color-danger-text: #FCA5A5;
+  --color-danger-soft: #2E1414;
+  --color-inverse: #ECF3F1;
+  --color-on-inverse: #0B1514;
+  --color-on-inverse-brand: #0F766E;
+  --color-on-inverse-danger: #991B1B;
+  --color-focus: #5EEAD4;
+  --color-overlay: rgba(0,0,0,0.6);
+  --color-chart-1: #2DD4BF;
+  --color-chart-2: #5B8DEF;
+  --color-chart-3: #FBBF24;
+  --color-chart-4: #F472B6;
+  --color-chart-5: #94A3B8;
+  --color-chart-grid: #22312F;
+  --color-on-primary: #0B1514;
 
-  --text-primary:   #f3ede3;
-  --text-secondary: #cfc5b4;
-  --text-tertiary:  #cfc5b4;
-  --text-muted:     #a39886;
-  --text-disabled:  #6f6558;
+  /* Legacy aliases */
+  --bg-primary:       #111E1C;
+  --bg-secondary:     #172725;
+  --bg-surface:       #111E1C;
+  --bg-surface-hover: #172725;
+  --bg-elevated:      #111E1C;
 
-  --accent-text:    #d6b07a;
-  --accent-brass:   #c9a063;
-  --on-accent:      #ffffff;
-  --cta-bg:         #d6b07a;
-  --cta-fg:         #14110e;
+  --text-primary:   #ECF3F1;
+  --text-secondary: #B8C7C4;
+  --text-tertiary:  #B8C7C4;
+  --text-muted:     #8FA3A0;
+  --text-disabled:  #4B6360;
 
-  --border-primary: #6f6558;
-  --border-subtle:  #3a3128;
-  --border-hover:   #c9a063;
+  --accent-text:    #5EEAD4;
+  --accent-brass:   #5EEAD4;
+  --on-accent:      #042F2E;
+  --cta-bg:         #2DD4BF;
+  --cta-fg:         #042F2E;
 
-  --focus-ring:     #d6b07a;
+  --border-primary: #567370;
+  --border-subtle:  #22312F;
+  --border-hover:   #5EEAD4;
+
+  --focus-ring:     #5EEAD4;
 
   --overlay:            rgba(0,0,0,0.6);
-  --skeleton-base:      #1d1814;
-  --skeleton-highlight: #2a231c;
+  --skeleton-base:      #172725;
+  --skeleton-highlight: #1F3330;
 
-  --brand-primary:    #f3ede3;
-  --brand-on-primary: #14110e;
+  --brand-primary:    #ECF3F1;
+  --brand-on-primary: #0B1514;
 
-  --accent-mint:          #a06a36;
-  --accent-mint-muted:    rgba(201,160,99,0.14);
-  --accent-lavender:      #cfc5b4;
-  --accent-lavender-muted:rgba(243,237,227,0.08);
-  --accent-blue:          #c9a063;
-  --accent-blue-muted:    rgba(201,160,99,0.14);
-  --accent-rose:          #d4433b;
-  --accent-rose-muted:    rgba(212,67,59,0.16);
-  --accent-amber:         #c9a063;
-  --accent-amber-muted:   rgba(201,160,99,0.14);
-  --accent-electric:      #c9a063;
-  --accent-cobalt:        #a06a36;
+  --accent-mint:          #2DD4BF;
+  --accent-mint-muted:    #0F2E2B;
+  --accent-lavender:      #B8C7C4;
+  --accent-lavender-muted:#172725;
+  --accent-blue:          #5EEAD4;
+  --accent-blue-muted:    #0F2E2B;
+  --accent-rose:          #F87171;
+  --accent-rose-muted:    #2E1414;
+  --accent-amber:         #FBBF24;
+  --accent-amber-muted:   #2A2210;
+  --accent-electric:      #5EEAD4;
+  --accent-cobalt:        #2DD4BF;
 
-  --glass-bg:          #1a1612;
-  --glass-bg-elevated: #1f1a15;
-  --shadow-focus: 0px 0px 0px 1px rgb(214,176,122), 0px 6px 16px 0px rgba(0,0,0,0.5);
+  --glass-bg:          #111E1C;
+  --glass-bg-elevated: #111E1C;
 
-  /* Tailwind @theme colour tokens (bg-background, text-on-surface, …) */
-  --color-primary:               #f3ede3;
-  --color-on-primary:            #14110e;
-  --color-primary-container:     #1d1814;
-  --color-on-primary-container:  #f3ede3;
-  --color-primary-fixed:         #1d1814;
-  --color-primary-fixed-dim:     #3a3128;
-  --color-on-primary-fixed:      #f3ede3;
-  --color-on-primary-fixed-variant: #cfc5b4;
-  --color-inverse-primary:       #1d1814;
-  --color-background:            #14110e;
-  --color-surface:               #1a1612;
-  --color-surface-bright:        #1f1a15;
-  --color-surface-dim:           #1d1814;
-  --color-surface-variant:       #1d1814;
-  --color-surface-container-lowest: #14110e;
-  --color-surface-container-low:    #1a1612;
-  --color-surface-container:        #1d1814;
-  --color-surface-container-high:   #2a231c;
-  --color-surface-container-highest:#6f6558;
-  --color-on-surface:            #f3ede3;
-  --color-on-surface-variant:    #cfc5b4;
-  --color-inverse-surface:       #f3ede3;
-  --color-inverse-on-surface:    #14110e;
-  --color-outline:               #f3ede3;
-  --color-outline-variant:       #3a3128;
-  --color-secondary:             #cfc5b4;
-  --color-on-secondary:          #14110e;
-  --color-secondary-container:   #1d1814;
-  --color-on-secondary-container:#cfc5b4;
-  --color-secondary-fixed:       #1d1814;
-  --color-secondary-fixed-dim:   #3a3128;
-  --color-tertiary:              #c9a063;
-  --color-tertiary-container:    #1d1814;
-  --color-on-tertiary-container: #d6b07a;
-  --color-error:                 #f08a80;
-  --color-error-container:       #3b1512;
-  --color-on-error-container:    #ffdad6;
-  --color-surface-tint:          #f3ede3;
+  --shadow-c-04: rgb(0 0 0 / 0.10);
+  --shadow-c-06: rgb(0 0 0 / 0.15);
+  --shadow-c-08: rgb(0 0 0 / 0.20);
+  --shadow-c-14: rgb(0 0 0 / 0.35);
+  --shadow-c-16: rgb(0 0 0 / 0.40);
+  --shadow-c-18: rgb(0 0 0 / 0.45);
+  --shadow-c-28: rgb(0 0 0 / 0.60);
+  --shadow-focus: 0 0 0 3px rgb(94 234 212 / 0.32);
 
-  /* Customer-portal aliases that are not derived from the tokens above */
-  --accent-muted:  rgba(243,237,227,0.08);
-  --emerald-light: rgba(201,160,99,0.14);
-  --sky-light:     rgba(201,160,99,0.12);
-  --rose-light:    rgba(212,67,59,0.16);
-  --amber-light:   rgba(201,160,99,0.12);
+  /* Customer-portal aliases */
+  --accent-muted:  #172725;
+  --emerald-light: #0F2E2B;
+  --sky-light:     #0F2E2B;
+  --rose-light:    #2E1414;
+  --amber-light:   #2A2210;
+}
+
+/* A sticky bottom bar on the page lifts toasts above it (mobile only;
+   the bars are lg:hidden). */
+:root:has([data-sticky-bar]) {
+  --toast-offset: 88px;
 }
 
 /* ─── Base Reset ───
@@ -409,11 +684,11 @@ h1, h2, h3, h4, h5, h6 {
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+::-webkit-scrollbar-thumb { background: var(--color-line-strong); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-ink-muted); }
 
 /* ─── Selection ─── */
-::selection { background: var(--accent-brass); color: var(--on-accent); }
+::selection { background: var(--color-brand-soft); color: var(--color-ink); }
 
 /* ─── Focus — one visible, consistent keyboard ring everywhere ───
    :where() keeps specificity at 0 so component rules can still restyle it;
@@ -434,14 +709,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ─── Text helpers backed by AA-contrast tokens ─── */
-.text-muted       { color: var(--text-muted); }
-.text-accent      { color: var(--accent-text); }
+/* (The old `.text-accent` helper is gone: `text-accent` is now the v2
+   amber utility for star fills. Teal text = `text-brand-text`.) */
+.text-muted       { color: var(--color-ink-muted); }
 .eyebrow {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--accent-text);
+  color: var(--color-brand-text);
 }
 [dir="rtl"] .eyebrow { letter-spacing: 0; text-transform: none; }
 
@@ -453,71 +729,65 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 200;
   padding: 10px 16px;
   border-radius: var(--radius-buttons);
-  background: var(--accent-mint);
-  color: var(--on-accent);
-  font-weight: 500;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font-weight: 600;
   text-decoration: none;
+  box-shadow: var(--shadow-raised);
 }
 .skip-link:focus { top: 16px; }
-
-/* ─── Sidebar layout helper ───
-   The desktop rail is `hidden lg:flex` (≥1024px), so the content offset uses
-   the same breakpoint. Logical properties handle RTL without overrides. */
-.main-content {
-  margin-inline-start: var(--sidebar-width);
-  transition: margin var(--transition-normal);
-}
-
-@media (max-width: 1023.98px) {
-  .main-content {
-    margin-inline-start: 0;
-  }
-}
 
 /* ─── Sidebar item states ─── */
 .sidebar-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  border-radius: var(--radius-buttons);
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-secondary);
-  transition: all 150ms cubic-bezier(0.25,1,0.4,1);
+  color: var(--color-ink-soft);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
   cursor: pointer;
   text-decoration: none;
 }
 
 .sidebar-item:hover {
-  color: var(--text-primary);
-  background: var(--bg-secondary);
+  color: var(--color-ink);
+  background: var(--color-sunken);
 }
 
-.sidebar-item-active {
-  background: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
+.sidebar-item-active,
+.sidebar-item[aria-current="page"] {
+  background: var(--color-brand-soft) !important;
+  color: var(--color-brand-pressed) !important;
+  font-weight: 600;
 }
+.sidebar-item-active svg,
+.sidebar-item[aria-current="page"] svg { color: var(--color-brand-text); }
 
 .sidebar-item-active:hover {
-  background: var(--bg-secondary) !important;
-  opacity: 0.9;
+  background: var(--color-brand-soft) !important;
 }
 
 /* ─── Minimal input ─── */
 .minimal-input {
-  border: 1px solid var(--border-subtle);
-  background-color: var(--bg-primary);
+  border: 1px solid var(--color-line-strong);
+  background-color: var(--color-card);
+  color: var(--color-ink);
   border-radius: var(--radius-inputs);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   outline: none;
   width: 100%;
 }
+.minimal-input::placeholder { color: var(--color-ink-muted); opacity: 1; }
+.minimal-input:hover:not(:disabled) { border-color: var(--color-ink-soft); }
 
 .minimal-input:focus {
-  background-color: var(--bg-primary);
-  border-color: var(--accent-brass);
-  box-shadow: var(--shadow-focus);
+  background-color: var(--color-card);
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-brand) 15%, transparent);
 }
 
 /* ─── Form field — shared input style (auth, booking, settings) ───
@@ -529,33 +799,37 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
   min-height: 48px;
   padding-block: 10px;
-  padding-inline: 14px;
-  border: 1px solid var(--border-primary);
+  padding-inline: 16px;
+  border: 1px solid var(--color-line-strong);
   border-radius: var(--radius-inputs);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--color-card);
+  color: var(--color-ink);
   font-size: 16px; /* ≥16px prevents iOS zoom-on-focus */
   outline: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 .field-input::placeholder,
-.auth-input::placeholder { color: var(--text-muted); opacity: 1; }
+.auth-input::placeholder { color: var(--color-ink-muted); opacity: 1; }
 .field-input:hover:not(:disabled),
-.auth-input:hover:not(:disabled) { border-color: var(--text-secondary); }
+.auth-input:hover:not(:disabled) { border-color: var(--color-ink-soft); }
 .field-input:focus-visible,
 .auth-input:focus-visible,
 .field-input:focus,
 .auth-input:focus {
-  border-color: var(--accent-brass);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-brass) 25%, transparent);
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-brand) 15%, transparent);
 }
 .field-input[aria-invalid="true"],
 .auth-input[aria-invalid="true"] {
-  border-color: var(--accent-rose);
-  box-shadow: 0 0 0 3px var(--accent-rose-muted);
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-danger) 15%, transparent);
 }
 .field-input:disabled,
-.auth-input:disabled { opacity: 0.6; cursor: not-allowed; }
+.auth-input:disabled {
+  background-color: var(--color-sunken);
+  color: var(--color-ink-disabled);
+  cursor: not-allowed;
+}
 .field-input.has-icon,
 .auth-input.has-icon { padding-inline-start: 44px; }
 .field-input.has-action,
@@ -565,7 +839,7 @@ h1, h2, h3, h4, h5, h6 {
   inset-inline-start: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-muted);
+  color: var(--color-ink-muted);
   pointer-events: none;
 }
 .field-action {
@@ -579,23 +853,29 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-buttons);
-  color: var(--text-secondary);
+  color: var(--color-ink-soft);
   background: transparent;
   border: none;
   cursor: pointer;
 }
-.field-action:hover { color: var(--text-primary); background: var(--bg-secondary); }
+.field-action:hover { color: var(--color-ink); background: var(--color-sunken); }
 .field-label {
   display: block;
   margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.field-helper {
+  margin-top: 6px;
   font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--color-ink-muted);
 }
 .field-error {
   margin-top: 6px;
   font-size: 13px;
-  color: var(--accent-rose);
+  font-weight: 500;
+  color: var(--color-danger-text);
 }
 
 /* ─── Page entrance animation ─── */
@@ -603,23 +883,46 @@ h1, h2, h3, h4, h5, h6 {
   0%   { opacity: 0; transform: translateY(16px); }
   100% { opacity: 1; transform: translateY(0); }
 }
-.page-enter { animation: page-enter 0.5s cubic-bezier(0.25,1,0.5,1) forwards; }
+.page-enter { animation: page-enter 0.28s var(--ease-enter) forwards; }
 
 /* ─── Section spacing helpers ─── */
 .section-gap    { margin-bottom: 64px; }
 .section-gap-sm { margin-bottom: 40px; }
 
-/* ─── Skeleton shimmer ─── */
+/* ─── Skeleton shimmer ───
+   Base fill is bg-sunken; a soft highlight sweeps in the reading direction.
+   Static under prefers-reduced-motion. */
 @keyframes shimmer {
   0%   { background-position: -600px 0; }
   100% { background-position: 600px 0; }
 }
+@keyframes skeleton-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes skeleton-sweep-rtl {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
 
 .skeleton {
-  background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-highlight) 50%, var(--skeleton-base) 75%);
-  background-size: 600px 100%;
-  animation: shimmer 1.8s ease-in-out infinite;
-  border-radius: var(--radius-images);
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-sunken);
+  border-radius: var(--radius-lg);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.6), transparent);
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+[dir="rtl"] .skeleton::after { animation-name: skeleton-sweep-rtl; }
+:root.dark .skeleton::after,
+:root[data-theme="dark"] .skeleton::after {
+  background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.05), transparent);
 }
 
 /* ─── Confetti ─── */
@@ -657,16 +960,16 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ─── Backward-compat aliases ─── */
 .glass-card-premium {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-subtle);
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-cards);
-  transition: all 250ms cubic-bezier(0.25,1,0.4,1);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
   position: relative;
   overflow: hidden;
 }
 .glass-card-premium:hover {
-  border-color: var(--accent-brass);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-raised);
 }
 
 /* ════════════════════════════════════════════════════════
@@ -674,19 +977,19 @@ h1, h2, h3, h4, h5, h6 {
    ════════════════════════════════════════════════════════ */
 
 .atelier-card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-subtle);
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-cards);
-  padding: 28px;
+  padding: 20px;
   min-height: 152px;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.18s ease, transform 0.18s ease;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-normal), transform var(--transition-fast);
 }
 
 .atelier-card:hover {
-  border-color: var(--accent-brass);
-  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--color-line-strong) 50%, var(--color-line));
+  box-shadow: var(--shadow-card);
 }
 
 .atelier-card:active {
@@ -694,30 +997,31 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .atelier-card:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
-  border-color: var(--accent-brass);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .atelier-card.is-selected {
-  border-color: var(--accent-brass);
-  box-shadow: 0 0 0 2px var(--accent-brass);
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 1px var(--color-brand);
 }
 
 .atelier-card.is-dragging {
-  opacity: 0.35;
+  opacity: 0.6;
   transform: scale(0.97);
-  border-color: rgba(166,124,61,0.4);
+  border-color: color-mix(in srgb, var(--color-brand) 40%, transparent);
+  box-shadow: var(--shadow-float);
 }
 
 /* ─── Card Typography Scale ─── */
 .card-label {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  color: var(--color-ink-muted);
 }
+[dir="rtl"] .card-label { letter-spacing: 0; text-transform: none; }
 
 .card-title {
   font-size: 16px;
@@ -732,107 +1036,26 @@ h1, h2, h3, h4, h5, h6 {
 
 .card-value {
   font-size: 32px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-weight: 700;
+  color: var(--color-ink);
   font-family: var(--font-sans);
-  letter-spacing: 0.01em;
+  letter-spacing: -0.01em;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .card-sub {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--color-ink-muted);
   margin-top: 6px;
-}
-
-/* ─── Card grid utilities ─── */
-.card-grid-4 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 32px;
-}
-@media (max-width: 1280px) {
-  .card-grid-4 { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 768px) {
-  .card-grid-4 { grid-template-columns: 1fr; gap: 16px; }
-}
-/* .card-grid-3 / .card-grid-2 are defined once, below ("Card grids") */
-
-/* ─── Responsive Layout Helpers ─── */
-.page-padding {
-  padding-left: 72px;
-  padding-right: 72px;
-}
-@media (max-width: 1024px) {
-  .page-padding {
-    padding-left: 32px;
-    padding-right: 32px;
-  }
-}
-@media (max-width: 768px) {
-  .page-padding {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-}
-
-.dashboard-header-flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-@media (max-width: 768px) {
-  .dashboard-header-flex {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
-}
-
-.dashboard-main-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
-  margin-bottom: 32px;
-  align-items: stretch;
-}
-@media (max-width: 1024px) {
-  .dashboard-main-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.topbar-wrapper {
-  position: fixed;
-  top: 0;
-  height: 64px;
-  background: var(--bg-primary);
-  border-bottom: 1px solid var(--border-subtle);
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
-  gap: 16px;
-  inset-inline-start: var(--sidebar-width);
-  inset-inline-end: 0;
-  transition: inset var(--transition-normal), background-color var(--transition-normal);
-}
-@media (max-width: 1023.98px) {
-  .topbar-wrapper {
-    inset-inline-start: 0;
-    inset-inline-end: 0;
-    padding: 0 16px;
-  }
 }
 
 /* ─── Skeleton shimmer (aliased) ─── */
 .card-skeleton {
   background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-highlight) 50%, var(--skeleton-base) 75%);
   background-size: 600px 100%;
-  animation: shimmer 1.6s ease-in-out infinite;
-  border-radius: var(--radius-images);
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius-cards);
 }
 
 /* ════════════════════════════════════════════════════════
@@ -850,14 +1073,19 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0 20px;
   border-radius: var(--radius-buttons);
   font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: 0.008em;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
   text-decoration: none;
   cursor: pointer;
   border: 1px solid transparent;
   white-space: nowrap;
-  transition: all 0.25s cubic-bezier(0.25, 1, 0.4, 1);
+  user-select: none;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 [dir="rtl"] .btn {
@@ -865,56 +1093,62 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
 
-.btn:disabled {
-  opacity: 0.5;
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.45;
   cursor: not-allowed;
+  pointer-events: none;
   transform: none !important;
 }
 
-/* Primary Button — the sole chromatic action */
+/* Primary Button — the sole chromatic action (one per surface) */
 .btn-primary {
-  background-color: var(--accent-mint);
-  color: var(--on-accent);
-  border-color: var(--accent-mint);
+  background-color: var(--color-brand);
+  color: var(--color-on-brand);
+  border-color: var(--color-brand);
+  box-shadow: var(--shadow-xs);
 }
 .btn-primary:hover:not(:disabled) {
-  opacity: 0.92;
+  background-color: var(--color-brand-hover);
+  border-color: var(--color-brand-hover);
 }
-.btn-primary:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+.btn-primary:active:not(:disabled) {
+  background-color: var(--color-brand-pressed);
 }
 
-/* Secondary Button — outlined ghost */
+/* Secondary Button — outline */
 .btn-secondary {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--color-card);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line-strong);
 }
 .btn-secondary:hover:not(:disabled) {
-  border-color: var(--accent-brass);
+  border-color: var(--color-ink);
+  background-color: var(--color-sunken);
 }
 
 /* Destructive Button */
 .btn-destructive {
-  background-color: var(--accent-rose);
-  color: var(--on-accent);
+  background-color: var(--color-danger);
+  color: #FFFFFF;
 }
+:root.dark .btn-destructive,
+:root[data-theme="dark"] .btn-destructive { color: #2E1414; }
 .btn-destructive:hover:not(:disabled) {
-  opacity: 0.9;
+  filter: brightness(0.95);
 }
 
 /* Ghost / Tertiary Button */
 .btn-ghost {
   background-color: transparent;
-  color: var(--text-secondary);
+  color: var(--color-ink-soft);
 }
 .btn-ghost:hover:not(:disabled) {
-  background-color: rgba(28,22,17,0.05);
-  color: var(--text-primary);
+  background-color: var(--color-sunken);
+  color: var(--color-ink);
 }
 
 }
@@ -924,14 +1158,14 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-primary);
+  color: var(--color-ink);
   font-weight: 500;
   text-decoration: none;
   border-bottom: 1px solid transparent;
-  transition: border-color 0.2s ease;
+  transition: border-color var(--transition-fast);
 }
 .nav-link:hover {
-  border-bottom-color: var(--accent-brass);
+  border-bottom-color: var(--color-brand);
 }
 
 /* ─── Landing Page Helpers ─── */
@@ -953,7 +1187,10 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 50;
   padding: 0 48px;
   height: 80px;
-  background: var(--bg-primary);
+  background: color-mix(in srgb, var(--color-card) 90%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-line);
 }
 @media (max-width: 768px) {
   .landing-nav {
@@ -992,50 +1229,6 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* ─── Auth Page Helpers ─── */
-.auth-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  padding: 0 48px;
-  height: 80px;
-}
-@media (max-width: 768px) {
-  .auth-nav { padding: 0 24px; }
-}
-
-.auth-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 48px;
-}
-@media (max-width: 768px) {
-  .auth-main { padding: 40px 24px; }
-}
-
-.auth-card {
-  padding: 64px 64px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-cards);
-  background: var(--bg-primary);
-}
-@media (max-width: 768px) {
-  .auth-card { padding: 40px 24px; border: none !important; }
-}
-
-.auth-footer {
-  padding: 48px 48px;
-}
-@media (max-width: 768px) {
-  .auth-footer { padding: 32px 24px; }
-}
-
 /* ── Card grids (single definition — dashboard + landing) ── */
 .card-grid-3 {
   display: grid;
@@ -1068,17 +1261,17 @@ h1, h2, h3, h4, h5, h6 {
 :root {
   --accent: var(--text-primary);
   --accent-soft: var(--bg-secondary);
-  --accent-muted: rgba(28,22,17,0.08);
-  --gold: var(--accent-brass);
-  --gold-light: var(--bg-secondary);
-  --emerald: var(--accent-mint);
-  --emerald-light: rgba(124,74,30,0.1);
+  --accent-muted: #F1EFEA;
+  --gold: var(--color-accent);
+  --gold-light: var(--color-accent-soft);
+  --emerald: var(--color-success);
+  --emerald-light: #E6F2F0;
   --sky: var(--accent-brass);
-  --sky-light: rgba(166,124,61,0.08);
+  --sky-light: #E6F2F0;
   --rose: var(--accent-rose);
-  --rose-light: rgba(186,26,26,0.08);
-  --amber: var(--accent-brass);
-  --amber-light: rgba(166,124,61,0.08);
+  --rose-light: #FEE2E2;
+  --amber: var(--color-accent);
+  --amber-light: #FEF3C7;
 }
 
 /* ─── Utility: hide scrollbar but keep scroll ─── */
@@ -1091,12 +1284,12 @@ h1, h2, h3, h4, h5, h6 {
   to   { opacity: 1; transform: translateY(0); }
 }
 .fade-slide-up {
-  animation: fadeSlideUp 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
+  animation: fadeSlideUp 0.28s var(--ease-enter) both;
 }
-.fade-slide-up-delay-1 { animation-delay: 0.05s; }
-.fade-slide-up-delay-2 { animation-delay: 0.10s; }
-.fade-slide-up-delay-3 { animation-delay: 0.15s; }
-.fade-slide-up-delay-4 { animation-delay: 0.20s; }
+.fade-slide-up-delay-1 { animation-delay: 0.04s; }
+.fade-slide-up-delay-2 { animation-delay: 0.08s; }
+.fade-slide-up-delay-3 { animation-delay: 0.12s; }
+.fade-slide-up-delay-4 { animation-delay: 0.16s; }
 
 /* Respect reduced motion — CSS side. framer-motion (JS) animations are
    handled by <MotionConfig reducedMotion="user"> in theme-provider.tsx.
@@ -1114,10 +1307,10 @@ h1, h2, h3, h4, h5, h6 {
     scroll-behavior: auto !important;
   }
   .skeleton, .card-skeleton, .shimmer-card, .pulse-dot { animation: none !important; }
+  .skeleton::after { display: none; }
   .confetti-dot { display: none; }
   .reveal { opacity: 1; transform: none; }
-  .atelier-card:hover, .shop-card:hover, .glass-card-premium:hover,
-  .landing-feature-cell:hover { transform: none; }
+  .atelier-card:hover, .atelier-card:active, .shop-card:hover, .shop-card:active, .glass-card-premium:hover, .btn:active, .btn-premium:active, .time-slot:active, .date-pill:active { transform: none; }
 }
 
 /* ─── Shimmer skeleton loader ─── */
@@ -1134,81 +1327,59 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ─── Shop card (explore + customer home) ─── */
 .shop-card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-subtle);
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-cards);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
-  transition: transform 150ms ease, border-color 150ms ease;
+  transition: box-shadow var(--transition-normal), transform var(--transition-fast);
   cursor: pointer;
 }
-.shop-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--accent-brass);
+.shop-card:hover,
+.shop-card:focus-within {
+  box-shadow: var(--shadow-raised);
 }
 .shop-card:active {
-  transform: scale(0.98);
+  transform: scale(0.99);
 }
 .shop-card:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
-/* ─── Badge system — Electric Blue for the one accent; neutral statuses
-   stay ink-on-frost so meaning also lives in the text ─── */
+/* ─── Badge system — fill-only status pills (colour + label); statuses
+   always pair the tint with a label so meaning lives in the text ─── */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 3px 10px;
   border-radius: var(--radius-tags);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
   white-space: nowrap;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid transparent;
+  background: var(--color-sunken);
+  color: var(--color-ink-soft);
 }
-.badge-upcoming { background: rgba(124,74,30,0.1); color: var(--text-primary); border-color: var(--accent-mint); }
-.badge-completed { background: var(--bg-secondary); color: var(--text-secondary); }
-.badge-cancelled { background: var(--accent-rose-muted); color: var(--accent-rose); border-color: var(--accent-rose); }
-.badge-pending   { background: var(--bg-secondary); color: var(--text-secondary); }
-.badge-noshow    { background: var(--bg-secondary); color: var(--text-secondary); }
-.badge-open      { background: rgba(124,74,30,0.1); color: var(--text-primary); border-color: var(--accent-mint); }
+.badge-upcoming  { background: var(--color-brand-soft); color: var(--color-brand-pressed); }
+.badge-completed { background: var(--color-success-soft); color: var(--color-success-text); }
+.badge-cancelled { background: var(--color-sunken); color: var(--color-ink-muted); }
+.badge-pending   { background: var(--color-warning-soft); color: var(--color-warning-text); }
+.badge-noshow    { background: var(--color-danger-soft); color: var(--color-danger-text); }
+.badge-open      { background: var(--color-success-soft); color: var(--color-success-text); }
 
-/* ─── Star rating (kept as the one chromatic accent — electric blue) ─── */
+/* ─── Star rating — amber fills (icons only, always paired with the number) ─── */
 .star-row {
   display: flex;
   align-items: center;
   gap: 2px;
 }
-.star-fill  { color: var(--accent-brass); }
-.star-empty { color: var(--border-subtle); }
-
-/* ─── Customer portal nav (sidebar) ─── */
-.portal-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: var(--radius-buttons);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  text-decoration: none;
-  transition: all 120ms ease;
-  cursor: pointer;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: start;
-}
-.portal-nav-item:hover {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-}
-.portal-nav-item.active {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-}
+.star-fill  { color: var(--color-accent); fill: var(--color-accent); }
+.star-empty { color: var(--color-sunken-2); fill: var(--color-sunken-2); }
+:root.dark .star-empty,
+:root[data-theme="dark"] .star-empty { color: var(--color-line); fill: var(--color-line); }
 
 /* ─── Booking step progress indicator ─── */
 .booking-step-bar {
@@ -1229,16 +1400,17 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 200ms ease;
   flex-shrink: 0;
 }
-.booking-step-dot.done    { background: var(--accent-mint); color: var(--on-accent); border-color: var(--accent-mint); }
-.booking-step-dot.active  { background: var(--bg-primary); color: var(--text-primary); border-color: var(--accent-brass); }
-.booking-step-dot.pending { background: var(--bg-secondary); color: var(--text-secondary); border-color: var(--border-subtle); }
+.booking-step-dot.done    { background: var(--color-brand); color: var(--color-on-brand); border-color: var(--color-brand); }
+.booking-step-dot.active  { background: var(--color-card); color: var(--color-ink); border-color: var(--color-brand); }
+.booking-step-dot.pending { background: var(--color-sunken); color: var(--color-ink-muted); border-color: var(--color-line); }
 .booking-step-line {
   flex: 1;
   height: 2px;
-  background: var(--border-subtle);
-  transition: background 200ms ease;
+  border-radius: 9999px;
+  background: var(--color-sunken-2);
+  transition: background var(--transition-normal);
 }
-.booking-step-line.done { background: var(--accent-mint); }
+.booking-step-line.done { background: var(--color-brand); }
 
 /* ─── Floating label inputs ─── */
 .float-group {
@@ -1248,23 +1420,24 @@ h1, h2, h3, h4, h5, h6 {
   width: 100%;
   height: 56px;
   padding: 20px 16px 8px;
-  background: var(--bg-primary);
-  border: 1.5px solid var(--border-subtle);
+  background: var(--color-card);
+  border: 1px solid var(--color-line-strong);
   border-radius: var(--radius-inputs);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--color-ink);
   outline: none;
-  transition: all 150ms ease;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
+.float-input:hover { border-color: var(--color-ink-soft); }
 .float-input:focus {
-  background: var(--bg-primary);
-  border-color: var(--accent-brass);
-  box-shadow: var(--shadow-focus);
+  background: var(--color-card);
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-brand) 15%, transparent);
 }
 .float-input.error {
-  border-color: var(--accent-rose);
-  box-shadow: 0 0 0 3px rgba(186,26,26,0.08);
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-danger) 15%, transparent);
 }
 .float-label {
   position: absolute;
@@ -1272,55 +1445,58 @@ h1, h2, h3, h4, h5, h6 {
   top: 50%;
   transform: translateY(-50%);
   font-size: 14px;
-  color: var(--text-secondary);
+  color: var(--color-ink-muted);
   font-weight: 500;
   pointer-events: none;
-  transition: all 150ms ease;
+  transition: top var(--transition-fast), font-size var(--transition-fast), transform var(--transition-fast);
 }
 .float-input:focus ~ .float-label,
 .float-input:not(:placeholder-shown) ~ .float-label {
   top: 10px;
   transform: none;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--color-ink-muted);
 }
+[dir="rtl"] .float-input:focus ~ .float-label,
+[dir="rtl"] .float-input:not(:placeholder-shown) ~ .float-label { letter-spacing: 0; text-transform: none; }
 
 /* ─── Time slot pill ─── */
 .time-slot {
+  min-height: 44px;
   padding: 10px 0;
-  border-radius: var(--radius-buttons);
-  border: 2px solid var(--border-subtle);
-  background: var(--bg-primary);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-primary);
+  border-radius: 9999px;
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-card);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
   text-align: center;
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
   user-select: none;
 }
 .time-slot:hover:not(:disabled) {
-  border-color: var(--accent-brass);
-  background: var(--bg-secondary);
+  border-color: var(--color-ink);
 }
-.time-slot.selected {
-  background: var(--accent-mint);
-  border-color: var(--accent-mint);
-  color: var(--on-accent);
+.time-slot.selected,
+.time-slot[aria-pressed="true"] {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: var(--color-on-brand);
 }
 .time-slot:disabled {
-  background: var(--bg-secondary);
-  border-color: var(--border-subtle);
-  color: var(--text-disabled);
+  background: var(--color-sunken);
+  border-color: var(--color-line);
+  color: var(--color-ink-disabled);
   cursor: not-allowed;
   text-decoration: line-through;
-  opacity: 0.6;
 }
 .time-slot:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: scale(0.98);
 }
 
 /* ─── Date pill (booking date scroller) ─── */
@@ -1329,22 +1505,24 @@ h1, h2, h3, h4, h5, h6 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 60px;
-  min-height: 76px;
-  border-radius: var(--radius-buttons);
-  border: 2px solid var(--border-subtle);
-  background: var(--bg-primary);
+  width: 56px;
+  min-height: 64px;
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-line);
+  background: var(--color-card);
+  color: var(--color-ink);
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
   flex-shrink: 0;
 }
-.date-pill:hover { border-color: var(--accent-brass); }
-.date-pill.selected {
-  background: var(--accent-mint);
-  border-color: var(--accent-mint);
-  color: var(--on-accent);
+.date-pill:hover { border-color: var(--color-ink-soft); }
+.date-pill.selected,
+.date-pill[aria-pressed="true"] {
+  background: var(--color-inverse);
+  border-color: var(--color-inverse);
+  color: var(--color-on-inverse);
 }
-.date-pill:active { transform: scale(0.95); }
+.date-pill:active { transform: scale(0.97); }
 
 /* ─── Animated checkmark SVG ─── */
 @keyframes draw-checkmark {
@@ -1354,7 +1532,7 @@ h1, h2, h3, h4, h5, h6 {
 .animated-check {
   stroke-dasharray: 80;
   stroke-dashoffset: 80;
-  animation: draw-checkmark 0.5s ease 0.3s forwards;
+  animation: draw-checkmark 0.4s var(--ease-enter) 0.2s forwards;
 }
 
 /* ─── Success scale-in ─── */
@@ -1386,41 +1564,17 @@ h1, h2, h3, h4, h5, h6 {
   from { opacity: 0; transform: scale(0.95); }
   to   { opacity: 1; transform: scale(1); }
 }
-.modal-sheet-enter { animation: slideUp 0.32s cubic-bezier(0.25, 1, 0.5, 1) both; }
-.modal-dialog-enter { animation: fadeScale 0.25s cubic-bezier(0.25, 1, 0.5, 1) both; }
+.modal-sheet-enter { animation: slideUp 0.28s var(--ease-enter) both; }
+.modal-dialog-enter { animation: fadeScale 0.28s var(--ease-enter) both; }
 
 /* ─── Tab underline transition ─── */
-.portal-tab-btn {
-  position: relative;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  border: none;
-  background: none;
-  cursor: pointer;
-  transition: color 150ms ease;
-  white-space: nowrap;
-}
-.portal-tab-btn::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0; right: 0;
-  height: 2px;
-  background: var(--accent-mint);
-  border-radius: 9999px;
-  transform: scaleX(0);
-  transition: transform 200ms ease;
-}
-.portal-tab-btn.active {
-  color: var(--text-primary);
-}
-.portal-tab-btn.active::after { transform: scaleX(1); }
 
 /* ─── Hero background (landing page) — flat paper, no gradients ─── */
 .hero-gradient {
-  background: var(--bg-primary);
+  background: radial-gradient(60% 50% at 85% 0%, var(--color-brand-soft), transparent) var(--color-page);
+}
+[dir="rtl"] .hero-gradient {
+  background: radial-gradient(60% 50% at 15% 0%, var(--color-brand-soft), transparent) var(--color-page);
 }
 
 /* ─── Floating orb — decorative gradients/blur are off-spec; disabled ─── */
@@ -1440,7 +1594,7 @@ h1, h2, h3, h4, h5, h6 {
 .pulse-dot {
   width: 7px; height: 7px;
   border-radius: 50%;
-  background: var(--emerald);
+  background: var(--color-success);
   display: inline-block;
   animation: pulseDot 2s ease-in-out infinite;
 }
@@ -1449,12 +1603,15 @@ h1, h2, h3, h4, h5, h6 {
 .sticky-booking-bar {
   position: fixed;
   top: 0;
-  left: 0; right: 0;
+  inset-inline: 0;
   z-index: 60;
-  background: var(--bg-primary);
-  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--color-card) 95%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-line);
+  box-shadow: var(--shadow-card);
   transform: translateY(-100%);
-  transition: transform 300ms cubic-bezier(0.25,1,0.5,1);
+  transition: transform 280ms var(--ease-enter);
 }
 .sticky-booking-bar.visible { transform: translateY(0); }
 
@@ -1466,8 +1623,8 @@ h1, h2, h3, h4, h5, h6 {
   transition: background 150ms ease;
 }
 .barber-avatar-ring.selected {
-  background: var(--accent-mint);
-  box-shadow: 0 0 0 2px var(--accent-brass);
+  background: var(--color-brand);
+  box-shadow: 0 0 0 2px var(--color-card), 0 0 0 4px var(--color-brand);
 }
 
 /* ─── Review star interactive ─── */
@@ -1476,11 +1633,15 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
   cursor: pointer;
   padding: 4px;
-  transition: transform 120ms ease;
+  transition: transform var(--transition-fast);
   display: inline-flex;
+  border-radius: 9999px;
 }
-.review-star-btn:hover { transform: scale(1.2); }
-.review-star-btn:active { transform: scale(0.9); }
+.review-star-btn:hover { transform: scale(1.1); }
+.review-star-btn:active { transform: scale(0.95); }
+@media (prefers-reduced-motion: reduce) {
+  .review-star-btn:hover, .review-star-btn:active { transform: none; }
+}
 
 /* ─── CTA button premium variants ─── */
 /* In @layer components so Tailwind utilities (hidden, md:inline-flex, px-*) can override it. */
@@ -1491,60 +1652,66 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   gap: 8px;
   min-height: 52px;
-  padding: 0 32px;
+  padding: 0 28px;
   border-radius: var(--radius-buttons);
   font-size: 16px;
-  font-weight: 500;
-  letter-spacing: 0.008em;
+  font-weight: 600;
+  letter-spacing: 0;
   cursor: pointer;
-  border: none;
+  border: 1px solid transparent;
   outline: none;
-  transition: all 150ms ease;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
   white-space: nowrap;
   text-decoration: none;
+  user-select: none;
 }
-.btn-premium:active { transform: scale(0.97); }
-.btn-premium:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+.btn-premium:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.btn-premium:active { transform: scale(0.98); }
+.btn-premium:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
 
 .btn-premium-dark {
-  background: var(--accent-mint);
-  color: var(--on-accent);
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  box-shadow: var(--shadow-xs);
 }
 .btn-premium-dark:hover:not(:disabled) {
-  opacity: 0.92;
+  background: var(--color-brand-hover);
 }
-.btn-premium-dark:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+.btn-premium-dark:active:not(:disabled) {
+  background: var(--color-brand-pressed);
 }
 
 .btn-premium-outline {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  border: 1.5px solid var(--border-subtle);
+  background: var(--color-card);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line-strong);
 }
 .btn-premium-outline:hover:not(:disabled) {
-  border-color: var(--accent-brass);
+  border-color: var(--color-ink);
+  background: var(--color-sunken);
 }
 
 .btn-premium-ghost {
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--color-ink-soft);
   padding: 0 16px;
-  min-height: 40px;
+  min-height: 44px;
 }
 .btn-premium-ghost:hover:not(:disabled) {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--color-sunken);
+  color: var(--color-ink);
 }
 
 .btn-premium-danger {
-  background: var(--rose-light);
-  color: var(--rose);
-  border: 1px solid rgba(186,26,26,0.2);
+  background: var(--color-danger-soft);
+  color: var(--color-danger-text);
+  border: 1px solid transparent;
 }
 .btn-premium-danger:hover:not(:disabled) {
-  background: #ffdad6;
+  border-color: color-mix(in srgb, var(--color-danger) 30%, transparent);
 }
 
 }
@@ -1555,20 +1722,20 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  background: var(--bg-secondary);
-  border: none;
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-tags);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--color-ink-soft);
   white-space: nowrap;
 }
 
 /* ─── Section reveal (scroll animations) ─── */
 .reveal {
   opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.25,1,0.5,1);
+  transform: translateY(12px);
+  transition: opacity 0.28s var(--ease-enter), transform 0.28s var(--ease-enter);
 }
 .reveal.in-view {
   opacity: 1;
@@ -1589,119 +1756,14 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 200ms ease;
   flex-shrink: 0;
 }
-.progress-step-circle.complete  { background: var(--accent-mint); color: var(--on-accent); }
-.progress-step-circle.current   { background: var(--bg-primary); color: var(--text-primary); border: 2.5px solid var(--accent-brass); }
-.progress-step-circle.upcoming  { background: var(--bg-secondary); color: var(--text-secondary); border: 2px solid var(--border-subtle); }
+.progress-step-circle.complete  { background: var(--color-brand); color: var(--color-on-brand); }
+.progress-step-circle.current   { background: var(--color-card); color: var(--color-ink); border: 2px solid var(--color-brand); }
+.progress-step-circle.upcoming  { background: var(--color-sunken); color: var(--color-ink-muted); border: 1px solid var(--color-line); }
 .progress-step-connector {
   flex: 1; height: 2px;
-  background: var(--border-subtle);
-  transition: background 200ms ease;
-}
-.progress-step-connector.done { background: var(--accent-mint); }
-
-/* ─── Landing: full-page scroll-snap — each top-level section is a "page";
-   scrolling settles onto the next one, like a slideshow ─── */
-.landing-snap-container {
-  height: 100dvh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* proximity (not mandatory) + no snap-stop: sections taller than the
-     viewport scroll freely and fast flicks aren't pulled back */
-  scroll-snap-type: y proximity;
-}
-.landing-snap-page {
-  min-height: 100dvh;
-  scroll-snap-align: start;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-/* Phones and reduced-motion users: free scrolling, no snapping. The
-   container stays the scroller (landing/page.tsx locks body overflow). */
-@media (max-width: 767.98px), (prefers-reduced-motion: reduce) {
-  .landing-snap-container {
-    scroll-snap-type: none;
-  }
-  .landing-snap-page {
-    min-height: auto;
-    scroll-snap-align: none;
-  }
-}
-
-/* ─── Landing: features — hairline-divided grid (gap reveals the wrapper's
-   bg as a 1px divider, so column count can change per breakpoint with no
-   nth-child border math) ─── */
-.landing-feature-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-}
-@media (max-width: 900px) {
-  .landing-feature-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 600px) {
-  .landing-feature-grid { grid-template-columns: 1fr; }
-}
-.landing-feature-cell {
-  height: 100%;
-  box-sizing: border-box;
-  padding: 40px;
-  background: var(--bg-primary);
-  transition: background 0.25s ease, transform 0.25s ease;
-}
-.landing-feature-cell:hover {
-  background: var(--bg-secondary);
-  transform: translateY(-2px);
-}
-.landing-feature-icon {
-  width: 44px; height: 44px;
   border-radius: 9999px;
-  background: var(--bg-secondary);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 24px;
-  transition: background 0.25s ease;
+  background: var(--color-sunken-2);
+  transition: background var(--transition-normal);
 }
-.landing-feature-icon .material-symbols-outlined {
-  font-size: 20px;
-  color: var(--accent-brass);
-  transition: color 0.25s ease;
-}
-.landing-feature-cell:hover .landing-feature-icon {
-  background: var(--accent-brass);
-}
-.landing-feature-cell:hover .landing-feature-icon .material-symbols-outlined {
-  color: var(--on-accent);
-}
+.progress-step-connector.done { background: var(--color-brand); }
 
-/* ─── Landing: Mission/Approach statement blocks — alternate left/right on
-   wide viewports for an editorial zigzag, but collapse to a single
-   left-aligned column on narrow ones where the zigzag just reads as
-   unbalanced/harder to scan ─── */
-.landing-statement {
-  max-width: 560px;
-  margin-inline-end: auto;
-  text-align: start;
-}
-.landing-statement-rule {
-  margin-inline-end: auto;
-}
-.landing-statement--end {
-  margin-inline-start: auto;
-  margin-inline-end: 0;
-  text-align: end;
-}
-.landing-statement--end .landing-statement-rule {
-  margin-inline-start: auto;
-  margin-inline-end: 0;
-}
-@media (max-width: 640px) {
-  .landing-statement--end {
-    margin-inline-start: 0;
-    margin-inline-end: auto;
-    text-align: start;
-  }
-  .landing-statement--end .landing-statement-rule {
-    margin-inline-start: 0;
-    margin-inline-end: auto;
-  }
-}

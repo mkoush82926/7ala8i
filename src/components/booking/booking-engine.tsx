@@ -11,8 +11,8 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, CalendarCheck, MapPin, RefreshCw, Scissors, Star, Store, Wallet } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AlertCircle, CalendarCheck, CalendarClock, MapPin, RefreshCw, Scissors, ShieldCheck, Star, Store, User, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { MOCK_DATA_ENABLED } from "@/lib/mock-data";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
@@ -20,6 +20,7 @@ import { pluralLabel } from "@/components/ui/booking-cta";
 import { toast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { placeholderFill, placeholderInitials } from "@/components/ui/photo-frame";
 import { isSlotBookable, type AvailableSlot, type RpcClient } from "@/lib/availability";
 import { OTP_DISABLED, type PublicBookingSecurity } from "@/lib/otp/config";
 import { BOOKING_CSS } from "./booking-css";
@@ -33,6 +34,7 @@ import {
   freshSlot,
   initialStep,
   isUuid,
+  lineQuote,
   offersAll,
   parseEntryParams,
   persistKey,
@@ -99,8 +101,9 @@ export function BookingEngine({
 }) {
   const [supabase] = useState(() => createClient());
   const rpcClient = supabase as unknown as RpcClient;
-  const { t, locale, dir, isRTL, FF, href, formatDuration, formatNumber } = useTranslation();
+  const { t, locale, dir, isRTL, FF, href, formatDuration, formatNumber, formatDate, formatTime } = useTranslation();
   const f = t.bookingFlow;
+  const reduceMotion = useReducedMotion();
   const searchParams = useSearchParams();
   const entry = useMemo(() => parseEntryParams(searchParams), [searchParams]);
   const rescheduleId = rescheduleAppointmentId ?? entry.rescheduleId;
@@ -508,18 +511,19 @@ export function BookingEngine({
     ? interpolate(t.booking.freeCancellationHours, { hours: String(policyHours) })
     : t.booking.freeCancellation;
   const shopHref = shopHrefProp ?? href(`/shop/${shopId}`);
-  const slideX = isRTL ? -24 : 24;
+  const slideX = isRTL ? -12 : 12;
+  // Crossfade + a 12px slide in reading direction; opacity only under reduced motion.
   const motionProps = {
-    initial: { opacity: 0, x: slideX },
+    initial: { opacity: 0, x: reduceMotion ? 0 : slideX },
     animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -slideX },
-    transition: { duration: 0.22 },
+    exit: { opacity: 0, x: reduceMotion ? 0 : -slideX },
+    transition: { duration: 0.28, ease: [0.05, 0.7, 0.1, 1] as const },
   };
 
   // ─── Whole-page states ───
   if ((loading && !data) || (data && !ready)) {
     return (
-      <div role="status" aria-busy="true" aria-label={t.common.loading} style={{ width: "100%", maxWidth: 720, margin: "0 auto" }} dir={dir}>
+      <div role="status" aria-busy="true" aria-label={t.common.loading} style={{ width: "100%", maxWidth: 1120, margin: "0 auto" }} dir={dir}>
         <Skeleton variant="text" style={{ height: 14, width: 120, marginBottom: 12 }} />
         <Skeleton variant="text" style={{ height: 32, width: "60%", marginBottom: 24 }} />
         <CardsSkeleton label={t.common.loading} />
@@ -556,17 +560,98 @@ export function BookingEngine({
     <StepHeader
       stepIndex={stepIndex} title={title} label={stepLabel(stepIndex, title)} isRTL={isRTL} FF={FF}
       headingRef={headingRef} onBack={onBack} backLabel={t.common.back} progressLabel={t.booking.progress}
+      stepLabels={[t.booking.services, t.booking.barber, t.booking.timeLabel, t.common.confirm]}
     />
   );
   const shopName = isRTL && shop.name_ar ? shop.name_ar : shop.name;
   const importantInfo = (isRTL ? shop.important_info_ar || shop.important_info_en : shop.important_info_en || shop.important_info_ar) || null;
   const rating = data?.rating ?? { avg: 0, count: 0 };
+  const shopFill = placeholderFill(shop.id);
+  const showAside = !booked && step !== "review";
+
+  // Desktop summary (≥ 960px container): what's chosen so far, live.
+  const summaryAside = (
+    <aside className="bk-aside" aria-label={t.booking.summary}>
+      <div className="bk-summary-card">
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+          <span
+            aria-hidden="true"
+            style={{
+              width: 56, height: 56, borderRadius: 12, flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
+              backgroundImage: `repeating-linear-gradient(135deg, ${shopFill.hatch} 0 2px, transparent 2px 12px), ${shopFill.bg}`,
+              color: shopFill.fg, fontSize: 19, fontWeight: 800,
+            }}
+          >
+            {placeholderInitials(shopName)}
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <p className="text-title" style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shopName}</p>
+            {shop.address && (
+              <p className="text-meta" style={{ color: "var(--color-ink-muted)", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shop.address}</p>
+            )}
+          </div>
+        </div>
+
+        {lines.length > 0 ? (
+          <ul style={{ listStyle: "none", margin: 0, padding: "16px 0 0", borderTop: "1px solid var(--color-line)", display: "flex", flexDirection: "column", gap: 10 }}>
+            {lines.map((l) => {
+              const svc = servicesById.get(l.serviceId);
+              if (!svc) return null;
+              const q = lineQuote(svc, l.variantId, chosenBarber?.barber_services.find((r) => r.service_id === svc.id) ?? null);
+              const price = svc.price_type === "free" ? f.free : q.isFrom ? interpolate(f.fromPrice, { price: money(q.price, currency, locale) }) : money(q.price, currency, locale);
+              return (
+                <li key={l.serviceId} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 15, fontWeight: 500, overflowWrap: "anywhere" }}>{localName(l.serviceId)}</span>
+                    <span className="text-meta" style={{ display: "block", color: "var(--color-ink-muted)" }}>{formatDuration(q.duration)}</span>
+                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{price}</span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="text-meta" style={{ margin: 0, padding: "16px 0 0", borderTop: "1px solid var(--color-line)", color: "var(--color-ink-muted)" }}>{t.booking.selectServices}</p>
+        )}
+
+        {(barber || slot) && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 14, color: "var(--color-ink-soft)" }}>
+            {barber && (
+              <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                <User size={16} aria-hidden="true" style={{ color: "var(--color-ink-muted)", flexShrink: 0 }} />
+                {barberLabel}
+              </p>
+            )}
+            {slot && (
+              <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                <CalendarClock size={16} aria-hidden="true" style={{ color: "var(--color-ink-muted)", flexShrink: 0 }} />
+                <span style={{ fontVariantNumeric: "tabular-nums" }}>
+                  {formatDate(new Date(slot.startIso), { weekday: "short", day: "numeric", month: "short", timeZone })} · {formatTime(slot.localTime)}
+                </span>
+              </p>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingTop: 16, borderTop: "1px solid var(--color-line)" }}>
+          <span style={{ fontSize: 15, fontWeight: 600 }}>{t.booking.total}</span>
+          <span style={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{lines.length ? amountLabel : "—"}</span>
+        </div>
+        <p className="text-meta" style={{ margin: 0, display: "flex", alignItems: "flex-start", gap: 6, color: "var(--color-ink-muted)" }}>
+          <ShieldCheck size={16} aria-hidden="true" style={{ flexShrink: 0, color: "var(--color-success)" }} />
+          <span>{t.booking.payInShop} · {policyText}</span>
+        </p>
+      </div>
+    </aside>
+  );
 
   return (
-    <div className="bk-root" style={{ width: "100%", fontFamily: FF, color: "var(--text-primary)", maxWidth: 720, margin: "0 auto" }} dir={dir}>
+    <div className="bk-root" style={{ width: "100%", fontFamily: FF, maxWidth: showAside ? 1120 : 960, margin: "0 auto" }} dir={dir}>
+      <div className={showAside ? "bk-layout" : undefined}>
+      <div style={{ minWidth: 0, maxWidth: showAside ? 720 : undefined, width: "100%" }}>
       <AnimatePresence mode="wait" initial={false}>
         {booked ? (
-          <motion.div key="booked" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <motion.div key="booked" initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
             <StepSuccess
               booked={booked}
               shop={{ id: shop.id, name: shopName, address: shop.address, phone: shop.phone, whatsapp: shop.whatsapp }}
@@ -580,34 +665,41 @@ export function BookingEngine({
           </motion.div>
         ) : step === "services" ? (
           <motion.section key="services" {...motionProps}>
-            <div className="bk-card" style={{ padding: "16px 18px", marginBottom: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div className="bk-card" style={{ padding: 16, marginBottom: 24, display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-                <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "var(--text-primary)", color: "var(--on-accent)", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Scissors size={18} />
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 48, height: 48, borderRadius: 12, flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    backgroundImage: `repeating-linear-gradient(135deg, ${shopFill.hatch} 0 2px, transparent 2px 12px), ${shopFill.bg}`,
+                    color: shopFill.fg, fontSize: 17, fontWeight: 800,
+                  }}
+                >
+                  {placeholderInitials(shopName)}
                 </span>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: 15, fontWeight: 800, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shopName}</p>
+                  <p className="text-title" style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shopName}</p>
                   {shop.address && (
-                    <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
-                      <MapPin size={12} aria-hidden="true" style={{ flexShrink: 0 }} />
+                    <p className="text-meta" style={{ color: "var(--color-ink-muted)", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
+                      <MapPin size={13} aria-hidden="true" style={{ flexShrink: 0 }} />
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shop.address}</span>
                     </p>
                   )}
                 </div>
                 {rating.count > 0 && (
                   <span
-                    style={{ marginInlineStart: "auto", display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 800, flexShrink: 0 }}
+                    style={{ marginInlineStart: "auto", display: "inline-flex", alignItems: "center", gap: 4, fontSize: 14, fontWeight: 600, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}
                     aria-label={`${interpolate(t.shopPage.ratingLabel, { rating: ratingText(rating.avg) })} · ${pluralLabel(t.primitives.reviewsCount, rating.count, locale, formatNumber(rating.count))}`}
                   >
-                    <Star size={14} aria-hidden="true" style={{ color: "var(--accent-brass)", fill: "var(--accent-brass)" }} />
+                    <Star size={15} aria-hidden="true" className="fill-accent text-accent" />
                     {ratingText(rating.avg)}
-                    <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-secondary)" }}>({formatNumber(rating.count)})</span>
+                    <span style={{ fontSize: 13, fontWeight: 400, color: "var(--color-ink-muted)" }}>({formatNumber(rating.count)})</span>
                   </span>
                 )}
               </div>
               <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {[{ icon: Wallet, text: t.booking.payInShop }, { icon: CalendarCheck, text: policyText }].map(({ icon: Icon, text }) => (
-                  <li key={text} className="bk-pill-info"><Icon size={13} aria-hidden="true" /> {text}</li>
+                  <li key={text} className="bk-pill-info"><Icon size={14} aria-hidden="true" /> {text}</li>
                 ))}
               </ul>
             </div>
@@ -738,6 +830,9 @@ export function BookingEngine({
           </motion.section>
         )}
       </AnimatePresence>
+      </div>
+      {showAside && summaryAside}
+      </div>
 
       <style>{BOOKING_CSS}</style>
     </div>

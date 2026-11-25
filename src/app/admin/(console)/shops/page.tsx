@@ -79,7 +79,7 @@ export default async function AdminShopsPage({ searchParams }: { searchParams: P
             <Search
               size={16}
               aria-hidden
-              className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+              className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-ink-muted"
             />
             <input
               id="shop-q"
@@ -89,7 +89,7 @@ export default async function AdminShopsPage({ searchParams }: { searchParams: P
               maxLength={100}
               placeholder={c.searchPlaceholder}
               autoComplete="off"
-              className="h-11 w-full rounded-[var(--radius)] border border-[var(--border-primary)] bg-[var(--bg-primary)] ps-9 pe-3 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+              className="h-11 w-full rounded-full border border-line-strong bg-card ps-10 pe-4 text-[15px] text-ink placeholder:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             />
           </div>
           <label htmlFor="shop-city" className="sr-only">
@@ -99,7 +99,7 @@ export default async function AdminShopsPage({ searchParams }: { searchParams: P
             id="shop-city"
             name="city"
             defaultValue={f.city ?? ""}
-            className="h-11 rounded-[var(--radius)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 text-[15px] text-[var(--text-primary)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] sm:w-48"
+            className="h-11 rounded-lg border border-line-strong bg-card px-4 text-[15px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-48"
           >
             <option value="">{c.allCities}</option>
             {cities.map((city) => (
@@ -140,23 +140,23 @@ export default async function AdminShopsPage({ searchParams }: { searchParams: P
             {page.rows.map((shop) => (
               <li
                 key={shop.id}
-                className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4"
+                className="rounded-xl border border-line bg-card p-4 transition-shadow duration-200 hover:shadow-card"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <Link
                       href={`/admin/shops/${shop.id}`}
-                      className="block truncate rounded text-[15px] font-semibold text-[var(--text-primary)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+                      className="block truncate rounded text-[15px] font-semibold text-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                     >
                       {shop.name}
                     </Link>
-                    <p className="mt-0.5 truncate text-[12px] text-[var(--text-muted)]">
+                    <p className="mt-0.5 truncate text-[13px] text-ink-muted">
                       {[shop.city_name, `/${shop.slug}`].filter(Boolean).join(" · ")}
                     </p>
                   </div>
                   {verifyCell(shop)}
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[var(--text-secondary)]">
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-ink-soft">
                   <ShopStatePills shop={shop} />
                   <span>
                     {c.columns.bookings}: {formatCount(num(shop.bookings_30d))}
@@ -170,32 +170,32 @@ export default async function AdminShopsPage({ searchParams }: { searchParams: P
           </ul>
 
           {/* Desktop: table */}
-          <div className="hidden overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-subtle)] md:block">
-            <table className="w-full text-[14px]">
+          <div className="hidden overflow-x-auto rounded-xl border border-line bg-card md:block">
+            <table className="w-full text-sm">
               <caption className="sr-only">{c.title}</caption>
-              <thead className="bg-[var(--bg-secondary)] text-start text-[12px] text-[var(--text-secondary)]">
+              <thead className="sticky top-16 z-10 bg-sunken/60 text-start text-xs text-ink-muted backdrop-blur">
                 <tr>
-                  <th scope="col" className="px-4 py-2.5 text-start font-medium">{c.columns.shop}</th>
-                  <th scope="col" className="px-3 py-2.5 text-start font-medium">{c.columns.state}</th>
-                  <th scope="col" className="px-3 py-2.5 text-end font-medium">{c.columns.staff}</th>
-                  <th scope="col" className="px-3 py-2.5 text-end font-medium">{c.columns.bookings}</th>
-                  <th scope="col" className="px-3 py-2.5 text-end font-medium">{c.columns.rating}</th>
-                  <th scope="col" className="px-3 py-2.5 text-start font-medium">{c.columns.plan}</th>
-                  <th scope="col" className="px-3 py-2.5 text-start font-medium">{c.columns.created}</th>
-                  <th scope="col" className="px-4 py-2.5 text-end font-medium">{c.columns.verified}</th>
+                  <th scope="col" className="h-10 px-4 text-start font-semibold">{c.columns.shop}</th>
+                  <th scope="col" className="h-10 px-3 text-start font-semibold">{c.columns.state}</th>
+                  <th scope="col" className="h-10 px-3 text-end font-semibold">{c.columns.staff}</th>
+                  <th scope="col" className="h-10 px-3 text-end font-semibold">{c.columns.bookings}</th>
+                  <th scope="col" className="h-10 px-3 text-end font-semibold">{c.columns.rating}</th>
+                  <th scope="col" className="h-10 px-3 text-start font-semibold">{c.columns.plan}</th>
+                  <th scope="col" className="h-10 px-3 text-start font-semibold">{c.columns.created}</th>
+                  <th scope="col" className="h-10 px-4 text-end font-semibold">{c.columns.verified}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border-subtle)] bg-[var(--bg-surface)]">
+              <tbody className="divide-y divide-line bg-card">
                 {page.rows.map((shop) => (
-                  <tr key={shop.id} className="hover:bg-[var(--bg-surface-hover)]">
+                  <tr key={shop.id} className="h-14 transition-colors hover:bg-sunken/60">
                     <td className="max-w-[16rem] px-4 py-3">
                       <Link
                         href={`/admin/shops/${shop.id}`}
-                        className="block truncate rounded font-semibold text-[var(--text-primary)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+                        className="block truncate rounded font-semibold text-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                       >
                         {shop.name}
                       </Link>
-                      <span className="block truncate text-[12px] text-[var(--text-muted)]">
+                      <span className="block truncate text-[13px] text-ink-muted">
                         {[shop.city_name, `/${shop.slug}`].filter(Boolean).join(" · ")}
                       </span>
                     </td>
@@ -208,7 +208,7 @@ export default async function AdminShopsPage({ searchParams }: { searchParams: P
                     <td className="px-3 py-3 text-[13px]">
                       {shop.plan_code ? ADMIN_COPY.plan.codes[shop.plan_code] : ADMIN_COPY.common.dash}
                     </td>
-                    <td className="px-3 py-3 text-[13px] text-[var(--text-secondary)]">{formatDate(shop.created_at)}</td>
+                    <td className="px-3 py-3 text-[13px] text-ink-soft">{formatDate(shop.created_at)}</td>
                     <td className="px-4 py-3 text-end">
                       {verifyCell(shop)}
                     </td>

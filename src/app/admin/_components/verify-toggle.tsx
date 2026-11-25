@@ -63,11 +63,11 @@ export function VerifyToggle({
         aria-label={c.verifyToggle(shopName)}
         onClick={onClick}
         disabled={pending}
-        className="inline-flex shrink-0 items-center gap-2 rounded-full focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] disabled:opacity-60"
+        className="inline-flex shrink-0 items-center gap-2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:opacity-60"
       >
         {showLabel && (
-          <span className="flex items-center gap-1 text-[13px] font-medium text-[var(--text-primary)]">
-            <BadgeCheck size={16} aria-hidden className={value ? "text-[var(--accent-text)]" : "text-[var(--text-muted)]"} />
+          <span className="flex items-center gap-1 text-[13px] font-medium text-ink">
+            <BadgeCheck size={16} aria-hidden className={value ? "text-brand-text" : "text-ink-muted"} />
             {c.verified}
           </span>
         )}
@@ -76,13 +76,13 @@ export function VerifyToggle({
           className={cn(
             "relative inline-flex h-6 w-11 items-center rounded-full border transition-colors",
             value
-              ? "border-[var(--accent-mint)] bg-[var(--accent-mint)]"
-              : "border-[var(--border-primary)] bg-[var(--bg-secondary)]",
+              ? "border-brand bg-brand"
+              : "border-line-strong bg-sunken",
           )}
         >
           <span
             className={cn(
-              "inline-block h-4 w-4 rounded-full bg-[var(--bg-primary)] shadow transition-transform",
+              "inline-block h-4 w-4 rounded-full bg-card shadow transition-transform",
               value ? "translate-x-6 rtl:-translate-x-6" : "translate-x-1 rtl:-translate-x-1",
             )}
           />

@@ -64,7 +64,7 @@ export default async function AdminShopPage({ params }: { params: Promise<{ shop
           <span className="flex flex-wrap items-center gap-2">
             {shop.name}
             {shop.is_verified && (
-              <Pill tone="brass" size="sm">
+              <Pill tone="brand" size="sm">
                 {ADMIN_COPY.shops.verified}
               </Pill>
             )}
@@ -95,8 +95,8 @@ export default async function AdminShopPage({ params }: { params: Promise<{ shop
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 lg:col-span-2">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+        <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
           <Section id="details">
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label={c.slug}>/{shop.slug}{shop.slug_ar ? ` · /${shop.slug_ar}` : ""}</Field>
@@ -119,9 +119,9 @@ export default async function AdminShopPage({ params }: { params: Promise<{ shop
           <Section title={c.statsTitle} id="stats">
             <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {STAT_KEYS.map((key) => (
-                <div key={key} className="rounded-[var(--radius)] bg-[var(--bg-secondary)] p-3">
-                  <dt className="text-[12px] text-[var(--text-secondary)]">{c.stats[key]}</dt>
-                  <dd className="mt-0.5 text-[18px] font-semibold tabular-nums">
+                <div key={key} className="rounded-xl bg-sunken p-3 lg:p-4">
+                  <dt className="text-xs font-semibold text-ink-muted">{c.stats[key]}</dt>
+                  <dd className="mt-1 text-xl font-bold text-ink tabular-nums">
                     {key === "rating_avg" ? formatRating(stats.rating_avg) : formatCount(num(stats[key]))}
                   </dd>
                 </div>
@@ -135,9 +135,9 @@ export default async function AdminShopPage({ params }: { params: Promise<{ shop
 
           <Section title={c.staffTitle} id="team">
             {staff.length === 0 ? (
-              <p className="text-[14px] text-[var(--text-secondary)]">{c.staffEmpty}</p>
+              <p className="text-[14px] text-ink-soft">{c.staffEmpty}</p>
             ) : (
-              <ul className="divide-y divide-[var(--border-subtle)]">
+              <ul className="divide-y divide-line">
                 {staff.map((p) => (
                   <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
                     <div className="min-w-0">
@@ -149,7 +149,7 @@ export default async function AdminShopPage({ params }: { params: Promise<{ shop
                           </Pill>
                         )}
                       </p>
-                      <p className="text-[12px] text-[var(--text-muted)]">
+                      <p className="text-[12px] text-ink-muted">
                         {ADMIN_COPY.abuse.roleLabels[p.role] ?? p.role}
                         {p.phone_masked ? (
                           <>
@@ -171,7 +171,7 @@ export default async function AdminShopPage({ params }: { params: Promise<{ shop
           </Section>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start lg:gap-6">
           <Section title={c.verificationTitle} description={c.verificationBody} id="verification">
             {isAdmin ? (
               <VerifyToggle shopId={shop.id} shopName={shop.name} verified={shop.is_verified} showLabel />
@@ -180,9 +180,10 @@ export default async function AdminShopPage({ params }: { params: Promise<{ shop
             )}
           </Section>
 
-          <Section title={c.suspensionTitle} description={c.suspensionBody} id="suspension">
+          {/* Danger zone: destructive controls are visually separated. */}
+          <Section title={c.suspensionTitle} description={c.suspensionBody} id="suspension" className="border-danger/30">
             {suspended && (
-              <p className="mb-3 text-[14px] font-medium text-[var(--accent-rose)]">
+              <p className="mb-3 text-[14px] font-medium text-danger-text">
                 {c.suspendedSince(formatDate(shop.suspended_at))}
               </p>
             )}
@@ -192,7 +193,7 @@ export default async function AdminShopPage({ params }: { params: Promise<{ shop
           <Section title={c.supportTitle} description={c.supportBody} id="support">
             <StartSupportSession shopId={shop.id} />
           </Section>
-        </div>
+        </aside>
       </div>
     </>
   );

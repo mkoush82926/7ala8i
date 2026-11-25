@@ -50,8 +50,8 @@ export function ImpersonationBanner({ session }: { session: ImpersonationInfo })
       className={cn(
         "border-b",
         write
-          ? "border-[var(--accent-rose)] bg-[var(--accent-rose)] text-[var(--on-accent)]"
-          : "border-[var(--accent-brass)] bg-[var(--accent-blue-muted)] text-[var(--text-primary)]",
+          ? "border-danger bg-danger text-white dark:text-[#2E1414]"
+          : "border-brand-soft-line bg-brand-soft text-brand-pressed",
       )}
     >
       <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 lg:px-6">
@@ -64,8 +64,8 @@ export function ImpersonationBanner({ session }: { session: ImpersonationInfo })
           <Link
             href="/admin/support"
             className={cn(
-              "inline-flex h-9 items-center rounded-[var(--radius)] px-3 text-[13px] font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2",
-              write ? "focus-visible:ring-[var(--on-accent)]" : "focus-visible:ring-[var(--accent-brass)]",
+              "inline-flex h-9 items-center rounded-full px-3 text-[13px] font-semibold underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2",
+              write ? "focus-visible:outline-current" : "focus-visible:outline-focus",
             )}
           >
             {c.bannerOpen}
@@ -76,10 +76,10 @@ export function ImpersonationBanner({ session }: { session: ImpersonationInfo })
             disabled={pending}
             aria-busy={pending}
             className={cn(
-              "inline-flex h-9 items-center rounded-[var(--radius)] border px-3 text-[13px] font-semibold focus-visible:outline-none focus-visible:ring-2 disabled:opacity-60",
+              "inline-flex h-9 items-center rounded-full border px-4 text-[13px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-45",
               write
-                ? "border-[var(--on-accent)] focus-visible:ring-[var(--on-accent)]"
-                : "border-[var(--text-primary)] focus-visible:ring-[var(--accent-brass)]",
+                ? "border-current hover:bg-white/15 focus-visible:outline-current"
+                : "border-brand-pressed hover:bg-card focus-visible:outline-focus",
             )}
           >
             {pending ? c.stopping : c.stop}

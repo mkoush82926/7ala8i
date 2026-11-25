@@ -28,7 +28,7 @@ import type { CalendarAppointment } from "@/hooks/use-appointments";
 
 function seed(): { lanes: { key: string; barberId: string; name: string; color: string }[]; appts: CalendarAppointment[]; days: string[] } {
   const days = rangeFor("week", new Date(2026, 10, 14)).days;
-  const lanes = Array.from({ length: 6 }, (_, i) => ({ key: `b${i}`, barberId: `b${i}`, name: `Barber ${i}`, color: "#b08d57" }));
+  const lanes = Array.from({ length: 6 }, (_, i) => ({ key: `b${i}`, barberId: `b${i}`, name: `Barber ${i}`, color: "#0F766E" }));
   const appts: CalendarAppointment[] = [];
   let n = 0;
   for (const lane of lanes) {
@@ -69,7 +69,7 @@ describe("WeekMatrix", () => {
       lanes,
       appointments: appts,
       blocks: [],
-      colorFor: () => "#b08d57",
+      colorFor: () => "#0F766E",
       now: new Date(2026, 10, 14, 12),
       canEdit: () => true,
       isWorking: () => true,

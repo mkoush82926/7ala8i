@@ -148,22 +148,22 @@ export function OtpPanel({
   if (verified) {
     return (
       <div className="bk-policy" role="status">
-        <CheckCircle2 size={18} aria-hidden="true" style={{ color: "var(--accent-sage, var(--accent-text))", flexShrink: 0 }} />
+        <CheckCircle2 size={18} aria-hidden="true" style={{ color: "var(--color-success)", flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <strong>{f.phoneVerified}</strong>
-          <span dir="ltr" style={{ display: "block", color: "var(--text-secondary)", fontSize: 12 }}>{maskForDisplay(phone)}</span>
+          <span dir="ltr" style={{ display: "block", color: "var(--color-ink-muted)", fontSize: 12 }}>{maskForDisplay(phone)}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bk-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+    <div className="bk-card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-        <ShieldCheck size={20} aria-hidden="true" style={{ color: "var(--accent-text)", flexShrink: 0, marginTop: 2 }} />
+        <ShieldCheck size={20} aria-hidden="true" style={{ color: "var(--color-brand-text)", flexShrink: 0, marginTop: 2 }} />
         <div>
-          <p style={{ margin: 0, fontWeight: 800, fontSize: 14 }}>{f.verifyPhoneTitle}</p>
-          <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+          <p className="text-title" style={{ margin: 0 }}>{f.verifyPhoneTitle}</p>
+          <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--color-ink-muted)", lineHeight: 1.5 }}>
             {security.otpChannel === "whatsapp" ? f.verifyPhoneWhatsApp : f.verifyPhoneSms}
           </p>
         </div>

@@ -6,12 +6,13 @@ import { Pill, type PillTone } from "@/components/ui/pill";
 import type { AppointmentStatus } from "@/lib/types";
 import { useStatusLabel } from "./status-label";
 
+/** §5.5 status tones: confirmed → brand, pending → warning, done → success, no-show → danger. */
 const TONE: Record<AppointmentStatus, PillTone> = {
-  pending: "neutral",
-  confirmed: "ink",
-  awaiting_deposit: "brass",
-  arrived: "brass",
-  in_chair: "success",
+  pending: "warning",
+  confirmed: "brand",
+  awaiting_deposit: "accent",
+  arrived: "brand",
+  in_chair: "ink",
   completed: "success",
   no_show: "danger",
   cancelled: "neutral",

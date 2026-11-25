@@ -109,7 +109,7 @@ describe("snippets", () => {
     const s = buttonSnippet('https://x/b/a?src=web&entry=link', 'Book <now> "today"', "brass", "rtl");
     expect(s).toContain('href="https://x/b/a?src=web&amp;entry=link"');
     expect(s).toContain("Book &lt;now&gt; &quot;today&quot;");
-    expect(s).toContain("#7c5a26");
+    expect(s).toContain("#0F766E");
     expect(s).toContain('dir="rtl"');
   });
   it("clamps the iframe height", () => {

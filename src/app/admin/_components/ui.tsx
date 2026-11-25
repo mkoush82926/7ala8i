@@ -5,6 +5,7 @@ import { ADMIN_COPY, adminErrorMessage } from "@/lib/admin/dictionary";
 import { buildHref, pageBounds, pageCount } from "@/lib/admin/params";
 import type { AdminErrorCode } from "@/lib/admin/rpc";
 import { cn } from "@/lib/utils";
+import { buttonClasses } from "@/components/ui/recipes";
 
 /** Server-safe presentational pieces shared by the back-office pages. */
 
@@ -20,19 +21,19 @@ export function PageHeader({
   back?: { href: string; label: string };
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {back && (
           <Link
             href={back.href}
-            className="mb-2 inline-flex items-center gap-1 rounded text-[13px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+            className="mb-3 inline-flex min-h-9 items-center gap-1.5 rounded-full text-sm font-semibold text-ink-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
-            <ArrowLeft size={14} aria-hidden className="rtl:rotate-180" />
+            <ArrowLeft size={16} aria-hidden className="rtl:rotate-180" />
             {back.label}
           </Link>
         )}
-        <h1 className="text-[22px] font-bold tracking-tight text-[var(--text-primary)] sm:text-[26px]">{title}</h1>
-        {subtitle && <p className="mt-1 max-w-2xl text-[14px] text-[var(--text-secondary)]">{subtitle}</p>}
+        <h1 className="text-h2 text-ink">{title}</h1>
+        {subtitle && <p className="mt-1 max-w-2xl text-[15px] text-ink-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
     </div>
@@ -60,7 +61,7 @@ export function Section({
       id={id}
       aria-labelledby={title ? headingId : undefined}
       className={cn(
-        "rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5",
+        "rounded-xl border border-line bg-card p-4 lg:p-5",
         className,
       )}
     >
@@ -68,11 +69,11 @@ export function Section({
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             {title && (
-              <h2 id={headingId} className="text-[16px] font-semibold text-[var(--text-primary)]">
+              <h2 id={headingId} className="text-h3 text-ink">
                 {title}
               </h2>
             )}
-            {description && <p className="mt-1 text-[13px] text-[var(--text-secondary)]">{description}</p>}
+            {description && <p className="mt-1 text-sm text-ink-muted">{description}</p>}
           </div>
           {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
         </div>
@@ -85,14 +86,14 @@ export function Section({
 export function StatTile({ label, value, href }: { label: string; value: React.ReactNode; href?: string }) {
   const body = (
     <>
-      <span className="block text-[13px] text-[var(--text-secondary)]">{label}</span>
-      <span className="mt-1 block text-[24px] font-bold tabular-nums text-[var(--text-primary)]">{value}</span>
+      <span className="block text-sm font-medium text-ink-muted">{label}</span>
+      <span className="text-stat mt-2 block text-ink">{value}</span>
     </>
   );
   const cls =
-    "block rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]";
+    "block rounded-xl border border-line bg-card p-4 lg:p-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
   return href ? (
-    <Link href={href} className={cn(cls, "hover:border-[var(--border-hover)]")}>
+    <Link href={href} className={cn(cls, "transition-shadow duration-200 hover:shadow-card")}>
       {body}
     </Link>
   ) : (
@@ -114,7 +115,7 @@ export function FilterTabs<T extends string>({
 }) {
   return (
     <nav aria-label={label} className="-mx-1 overflow-x-auto px-1 [scrollbar-width:none]">
-      <ul className="flex w-max gap-1 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1">
+      <ul className="flex w-max gap-1 rounded-full bg-sunken p-1">
         {options.map((o) => {
           const active = o.value === value;
           return (
@@ -123,10 +124,10 @@ export function FilterTabs<T extends string>({
                 href={hrefFor(o.value)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-8 items-center rounded-full px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]",
+                  "inline-flex h-9 items-center rounded-full px-4 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
                   active
-                    ? "bg-[var(--text-primary)] text-[var(--bg-primary)]"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                    ? "bg-card text-ink shadow-xs"
+                    : "text-ink-muted hover:text-ink",
                 )}
               >
                 {o.label}
@@ -156,12 +157,11 @@ export function Pagination({
   const pages = pageCount(total, size);
   if (!bounds || pages <= 1) return null;
   const c = ADMIN_COPY.common;
-  const linkCls =
-    "inline-flex h-10 items-center rounded-[var(--radius)] border border-[var(--border-subtle)] px-3 text-[13px] font-medium hover:border-[var(--border-hover)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]";
-  const disabledCls = "pointer-events-none opacity-40";
+  const linkCls = buttonClasses({ variant: "secondary", size: "sm" });
+  const disabledCls = "pointer-events-none opacity-45";
   return (
     <nav aria-label={c.pageOf(bounds.from, bounds.to, total)} className="mt-4 flex items-center justify-between gap-3">
-      <p className="text-[13px] tabular-nums text-[var(--text-secondary)]">{c.pageOf(bounds.from, bounds.to, total)}</p>
+      <p className="text-[13px] tabular-nums text-ink-soft">{c.pageOf(bounds.from, bounds.to, total)}</p>
       <div className="flex gap-2">
         <Link
           href={buildHref(path, { ...params, page: page - 1 })}
@@ -202,8 +202,8 @@ export function ErrorPanel({ code, retryHref }: { code: AdminErrorCode; retryHre
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[12px] font-medium text-[var(--text-muted)]">{label}</dt>
-      <dd className="mt-0.5 break-words text-[14px] text-[var(--text-primary)]">{children}</dd>
+      <dt className="text-xs font-semibold text-ink-muted">{label}</dt>
+      <dd className="mt-1 break-words text-sm text-ink">{children}</dd>
     </div>
   );
 }

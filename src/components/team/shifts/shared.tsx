@@ -44,7 +44,7 @@ export function PanelActions({
 }) {
   const { t } = useTranslation();
   return (
-    <DialogFooter className="mt-6 border-t border-[var(--border-subtle)] pt-4">
+    <DialogFooter className="mt-6 border-t border-line pt-4">
       <button type="button" onClick={onCancel} className="btn btn-secondary" disabled={saving}>
         {t.common.cancel}
       </button>

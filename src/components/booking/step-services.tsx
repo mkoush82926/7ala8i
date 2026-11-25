@@ -6,6 +6,7 @@ import React, { useMemo, useState } from "react";
 import { Check, Home, Plus, Scissors } from "lucide-react";
 import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
+import { buttonClasses } from "@/components/ui/recipes";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { getServiceCategory, type ServiceCategory } from "@/lib/service-icon";
 import type { BookingCategory } from "./use-booking-data";
@@ -127,7 +128,7 @@ export function StepServices({
                   </span>
                   {desc && <span className="bk-row-desc">{desc}</span>}
                   {s.location_type === "home" && (
-                    <span className="bk-row-meta" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <span className="bk-row-meta" style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 4, color: "var(--color-brand-text)", fontWeight: 600 }}>
                       <Home size={12} aria-hidden="true" /> {f.homeService}
                     </span>
                   )}
@@ -155,7 +156,7 @@ export function StepServices({
             {variantFor && selected.has(variantFor.id) && (
               <button
                 type="button"
-                className="btn btn-secondary"
+                className={buttonClasses({ variant: "secondary" })}
                 onClick={() => { onToggle(variantFor.id); setVariantFor(null); }}
               >
                 {f.removeService}
@@ -163,7 +164,7 @@ export function StepServices({
             )}
             <button
               type="button"
-              className="btn btn-primary font-bold"
+              className={buttonClasses({ variant: "primary" })}
               disabled={!variantChoice}
               onClick={() => {
                 if (variantFor && variantChoice) onToggle(variantFor.id, variantChoice);
@@ -188,12 +189,12 @@ export function StepServices({
               >
                 <span className="bk-radio" aria-hidden="true" />
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontWeight: 800, fontSize: 14 }}>{isRTL && v.name_ar ? v.name_ar : v.name_en}</span>
-                  <span style={{ display: "block", fontSize: 12, color: "var(--text-secondary)" }}>
+                  <span style={{ display: "block", fontWeight: 600, fontSize: 15 }}>{isRTL && v.name_ar ? v.name_ar : v.name_en}</span>
+                  <span style={{ display: "block", fontSize: 12, color: "var(--color-ink-muted)" }}>
                     {serviceDurationLabel({ duration: v.duration, variants: [] }, locale)}
                   </span>
                 </span>
-                <span style={{ fontWeight: 800, fontSize: 14, whiteSpace: "nowrap" }}>
+                <span style={{ fontWeight: 600, fontSize: 15, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                   {variantFor.price_type === "free" ? f.free : money(v.price, currency, locale)}
                 </span>
               </button>

@@ -20,14 +20,14 @@ export function SettingsSection({
     <section
       id={id}
       aria-labelledby={`${id}-title`}
-      className="scroll-mt-24 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-4 sm:p-6"
+      className="scroll-mt-24 rounded-xl border border-line bg-card p-4 lg:p-5"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 id={`${id}-title`} className="text-base font-bold text-[var(--text-primary)]">
+          <h2 id={`${id}-title`} className="text-h3 text-ink">
             {title}
           </h2>
-          {description && <p className="mt-1 text-sm text-[var(--text-secondary)]">{description}</p>}
+          {description && <p className="mt-1 max-w-prose text-sm text-ink-muted">{description}</p>}
         </div>
         {aside}
       </div>
@@ -91,7 +91,7 @@ export function TextField({
         <input {...common} type={type} inputMode={inputMode} className="field-input" onChange={(e) => onChange(e.target.value)} />
       )}
       {hint && !error && (
-        <p id={`${id}-hint`} className="mt-1.5 text-xs text-[var(--text-muted)]">
+        <p id={`${id}-hint`} className="mt-1.5 text-[13px] text-ink-muted">
           {hint}
         </p>
       )}
@@ -122,11 +122,11 @@ export function Switch({
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <p id={`${id}-l`} className="text-sm font-bold text-[var(--text-primary)]">
+        <p id={`${id}-l`} className="text-sm font-semibold text-ink">
           {label}
         </p>
         {description && (
-          <p id={`${id}-d`} className="mt-0.5 text-xs text-[var(--text-secondary)]">
+          <p id={`${id}-d`} className="mt-0.5 text-[13px] text-ink-muted">
             {description}
           </p>
         )}
@@ -140,15 +140,15 @@ export function Switch({
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={cn(
-          "focus-ring relative shrink-0 inline-flex h-7 w-12 items-center rounded-full transition-colors disabled:opacity-50",
-          checked ? "bg-[var(--cta-bg)]" : "bg-[var(--border-primary)]",
+          "focus-ring relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-150 ease-standard disabled:opacity-45 motion-reduce:transition-none",
+          checked ? "bg-brand" : "bg-line-strong",
         )}
       >
         <span
           aria-hidden="true"
           className={cn(
-            "inline-block h-5 w-5 rounded-full bg-white shadow transition-transform",
-            checked ? "translate-x-6 rtl:-translate-x-6" : "translate-x-1 rtl:-translate-x-1",
+            "inline-block size-5 rounded-full bg-white shadow-xs transition-transform duration-100 ease-standard motion-reduce:transition-none",
+            checked ? "translate-x-[22px] rtl:-translate-x-[22px]" : "translate-x-0.5 rtl:-translate-x-0.5",
           )}
         />
       </button>

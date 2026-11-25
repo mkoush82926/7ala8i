@@ -43,6 +43,8 @@ export interface MetaLineProps {
   className?: string;
   /** Extra class for each item. */
   itemClassName?: string;
+  /** Emphasise the first fact (ink, medium) — e.g. the rating. */
+  emphasizeFirst?: boolean;
 }
 
 function isItemObject(item: unknown): item is MetaItemObject {
@@ -65,6 +67,7 @@ export function MetaLine({
   truncate = false,
   className,
   itemClassName,
+  emphasizeFirst = false,
 }: MetaLineProps) {
   const visible = items.filter((item) => !isEmpty(item));
   if (visible.length === 0) return null;
@@ -78,7 +81,7 @@ export function MetaLine({
   return (
     <Tag
       className={cn(
-        "flex items-center gap-x-1.5 text-sm text-[var(--text-secondary)]",
+        "flex items-center gap-x-1.5 text-sm text-ink-muted",
         truncate ? "min-w-0 flex-nowrap overflow-hidden whitespace-nowrap" : "flex-wrap",
         className,
       )}
@@ -90,7 +93,7 @@ export function MetaLine({
           <React.Fragment key={key}>
             {i > 0 && (
               <>
-                <span aria-hidden="true" className="select-none text-[var(--text-muted)]">
+                <span aria-hidden="true" className="select-none text-ink-disabled">
                   {META_SEPARATOR}
                 </span>
                 <span className="sr-only">, </span>
@@ -101,6 +104,7 @@ export function MetaLine({
               className={cn(
                 "inline-flex items-center gap-1",
                 truncate && i === visible.length - 1 && "min-w-0 truncate",
+                emphasizeFirst && i === 0 && "font-medium text-ink",
                 itemClassName,
                 obj?.className,
               )}

@@ -4,10 +4,12 @@
 // clients, online booking and timing (buffer / processing). Mobile-first.
 
 import React, { useId, useRef, useState } from "react";
-import { ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
 import { Dialog, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { checkboxClasses, focusRing } from "@/components/ui/recipes";
 import type { ServiceItem } from "@/hooks/use-services";
 import { AUDIENCES, LOCATION_TYPES, PRICE_TYPES, type CategoryRow, type VariantDraft, type ServiceWrite } from "@/lib/queries/services";
 import {
@@ -23,14 +25,17 @@ import {
 
 const ICONS = ["✂️", "💈", "🧔", "💇", "🪒", "🧴", "💆", "🎨", "✨", "👑", "🧖", "💅"];
 
+/** Segmented control segment (§5.6): sits inside `segTrack`; selected = white chip. */
+const segTrack = "flex gap-1 rounded-full bg-sunken p-1";
 const segBtn = (on: boolean) =>
   cn(
-    "min-h-11 flex-1 rounded-[var(--radius-buttons)] border px-3 text-sm font-bold transition-colors cursor-pointer",
-    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-brass)]",
-    on
-      ? "border-[var(--brand-primary)] bg-[var(--brand-primary)] text-[var(--brand-on-primary)]"
-      : "border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:border-[var(--border-primary)]",
+    "min-h-10 flex-1 cursor-pointer rounded-full px-3 text-sm font-semibold transition-colors duration-150",
+    focusRing,
+    on ? "bg-card text-ink shadow-xs" : "text-ink-muted hover:text-ink",
   );
+
+/** Section heading inside the editor form. */
+const sectionLegend = "mb-3 text-title text-ink";
 
 export function ServiceEditor({
   open, service, categories, currency, legacy, onClose, onSave,
@@ -128,17 +133,16 @@ function ServiceEditorBody({
       size="lg"
       footer={
         <DialogFooter>
-          <button type="button" className="btn btn-secondary" onClick={close} disabled={saving}>
+          <Button variant="secondary" onClick={close} disabled={saving}>
             {t.common.cancel}
-          </button>
-          <button type="submit" form={formId} className="btn btn-primary font-bold" disabled={saving} aria-busy={saving || undefined}>
-            {saving ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
+          </Button>
+          <Button type="submit" form={formId} loading={saving}>
             {service ? svc.saveChanges : svc.addService}
-          </button>
+          </Button>
         </DialogFooter>
       }
     >
-      <form id={formId} onSubmit={submit} noValidate className="flex flex-col gap-6">
+      <form id={formId} onSubmit={submit} noValidate className="flex flex-col gap-7">
         {/* ── Basics ── */}
         <fieldset className="flex flex-col gap-4">
           <legend className="sr-only">{svc.sectionBasics}</legend>
@@ -152,11 +156,11 @@ function ServiceEditorBody({
                   onClick={() => set("icon", ic)}
                   aria-pressed={form.icon === ic}
                   className={cn(
-                    "flex size-11 cursor-pointer items-center justify-center rounded-[var(--radius-buttons)] border text-lg transition-all",
-                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-brass)]",
+                    "flex size-11 cursor-pointer items-center justify-center rounded-lg border text-lg transition-colors duration-150",
+                    focusRing,
                     form.icon === ic
-                      ? "border-[var(--accent-brass)] bg-[var(--bg-secondary)]"
-                      : "border-transparent bg-[var(--bg-secondary)]/60 hover:border-[var(--border-primary)]",
+                      ? "border-brand bg-brand-soft ring-1 ring-brand"
+                      : "border-line bg-sunken/60 hover:border-ink-soft",
                   )}
                 >
                   <span aria-hidden>{ic}</span>
@@ -207,9 +211,9 @@ function ServiceEditorBody({
 
         {/* ── Price & duration ── */}
         <fieldset className="flex flex-col gap-4">
-          <legend className="field-label">{svc.sectionPricing}</legend>
+          <legend className={sectionLegend}>{svc.sectionPricing}</legend>
           {!legacy && (
-            <div className="flex gap-2" role="radiogroup" aria-label={svc.priceType}>
+            <div className={segTrack} role="radiogroup" aria-label={svc.priceType}>
               {PRICE_TYPES.map((pt) => (
                 <button
                   key={pt} type="button" role="radio" aria-checked={form.price_type === pt}
@@ -249,21 +253,21 @@ function ServiceEditorBody({
         {/* ── Options (variants) ── */}
         {!legacy && (
           <fieldset className="flex flex-col gap-3">
-            <legend className="field-label">{svc.sectionVariants}</legend>
-            <p className="-mt-1 text-xs text-[var(--text-secondary)]">{svc.variantsHint}</p>
+            <legend className={sectionLegend}>{svc.sectionVariants}</legend>
+            <p className="-mt-2 text-[13px] text-ink-muted">{svc.variantsHint}</p>
             {form.variants.length > 0 && (
               <ul className="flex flex-col gap-3" role="list">
                 {form.variants.map((v, i) => {
                   const vErr = errors.variants?.[v.key] ?? {};
                   const base = `variant-${v.key}`;
                   return (
-                    <li key={v.key} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-3">
+                    <li key={v.key} className="rounded-xl border border-line bg-sunken/60 p-3 sm:p-4">
                       <div className="mb-2 flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-[var(--text-secondary)]">{`${svc.variant} ${i + 1}`}</span>
+                        <span className="text-xs font-semibold text-ink-muted">{`${svc.variant} ${i + 1}`}</span>
                         <button
                           type="button" onClick={() => removeVariant(v.key)}
                           aria-label={`${svc.removeVariant} ${i + 1}`}
-                          className="inline-flex size-11 cursor-pointer items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--accent-rose)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-brass)]"
+                          className={cn("-me-2 inline-flex size-11 cursor-pointer items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-danger-soft hover:text-danger-text", focusRing)}
                         >
                           <Trash2 size={15} aria-hidden />
                         </button>
@@ -311,9 +315,9 @@ function ServiceEditorBody({
               </ul>
             )}
             {form.variants.length < MAX_VARIANTS && (
-              <button type="button" onClick={addVariant} className="btn btn-secondary self-start">
-                <Plus size={15} aria-hidden /> {svc.addVariant}
-              </button>
+              <Button variant="soft" size="sm" onClick={addVariant} icon={<Plus aria-hidden />} className="self-start">
+                {svc.addVariant}
+              </Button>
             )}
           </fieldset>
         )}
@@ -321,7 +325,7 @@ function ServiceEditorBody({
         {/* ── Shown to clients ── */}
         {!legacy && (
           <fieldset className="flex flex-col gap-4">
-            <legend className="field-label">{svc.sectionDetails}</legend>
+            <legend className={sectionLegend}>{svc.sectionDetails}</legend>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {(["description_en", "description_ar"] as const).map((k) => (
                 <div key={k}>
@@ -356,7 +360,7 @@ function ServiceEditorBody({
               </div>
               <div>
                 <span className="field-label" id={`${formId}-location-label`}>{svc.location}</span>
-                <div className="flex gap-2" role="radiogroup" aria-labelledby={`${formId}-location-label`}>
+                <div className={segTrack} role="radiogroup" aria-labelledby={`${formId}-location-label`}>
                   {LOCATION_TYPES.map((l) => (
                     <button
                       key={l} type="button" role="radio" aria-checked={form.location_type === l}
@@ -373,34 +377,37 @@ function ServiceEditorBody({
 
         {/* ── Online booking ── */}
         {!legacy && (
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--border-subtle)] p-3">
-            <input
-              type="checkbox" className="mt-1 size-5 accent-[var(--accent-brass)]" checked={form.online_bookable}
-              onChange={(e) => set("online_bookable", e.target.checked)}
-            />
-            <span>
-              <span className="block text-sm font-bold text-[var(--text-primary)]">{svc.onlineBookable}</span>
-              <span className="block text-xs text-[var(--text-secondary)]">{svc.onlineBookableHint}</span>
-            </span>
-          </label>
+          <div>
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line p-4 transition-colors hover:border-ink-soft has-[:checked]:border-brand-soft-line has-[:checked]:bg-brand-soft/50">
+              <input
+                type="checkbox" className={cn(checkboxClasses, "mt-0.5 shrink-0 accent-brand")} checked={form.online_bookable}
+                onChange={(e) => set("online_bookable", e.target.checked)}
+              />
+              <span>
+                <span className="block text-sm font-semibold text-ink">{svc.onlineBookable}</span>
+                <span className="mt-0.5 block text-[13px] text-ink-muted">{svc.onlineBookableHint}</span>
+              </span>
+            </label>
+          </div>
         )}
 
         {/* ── Timing (advanced) ── */}
         {!legacy && (
-          <div className="rounded-xl border border-[var(--border-subtle)]">
+          <div>
+          <div className="overflow-hidden rounded-xl border border-line">
             <button
               type="button" onClick={() => setShowTiming((v) => !v)} aria-expanded={showTiming}
               aria-controls={`${formId}-timing`}
-              className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-start text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-brass)]"
+              className={cn("flex min-h-12 w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-start transition-colors hover:bg-sunken/60", focusRing, "focus-visible:-outline-offset-2")}
             >
               <span>
-                {svc.sectionTiming}
-                <span className="block text-xs font-medium text-[var(--text-secondary)]">{svc.timingHint}</span>
+                <span className="block text-sm font-semibold text-ink">{svc.sectionTiming}</span>
+                <span className="mt-0.5 block text-[13px] text-ink-muted">{svc.timingHint}</span>
               </span>
-              <ChevronDown size={16} aria-hidden className={cn("shrink-0 transition-transform", showTiming && "rotate-180")} />
+              <ChevronDown size={18} aria-hidden className={cn("shrink-0 text-ink-muted transition-transform duration-200 motion-reduce:transition-none", showTiming && "rotate-180")} />
             </button>
             {showTiming && (
-              <div id={`${formId}-timing`} className="grid grid-cols-1 gap-4 border-t border-[var(--border-subtle)] p-3 min-[400px]:grid-cols-3">
+              <div id={`${formId}-timing`} className="grid grid-cols-1 gap-4 border-t border-line p-4 min-[400px]:grid-cols-3">
                 <div>
                   <label htmlFor={`${formId}-buffer_minutes`} className="field-label">{svc.bufferMinutes}</label>
                   <input
@@ -427,10 +434,11 @@ function ServiceEditorBody({
                 </div>
                 <div className="min-[400px]:col-span-3">
                   {fieldError("processing", errors.processing)}
-                  <p className="text-xs text-[var(--text-secondary)]">{svc.processingHint}</p>
+                  <p className="text-[13px] text-ink-muted">{svc.processingHint}</p>
                 </div>
               </div>
             )}
+          </div>
           </div>
         )}
       </form>

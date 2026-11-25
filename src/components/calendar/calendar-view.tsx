@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, ChevronLeft, ChevronRight, Footprints, Lock, Moon, Plus, Users } from "lucide-react";
+import { AlertTriangle, CalendarClock, ChevronLeft, ChevronRight, Footprints, Lock, Moon, Plus, Users } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { filterChipClasses, checkboxClasses } from "@/components/ui/recipes";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
@@ -14,13 +16,14 @@ import { enqueueMessage } from "@/lib/messaging-stub";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabase } from "@/hooks/use-supabase";
 import { getClientById } from "@/lib/queries/clients";
-import { useTranslation, interpolate, headingTracking } from "@/hooks/use-translation";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { AppointmentActionError, useAppointments, type CalendarAppointment } from "@/hooks/use-appointments";
 import type { PaymentMethod } from "@/lib/types";
 import type { BlockedTimeRow } from "@/lib/queries/appointments";
 import {
   COLOR_SOURCES,
   JUMP_WEEKS,
+  NEUTRAL_COLOR,
   RANGE_MODES,
   addDaysLocal,
   barberColor,
@@ -108,7 +111,7 @@ function useIsNarrow() {
  * selection and ordering, and front-desk statuses.
  */
 export function CalendarView() {
-  const { t, isRTL, FFD, href, locale, formatDate, formatTime } = useTranslation();
+  const { t, isRTL, href, locale, formatDate, formatTime } = useTranslation();
   const supabase = useSupabase();
   const barbers = useWorkspaceStore((s) => s.barbers);
   const currentView = useWorkspaceStore((s) => s.currentView);
@@ -273,18 +276,18 @@ export function CalendarView() {
 
   const lanes = useMemo<GridLane[]>(() => {
     const base = currentView === "master" ? selectTeam(prefs.teamMode, ordered, scheduled, prefs.custom) : ordered.filter((m) => m.id === currentView);
-    const out: GridLane[] = base.map((m) => ({ key: m.id, barberId: m.id, name: m.name, avatar: m.avatar, color: barberColors.get(m.id) ?? "#8c8478" }));
+    const out: GridLane[] = base.map((m) => ({ key: m.id, barberId: m.id, name: m.name, avatar: m.avatar, color: barberColors.get(m.id) ?? NEUTRAL_COLOR }));
     const known = new Set(out.map((l) => l.barberId));
     // Anyone hidden by the team filter who still has bookings in range stays visible.
     for (const a of visible) {
       if (a.barberId && !known.has(a.barberId)) {
         known.add(a.barberId);
         const m = ordered.find((x) => x.id === a.barberId);
-        out.push({ key: a.barberId, barberId: a.barberId, name: m?.name ?? t.calendar.barber, avatar: m?.avatar, color: barberColors.get(a.barberId) ?? "#8c8478" });
+        out.push({ key: a.barberId, barberId: a.barberId, name: m?.name ?? t.calendar.barber, avatar: m?.avatar, color: barberColors.get(a.barberId) ?? NEUTRAL_COLOR });
       }
     }
     if (currentView === "master" && visible.some((a) => a.barberId === null)) {
-      out.push({ key: UNASSIGNED_KEY, barberId: null, name: t.calendar.unassigned, color: "#8c8478" });
+      out.push({ key: UNASSIGNED_KEY, barberId: null, name: t.calendar.unassigned, color: NEUTRAL_COLOR });
     }
     return out;
   }, [currentView, prefs.teamMode, prefs.custom, ordered, scheduled, barberColors, visible, t]);
@@ -472,97 +475,84 @@ export function CalendarView() {
     setLaneIndex((i) => Math.max(0, Math.min(lanes.length - 1, (Math.min(i, lanes.length - 1)) + (forward ? 1 : -1))));
   };
 
-  const segBtn = (active: boolean) =>
-    cn(
-      "min-h-[36px] rounded-[6px] px-3 text-[13px] transition-colors",
-      active ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-    );
-  const navButton =
-    "inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]";
-
   const showSkeleton = !prefsLoaded || (loading && appointments.length === 0);
+  const teamLabel = prefs.teamMode === "scheduled" ? t.calendar.teamScheduled : prefs.teamMode === "all" ? t.calendar.teamAll : t.calendar.teamCustom;
 
   return (
-    <div className="space-y-4 pb-24 lg:pb-8">
-      {/* Header */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <h1 className="text-[22px] font-light text-[var(--text-primary)]" style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.012em") }}>
-            {t.calendar.title}
-          </h1>
-          <div className="flex items-center gap-1">
-            <button type="button" onClick={() => setAnchor((d) => shiftAnchor(mode, d, -1))} aria-label={t.calendar.previous} className={navButton}>
-              <ChevronLeft size={18} className="rtl:-scale-x-100" aria-hidden="true" />
-            </button>
-            <label>
-              <span className="sr-only">{t.calendar.jumpToDate}</span>
-              <input
-                type="date"
-                value={isoDay(anchor)}
-                onChange={(e) => {
-                  const d = parseDateInput(e.target.value);
-                  if (d) setAnchor(d);
-                }}
-                className="field-input h-11 w-auto min-w-0 cursor-pointer px-3 text-[14px]"
-              />
-            </label>
-            <button type="button" onClick={() => setAnchor((d) => shiftAnchor(mode, d, 1))} aria-label={t.calendar.next} className={navButton}>
-              <ChevronRight size={18} className="rtl:-scale-x-100" aria-hidden="true" />
-            </button>
-            <button type="button" onClick={() => setAnchor(new Date())} disabled={inRange} className="btn btn-ghost ms-1 disabled:opacity-50">
-              {t.common.today}
-            </button>
-          </div>
-          <p className="w-full text-[13px] text-[var(--text-secondary)]" aria-live="polite">
-            {rangeLabel}
-            {hijriLabel && <span className="ms-2 text-[var(--text-muted)]">· {hijriLabel}</span>}
+    <div className="space-y-4 pb-28 lg:space-y-5 lg:pb-8">
+      {/* Page header (§6.13): title + range on the start, Queue / New on the end */}
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-h2 text-ink">{t.calendar.title}</h1>
+          <p className="mt-1 text-meta text-ink-muted" aria-live="polite">
+            <span className="font-medium text-ink-soft">{rangeLabel}</span>
+            {hijriLabel && <span className="ms-1.5">· {hijriLabel}</span>}
           </p>
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <div role="radiogroup" aria-label={t.calendar.viewMode} className="flex items-center gap-1 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-1">
-            {RANGE_MODES.map((m) => (
-              <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => updatePrefs({ mode: m })} className={segBtn(mode === m)}>
-                {modeLabels[m]}
-              </button>
-            ))}
-          </div>
-          <Link href={href("/queue")} className="btn btn-secondary">
-            <Footprints size={16} aria-hidden="true" />
+        <div className="flex items-center gap-2">
+          <ButtonLink href={href("/queue")} variant="secondary" size="sm" icon={<Footprints aria-hidden="true" />}>
             {t.queue.title}
-          </Link>
-          <button type="button" className="btn btn-primary hidden sm:inline-flex" onClick={() => openCreate("appointment")}>
-            <Plus size={16} aria-hidden="true" />
+          </ButtonLink>
+          <Button size="sm" className="hidden sm:inline-flex" icon={<Plus aria-hidden="true" />} onClick={() => openCreate("appointment")}>
             {t.calendar.newBooking}
-          </button>
+          </Button>
         </div>
+      </header>
+
+      {/* Toolbar: Today · prev/next · date · view switch */}
+      <div className="flex flex-col gap-3 rounded-xl border border-line bg-card p-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-1">
+          <Button variant="secondary" size="sm" onClick={() => setAnchor(new Date())} disabled={inRange}>
+            {t.common.today}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setAnchor((d) => shiftAnchor(mode, d, -1))} aria-label={t.calendar.previous}>
+            <ChevronLeft className="rtl:-scale-x-100" aria-hidden="true" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setAnchor((d) => shiftAnchor(mode, d, 1))} aria-label={t.calendar.next}>
+            <ChevronRight className="rtl:-scale-x-100" aria-hidden="true" />
+          </Button>
+          <label className="min-w-0 flex-1 sm:flex-none">
+            <span className="sr-only">{t.calendar.jumpToDate}</span>
+            <input
+              type="date"
+              value={isoDay(anchor)}
+              onChange={(e) => {
+                const d = parseDateInput(e.target.value);
+                if (d) setAnchor(d);
+              }}
+              className="h-9 w-full min-w-0 cursor-pointer rounded-full border border-line-strong bg-card px-3.5 text-sm font-medium tabular-nums text-ink transition-[border-color,box-shadow] duration-150 hover:border-ink-soft focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15 sm:w-auto"
+            />
+          </label>
+        </div>
+        <SegmentedControl
+          ariaLabel={t.calendar.viewMode}
+          value={mode}
+          onChange={(m) => updatePrefs({ mode: m })}
+          options={RANGE_MODES.map((m) => ({ value: m, label: modeLabels[m] }))}
+          fullWidth
+          className="sm:w-auto"
+        />
       </div>
 
-      {/* Toolbar: jump chips, team, colours, Hijri, blocks */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex max-w-full items-center gap-1.5 overflow-x-auto pb-1" role="group" aria-label={t.calendar.jumpAhead}>
+      {/* Secondary tools: jump ahead, team, colours, Hijri, blocks, prayer */}
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+        <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 lg:mx-0 lg:px-0" role="group" aria-label={t.calendar.jumpAhead}>
           {JUMP_WEEKS.map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setAnchor(addDaysLocal(new Date(), n * 7))}
-              className="min-h-[36px] shrink-0 rounded-full border border-[var(--border-subtle)] px-3 text-[12px] text-[var(--text-secondary)] hover:border-[var(--accent-brass)] hover:text-[var(--text-primary)]"
-            >
+            <button key={n} type="button" onClick={() => setAnchor(addDaysLocal(new Date(), n * 7))} className={cn(filterChipClasses, "h-8 px-3 text-[13px]")}>
               {interpolate(t.calendar.inWeeks, { n })}
             </button>
           ))}
         </div>
-        <span className="ms-auto flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {currentView === "master" && (
-            <button type="button" className="btn btn-ghost" onClick={() => setTeamOpen(true)} aria-haspopup="dialog">
-              <Users size={16} aria-hidden="true" />
-              {prefs.teamMode === "scheduled" ? t.calendar.teamScheduled : prefs.teamMode === "all" ? t.calendar.teamAll : t.calendar.teamCustom}
-            </button>
+            <Button variant="ghost" size="sm" icon={<Users aria-hidden="true" />} onClick={() => setTeamOpen(true)} aria-haspopup="dialog">
+              {teamLabel}
+            </Button>
           )}
-          <label className="flex items-center gap-2 text-[13px] text-[var(--text-secondary)]">
+          <label className="flex h-9 items-center gap-2 rounded-full ps-3 text-sm text-ink-muted">
             <span>{t.calendar.colorBy}</span>
             <select
-              className="field-input h-9 w-auto py-0 text-[13px]"
+              className="h-9 cursor-pointer rounded-full border border-line-strong bg-card px-3 text-sm font-medium text-ink hover:border-ink-soft focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15"
               value={prefs.colorSource}
               onChange={(e) => updatePrefs({ colorSource: e.target.value as ColorSource })}
             >
@@ -573,32 +563,30 @@ export function CalendarView() {
               ))}
             </select>
           </label>
-          <label className="flex min-h-[36px] cursor-pointer items-center gap-2 text-[13px] text-[var(--text-secondary)]">
-            <input type="checkbox" className="h-4 w-4 accent-[var(--accent-brass)]" checked={prefs.showHijri} onChange={(e) => updatePrefs({ showHijri: e.target.checked })} />
+          <label className="flex h-11 cursor-pointer items-center gap-2 px-2 text-sm font-medium text-ink-soft">
+            <input type="checkbox" className={checkboxClasses} checked={prefs.showHijri} onChange={(e) => updatePrefs({ showHijri: e.target.checked })} />
             {t.calendar.showHijri}
           </label>
-          <button type="button" className="btn btn-ghost" onClick={() => openCreate("block")}>
-            <Lock size={16} aria-hidden="true" />
+          <Button variant="ghost" size="sm" icon={<Lock aria-hidden="true" />} onClick={() => openCreate("block")}>
             {t.calendar.blockTime}
-          </button>
+          </Button>
           {isAdmin && (
-            <button type="button" className="btn btn-ghost" onClick={() => setPrayerOpen(true)} aria-haspopup="dialog">
-              <Moon size={16} aria-hidden="true" />
+            <Button variant="ghost" size="sm" icon={<Moon aria-hidden="true" />} onClick={() => setPrayerOpen(true)} aria-haspopup="dialog">
               {t.calendar.prayerSettings}
-            </button>
+            </Button>
           )}
-        </span>
+        </div>
       </div>
 
       {data.blocksError && (
-        <p role="status" className="text-[12px] text-[var(--text-muted)]">
+        <p role="status" className="rounded-lg bg-warning-soft px-3 py-2 text-[13px] font-medium text-warning-text">
           {t.calendar.blocksLoadError}
         </p>
       )}
 
       {/* Mobile single-lane day view: barber chips + swipe */}
       {singleLane && (
-        <div role="tablist" aria-label={t.calendar.teamTitle} className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+        <div role="tablist" aria-label={t.calendar.teamTitle} className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
           {lanes.map((l, i) => (
             <button
               key={l.key}
@@ -607,13 +595,11 @@ export function CalendarView() {
               aria-selected={i === safeLaneIndex}
               onClick={() => setLaneIndex(i)}
               className={cn(
-                "flex min-h-[40px] shrink-0 items-center gap-2 rounded-full border px-3 text-[13px]",
-                i === safeLaneIndex
-                  ? "border-[var(--accent-brass)] bg-[var(--accent-blue-muted)] text-[var(--text-primary)]"
-                  : "border-[var(--border-subtle)] text-[var(--text-secondary)]",
+                "flex h-11 shrink-0 items-center gap-2 rounded-full border ps-1.5 pe-4 text-sm font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none",
+                i === safeLaneIndex ? "border-inverse bg-inverse text-on-inverse" : "border-line bg-card text-ink-soft hover:border-ink-soft",
               )}
             >
-              <LaneAvatar lane={l} size={22} />
+              <LaneAvatar lane={l} size={28} />
               {l.name}
             </button>
           ))}
@@ -622,10 +608,20 @@ export function CalendarView() {
 
       {/* Body */}
       {showSkeleton && (
-        <SkeletonGroup className="min-h-[320px] space-y-3">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-lg" />
-          ))}
+        <SkeletonGroup className="overflow-hidden rounded-xl border border-line bg-card">
+          <div className="flex gap-3 border-b border-line px-4 py-3">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="flex flex-1 items-center gap-2">
+                <Skeleton variant="avatar" className="size-7" />
+                <Skeleton className="h-3.5 w-20" />
+              </span>
+            ))}
+          </div>
+          <div className="grid min-h-[360px] grid-cols-3 gap-3 p-4 ps-20">
+            <Skeleton className="h-20 w-full rounded-xs" />
+            <Skeleton className="mt-16 h-28 w-full rounded-xs" />
+            <Skeleton className="mt-8 h-14 w-full rounded-xs" />
+          </div>
         </SkeletonGroup>
       )}
 
@@ -665,7 +661,10 @@ export function CalendarView() {
             compact={singleLane}
           />
           {visible.length === 0 && !loading && (
-            <p className="mt-3 text-center text-[13px] text-[var(--text-muted)]">{t.calendar.emptyDescription}</p>
+            <p className="mt-3 flex items-center justify-center gap-2 text-center text-meta text-ink-muted">
+              <CalendarClock size={16} aria-hidden="true" className="shrink-0" />
+              {t.calendar.emptyDescription}
+            </p>
           )}
         </div>
       )}
@@ -822,7 +821,7 @@ export function CalendarView() {
       <TeamDialog
         open={teamOpen}
         onClose={() => setTeamOpen(false)}
-        members={ordered.map((m) => ({ id: m.id, name: m.name, avatar: m.avatar, color: barberColors.get(m.id) ?? "#8c8478" }))}
+        members={ordered.map((m) => ({ id: m.id, name: m.name, avatar: m.avatar, color: barberColors.get(m.id) ?? NEUTRAL_COLOR }))}
         mode={prefs.teamMode}
         custom={prefs.custom}
         isAdmin={isAdmin}

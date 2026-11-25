@@ -68,19 +68,21 @@ export function SlotPopover({ open, x, y, title, onPick, onClose }: SlotPopoverP
       ref={ref}
       role="menu"
       aria-label={title}
-      className="fixed z-[60] w-[220px] rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-1 shadow-[0_16px_40px_-12px_rgba(28,22,17,0.35)]"
+      className="fixed z-[60] w-[248px] rounded-2xl border border-line bg-card p-1.5 shadow-float"
       style={{ left: pos.left, top: pos.top }}
     >
-      <p className="px-3 pb-1 pt-2 text-[12px] text-[var(--text-muted)]">{title}</p>
+      <p className="truncate px-3 pb-1.5 pt-2 text-xs font-semibold tabular-nums text-ink-muted">{title}</p>
       {items.map(({ kind, label, icon: Icon }) => (
         <button
           key={kind}
           type="button"
           role="menuitem"
           onClick={() => onPick(kind)}
-          className="flex min-h-[44px] w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 text-start text-[14px] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] focus-visible:bg-[var(--bg-secondary)] focus-visible:outline-none"
+          className="flex min-h-11 w-full items-center gap-3 rounded-lg px-2 text-start text-sm font-medium text-ink transition-colors duration-150 hover:bg-sunken focus-visible:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus motion-reduce:transition-none"
         >
-          <Icon size={16} aria-hidden="true" />
+          <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand-text">
+            <Icon size={16} />
+          </span>
           {label}
         </button>
       ))}
@@ -124,9 +126,9 @@ export function CreateFab({ onPick }: { onPick: (kind: CreateKind) => void }) {
                 setOpen(false);
                 onPick(kind);
               }}
-              className="flex min-h-[44px] items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-4 text-[14px] text-[var(--text-primary)] shadow-[0_10px_24px_-10px_rgba(28,22,17,0.4)] hover:bg-[var(--bg-secondary)]"
+              className="flex h-11 items-center gap-2 rounded-full border border-line bg-card px-4 text-sm font-semibold text-ink shadow-raised transition-colors duration-150 hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none"
             >
-              <Icon size={16} aria-hidden="true" />
+              <Icon size={16} aria-hidden="true" className="text-brand-text" />
               {label}
             </button>
           ))}
@@ -139,8 +141,8 @@ export function CreateFab({ onPick }: { onPick: (kind: CreateKind) => void }) {
         aria-label={open ? t.common.close : t.calendar.create}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex h-14 w-14 items-center justify-center rounded-full bg-[var(--cta-bg)] text-[var(--cta-fg)] shadow-[0_12px_28px_-10px_rgba(28,22,17,0.55)] transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-brass)]",
-          open && "rotate-90",
+          "flex size-14 items-center justify-center rounded-full bg-brand text-on-brand shadow-float transition-[background-color,transform] duration-200 ease-standard hover:bg-brand-hover active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none motion-reduce:active:scale-100",
+          open && "bg-inverse text-on-inverse hover:bg-ink-soft",
         )}
       >
         {open ? <X size={22} aria-hidden="true" /> : <Plus size={24} aria-hidden="true" />}

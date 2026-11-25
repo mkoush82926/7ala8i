@@ -22,7 +22,7 @@ import {
 
 const translations: Record<string, TranslationKeys> = { en, ar };
 
-// ── Font constants — "Ink & Brass" system ──────────────────────────────────
+// ── Font constants — "Deep Teal & Sand" system ───────────────────────────────
 // Body/UI text: BDO Grotesk (EN) / Cairo (AR) — clean, geometric, optimized
 // for small-size legibility.
 export const FONT_EN = "var(--font-bdo-grotesk),'Segoe UI',system-ui,sans-serif";

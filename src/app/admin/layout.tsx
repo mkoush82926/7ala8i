@@ -37,11 +37,11 @@ export const viewport: Viewport = {
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" dir="ltr" data-lang="en" suppressHydrationWarning>
+    <html lang="en" dir="ltr" data-lang="en" className={bdoGrotesk.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className={`${bdoGrotesk.variable} antialiased bg-[var(--bg-primary)] text-[var(--text-primary)]`}>
+      <body className="antialiased bg-card text-ink">
         <AdminProviders>{children}</AdminProviders>
       </body>
     </html>

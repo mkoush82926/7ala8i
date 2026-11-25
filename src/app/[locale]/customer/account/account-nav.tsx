@@ -1,9 +1,10 @@
 "use client";
 
-// Mobile bottom navigation shared by the customer portal pages.
+// Mobile bottom tab bar shared by the customer portal pages (v2 §5.10 grammar).
 import Link from "next/link";
 import { CalendarCheck, Compass, UserRound } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
+import { cn } from "@/lib/utils";
 
 export type CustomerNavKey = "explore" | "bookings" | "account";
 
@@ -17,31 +18,37 @@ export function CustomerBottomNav({ active }: { active: CustomerNavKey }) {
   return (
     <nav
       aria-label={t.customer.accountNav}
-      className="lg:hidden fixed bottom-0 inset-x-0 z-50 flex justify-around items-center px-4 pt-2.5 bg-[var(--bg-primary)] border-t border-[var(--border-subtle)]"
-      style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-bar backdrop-blur supports-[backdrop-filter]:bg-card/85 lg:hidden"
     >
-      {items.map(({ key, href: to, label, icon: Icon }) => {
-        const current = key === active;
-        return (
-          <Link
-            key={key}
-            href={to}
-            aria-current={current ? "page" : undefined}
-            className={`flex flex-col items-center gap-1 min-w-[64px] py-1 text-[11px] font-bold rounded-[8px] ${
-              current ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
-            }`}
-          >
-            {current ? (
-              <span aria-hidden="true" className="w-10 h-7 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center">
-                <Icon size={19} />
-              </span>
-            ) : (
-              <Icon size={21} aria-hidden="true" />
-            )}
-            {label}
-          </Link>
-        );
-      })}
+      <ul className="m-0 grid h-16 list-none grid-cols-3 p-0">
+        {items.map(({ key, href: to, label, icon: Icon }) => {
+          const current = key === active;
+          return (
+            <li key={key} className="flex">
+              <Link
+                href={to}
+                aria-current={current ? "page" : undefined}
+                className={cn(
+                  "flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-semibold text-ink-muted no-underline transition-colors duration-150",
+                  "hover:text-ink aria-[current=page]:text-brand-text",
+                  "focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-focus",
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "grid h-7 w-12 place-items-center rounded-full transition-colors duration-150",
+                    current && "bg-brand-soft",
+                  )}
+                >
+                  <Icon size={20} />
+                </span>
+                {label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }

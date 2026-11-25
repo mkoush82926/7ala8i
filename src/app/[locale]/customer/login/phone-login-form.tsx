@@ -8,10 +8,24 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Loader2, Mail, MessageCircle, ShieldCheck, Smartphone } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Mail, MessageCircle, ShieldCheck, Smartphone } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
+import {
+  buttonClasses,
+  checkboxClasses,
+  errorTextClasses,
+  fieldIconClasses,
+  focusRing,
+  helperClasses,
+  inputClasses,
+  labelClasses,
+  textLinkClasses,
+} from "@/components/ui/recipes";
+import { cn } from "@/lib/utils";
+import { AuthShell } from "@/app/[locale]/auth/_components/auth-shell";
 import { TurnstileWidget } from "@/components/booking/turnstile-widget";
 import type { PublicBookingSecurity } from "@/lib/otp/config";
 import { maskForDisplay, toJordanMobile } from "@/lib/otp/phone";
@@ -34,7 +48,7 @@ type Db = { rpc: (fn: string, args?: Record<string, unknown>) => PromiseLike<{ d
 
 export function PhoneLoginForm({ security, next }: { security: PublicBookingSecurity; next: string | null }) {
   const router = useRouter();
-  const { t, dir, isRTL, FF, FFD, href, locale } = useTranslation();
+  const { t, isRTL, href, locale } = useTranslation();
   const l = t.customerLogin;
   const [supabase] = useState(() => createClient());
   const ids = { phone: useId(), name: useId(), code: useId(), terms: useId(), err: useId() };
@@ -211,195 +225,196 @@ export function PhoneLoginForm({ security, next }: { security: PublicBookingSecu
     }
   }
 
+  const channelIsWhatsapp = security.otpChannel === "whatsapp";
+
   return (
-    <div dir={dir} style={{ fontFamily: FF }} className="flex min-h-dvh flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
-      <a href="#main" className="skip-link">
-        {t.common.skipToContent}
-      </a>
-      <header className="flex h-16 items-center justify-between border-b border-[var(--border-subtle)] px-4 sm:px-6">
-        <Link href={href("/landing")} dir="ltr" className="rounded-sm text-[18px] font-black text-[var(--text-primary)]" style={{ fontFamily: FFD }}>
-          Halaqy<span className="text-[var(--accent-brass)]">.</span>
-        </Link>
-        <Link href={href("/explore")} className="btn btn-ghost text-[13px]" style={{ minHeight: 40 }}>
-          <BackIcon size={16} aria-hidden="true" />
-          {l.browseShops}
-        </Link>
-      </header>
+    <AuthShell navLink={{ href: href("/explore"), label: l.browseShops }}>
+      <span
+        aria-hidden="true"
+        className="bg-hatch-ink mb-5 grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand-text"
+      >
+        {step === "code" ? <ShieldCheck size={26} /> : <Smartphone size={26} />}
+      </span>
+      <h1 className="text-h1 m-0 mb-2 text-ink">{step === "code" ? l.codeTitle : l.title}</h1>
+      <p className="text-body m-0 mb-8 text-ink-muted">
+        {step === "code"
+          ? interpolate(channelIsWhatsapp ? l.codeSubtitleWhatsapp : l.codeSubtitleSms, {
+              phone: maskForDisplay(e164 ?? phone),
+            })
+          : l.subtitle}
+      </p>
 
-      <main id="main" className="flex flex-1 items-start justify-center px-4 py-10 sm:items-center">
-        <div className="w-full max-w-[400px]">
-          <span aria-hidden="true" className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[var(--accent-brass)]">
-            {step === "code" ? <ShieldCheck size={22} /> : <Smartphone size={22} />}
-          </span>
-          <h1 className="m-0 mb-2 text-[26px] font-black leading-tight" style={{ fontFamily: FFD }}>
-            {step === "code" ? l.codeTitle : l.title}
-          </h1>
-          <p className="m-0 mb-7 text-[14px] leading-relaxed text-[var(--text-secondary)]">
-            {step === "code"
-              ? interpolate(security.otpChannel === "whatsapp" ? l.codeSubtitleWhatsapp : l.codeSubtitleSms, {
-                  phone: maskForDisplay(e164 ?? phone),
-                })
-              : l.subtitle}
-          </p>
-
-          {!enabled ? (
-            <div className="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-5">
-              <p className="m-0 mb-4 text-[14px] text-[var(--text-secondary)]">{l.unavailable}</p>
-              <Link href={emailLogin} className="btn btn-primary w-full" style={{ minHeight: 44 }}>
-                <Mail size={16} aria-hidden="true" />
-                {l.useEmail}
-              </Link>
+      {!enabled ? (
+        <div className="rounded-xl border border-line bg-sunken p-5">
+          <p className="m-0 mb-4 text-sm leading-[22px] text-ink-soft">{l.unavailable}</p>
+          <Link href={emailLogin} className={buttonClasses({ variant: "primary", size: "lg", fullWidth: true })}>
+            <Mail aria-hidden="true" />
+            {l.useEmail}
+          </Link>
+        </div>
+      ) : step === "phone" ? (
+        <form onSubmit={sendCode} noValidate className="flex flex-col gap-5" aria-describedby={error ? ids.err : undefined}>
+          <div>
+            <label htmlFor={ids.phone} className={labelClasses}>
+              {l.phoneLabel}
+            </label>
+            <div className="relative">
+              <span className={fieldIconClasses}>
+                <Smartphone aria-hidden="true" />
+              </span>
+              <input
+                id={ids.phone}
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                dir="ltr"
+                className={inputClasses({ withIcon: true, className: "text-start tabular-nums" })}
+                placeholder="07X XXX XXXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.slice(0, 20))}
+                aria-invalid={!!phone && !e164}
+                aria-describedby={`${ids.phone}-hint`}
+                required
+                autoFocus
+              />
             </div>
-          ) : step === "phone" ? (
-            <form onSubmit={sendCode} noValidate className="flex flex-col gap-4" aria-describedby={error ? ids.err : undefined}>
-              <div>
-                <label htmlFor={ids.phone} className="field-label">
-                  {l.phoneLabel}
-                </label>
-                <input
-                  id={ids.phone}
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  dir="ltr"
-                  className="field-input w-full text-start"
-                  placeholder="07X XXX XXXX"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.slice(0, 20))}
-                  aria-invalid={!!phone && !e164}
-                  required
-                  autoFocus
-                />
-                <p className="m-0 mt-1.5 text-xs text-[var(--text-muted)]">{l.phoneHint}</p>
-              </div>
-              <div>
-                <label htmlFor={ids.name} className="field-label">
-                  {l.nameLabel}
-                </label>
-                <input
-                  id={ids.name}
-                  type="text"
-                  autoComplete="name"
-                  className="field-input w-full"
-                  value={name}
-                  onChange={(e) => setName(e.target.value.slice(0, 80))}
-                  maxLength={80}
-                />
-                <p className="m-0 mt-1.5 text-xs text-[var(--text-muted)]">{l.nameHint}</p>
-              </div>
-              <label htmlFor={ids.terms} className="flex cursor-pointer items-start gap-2.5 text-[13px] leading-relaxed text-[var(--text-secondary)]">
-                <input
-                  id={ids.terms}
-                  type="checkbox"
-                  checked={accept}
-                  onChange={(e) => setAccept(e.target.checked)}
-                  className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent-brass)]"
-                />
-                <span>
-                  {l.termsPrefix}{" "}
-                  <Link href={href("/terms")} className="font-semibold text-[var(--text-primary)] underline underline-offset-2">
-                    {t.landing.terms}
-                  </Link>{" "}
-                  {l.termsAnd}{" "}
-                  <Link href={href("/privacy")} className="font-semibold text-[var(--text-primary)] underline underline-offset-2">
-                    {t.landing.privacy}
-                  </Link>
-                </span>
-              </label>
-              {security.turnstileSiteKey && (
-                <TurnstileWidget
-                  key={captchaKey}
-                  siteKey={security.turnstileSiteKey}
-                  locale={locale}
-                  onToken={setCaptcha}
-                  label={t.bookingFlow.securityCheck}
-                />
-              )}
-              {error && (
-                <p id={ids.err} className="field-error m-0" role="alert">
-                  {error}
-                </p>
-              )}
-              <button type="submit" className="btn btn-primary w-full" style={{ minHeight: 48 }} disabled={busy} aria-busy={busy}>
-                {busy ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : security.otpChannel === "whatsapp" ? <MessageCircle size={16} aria-hidden="true" /> : null}
-                {security.otpChannel === "whatsapp" ? l.sendWhatsapp : l.sendSms}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={verifyCode} noValidate className="flex flex-col gap-4" aria-describedby={error ? ids.err : undefined}>
-              <div>
-                <label htmlFor={ids.code} className="field-label">
-                  {l.codeLabel}
-                </label>
-                <input
-                  ref={codeRef}
-                  id={ids.code}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  dir="ltr"
-                  maxLength={12}
-                  className="field-input w-full text-center text-[22px] font-bold tracking-[0.4em] tabular-nums"
-                  value={code}
-                  onChange={(e) => {
-                    const v = normalizeOtpCode(e.target.value);
-                    setCode(v);
-                    setError(null);
-                  }}
-                  aria-invalid={!!error}
-                  required
-                />
-              </div>
-              {error && (
-                <p id={ids.err} className="field-error m-0" role="alert">
-                  {error}
-                </p>
-              )}
-              <button
-                type="submit"
-                className="btn btn-primary w-full"
-                style={{ minHeight: 48 }}
-                disabled={busy || code.length !== 6 || step !== "code"}
-                aria-busy={busy}
-              >
-                {busy && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
-                {l.verify}
-              </button>
-              <div className="flex items-center justify-between gap-3 text-[13px]">
-                <button
-                  type="button"
-                  className="rounded-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  onClick={() => {
-                    setStep("phone");
-                    setError(null);
-                  }}
-                  disabled={busy}
-                >
-                  {l.changeNumber}
-                </button>
-                <button
-                  type="button"
-                  className="rounded-sm font-semibold text-[var(--text-primary)] disabled:text-[var(--text-muted)]"
-                  onClick={() => sendCode()}
-                  disabled={busy || wait > 0}
-                  aria-live="polite"
-                >
-                  {wait > 0 ? interpolate(l.resendIn, { seconds: wait }) : l.resend}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {enabled && (
-            <p className="m-0 mt-8 border-t border-[var(--border-subtle)] pt-5 text-center text-[13px] text-[var(--text-secondary)]">
-              {l.preferEmail}{" "}
-              <Link href={emailLogin} className="font-semibold text-[var(--text-primary)] underline underline-offset-2">
-                {l.useEmail}
+            <p id={`${ids.phone}-hint`} className={cn(helperClasses, "m-0")}>
+              {l.phoneHint}
+            </p>
+          </div>
+          <div>
+            <label htmlFor={ids.name} className={labelClasses}>
+              {l.nameLabel}
+            </label>
+            <input
+              id={ids.name}
+              type="text"
+              autoComplete="name"
+              className={inputClasses()}
+              value={name}
+              onChange={(e) => setName(e.target.value.slice(0, 80))}
+              maxLength={80}
+              aria-describedby={`${ids.name}-hint`}
+            />
+            <p id={`${ids.name}-hint`} className={cn(helperClasses, "m-0")}>
+              {l.nameHint}
+            </p>
+          </div>
+          <label htmlFor={ids.terms} className="flex cursor-pointer items-start gap-3 text-[13px] leading-5 text-ink-soft">
+            <input
+              id={ids.terms}
+              type="checkbox"
+              checked={accept}
+              onChange={(e) => setAccept(e.target.checked)}
+              className={cn(checkboxClasses, "mt-0.5 shrink-0 accent-[var(--color-brand)]")}
+            />
+            <span>
+              {l.termsPrefix}{" "}
+              <Link href={href("/terms")} className={cn("rounded-sm", textLinkClasses, focusRing)}>
+                {t.landing.terms}
+              </Link>{" "}
+              {l.termsAnd}{" "}
+              <Link href={href("/privacy")} className={cn("rounded-sm", textLinkClasses, focusRing)}>
+                {t.landing.privacy}
               </Link>
+            </span>
+          </label>
+          {security.turnstileSiteKey && (
+            <TurnstileWidget
+              key={captchaKey}
+              siteKey={security.turnstileSiteKey}
+              locale={locale}
+              onToken={setCaptcha}
+              label={t.bookingFlow.securityCheck}
+            />
+          )}
+          {error && (
+            <p id={ids.err} className={cn(errorTextClasses, "m-0")} role="alert">
+              <AlertCircle aria-hidden="true" />
+              <span>{error}</span>
             </p>
           )}
-        </div>
-      </main>
-    </div>
+          <Button
+            type="submit"
+            size="xl"
+            fullWidth
+            loading={busy}
+            icon={channelIsWhatsapp ? <MessageCircle aria-hidden="true" /> : undefined}
+          >
+            {channelIsWhatsapp ? l.sendWhatsapp : l.sendSms}
+          </Button>
+        </form>
+      ) : (
+        <form onSubmit={verifyCode} noValidate className="flex flex-col gap-5" aria-describedby={error ? ids.err : undefined}>
+          <div>
+            <label htmlFor={ids.code} className={labelClasses}>
+              {l.codeLabel}
+            </label>
+            <input
+              ref={codeRef}
+              id={ids.code}
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              dir="ltr"
+              maxLength={12}
+              placeholder="••••••"
+              className={inputClasses({
+                className: "h-14 text-center text-2xl font-bold tracking-[0.5em] tabular-nums placeholder:tracking-[0.5em] sm:text-2xl",
+              })}
+              value={code}
+              onChange={(e) => {
+                const v = normalizeOtpCode(e.target.value);
+                setCode(v);
+                setError(null);
+              }}
+              aria-invalid={!!error}
+              required
+            />
+          </div>
+          {error && (
+            <p id={ids.err} className={cn(errorTextClasses, "m-0")} role="alert">
+              <AlertCircle aria-hidden="true" />
+              <span>{error}</span>
+            </p>
+          )}
+          <Button type="submit" size="xl" fullWidth loading={busy} disabled={code.length !== 6 || step !== "code"}>
+            {l.verify}
+          </Button>
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              className={buttonClasses({ variant: "ghost", size: "sm", className: "-ms-3.5" })}
+              onClick={() => {
+                setStep("phone");
+                setError(null);
+              }}
+              disabled={busy}
+            >
+              <BackIcon aria-hidden="true" />
+              {l.changeNumber}
+            </button>
+            <button
+              type="button"
+              className={buttonClasses({ variant: "ghost", size: "sm", className: "-me-3.5 tabular-nums text-brand-text" })}
+              onClick={() => sendCode()}
+              disabled={busy || wait > 0}
+              aria-live="polite"
+            >
+              {wait > 0 ? interpolate(l.resendIn, { seconds: wait }) : l.resend}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {enabled && (
+        <p className="m-0 mt-8 border-t border-line pt-6 text-center text-sm text-ink-muted">
+          {l.preferEmail}{" "}
+          <Link href={emailLogin} className={cn("rounded-sm", textLinkClasses, focusRing)}>
+            {l.useEmail}
+          </Link>
+        </p>
+      )}
+    </AuthShell>
   );
 }

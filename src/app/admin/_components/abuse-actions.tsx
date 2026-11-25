@@ -12,7 +12,7 @@ import { ReasonDialog } from "./reason-dialog";
 import { ProfileBanButton } from "./shop-actions";
 
 const inputCls =
-  "h-11 w-full rounded-[var(--radius)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] aria-[invalid=true]:border-[var(--accent-rose)]";
+  "h-11 w-full rounded-lg border border-line-strong bg-card px-4 text-[15px] text-ink placeholder:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus aria-[invalid=true]:border-danger";
 
 export function BanPhoneForm() {
   const [phone, setPhone] = useState("");
@@ -53,7 +53,7 @@ export function BanPhoneForm() {
           className={inputCls}
         />
         {invalid && (
-          <p id={`${id}-err`} className="mt-1 text-[12px] text-[var(--accent-rose)]">
+          <p id={`${id}-err`} className="mt-1 text-[12px] text-danger-text">
             {c.phoneInvalid}
           </p>
         )}
@@ -84,7 +84,7 @@ export function UnbanPhoneButton({ phoneKey, hint }: { phoneKey: string; hint: s
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-9 items-center rounded-[var(--radius)] border border-[var(--border-subtle)] px-3 text-[13px] font-medium hover:border-[var(--border-hover)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+        className="inline-flex h-9 items-center rounded-full border border-line-strong bg-card px-3.5 text-[13px] font-semibold transition-colors hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         {c.unbanPhone}
       </button>
@@ -137,7 +137,7 @@ export function ProfileSearch({ canBan }: { canBan: boolean }) {
           <Search
             size={16}
             aria-hidden
-            className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+            className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-ink-muted"
           />
           <input
             id={`${id}-q`}
@@ -156,16 +156,16 @@ export function ProfileSearch({ canBan }: { canBan: boolean }) {
         </button>
       </form>
       {error && (
-        <p id={`${id}-err`} role="alert" className="mt-2 text-[13px] text-[var(--accent-rose)]">
+        <p id={`${id}-err`} role="alert" className="mt-2 text-[13px] text-danger-text">
           {error}
         </p>
       )}
       <div aria-live="polite" aria-busy={pending}>
         {rows && rows.length === 0 && (
-          <p className="mt-4 text-[14px] text-[var(--text-secondary)]">{c.profileSearchEmpty}</p>
+          <p className="mt-4 text-[14px] text-ink-soft">{c.profileSearchEmpty}</p>
         )}
         {rows && rows.length > 0 && (
-          <ul className="mt-4 divide-y divide-[var(--border-subtle)]">
+          <ul className="mt-4 divide-y divide-line">
             {rows.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
@@ -182,7 +182,7 @@ export function ProfileSearch({ canBan }: { canBan: boolean }) {
                       </Pill>
                     )}
                   </p>
-                  <p className="text-[12px] text-[var(--text-muted)]">
+                  <p className="text-[12px] text-ink-muted">
                     {[c.roleLabels[p.role] ?? p.role, p.shop_name, formatDate(p.created_at)].filter(Boolean).join(" · ")}
                     {p.phone_masked ? (
                       <>

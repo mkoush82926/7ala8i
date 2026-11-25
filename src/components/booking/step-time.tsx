@@ -136,7 +136,7 @@ export function StepTime({
       {/* Day strip */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>
+          <h2 className="text-h3" style={{ margin: 0 }}>
             {activeDate ? formatDate(activeDate, "monthYear") : t.booking.selectDate}
           </h2>
           <div style={{ display: "flex", gap: 6 }}>
@@ -152,7 +152,7 @@ export function StepTime({
         </div>
         {!slots && !error ? (
           <div style={{ display: "flex", gap: 8, overflow: "hidden" }} aria-hidden="true">
-            {Array.from({ length: 7 }, (_, i) => <Skeleton key={i} variant="card" style={{ width: 62, height: 76, flexShrink: 0 }} />)}
+            {Array.from({ length: 7 }, (_, i) => <Skeleton key={i} variant="card" style={{ width: 56, height: 72, flexShrink: 0, borderRadius: 16 }} />)}
           </div>
         ) : (
           <div className="bk-date-strip" role="radiogroup" aria-label={t.booking.selectDate}>
@@ -171,8 +171,8 @@ export function StepTime({
                   onClick={() => onDate(d)}
                   className={`bk-day${isSelected ? " is-selected" : ""}`}
                 >
-                  <span style={{ fontSize: 11, fontWeight: 700 }}>{d === today ? t.common.today : formatDate(d, "weekdayShort")}</span>
-                  <span style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.1 }}>{formatDate(d, { day: "numeric" })}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.85 }}>{d === today ? t.common.today : formatDate(d, "weekdayShort")}</span>
+                  <span className="bk-day-num" style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2, fontVariantNumeric: "tabular-nums" }}>{formatDate(d, { day: "numeric" })}</span>
                   {full ? <span style={{ fontSize: 10, fontWeight: 600 }}>{f.full}</span> : <span className="bk-day-dot" aria-hidden="true" />}
                 </button>
               );
@@ -192,9 +192,9 @@ export function StepTime({
       )}
 
       {/* Times */}
-      <h2 style={{ fontSize: 14, fontWeight: 800, margin: "0 0 12px" }}>
+      <h2 className="text-h3" style={{ margin: "0 0 14px" }}>
         {t.booking.availableTimes}
-        {activeDate && <span style={{ fontWeight: 500, color: "var(--text-secondary)" }}> · {formatDate(activeDate, "weekdayDay")}</span>}
+        {activeDate && <span style={{ fontWeight: 500, color: "var(--color-ink-muted)" }}> · {formatDate(activeDate, "weekdayDay")}</span>}
       </h2>
 
       {error ? (
@@ -219,22 +219,22 @@ export function StepTime({
           />
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
             {onAnyBarber && (
-              <button type="button" className="bk-jump" onClick={onAnyBarber}>
+              <button type="button" className="bk-btn-secondary" onClick={onAnyBarber}>
                 <Users size={15} aria-hidden="true" /> {f.tryAnyBarber}
               </button>
             )}
             {waHref && (
-              <a href={waHref} target="_blank" rel="noopener noreferrer" className="bk-jump" style={{ textDecoration: "none" }}>
+              <a href={waHref} target="_blank" rel="noopener noreferrer" className="bk-btn-secondary">
                 <MessageCircle size={15} aria-hidden="true" /> {f.askShopWhatsApp}
               </a>
             )}
           </div>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {groups.map((group) => (
             <div key={group.key} role="group" aria-labelledby={`bk-slots-${group.key}`}>
-              <p id={`bk-slots-${group.key}`} style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", margin: "0 0 8px" }}>
+              <p id={`bk-slots-${group.key}`} className="text-micro" style={{ color: "var(--color-ink-muted)", margin: "0 0 10px" }}>
                 {partLabel[group.key]}
               </p>
               <div className="bk-slot-grid">

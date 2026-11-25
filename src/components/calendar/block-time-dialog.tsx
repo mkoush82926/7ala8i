@@ -253,11 +253,11 @@ function BlockForm({
   if (isPrayer) {
     return (
       <div className="space-y-4 text-[14px]">
-        <p className="flex items-start gap-2 text-[var(--text-secondary)]">
-          <Moon size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--accent-brass)]" />
+        <p className="flex items-start gap-2 text-ink-soft">
+          <Moon size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-brand-text" />
           {t.calendar.prayerBlockManaged}
         </p>
-        <p className="text-[13px] text-[var(--text-muted)]">
+        <p className="text-[13px] text-ink-muted">
           {block?.allow_online ? t.calendar.blockAllowsOnline : t.calendar.blockHidesOnline}
         </p>
         <DialogFooter>
@@ -393,7 +393,7 @@ function BlockForm({
                 aria-describedby={`${id}-until-hint`}
                 onChange={(e) => setUntil(e.target.value)}
               />
-              <p id={`${id}-until-hint`} className="mt-1 text-[12px] text-[var(--text-muted)]">
+              <p id={`${id}-until-hint`} className="mt-1 text-[12px] text-ink-muted">
                 {interpolate(t.calendar.repeatHint, { max: MAX_BLOCK_ROWS })}
               </p>
             </div>
@@ -404,14 +404,14 @@ function BlockForm({
       <label className="flex min-h-[44px] cursor-pointer items-start gap-3">
         <input
           type="checkbox"
-          className="mt-1 h-5 w-5 accent-[var(--accent-brass)]"
+          className="mt-1 h-5 w-5 rounded-[6px] border-line-strong text-brand focus:ring-2 focus:ring-brand/30 focus:ring-offset-0"
           checked={allowOnline}
           disabled={!canEdit}
           onChange={(e) => setAllowOnline(e.target.checked)}
         />
         <span className="text-[14px]">
           {t.calendar.allowOnline}
-          <span className="block text-[12px] text-[var(--text-muted)]">{t.calendar.allowOnlineHint}</span>
+          <span className="block text-[12px] text-ink-muted">{t.calendar.allowOnlineHint}</span>
         </span>
       </label>
 
@@ -424,12 +424,12 @@ function BlockForm({
       <DialogFooter>
         {block && canEdit && (
           <span className="me-auto flex flex-wrap gap-2">
-            <button type="button" className="btn btn-ghost text-[var(--accent-rose)]" onClick={() => setConfirmDelete("one")} disabled={busy}>
+            <button type="button" className="btn btn-ghost text-danger-text" onClick={() => setConfirmDelete("one")} disabled={busy}>
               <Trash2 size={16} aria-hidden="true" />
               {block.series_id ? t.calendar.deleteOccurrence : t.common.delete}
             </button>
             {block.series_id && (
-              <button type="button" className="btn btn-ghost text-[var(--accent-rose)]" onClick={() => setConfirmDelete("series")} disabled={busy}>
+              <button type="button" className="btn btn-ghost text-danger-text" onClick={() => setConfirmDelete("series")} disabled={busy}>
                 {t.calendar.deleteFollowing}
               </button>
             )}

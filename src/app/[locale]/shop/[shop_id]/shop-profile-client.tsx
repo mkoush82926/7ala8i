@@ -7,12 +7,17 @@ import {
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
+  ChevronRight,
+  Clock3,
   Eye,
   Instagram,
+  MapPin,
   MessageCircle,
+  Navigation,
   Phone,
   Scissors,
   Share2,
+  ShieldCheck,
   Star,
   Store,
 } from "lucide-react";
@@ -24,6 +29,15 @@ import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
 import { MetaLine } from "@/components/ui/meta-line";
 import { Pill } from "@/components/ui/pill";
 import { BookingCta, pluralLabel } from "@/components/ui/booking-cta";
+import { placeholderFill, placeholderInitials } from "@/components/ui/photo-frame";
+import {
+  buttonClasses,
+  cardClasses,
+  containerClasses,
+  focusRing,
+  onPhotoIconButtonClasses,
+  textLinkClasses,
+} from "@/components/ui/recipes";
 import { PhotoGallery } from "@/components/shop/photo-gallery";
 import { ScrollSpyTabs } from "@/components/shop/scroll-spy-tabs";
 import { ServicesSection } from "@/components/shop/services-section";
@@ -36,11 +50,13 @@ import { RatingStars } from "@/components/shop/rating-stars";
 import { minPrice } from "@/components/shop/lib/services";
 import { localizedText } from "@/components/shop/lib/media";
 import { formatJOD } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   computeWeeklyHours,
   coverForShop,
   instagramUrl,
   isOpenAt,
+  mapsUrl,
   referenceDateForWeekday,
   shopInitials,
   summarizeRatings,
@@ -55,43 +71,50 @@ import { loadShopProfile, type ShopProfileData } from "./shop-data";
 function RatingBar({ star, count, total }: { star: number; count: number; total: number }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="text-xs font-semibold text-[var(--text-secondary)] w-3 text-end tabular-nums">{star}</span>
-      <Star size={12} aria-hidden="true" style={{ color: "var(--accent-brass)", fill: "var(--accent-brass)" }} />
-      <div className="flex-1 h-1.5 bg-[var(--border-subtle)] rounded-full overflow-hidden">
-        <div className="h-full bg-[var(--accent-brass)] rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+    <div className="flex items-center gap-3 text-sm">
+      <span className="inline-flex w-7 shrink-0 items-center justify-end gap-0.5 text-xs font-semibold tabular-nums text-ink-soft">
+        {star}
+        <Star aria-hidden="true" className="size-3 fill-accent text-accent" />
+      </span>
+      <div aria-hidden="true" className="h-2 flex-1 overflow-hidden rounded-full bg-sunken">
+        <div
+          className="h-full rounded-full bg-accent transition-[width] duration-500 ease-enter motion-reduce:transition-none"
+          style={{ width: `${pct}%` }}
+        />
       </div>
-      <span className="text-xs text-[var(--text-secondary)] w-6 text-end tabular-nums">{count}</span>
+      <span className="w-8 shrink-0 text-end text-xs tabular-nums text-ink-muted">{count}</span>
     </div>
   );
 }
 
 function SectionHeading({ id, children, aside }: { id: string; children: React.ReactNode; aside?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-4 mb-5">
-      <h2 id={id} className="text-xl font-black text-[var(--text-primary)] shrink-0">
+    <div className="mb-5 flex items-end justify-between gap-4">
+      <h2 id={id} className="text-h2 text-ink">
         {children}
       </h2>
-      <div className="flex-1 h-px bg-[var(--border-subtle)]" aria-hidden="true" />
-      {aside && <span className="text-xs font-bold text-[var(--text-secondary)] shrink-0">{aside}</span>}
+      {aside && <span className="shrink-0 pb-1 text-sm font-medium text-ink-muted">{aside}</span>}
     </div>
   );
 }
 
 function ShopPageSkeleton() {
   return (
-    <SkeletonGroup className="min-h-dvh bg-[var(--bg-primary)]">
-      <div className="h-16" />
-      <div className="max-w-6xl mx-auto sm:px-8">
-        <Skeleton className="aspect-video md:aspect-[32/11] w-full rounded-none sm:rounded-[12px]" />
+    <SkeletonGroup className="min-h-dvh bg-page">
+      <div className="hidden h-16 border-b border-line bg-card md:block" />
+      <div className={cn(containerClasses, "px-0 sm:px-0 md:px-6 md:pt-6 lg:px-8")}>
+        <Skeleton className="aspect-[4/3] h-auto w-full rounded-none md:aspect-auto md:h-[440px] md:rounded-2xl" />
       </div>
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8 space-y-4">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-4 w-48" />
-        <div className="space-y-3 pt-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} variant="card" className="h-16" />
-          ))}
+      <div className={cn(containerClasses, "space-y-3 py-6")}>
+        <Skeleton className="h-9 w-2/3 max-w-sm" />
+        <Skeleton className="h-4 w-1/2 max-w-xs" />
+        <div className="grid gap-10 pt-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+          <Skeleton variant="card" className="hidden h-72 lg:block" />
         </div>
       </div>
     </SkeletonGroup>
@@ -113,7 +136,7 @@ export default function ShopProfileClient({
   src?: string | null;
 }) {
   const router = useRouter();
-  const { t, dir, isRTL, FF, FFD, href, locale, formatCurrency, formatDate, formatTime, formatNumber } = useTranslation();
+  const { t, dir, isRTL, FF, href, locale, formatCurrency, formatDate, formatTime, formatNumber } = useTranslation();
 
   const [data, setData] = useState<ShopProfileData | null>(initialData);
   const [status, setStatus] = useState<"loading" | "ok" | "not_found" | "error">(initialData ? "ok" : "loading");
@@ -200,7 +223,7 @@ export default function ShopProfileClient({
   if (status === "not_found" || status === "error" || !data) {
     const isError = status === "error";
     return (
-      <main className="min-h-dvh bg-[var(--bg-primary)] flex items-center justify-center p-4" dir={dir} style={{ fontFamily: FF }}>
+      <main className="flex min-h-dvh items-center justify-center bg-page p-4" dir={dir} style={{ fontFamily: FF }}>
         <EmptyState
           icon={Store}
           size="lg"
@@ -232,14 +255,14 @@ export default function ShopProfileClient({
   const phoneHref = telHref(shop.phone);
   const waHref = whatsappUrl(shop.whatsapp);
   const igHref = instagramUrl(shop.instagram);
+  const directionsHref = mapsUrl(shop.google_maps_url, [shop.address, placeLine].filter(Boolean).join(", "));
   const policyHours = shop.cancellation_policy_hours ?? 0;
   const cancelText =
     policyHours > 0 ? interpolate(t.shopPage.freeCancellationHours, { hours: policyHours }) : t.shopPage.freeCancellation;
   // CLDR plurals (Arabic dual "تقييمان") with localised digits.
   const reviewCountText = pluralLabel(t.primitives.reviewsCount, numReviews, locale, formatNumber(numReviews));
-  const ratingLabel = interpolate(t.shopPage.ratingLabel, {
-    rating: formatNumber(avgRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
-  });
+  const ratingValue = formatNumber(avgRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const ratingLabel = interpolate(t.shopPage.ratingLabel, { rating: ratingValue });
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
   const visibleReviews = showAllReviews ? reviews : reviews.slice(0, 6);
   const hasHours = weeklyHours.some((h) => h.open);
@@ -260,26 +283,30 @@ export default function ShopProfileClient({
     phoneHref && { key: "phone", href: phoneHref, icon: Phone, label: t.shopPage.call, value: shop.phone ?? "", external: false },
     waHref && { key: "wa", href: waHref, icon: MessageCircle, label: t.shopPage.whatsapp, value: shop.whatsapp ?? "", external: true },
     igHref && { key: "ig", href: igHref, icon: Instagram, label: t.booking.instagram, value: shop.instagram ?? "", external: true },
-  ].filter(Boolean) as { key: string; href: string; icon: typeof Phone; label: string; value: string; external: boolean }[];
+  ].filter(Boolean) as ContactLink[];
 
   const headerMeta = [
     numReviews > 0
       ? {
           key: "rating",
-          icon: <Star size={14} aria-hidden="true" style={{ color: "var(--accent-brass)", fill: "var(--accent-brass)" }} />,
-          label: `${formatNumber(avgRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${formatNumber(numReviews)})`,
+          icon: <Star aria-hidden="true" className="size-3.5 fill-accent text-accent" />,
+          label: `${ratingValue} (${formatNumber(numReviews)})`,
           title: ratingLabel,
+          className: "font-semibold text-ink",
         }
       : null,
-    openLabel ? { key: "open", label: openLabel, className: openState ? "text-[var(--accent-text)] font-bold" : undefined } : null,
+    openLabel
+      ? { key: "open", label: openLabel, className: openState ? "font-semibold text-success-text" : "font-medium text-ink-soft" }
+      : null,
     placeLine || shop.address || null,
   ];
 
+  // Section order (§6.3): Services · Team · Reviews · Work · About.
   const tabs = [
     services.length > 0 && { id: "services", label: t.shopProfile.tabServices },
     barbers.length > 0 && { id: "team", label: t.shopProfile.tabTeam },
-    portfolio.length > 0 && { id: "portfolio", label: t.shopProfile.tabPortfolio },
     { id: "reviews", label: t.shopProfile.tabReviews },
+    portfolio.length > 0 && { id: "portfolio", label: t.shopProfile.tabPortfolio },
     { id: "about", label: t.shopProfile.tabAbout },
   ].filter(Boolean) as { id: string; label: string }[];
 
@@ -292,109 +319,158 @@ export default function ShopProfileClient({
     fmtTime: (v: string) => formatTime(v),
   };
 
+  const photoButtons = (
+    <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3 md:hidden">
+      <button type="button" onClick={goBack} aria-label={t.common.back} className={onPhotoIconButtonClasses}>
+        <BackIcon aria-hidden="true" />
+      </button>
+      <button type="button" onClick={handleShare} aria-label={t.common.share} className={onPhotoIconButtonClasses}>
+        <Share2 aria-hidden="true" />
+      </button>
+    </div>
+  );
+
   return (
-    <div className="min-h-dvh bg-[var(--bg-primary)] text-[var(--text-primary)]" style={{ fontFamily: FF }} dir={dir}>
-      {/* ── Top bar ── */}
-      <header className="fixed top-0 inset-x-0 z-40 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border-subtle)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-3">
+    <div className="min-h-dvh bg-page text-ink" style={{ fontFamily: FF }} dir={dir}>
+      {/* ── Top bar (desktop; on phones the photo carries back/share) ── */}
+      <header className="fixed inset-x-0 top-0 z-40 hidden h-16 border-b border-line bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75 md:block">
+        <div className={cn(containerClasses, "flex h-full items-center justify-between gap-3")}>
           <button
             type="button"
             onClick={goBack}
             aria-label={t.common.back}
-            className="focus-ring flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors h-10 px-3 rounded-[8px] text-sm font-semibold"
+            className={buttonClasses({ variant: "ghost", size: "sm", className: "-ms-2" })}
           >
-            <BackIcon size={18} aria-hidden="true" />
-            <span className="hidden sm:inline">{t.common.back}</span>
+            <BackIcon aria-hidden="true" className="size-4" />
+            <span>{t.common.back}</span>
           </button>
-          <p className="min-w-0 flex-1 truncate text-center font-black text-[15px]" style={{ fontFamily: FFD }} aria-hidden="true">
+          <p className="min-w-0 flex-1 truncate text-center text-[15px] font-semibold text-ink" aria-hidden="true">
             {shopName}
           </p>
           <button
             type="button"
             onClick={handleShare}
-            aria-label={t.common.share}
-            className="focus-ring w-10 h-10 rounded-[8px] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)] hover:border-[var(--accent-brass)] transition-colors"
+            className={buttonClasses({ variant: "secondary", size: "sm" })}
           >
-            <Share2 size={18} aria-hidden="true" />
+            <Share2 aria-hidden="true" />
+            <span>{t.common.share}</span>
           </button>
         </div>
       </header>
 
-      <div className="pt-16">
+      <div className="md:pt-16">
         {preview && (
-          <div role="status" className="bg-[var(--bg-secondary)] border-b border-[var(--border-subtle)]">
-            <div className="max-w-6xl mx-auto px-4 sm:px-8 py-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-              <Eye size={16} aria-hidden="true" className="shrink-0 text-[var(--accent-text)]" />
-              <p className="flex-1 min-w-0 font-semibold">{t.shopProfile.previewBanner}</p>
-              <Link href={href("/settings/profile")} className="focus-ring font-bold text-[var(--accent-text)] underline underline-offset-2">
+          <div role="status" className="border-b border-brand-soft-line bg-brand-soft text-brand-pressed dark:text-brand-text">
+            <div className={cn(containerClasses, "flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm")}>
+              <Eye size={16} aria-hidden="true" className="shrink-0" />
+              <p className="min-w-0 flex-1 font-semibold">{t.shopProfile.previewBanner}</p>
+              <Link href={href("/settings/profile")} className={cn(focusRing, "rounded-sm font-semibold underline underline-offset-4")}>
                 {t.shopProfile.previewManage}
               </Link>
             </div>
           </div>
         )}
 
-        {/* ── Breadcrumb ── */}
-        <nav aria-label={t.shopPage.breadcrumb}>
-          <ol className="max-w-6xl mx-auto px-4 sm:px-8 py-3 flex items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] overflow-x-auto no-scrollbar whitespace-nowrap">
+        {/* ── Breadcrumb (desktop) ── */}
+        <nav aria-label={t.shopPage.breadcrumb} className="hidden md:block">
+          <ol className={cn(containerClasses, "no-scrollbar text-meta flex items-center gap-1.5 overflow-x-auto whitespace-nowrap py-4 text-ink-muted")}>
             <li className="shrink-0">
-              <Link href={href("/")} className="focus-ring hover:text-[var(--text-primary)] transition-colors">
+              <Link href={href("/")} className="focus-ring rounded-sm transition-colors hover:text-ink">
                 {t.shopPage.home}
               </Link>
             </li>
-            <li aria-hidden="true" className="text-[var(--text-muted)] shrink-0">/</li>
+            <li aria-hidden="true" className="shrink-0">
+              <ChevronRight className="size-3.5 rtl:rotate-180" />
+            </li>
             <li className="shrink-0">
-              <Link href={href("/explore")} className="focus-ring hover:text-[var(--text-primary)] transition-colors">
+              <Link href={href("/explore")} className="focus-ring rounded-sm transition-colors hover:text-ink">
                 {t.shopPage.barbers}
               </Link>
             </li>
-            <li aria-hidden="true" className="text-[var(--text-muted)] shrink-0">/</li>
-            <li className="text-[var(--text-primary)] font-bold shrink-0 truncate max-w-[60vw]" aria-current="page">
+            <li aria-hidden="true" className="shrink-0">
+              <ChevronRight className="size-3.5 rtl:rotate-180" />
+            </li>
+            <li className="max-w-[60vw] shrink-0 truncate font-medium text-ink" aria-current="page">
               {shopName}
             </li>
           </ol>
         </nav>
 
-        {/* ── Photos (or the per-shop initials cover when there are none) ── */}
-        <div className="max-w-6xl mx-auto sm:px-8">
+        {/* ── Photos (or the branded cover when there are none) ── */}
+        <div className="md:mx-auto md:w-full md:max-w-7xl md:px-6 lg:px-8">
           {photos.length > 0 ? (
-            <PhotoGallery photos={photos} shopName={shopName} className="sm:rounded-[12px] overflow-hidden" />
+            <PhotoGallery photos={photos} shopName={shopName} mobileOverlay={photoButtons} />
           ) : (
             <div
-              className="relative overflow-hidden aspect-[16/7] sm:rounded-[12px] flex items-center justify-center"
+              className="relative isolate grid aspect-[16/10] place-items-center overflow-hidden md:aspect-auto md:h-[320px] md:rounded-2xl"
               style={{ background: cover.bg }}
-              aria-hidden="true"
             >
-              <Scissors className="absolute -bottom-10 end-[-2rem] opacity-[0.08]" style={{ color: cover.fg, width: 240, height: 240 }} />
-              <span className="text-5xl sm:text-6xl font-black" style={{ color: cover.fg, fontFamily: FFD }}>
+              <span aria-hidden="true" className="text-[56px] leading-none font-extrabold md:text-[72px]" style={{ color: cover.fg }}>
                 {shopInitials(shopName)}
               </span>
+              <Scissors
+                aria-hidden="true"
+                className="absolute -bottom-8 -end-6 size-48 opacity-[0.08] md:size-64"
+                style={{ color: cover.fg }}
+              />
+              {photoButtons}
             </div>
           )}
         </div>
 
-        {/* ── Header ── */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-6 pb-4">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
+        {/* ── Header block ── */}
+        <div className={cn(containerClasses, "pb-6 pt-5 md:pt-8")}>
+          <div className="max-w-3xl">
             {shop.is_verified && (
-              <Pill tone="brass" size="sm" icon={<BadgeCheck size={12} aria-hidden="true" />}>
-                {t.shopProfile.verified}
-              </Pill>
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <Pill tone="brand" size="md" icon={<BadgeCheck aria-hidden="true" />}>
+                  {t.shopProfile.verified}
+                </Pill>
+              </div>
+            )}
+            <h1 className="text-h1 break-words text-ink">{shopName}</h1>
+            <MetaLine items={headerMeta} className="mt-2 text-[15px]" />
+
+            {/* Quick actions (mobile/tablet; desktop has them in the booking card) */}
+            {(directionsHref || contactLinks.length > 0) && (
+              <div className="no-scrollbar -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:hidden">
+                {directionsHref && (
+                  <a
+                    href={directionsHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={buttonClasses({ variant: "secondary", size: "sm" })}
+                  >
+                    <Navigation aria-hidden="true" className="rtl:-scale-x-100" />
+                    {t.shopPage.viewOnMap}
+                  </a>
+                )}
+                {contactLinks.map(({ key, href: linkHref, icon: Icon, label, external }) => (
+                  <a
+                    key={key}
+                    href={linkHref}
+                    target={external ? "_blank" : undefined}
+                    rel={external ? "noopener noreferrer" : undefined}
+                    className={buttonClasses({ variant: "secondary", size: "sm" })}
+                  >
+                    <Icon aria-hidden="true" />
+                    {label}
+                  </a>
+                ))}
+              </div>
             )}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black break-words" style={{ fontFamily: FFD }}>
-            {shopName}
-          </h1>
-          <MetaLine items={headerMeta} className="mt-2 text-sm text-[var(--text-secondary)]" />
         </div>
       </div>
 
-      <ScrollSpyTabs tabs={tabs} label={t.shopProfile.tabsLabel} top={64} />
+      <ScrollSpyTabs tabs={tabs} label={t.shopProfile.tabsLabel} top={64} stickyClassName="top-0 md:top-16" />
 
-      <main className="pb-28 lg:pb-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-8 lg:grid lg:grid-cols-[1fr_360px] lg:gap-10 lg:items-start">
-          <div className="min-w-0 space-y-12">
+      <main className="pb-28 lg:pb-20">
+        <div className={cn(containerClasses, "pt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-12")}>
+          <div className="min-w-0 space-y-14">
             {/* Upcoming closures / special hours (renders nothing when there are none). */}
             <ClosureBanner shopId={shop.id} timezone={timeZone} />
+
             {/* ── Services ── */}
             <section id="services" aria-labelledby="services-heading" className="scroll-mt-32">
               <SectionHeading
@@ -420,14 +496,6 @@ export default function ShopProfileClient({
               </section>
             )}
 
-            {/* ── Portfolio ── */}
-            {portfolio.length > 0 && (
-              <section id="portfolio" aria-labelledby="portfolio-heading" className="scroll-mt-32">
-                <SectionHeading id="portfolio-heading">{t.shopProfile.portfolio}</SectionHeading>
-                <PortfolioGrid items={portfolio} barbers={barbers} services={services} />
-              </section>
-            )}
-
             {/* ── Reviews ── */}
             <section id="reviews" aria-labelledby="reviews-heading" className="scroll-mt-32">
               <SectionHeading id="reviews-heading">{t.shopPage.reviews}</SectionHeading>
@@ -435,57 +503,57 @@ export default function ShopProfileClient({
                 <EmptyState icon={Star} size="sm" title={t.shopPage.noReviews} description={t.shopPage.noReviewsDesc} />
               ) : (
                 <>
-                  <div className="bg-[var(--bg-primary)] rounded-[12px] border border-[var(--border-subtle)] p-5 sm:p-6 mb-6">
-                    <div className="flex gap-6 sm:gap-8 items-center">
-                      <div className="text-center shrink-0">
-                        <div className="text-5xl font-black text-[var(--text-primary)] leading-none tabular-nums" style={{ fontFamily: FFD }}>
-                          {formatNumber(avgRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-                        </div>
-                        <div className="mt-2">
-                          <RatingStars rating={avgRating} size={16} label={ratingLabel} />
-                        </div>
-                        <p className="text-xs text-[var(--text-secondary)] font-semibold mt-1">{reviewCountText}</p>
+                  <div className={cardClasses({ className: "mb-6 grid gap-6 p-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:gap-10 sm:p-6" })}>
+                    <div className="flex items-center gap-4 sm:flex-col sm:items-start sm:gap-2">
+                      <p className="text-[48px] leading-none font-bold tabular-nums text-ink">{ratingValue}</p>
+                      <div className="flex flex-col gap-1">
+                        <RatingStars rating={avgRating} size="md" label={ratingLabel} />
+                        <p className="text-sm text-ink-muted">{reviewCountText}</p>
                       </div>
-                      <div className="flex-1 space-y-2 min-w-0">
-                        {ratingSummary.distribution.map(({ star, count }) => (
-                          <RatingBar key={star} star={star} count={count} total={numReviews} />
-                        ))}
-                      </div>
+                    </div>
+                    <div className="min-w-0 space-y-2">
+                      {ratingSummary.distribution.map(({ star, count }) => (
+                        <RatingBar key={star} star={star} count={count} total={numReviews} />
+                      ))}
                     </div>
                   </div>
 
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {visibleReviews.map((review) => {
                       const name = review.reviewer_name?.trim() || t.shopPage.anonymousReviewer;
+                      const fill = placeholderFill(name);
                       return (
-                        <li key={review.id} className="bg-[var(--bg-primary)] rounded-[12px] border border-[var(--border-subtle)] p-5">
-                          <div className="flex items-start gap-3 mb-3">
-                            <div
+                        <li key={review.id} className={cardClasses({ className: "flex flex-col gap-3 p-5" })}>
+                          <div className="flex items-center gap-3">
+                            <span
                               aria-hidden="true"
-                              className="w-9 h-9 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] flex items-center justify-center text-sm font-bold shrink-0"
+                              className="grid size-10 shrink-0 place-items-center rounded-full text-sm font-bold"
+                              style={{ background: fill.bg, color: fill.fg }}
                             >
-                              {shopInitials(name).charAt(0)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-sm text-[var(--text-primary)] truncate">{name}</p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <RatingStars rating={review.rating} size={12} label={interpolate(t.shopPage.ratingLabel, { rating: review.rating })} />
-                                <time dateTime={review.created_at} className="text-xs text-[var(--text-secondary)]">
-                                  {formatDate(review.created_at, "medium")}
-                                </time>
-                              </div>
+                              {placeholderInitials(name).slice(0, 1)}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-ink">{name}</p>
+                              <time dateTime={review.created_at} className="text-meta text-ink-muted">
+                                {formatDate(review.created_at, "medium")}
+                              </time>
                             </div>
                           </div>
+                          <RatingStars rating={review.rating} size="sm" label={interpolate(t.shopPage.ratingLabel, { rating: review.rating })} />
                           {review.comment && (
-                            <p className="text-sm text-[var(--text-secondary)] leading-relaxed ps-12 break-words">{review.comment}</p>
+                            <p className="line-clamp-4 break-words text-[15px] leading-6 text-ink-soft">{review.comment}</p>
                           )}
                         </li>
                       );
                     })}
                   </ul>
                   {!showAllReviews && reviews.length > 6 && (
-                    <div className="mt-5 text-center">
-                      <button type="button" className="btn btn-secondary" onClick={() => setShowAllReviews(true)}>
+                    <div className="mt-5 flex justify-center">
+                      <button
+                        type="button"
+                        className={buttonClasses({ variant: "secondary", className: "w-full sm:w-auto" })}
+                        onClick={() => setShowAllReviews(true)}
+                      >
                         {t.shopPage.showMoreReviews}
                       </button>
                     </div>
@@ -494,22 +562,32 @@ export default function ShopProfileClient({
               )}
             </section>
 
+            {/* ── Portfolio ── */}
+            {portfolio.length > 0 && (
+              <section id="portfolio" aria-labelledby="portfolio-heading" className="scroll-mt-32">
+                <SectionHeading id="portfolio-heading">{t.shopProfile.portfolio}</SectionHeading>
+                <PortfolioGrid items={portfolio} barbers={barbers} services={services} />
+              </section>
+            )}
+
             {/* ── About: description, amenities, hours (mobile), location, contact ── */}
             <section id="about" aria-labelledby="about-heading" className="scroll-mt-32 space-y-10">
               <div>
                 <SectionHeading id="about-heading">{t.shopPage.about}</SectionHeading>
                 {description ? (
-                  <p className="text-[15px] leading-relaxed text-[var(--text-secondary)] whitespace-pre-line">{description}</p>
+                  <p className="max-w-[65ch] whitespace-pre-line text-[15px] leading-7 text-ink-soft">{description}</p>
                 ) : null}
               </div>
 
               {amenities.length > 0 && (
                 <div>
-                  <h3 className="text-base font-black mb-3">{t.shopProfile.amenities}</h3>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                  <h3 className="text-h3 mb-4 text-ink">{t.shopProfile.amenities}</h3>
+                  <ul className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                     {amenities.map((a) => (
-                      <li key={a.id} className="flex items-center gap-3 text-sm text-[var(--text-primary)]">
-                        <AmenityIcon name={a.icon} className="shrink-0 text-[var(--text-secondary)]" />
+                      <li key={a.id} className="flex items-center gap-3 text-[15px] text-ink">
+                        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand-text">
+                          <AmenityIcon name={a.icon} size={18} />
+                        </span>
                         {isRTL ? a.name_ar : a.name_en}
                       </li>
                     ))}
@@ -534,43 +612,74 @@ export default function ShopProfileClient({
 
               {contactLinks.length > 0 && (
                 <div className="lg:hidden">
-                  <h3 className="text-base font-black mb-3">{t.shopPage.contact}</h3>
+                  <h3 className="text-h3 mb-4 text-ink">{t.shopPage.contact}</h3>
                   <ContactList links={contactLinks} />
                 </div>
               )}
             </section>
           </div>
 
-          {/* ── Desktop sidebar: book + trust info ── */}
-          <aside className="hidden lg:block lg:sticky space-y-6" style={{ top: 136 }} aria-label={t.shopPage.bookingBar}>
-            <div className="bg-[var(--bg-primary)] rounded-[12px] border border-[var(--border-subtle)] p-6 shadow-[0_8px_30px_-14px_rgba(28,22,17,0.18)]">
-              <p className="text-xl font-black text-[var(--text-primary)] mb-1" style={{ fontFamily: FFD }}>
-                {shopName}
-              </p>
-              {numReviews > 0 && (
-                <div className="flex items-center gap-1.5 mb-2">
-                  <RatingStars rating={avgRating} size={14} label={ratingLabel} />
-                  <span className="text-sm font-bold text-[var(--text-primary)]">{formatNumber(avgRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
-                  <span className="text-xs text-[var(--text-secondary)]">({reviewCountText})</span>
-                </div>
-              )}
+          {/* ── Desktop booking card ── */}
+          <aside className="hidden space-y-5 lg:sticky lg:top-[136px] lg:block" aria-label={t.shopPage.bookingBar}>
+            <div className={cardClasses({ elevation: "raised", className: "space-y-5 rounded-2xl p-6" })}>
+              <div className="space-y-1.5">
+                <p className="text-h3 text-ink">{shopName}</p>
+                {numReviews > 0 && (
+                  <RatingStars
+                    rating={avgRating}
+                    size="sm"
+                    value={ratingValue}
+                    count={`(${reviewCountText})`}
+                    label={`${ratingLabel} · ${reviewCountText}`}
+                  />
+                )}
+                {openLabel && (
+                  <p className={cn("flex items-center gap-1.5 text-sm", openState ? "font-semibold text-success-text" : "font-medium text-ink-soft")}>
+                    <Clock3 aria-hidden="true" className="size-4" />
+                    {openLabel}
+                  </p>
+                )}
+                {(placeLine || shop.address) && (
+                  <p className="text-meta flex items-start gap-1.5 text-ink-muted">
+                    <MapPin aria-hidden="true" className="mt-px size-4 shrink-0" />
+                    <span className="min-w-0">{placeLine || shop.address}</span>
+                  </p>
+                )}
+              </div>
               {startingPrice !== null && (
-                <p className="py-4 my-3 border-y border-[var(--border-subtle)] text-2xl font-black">
-                  {t.primitives.fromPrice.replace("{price}", priceText(startingPrice))}
+                <p className="border-y border-line py-4 text-ink">
+                  <span className="text-2xl font-bold tabular-nums">
+                    {t.primitives.fromPrice.replace("{price}", priceText(startingPrice))}
+                  </span>
                 </p>
               )}
               <BookingCta shop={shop.id} entry="profile_card" src={src} fullWidth />
-              <p className="mt-3 text-center text-xs text-[var(--text-secondary)]">
-                {t.shopPage.noPaymentToday} · {cancelText}
-              </p>
-              <p className="text-center text-xs mt-1 mb-4">
-                <Link href={href("/policy")} className="focus-ring text-[var(--accent-text)] underline underline-offset-2 hover:no-underline">
-                  {t.shopPage.policyLink}
-                </Link>
-              </p>
-              {contactLinks.length > 0 && (
-                <div className="pt-4 border-t border-[var(--border-subtle)]">
-                  <ContactList links={contactLinks} compact />
+              <div className="space-y-1.5 text-center">
+                <p className="text-meta flex items-center justify-center gap-1.5 text-ink-muted">
+                  <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-success" />
+                  <span>
+                    {t.shopPage.noPaymentToday} · {cancelText}
+                  </span>
+                </p>
+                <p className="text-meta">
+                  <Link href={href("/policy")} className={cn(textLinkClasses, focusRing, "rounded-sm")}>
+                    {t.shopPage.policyLink}
+                  </Link>
+                </p>
+              </div>
+              {(contactLinks.length > 0 || directionsHref) && (
+                <div className="border-t border-line pt-4">
+                  <ContactList
+                    links={
+                      directionsHref
+                        ? [
+                            ...contactLinks,
+                            { key: "map", href: directionsHref, icon: Navigation, label: t.shopPage.viewOnMap, value: t.shopPage.viewOnMap, external: true },
+                          ]
+                        : contactLinks
+                    }
+                    compact
+                  />
                 </div>
               )}
             </div>
@@ -591,15 +700,18 @@ export default function ShopProfileClient({
   );
 }
 
-function ContactList({
-  links,
-  compact = false,
-}: {
-  links: { key: string; href: string; icon: typeof Phone; label: string; value: string; external: boolean }[];
-  compact?: boolean;
-}) {
+interface ContactLink {
+  key: string;
+  href: string;
+  icon: typeof Phone;
+  label: string;
+  value: string;
+  external: boolean;
+}
+
+function ContactList({ links, compact = false }: { links: ContactLink[]; compact?: boolean }) {
   return (
-    <ul className={compact ? "flex flex-col gap-1" : "grid grid-cols-1 sm:grid-cols-2 gap-3"}>
+    <ul className={compact ? "flex flex-col" : "grid grid-cols-1 gap-3 sm:grid-cols-2"}>
       {links.map(({ key, href: linkHref, icon: Icon, label, value, external }) => (
         <li key={key}>
           <a
@@ -608,20 +720,23 @@ function ContactList({
             rel={external ? "noopener noreferrer" : undefined}
             className={
               compact
-                ? "focus-ring flex items-center gap-3 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors rounded-sm"
-                : "focus-ring flex items-center gap-3 p-4 bg-[var(--bg-primary)] rounded-[12px] border border-[var(--border-subtle)] hover:border-[var(--accent-brass)] transition-colors"
+                ? cn(focusRing, "-mx-2 flex min-h-10 items-center gap-3 rounded-lg px-2 text-sm text-ink-soft transition-colors hover:bg-sunken hover:text-ink")
+                : cardClasses({ interactive: true, className: cn(focusRing, "flex items-center gap-3 p-4 hover:border-line-strong") })
             }
           >
             {compact ? (
-              <Icon size={17} aria-hidden="true" className="shrink-0" />
+              <Icon size={18} aria-hidden="true" className={cn("shrink-0 text-ink-muted", key === "map" && "rtl:-scale-x-100")} />
             ) : (
-              <span className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center shrink-0 text-[var(--text-secondary)]">
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-text">
                 <Icon size={18} aria-hidden="true" />
               </span>
             )}
             <span className="min-w-0">
-              {!compact && <span className="block text-xs font-bold text-[var(--text-secondary)]">{label}</span>}
-              <span className={compact ? "truncate" : "block font-bold text-sm text-[var(--text-primary)] truncate"} dir={key === "phone" || key === "wa" ? "ltr" : undefined}>
+              {!compact && <span className="text-meta block text-ink-muted">{label}</span>}
+              <span
+                className={compact ? "block truncate" : "block truncate text-[15px] font-semibold text-ink"}
+                dir={key === "phone" || key === "wa" ? "ltr" : undefined}
+              >
                 {value || label}
               </span>
             </span>
@@ -652,26 +767,27 @@ function HoursCard({
   boxed?: boolean;
 }) {
   return (
-    <section
-      aria-labelledby={headingId}
-      className={boxed ? "bg-[var(--bg-primary)] rounded-[12px] border border-[var(--border-subtle)] p-6" : undefined}
-    >
-      <h2 id={headingId} className={boxed ? "text-base font-black text-[var(--text-primary)] mb-4" : "text-xl font-black text-[var(--text-primary)] mb-4"}>
+    <section aria-labelledby={headingId} className={boxed ? cardClasses({ className: "rounded-2xl p-6" }) : undefined}>
+      <h2 id={headingId} className={cn(boxed ? "text-h3" : "text-h2", "mb-4 text-ink")}>
         {labels.title}
       </h2>
       {!hasHours ? (
-        <p className="text-sm text-[var(--text-secondary)]">{labels.unavailable}</p>
+        <p className="text-sm text-ink-muted">{labels.unavailable}</p>
       ) : (
-        <dl className="divide-y divide-[var(--border-subtle)] text-sm">
+        <dl className="divide-y divide-line text-[15px]">
           {hours.map((h) => {
             const isToday = h.day === todayDay;
             return (
-              <div key={h.day} className={`flex items-center justify-between gap-4 py-2 ${isToday ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
+              <div
+                key={h.day}
+                className={cn("flex items-center justify-between gap-4 py-2.5", isToday ? "font-semibold text-ink" : "text-ink-soft")}
+              >
                 <dt className="flex items-center gap-2">
+                  {isToday && <span aria-hidden="true" className="size-1.5 rounded-full bg-success" />}
                   {dayName(h.day)}
                   {isToday && <span className="sr-only">({labels.today})</span>}
                 </dt>
-                <dd className="tabular-nums">
+                <dd className={cn("tabular-nums", !(h.open && h.close) && "text-ink-muted")}>
                   {h.open && h.close ? (
                     <span>
                       {fmtTime(h.open)} – {fmtTime(h.close)}

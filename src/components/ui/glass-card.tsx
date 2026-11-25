@@ -4,6 +4,13 @@ import React from "react";
 import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+/**
+ * Legacy card API kept for compatibility; renders the v2 generic panel
+ * surface (§5.4): white card, hairline border, 16px radius, no blur, no glow.
+ * `elevated` → resting shadow-card; `hoverable` → lifts to shadow-raised.
+ * `glow` is accepted but ignored (v2 has no glows).
+ * New code: import { Card, Panel } from "@/components/ui/card".
+ */
 interface GlassCardProps extends HTMLMotionProps<"div"> {
   children: React.ReactNode;
   className?: string;
@@ -13,25 +20,18 @@ interface GlassCardProps extends HTMLMotionProps<"div"> {
   padding?: "sm" | "md" | "lg" | "xl";
 }
 
-const glowColors = {
-  mint: "hover:shadow-[0_0_20px_rgba(110,231,183,0.15)]",
-  lavender: "hover:shadow-[0_0_20px_rgba(167,139,250,0.15)]",
-  blue: "hover:shadow-[0_0_20px_rgba(96,165,250,0.15)]",
-  rose: "hover:shadow-[0_0_20px_rgba(251,113,133,0.15)]",
-  none: "",
-};
-
 const paddingSizes = {
   sm: "p-4",
-  md: "p-6",
-  lg: "p-8",
-  xl: "p-12",
+  md: "p-4 lg:p-5",
+  lg: "p-5 lg:p-6",
+  xl: "p-8 lg:p-10",
 };
 
 export function GlassCard({
   children,
   className,
   elevated = false,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   glow = "none",
   hoverable = true,
   padding = "lg",
@@ -40,18 +40,11 @@ export function GlassCard({
   return (
     <motion.div
       className={cn(
-        "relative rounded-[var(--radius-lg)] border border-[var(--border-primary)]",
-        elevated
-          ? "bg-[var(--glass-bg-elevated)] backdrop-blur-[20px]"
-          : "bg-[var(--glass-bg)] backdrop-blur-[20px]",
+        "relative rounded-xl border border-line bg-card text-ink",
+        elevated && "shadow-card",
         paddingSizes[padding],
-        hoverable && [
-          "transition-all duration-[250ms]",
-          "hover:bg-[var(--bg-surface-hover)]",
-          "hover:border-[var(--border-hover)]",
-          "hover:-translate-y-0.5",
-          glowColors[glow],
-        ],
+        hoverable &&
+          "transition-[box-shadow,border-color] duration-200 ease-standard hover:border-line-strong/50 hover:shadow-raised motion-reduce:transition-none",
         className,
       )}
       {...motionProps}

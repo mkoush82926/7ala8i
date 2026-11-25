@@ -2,11 +2,13 @@
 
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Check, AlertTriangle, RefreshCw } from "lucide-react";
+import { Bell, BellOff, CalendarCheck, CalendarX, CalendarClock, CheckCheck, AlertTriangle, RefreshCw, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
-import { ListSkeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { focusRing } from "@/components/ui/recipes";
 import { statusLabel } from "@/components/dashboard/status-badge";
 import { normalizeAppointmentStatus } from "@/lib/types";
 import type { TranslationKeys } from "@/i18n/en";
@@ -74,6 +76,13 @@ export function describeNotification(
     default:
       return { title: n.title || t.notifications.bookingUpdated, body: n.message || "", link: n.link };
   }
+}
+
+/** Leading icon per notification type (decorative; the title carries the meaning). */
+function iconFor(type: string | null): LucideIcon {
+  if (type === "booking_created") return CalendarCheck;
+  if (type === "booking_cancelled_by_customer") return CalendarX;
+  return CalendarClock;
 }
 
 /**
@@ -210,13 +219,16 @@ export function NotificationBell() {
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls={open ? panelId : undefined}
-        className="relative grid size-11 place-items-center rounded-lg text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+        className={cn(
+          "relative grid size-11 place-items-center rounded-full text-ink-soft transition-colors duration-150 hover:bg-sunken hover:text-ink motion-reduce:transition-none aria-expanded:bg-sunken aria-expanded:text-ink",
+          focusRing,
+        )}
       >
-        <Bell size={17} aria-hidden="true" />
+        <Bell size={20} aria-hidden="true" />
         {unreadCount > 0 && (
           <span
             aria-hidden="true"
-            className="absolute end-1.5 top-1.5 grid min-w-[18px] place-items-center rounded-full border-2 border-[var(--bg-primary)] bg-[var(--accent-rose)] px-1 text-[10px] font-bold leading-[14px] text-[var(--on-accent)]"
+            className="absolute end-1 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none tabular-nums text-white ring-2 ring-page dark:text-[#2E1414]"
           >
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
@@ -229,87 +241,110 @@ export function NotificationBell() {
           id={panelId}
           role="dialog"
           aria-labelledby={titleId}
-          className="fixed inset-x-4 top-[72px] z-50 flex max-h-[min(80vh,560px)] flex-col overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] shadow-2xl sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-96"
+          className="fixed inset-x-4 top-[72px] z-50 flex max-h-[min(80vh,560px)] flex-col overflow-hidden rounded-2xl border border-line bg-card shadow-float sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-[400px]"
         >
-          <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-4 py-3">
-            <h2 id={titleId} className="m-0 text-[14px] font-bold text-[var(--text-primary)]">
+          <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+            <h2 id={titleId} className="m-0 flex items-center gap-2 text-base font-semibold text-ink">
               {t.common.notifications}
+              {unreadCount > 0 && (
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand-soft px-1.5 text-xs font-semibold tabular-nums text-brand-pressed">
+                  {unreadCount}
+                </span>
+              )}
             </h2>
             {unreadCount > 0 && (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setRead(notifications.filter((n) => !n.is_read).map((n) => n.id))}
-                className="inline-flex min-h-9 items-center gap-1 rounded-md px-2 text-[12px] font-semibold text-[var(--accent-text)] hover:underline"
+                icon={<CheckCheck aria-hidden="true" />}
+                className="-me-2 text-brand-text hover:text-brand-text"
               >
-                <Check size={13} aria-hidden="true" />
                 {t.notifications.markAllRead}
-              </button>
+              </Button>
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-2">
+          <div className="flex-1 overflow-y-auto overscroll-contain p-2">
             {loading ? (
-              <ListSkeleton rows={3} />
+              <SkeletonGroup className="flex flex-col gap-1 p-1">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-start gap-3 p-2">
+                    <Skeleton className="size-9 shrink-0 rounded-full" />
+                    <div className="flex flex-1 flex-col gap-2 pt-1">
+                      <Skeleton className="h-3.5 w-3/5" />
+                      <Skeleton className="h-3 w-4/5" />
+                    </div>
+                  </div>
+                ))}
+              </SkeletonGroup>
             ) : failed ? (
-              <div className="flex flex-col items-center gap-3 px-4 py-8 text-center" role="alert">
-                <AlertTriangle size={20} className="text-[var(--accent-rose)]" aria-hidden="true" />
-                <p className="m-0 text-[13px] text-[var(--text-secondary)]">{t.notifications.loadFailed}</p>
-                <button
-                  type="button"
-                  className="btn btn-secondary min-h-10"
+              <div className="flex flex-col items-center gap-3 px-6 py-10 text-center" role="alert">
+                <span aria-hidden="true" className="grid size-12 place-items-center rounded-2xl bg-danger-soft text-danger-text">
+                  <AlertTriangle size={22} />
+                </span>
+                <p className="m-0 max-w-xs text-sm text-ink-muted">{t.notifications.loadFailed}</p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<RefreshCw aria-hidden="true" />}
                   onClick={() => {
                     setLoading(true);
                     setReloadKey((k) => k + 1);
                   }}
                 >
-                  <RefreshCw size={14} aria-hidden="true" />
                   {t.common.retry}
-                </button>
+                </Button>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-                <Bell size={22} className="text-[var(--text-muted)]" aria-hidden="true" />
-                <p className="m-0 text-[13px] text-[var(--text-secondary)]">{t.notifications.empty}</p>
+              <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+                <span aria-hidden="true" className="bg-hatch-ink grid size-14 place-items-center rounded-2xl bg-brand-soft text-brand-text">
+                  <BellOff size={24} />
+                </span>
+                <p className="m-0 max-w-xs text-sm text-ink-muted">{t.notifications.empty}</p>
               </div>
             ) : (
-              <ul className="m-0 flex list-none flex-col gap-1 p-0">
+              <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
                 {notifications.map((n) => {
                   const d = describeNotification(n, t, fmt);
+                  const Icon = iconFor(n.type);
                   return (
                     <li key={n.id}>
                       <button
                         type="button"
                         onClick={() => openNotification(n, d.link)}
                         className={cn(
-                          "w-full rounded-xl p-3 text-start transition-colors",
-                          n.is_read
-                            ? "hover:bg-[var(--bg-surface-hover)]"
-                            : "bg-[var(--accent-mint-muted)] hover:bg-[var(--bg-surface-hover)]",
+                          "flex w-full items-start gap-3 rounded-xl p-3 text-start transition-colors duration-150 motion-reduce:transition-none",
+                          n.is_read ? "hover:bg-sunken" : "bg-brand-soft/60 hover:bg-brand-soft",
+                          focusRing,
+                          "focus-visible:-outline-offset-2",
                         )}
                       >
-                        <span className="mb-1 flex items-start justify-between gap-2">
-                          <span
-                            className={cn(
-                              "text-[13px]",
-                              n.is_read ? "font-medium text-[var(--text-secondary)]" : "font-bold text-[var(--text-primary)]",
-                            )}
-                          >
-                            {d.title}
-                          </span>
-                          {!n.is_read && (
-                            <>
-                              <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--accent-mint)]" />
-                              <span className="sr-only">{t.notifications.unread}</span>
-                            </>
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "grid size-9 shrink-0 place-items-center rounded-full",
+                            n.is_read ? "bg-sunken text-ink-muted" : "bg-card text-brand-text shadow-xs",
                           )}
+                        >
+                          <Icon size={18} />
                         </span>
-                        {d.body && (
-                          <span className="line-clamp-2 block text-[12px] leading-relaxed text-[var(--text-secondary)]">
-                            {d.body}
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-start justify-between gap-2">
+                            <span className={cn("text-sm", n.is_read ? "font-medium text-ink-soft" : "font-semibold text-ink")}>
+                              {d.title}
+                            </span>
+                            {!n.is_read && (
+                              <>
+                                <span aria-hidden="true" className="mt-1.5 size-2 shrink-0 rounded-full bg-brand" />
+                                <span className="sr-only">{t.notifications.unread}</span>
+                              </>
+                            )}
                           </span>
-                        )}
-                        <span className="mt-1.5 block text-[11px] text-[var(--text-muted)]">
-                          {formatRelative(n.created_at)}
+                          {d.body && (
+                            <span className="mt-0.5 line-clamp-2 block text-[13px] leading-5 text-ink-muted">{d.body}</span>
+                          )}
+                          <span className="mt-1 block text-xs text-ink-muted">{formatRelative(n.created_at)}</span>
                         </span>
                       </button>
                     </li>

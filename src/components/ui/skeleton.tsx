@@ -12,8 +12,9 @@ import { useTranslation } from "@/hooks/use-translation";
      a role="status" region with a translated "Loading…" label, so screen
      readers hear one announcement instead of silence.
    - No artificial delays: render these only while data is actually loading.
-   - Colours come from --skeleton-base / --skeleton-highlight (dark-mode aware);
-     the shimmer stops under prefers-reduced-motion.
+   - v2 (§5.14): bg-sunken base with a soft highlight sweeping in the reading
+     direction (mirrored in RTL); static under prefers-reduced-motion.
+     Shapes mirror the final layout (ShopCardSkeleton = 4:3 media + 2 lines).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export type SkeletonVariant = "text" | "card" | "circle" | "chart" | "button" | "avatar" | "pill";
@@ -25,12 +26,12 @@ interface SkeletonProps {
 }
 
 const variantStyles: Record<SkeletonVariant, string> = {
-  text: "h-4 w-full rounded-[4px]",
-  card: "h-32 w-full rounded-[12px]",
+  text: "h-4 w-full rounded-full",
+  card: "h-32 w-full rounded-xl",
   circle: "h-10 w-10 rounded-full",
   avatar: "h-10 w-10 rounded-full",
-  chart: "h-48 w-full rounded-[12px]",
-  button: "h-10 w-24 rounded-[8px]",
+  chart: "h-48 w-full rounded-xl",
+  button: "h-11 w-24 rounded-full",
   pill: "h-6 w-16 rounded-full",
 };
 
@@ -58,7 +59,7 @@ export function SkeletonGroup({
   );
 }
 
-const surface = "rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-primary)]";
+const surface = "rounded-xl border border-line bg-card";
 
 /** Paragraph placeholder; the last line is shorter. */
 export function SkeletonText({ lines = 3, className }: { lines?: number; className?: string }) {
@@ -93,12 +94,29 @@ function CardSkeletonInner() {
   );
 }
 
-/** Row of metric cards using the real .card-grid-4 breakpoints. */
+/** Marketplace shop card: 4:3 media + name (60%) + meta (40%). */
+export function ShopCardSkeleton({ count = 1, className }: { count?: number; className?: string }) {
+  return (
+    <SkeletonGroup className={cn(count > 1 && "grid gap-4 sm:grid-cols-2 xl:grid-cols-3", className)}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className={cn(surface, "overflow-hidden shadow-card")}>
+          <Skeleton className="aspect-[4/3] h-auto w-full rounded-none" />
+          <div className="flex flex-col gap-2.5 p-4">
+            <Skeleton className="h-4 w-3/5" />
+            <Skeleton className="h-3.5 w-2/5" />
+          </div>
+        </div>
+      ))}
+    </SkeletonGroup>
+  );
+}
+
+/** Row of KPI stat cards using the real overview grid (2 columns, 4 from lg). */
 export function MetricCardsSkeleton({ count = 4, className }: { count?: number; className?: string }) {
   return (
-    <SkeletonGroup className={cn("card-grid-4", className)}>
+    <SkeletonGroup className={cn("grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4", className)}>
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className={cn(surface, "flex min-h-[152px] flex-col justify-between gap-4 p-6 sm:p-7")}>
+        <div key={i} className={cn(surface, "flex min-h-[128px] flex-col justify-between gap-3 p-4 lg:p-5")}>
           <CardSkeletonInner />
         </div>
       ))}
@@ -140,7 +158,7 @@ export function TableRowsSkeleton({
     );
   }
   return (
-    <SkeletonGroup className={cn("divide-y divide-[var(--border-subtle)]", className)}>
+    <SkeletonGroup className={cn("divide-y divide-line", className)}>
       {Array.from({ length: rows }).map((_, r) => (
         <div key={r} className="flex items-center gap-4 px-4 py-3.5">
           <Skeleton variant="avatar" className="h-9 w-9 shrink-0" />
@@ -164,7 +182,7 @@ export function ListSkeleton({ rows = 6, className }: { rows?: number; className
     <SkeletonGroup className={cn("flex flex-col gap-3", className)}>
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className={cn(surface, "flex items-center gap-4 p-4")}>
-          <Skeleton className="h-11 w-11 shrink-0 rounded-[10px]" />
+          <Skeleton className="h-11 w-11 shrink-0 rounded-lg" />
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <Skeleton className="h-3.5 w-1/2 max-w-[220px]" />
             <Skeleton className="h-3 w-1/3 max-w-[140px]" />
@@ -203,7 +221,7 @@ export function ChartSkeleton({
         <Skeleton className="h-4 w-32" />
         <div className="flex gap-2">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-7 w-14 rounded-[6px]" />
+            <Skeleton key={i} className="h-7 w-14 rounded-full" />
           ))}
         </div>
       </div>
@@ -213,37 +231,58 @@ export function ChartSkeleton({
 }
 
 /*
- * DashboardSkeleton — mirrors the Overview page: metric cards in the real
- * .card-grid-4 (4 → 2 → 1 columns) and the 2/3 + 1/3 .dashboard-main-grid
- * (stacks under 1024px). Token colours, so it also works in dark mode.
+ * DashboardSkeleton — mirrors the Overview page: KPI stat cards (2 columns,
+ * 4 from lg) and the panel grid (stacked, then 1.6fr / 1fr from xl) with the
+ * Up next and Sales panels on the left and Today's takings on the right.
+ * Token colours, so it also works in dark mode.
  */
 export function DashboardSkeleton() {
   return (
-    <SkeletonGroup className="flex flex-col gap-6 py-2">
-      <div className="card-grid-4">
+    <SkeletonGroup className="flex flex-col gap-6 lg:gap-8">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-3.5 w-36" />
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className={cn(surface, "flex min-h-[152px] flex-col justify-between gap-4 p-6 sm:p-7")}>
+          <div key={i} className={cn(surface, "flex min-h-[128px] flex-col justify-between gap-3 p-4 lg:p-5")}>
             <CardSkeletonInner />
           </div>
         ))}
       </div>
 
-      <div className="dashboard-main-grid">
-        {/* Chart card */}
-        <div className={cn(surface, "flex min-h-[320px] flex-col gap-5 p-6 sm:p-7")}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Skeleton className="h-4 w-32" />
-            <div className="flex gap-2">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-6 w-14 rounded-[6px]" />
-              ))}
-            </div>
+      <div className="grid gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
+          {/* Up next card */}
+          <div className={cn(surface, "flex flex-col gap-4 p-4 lg:p-5")}>
+            <Skeleton className="h-4 w-24" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton variant="avatar" className="h-9 w-9 shrink-0" />
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <Skeleton className="h-3.5 w-2/5" />
+                  <Skeleton className="h-3 w-1/4" />
+                </div>
+                <Skeleton variant="pill" className="shrink-0" />
+              </div>
+            ))}
           </div>
-          <Skeleton variant="chart" className="h-52 flex-1" />
+          {/* Chart card */}
+          <div className={cn(surface, "flex min-h-[320px] flex-col gap-5 p-4 lg:p-5")}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Skeleton className="h-4 w-32" />
+              <div className="flex gap-2">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-6 w-14 rounded-full" />
+                ))}
+              </div>
+            </div>
+            <Skeleton variant="chart" className="h-52 flex-1" />
+          </div>
         </div>
 
-        {/* Receipt card */}
-        <div className={cn(surface, "flex min-h-[320px] flex-col gap-5 p-6 sm:p-7")}>
+        {/* Today's takings card */}
+        <div className={cn(surface, "flex min-h-[320px] flex-col gap-5 p-4 lg:p-5")}>
           <Skeleton className="h-4 w-24" />
           {[1, 2].map((i) => (
             <div key={i} className="flex items-center justify-between gap-3">
@@ -257,7 +296,7 @@ export function DashboardSkeleton() {
               <Skeleton className="h-4 w-12" />
             </div>
           ))}
-          <div className="mt-auto border-t border-[var(--border-subtle)] pt-5">
+          <div className="mt-auto border-t border-line pt-5">
             <div className="flex justify-between">
               <Skeleton className="h-3 w-16" />
               <Skeleton className="h-6 w-20" />
@@ -273,9 +312,9 @@ export function DashboardSkeleton() {
 export function AnalyticsSkeleton() {
   return (
     <SkeletonGroup className="flex flex-col gap-6 py-2">
-      <div className="card-grid-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className={cn(surface, "flex min-h-[152px] flex-col justify-between gap-4 p-6 sm:p-7")}>
+          <div key={i} className={cn(surface, "flex min-h-[128px] flex-col justify-between gap-3 p-4 lg:p-5")}>
             <CardSkeletonInner />
           </div>
         ))}

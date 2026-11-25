@@ -64,18 +64,25 @@ export function ScrollSpyTabs({
   label,
   top = 64,
   className,
+  innerClassName,
+  stickyClassName,
 }: {
   tabs: readonly SpyTab[];
   label: string;
   /** Sticky offset (px) below the fixed top bar. */
   top?: number;
   className?: string;
+  /** Width/gutter of the tab row (defaults to the marketplace container). */
+  innerClassName?: string;
+  /** Responsive sticky offset as classes (e.g. "top-0 md:top-16"); replaces `top`. */
+  stickyClassName?: string;
 }) {
   const active = useScrollSpy(
     tabs.map((t) => t.id),
     top + 64,
   );
   const listRef = useRef<HTMLUListElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!active || !listRef.current) return;
@@ -90,7 +97,9 @@ export function ScrollSpyTabs({
     if (!target) return;
     e.preventDefault();
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const y = target.getBoundingClientRect().top + window.scrollY - (top + 56);
+    // Land the section just under the sticky tab bar, wherever it sticks.
+    const stuckAt = navRef.current ? navRef.current.offsetHeight + (Number.parseFloat(getComputedStyle(navRef.current).top) || 0) : top + 48;
+    const y = target.getBoundingClientRect().top + window.scrollY - (stuckAt + 8);
     window.scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
     history.replaceState(null, "", `#${id}`);
     // Move focus for keyboard and screen-reader users.
@@ -100,11 +109,16 @@ export function ScrollSpyTabs({
 
   return (
     <nav
+      ref={navRef}
       aria-label={label}
-      className={cn("sticky z-30 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border-subtle)]", className)}
-      style={{ top }}
+      className={cn(
+        "sticky z-30 border-b border-line bg-page/95 backdrop-blur supports-[backdrop-filter]:bg-page/80",
+        stickyClassName,
+        className,
+      )}
+      style={stickyClassName ? undefined : { top }}
     >
-      <ul ref={listRef} className="max-w-6xl mx-auto px-4 sm:px-8 flex gap-1 overflow-x-auto no-scrollbar">
+      <ul ref={listRef} className={cn("no-scrollbar flex gap-6 overflow-x-auto", innerClassName ?? "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8")}>
         {tabs.map((tab) => {
           const isActive = tab.id === active;
           return (
@@ -115,16 +129,16 @@ export function ScrollSpyTabs({
                 onClick={(e) => jump(e, tab.id)}
                 aria-current={isActive ? "location" : undefined}
                 className={cn(
-                  "focus-ring relative inline-flex items-center h-12 px-3 text-sm font-bold transition-colors",
-                  isActive ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                  "focus-ring relative inline-flex h-12 items-center text-[15px] transition-colors duration-150 ease-standard",
+                  isActive ? "font-semibold text-ink" : "font-medium text-ink-muted hover:text-ink",
                 )}
               >
                 {tab.label}
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "absolute inset-x-3 bottom-0 h-0.5 rounded-full transition-opacity",
-                    isActive ? "opacity-100 bg-[var(--text-primary)]" : "opacity-0",
+                    "absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink transition-opacity duration-150 motion-reduce:transition-none",
+                    isActive ? "opacity-100" : "opacity-0",
                   )}
                 />
               </a>

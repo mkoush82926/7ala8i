@@ -21,24 +21,29 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Plus, Search, Clock, GripVertical, Pencil, Trash2, Sparkles, SlidersHorizontal, Home, EyeOff, Layers } from "lucide-react";
+import { Plus, Search, Clock, GripVertical, Pencil, Trash2, Sparkles, SlidersHorizontal, Home, EyeOff, Layers, Scissors } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { useServices, type ServiceItem } from "@/hooks/use-services";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ListSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+import { Pill } from "@/components/ui/pill";
+import { focusRing, inputClasses, fieldIconClasses } from "@/components/ui/recipes";
 import { joinMeta, formatJOD, formatMinutesRange } from "@/lib/format";
 import type { ServiceWrite, VariantDraft } from "@/lib/queries/services";
 import { ServiceEditor } from "./service-editor";
 import { BookingRulesDialog } from "./booking-rules-dialog";
 
-const iconBtn =
-  "inline-flex size-11 lg:size-9 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-brass)] cursor-pointer";
+const iconBtn = cn(
+  "inline-flex size-11 lg:size-9 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-sunken hover:text-ink cursor-pointer",
+  focusRing,
+);
 
 export default function ServicesPage() {
-  const { t, isRTL, FF, locale, formatCurrency } = useTranslation();
+  const { t, isRTL, FF, locale, formatCurrency, formatNumber } = useTranslation();
   const svc = t.services;
   const {
     services, categories, rules, legacy, loading, error, currency, refetch,
@@ -175,69 +180,69 @@ export default function ServicesPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="flex flex-col gap-6 sm:gap-9"
+      transition={{ duration: 0.28, ease: [0.05, 0.7, 0.1, 1] }}
+      className="flex flex-col gap-5 lg:gap-6 motion-reduce:transform-none"
     >
-      {/* Header */}
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2
-            className="font-extrabold text-[var(--text-primary)]"
-            style={{ fontFamily: FF, fontSize: 32, letterSpacing: headingTracking(isRTL, "0.016em") }}
-          >
-            {svc.title}
-          </h2>
-          <p className="mt-2 text-sm font-medium text-[var(--text-secondary)]">{svc.subtitle}</p>
+      {/* Header: title + count · search · rules (secondary) · add (the one primary) */}
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-h2 text-ink">{svc.title}</h1>
+            {!loading && services.length > 0 && (
+              <Pill tone="neutral" size="md" className="tabular-nums">{formatNumber(services.length)}</Pill>
+            )}
+          </div>
+          <p className="mt-1 text-[15px] text-ink-muted">{svc.subtitle}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative w-full sm:w-64">
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1 lg:w-72 lg:flex-none">
             <label htmlFor={searchId} className="sr-only">
               {svc.searchPlaceholder}
             </label>
-            <Search
-              size={15}
-              aria-hidden
-              className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]"
-            />
+            <span aria-hidden className={fieldIconClasses}>
+              <Search />
+            </span>
             <input
               id={searchId}
               type="search"
               placeholder={svc.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-11 w-full rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] ps-10 pe-4 text-base font-medium text-[var(--text-primary)] placeholder-[var(--text-muted)] transition-all focus:outline-none focus:shadow-[var(--shadow-focus)] sm:text-sm"
+              className={inputClasses({ withIcon: true, className: "h-11 rounded-full" })}
             />
           </div>
           {isAdmin && !legacy && (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={() => setShowRules(true)}
               aria-label={svc.bookingRules}
               title={svc.bookingRules}
-              className="btn btn-secondary shrink-0 px-3 sm:px-4 text-[14px] font-bold"
+              icon={<SlidersHorizontal aria-hidden />}
+              className="max-md:w-11 max-md:px-0"
             >
-              <SlidersHorizontal size={16} aria-hidden />
               <span className="hidden md:inline">{svc.bookingRules}</span>
-            </button>
+            </Button>
           )}
           {isAdmin && (
-            <button
-              type="button"
+            <Button
               onClick={openAdd}
               aria-label={svc.addService}
-              className="btn btn-primary shrink-0 px-4 sm:px-5 text-[14px] font-bold"
+              icon={<Plus aria-hidden />}
+              className="max-sm:w-11 max-sm:px-0"
             >
-              <Plus size={16} aria-hidden />
               <span className="hidden sm:inline">{svc.addService}</span>
-            </button>
+            </Button>
           )}
         </div>
-      </div>
+      </header>
 
       {canReorder && (
-        <p className="-mt-2 text-xs text-[var(--text-muted)] sm:-mt-5">{svc.reorderHint}</p>
+        <p className="-mt-1 flex items-center gap-1.5 text-[13px] text-ink-muted">
+          <GripVertical size={14} aria-hidden className="shrink-0" />
+          {svc.reorderHint}
+        </p>
       )}
 
       {/* List */}
@@ -264,9 +269,7 @@ export default function ServicesPage() {
           action={{ label: svc.clearSearch, onClick: () => setSearchTerm("") }}
         />
       ) : (
-        <div
-          className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]"
-        >
+        <div className="overflow-hidden rounded-xl border border-line bg-card">
           {canReorder ? (
             <DndContext
               sensors={sensors}
@@ -382,45 +385,39 @@ function ServiceRowBody({
       ref={rowRef}
       style={style}
       className={cn(
-        "group relative flex items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-3 last:border-b-0 transition-colors hover:bg-[var(--bg-secondary)] sm:gap-4 sm:px-6 sm:py-3.5",
-        dragging && "z-10 shadow-lg ring-1 ring-[var(--accent-brass)]",
+        "group relative flex items-center gap-3 border-b border-line bg-card px-3 py-3.5 last:border-b-0 transition-colors hover:bg-sunken/60 sm:gap-4 sm:px-5 sm:py-4",
+        dragging && "z-10 rounded-lg shadow-float ring-2 ring-brand",
       )}
     >
       {handle}
 
       <div
         className={cn(
-          "hidden size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-secondary)] text-lg min-[420px]:flex",
+          "hidden size-11 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-lg text-brand-text min-[420px]:flex",
           !service.is_active && "opacity-60",
         )}
         aria-hidden
       >
-        {service.icon || "✂️"}
+        {service.icon || <Scissors size={18} />}
       </div>
 
       <div className={cn("min-w-0 flex-1", !service.is_active && "opacity-70")}>
         <div className="flex min-w-0 items-center gap-2">
-          <p className="truncate text-sm font-bold text-[var(--text-primary)]" style={{ fontFamily }}>
+          <p className="text-title truncate text-ink" style={{ fontFamily }}>
             {title}
           </p>
           {!service.is_active && (
-            <span className="shrink-0 rounded-full bg-[var(--accent-rose-muted)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent-rose)]">
-              {labels.inactive}
-            </span>
+            <Pill tone="danger" size="sm">{labels.inactive}</Pill>
           )}
           {badges.hidden && (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--bg-secondary)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
-              <EyeOff size={11} aria-hidden /> {badges.hidden}
-            </span>
+            <Pill tone="neutral" size="sm" icon={<EyeOff />}>{badges.hidden}</Pill>
           )}
           {badges.home && (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--bg-secondary)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
-              <Home size={11} aria-hidden /> {badges.home}
-            </span>
+            <Pill tone="brand" size="sm" icon={<Home />}>{badges.home}</Pill>
           )}
         </div>
-        {subtitle && <p className="mt-0.5 truncate text-xs text-[var(--text-muted)]">{subtitle}</p>}
-        <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] tabular-nums">
+        {subtitle && <p className="mt-0.5 truncate text-[13px] text-ink-muted">{subtitle}</p>}
+        <p className="mt-1 flex items-center gap-1.5 text-[13px] text-ink-muted tabular-nums">
           {service.variants.length ? <Layers size={12} aria-hidden /> : <Clock size={12} aria-hidden />}
           <span className="sr-only">{labels.durationLabel}:</span>
           <span className="truncate">{meta}</span>
@@ -443,12 +440,12 @@ function ServiceRowBody({
               aria-hidden
               className={cn(
                 "relative inline-block h-5 w-9 rounded-full transition-colors",
-                service.is_active ? "bg-[var(--accent-mint)]" : "bg-[var(--border-primary)]",
+                service.is_active ? "bg-brand" : "bg-line-strong",
               )}
             >
               <span
                 className={cn(
-                  "absolute top-0.5 size-4 rounded-full bg-[var(--bg-primary)] shadow transition-all",
+                  "absolute top-0.5 size-4 rounded-full bg-white shadow-xs transition-[inset-inline-start] duration-150 motion-reduce:transition-none",
                   service.is_active ? "start-[18px]" : "start-0.5",
                 )}
               />
@@ -462,7 +459,7 @@ function ServiceRowBody({
             onClick={onDelete}
             aria-label={labels.remove}
             title={labels.remove}
-            className={cn(iconBtn, "hover:text-[var(--accent-rose)]")}
+            className={cn(iconBtn, "hover:bg-danger-soft hover:text-danger-text")}
           >
             <Trash2 size={15} aria-hidden />
           </button>

@@ -13,11 +13,12 @@ interface ConfettiPiece {
   duration: number;
 }
 
+// v2 (§5.18): teal / amber / sand only.
 const colors = [
-  "var(--accent-mint)",
-  "var(--accent-lavender)",
-  "var(--accent-blue)",
-  "var(--accent-amber)",
+  "var(--color-brand)",
+  "var(--color-brand-soft-line)",
+  "var(--color-accent)",
+  "var(--color-sunken-2)",
 ];
 
 function generatePieces(count = 20): ConfettiPiece[] {
@@ -92,11 +93,11 @@ export function Confetti({ trigger, onComplete }: ConfettiProps) {
               ) : (
                 <div className="relative w-2.5 h-2.5">
                   <div
-                    className="absolute top-1/2 left-0 w-full h-[2px] -translate-y-1/2 rounded-full"
+                    className="absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 rounded-full"
                     style={{ backgroundColor: piece.color }}
                   />
                   <div
-                    className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 rounded-full"
+                    className="absolute inset-x-0 top-0 mx-auto h-full w-[2px] rounded-full"
                     style={{ backgroundColor: piece.color }}
                   />
                 </div>

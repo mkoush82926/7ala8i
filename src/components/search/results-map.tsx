@@ -56,18 +56,30 @@ const OSM_STYLE: StyleSpecification = {
       attribution: "© OpenStreetMap contributors",
     },
   },
-  layers: [{ id: "osm", type: "raster", source: "osm" }],
+  // Muted base (§5.17) so the teal / ink pins pop.
+  layers: [{ id: "osm", type: "raster", source: "osm", paint: { "raster-saturation": -0.4 } }],
 };
 
 export function mapStyle(key = process.env.NEXT_PUBLIC_MAPTILER_KEY): string | StyleSpecification {
   const k = key?.trim();
-  return k && /^[A-Za-z0-9_-]{8,128}$/.test(k) ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${encodeURIComponent(k)}` : OSM_STYLE;
+  return k && /^[A-Za-z0-9_-]{8,128}$/.test(k)
+    ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${encodeURIComponent(k)}`
+    : OSM_STYLE;
 }
 
+// Pill markers (§5.17). Tailwind classes on DOM nodes MapLibre owns; the
+// tail is centred with inset-x-0 + mx-auto so it stays put in RTL too. The
+// state classes are toggled with classList so MapLibre's own marker classes
+// (absolute positioning) are never wiped.
+const PIN_OFF_CLASSES = () => PIN_OFF.split(" ");
+const PIN_ON_CLASSES = () => PIN_ON.split(" ");
 const PIN_BASE =
-  "halaqy-pin focus-ring cursor-pointer whitespace-nowrap rounded-full border px-2.5 py-1 text-[12px] font-bold shadow-[0_6px_16px_-6px_rgba(28,22,17,0.5)] transition-transform";
-const PIN_OFF = "border-[var(--border-primary)] bg-[var(--bg-primary)] text-[var(--text-primary)]";
-const PIN_ON = "border-transparent bg-[var(--cta-bg)] text-[var(--cta-fg)] scale-110";
+  "halaqy-pin inline-flex h-8 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full border px-3 text-[13px] font-bold tabular-nums shadow-raised " +
+  "transition-[scale,background-color,color] duration-150 ease-standard motion-reduce:transition-none " +
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus " +
+  "after:absolute after:inset-x-0 after:top-full after:mx-auto after:h-0 after:w-0 after:border-[6px] after:border-b-0 after:border-transparent";
+const PIN_OFF = "border-line bg-card text-ink hover:bg-sunken after:border-t-card";
+const PIN_ON = "border-inverse bg-inverse text-on-inverse scale-110 motion-reduce:scale-100 after:border-t-inverse";
 
 export function ResultsMap({ pins, center, activeId, onSelect, onHover, onUnavailable, className }: ResultsMapProps) {
   const { t, isRTL } = useTranslation();
@@ -183,21 +195,14 @@ export function ResultsMap({ pins, center, activeId, onSelect, onHover, onUnavai
   useEffect(() => {
     markers.current.forEach(({ button, marker }, id) => {
       const on = id === activeId;
-      button.className = `${PIN_BASE} ${on ? PIN_ON : PIN_OFF}`;
+      button.classList.remove(...(on ? PIN_OFF_CLASSES() : PIN_ON_CLASSES()));
+      button.classList.add(...(on ? PIN_ON_CLASSES() : PIN_OFF_CLASSES()));
       button.setAttribute("aria-pressed", on ? "true" : "false");
       marker.getElement().style.zIndex = on ? "2" : "1";
     });
   }, [activeId, pinsKey]);
 
-  return (
-    <div
-      ref={el}
-      role="region"
-      aria-label={t.search.mapLabel}
-      className={className}
-      style={{ background: "var(--bg-secondary)" }}
-    />
-  );
+  return <div ref={el} role="region" aria-label={t.search.mapLabel} className={className} style={{ background: "var(--color-sunken)" }} />;
 }
 
 export default ResultsMap;

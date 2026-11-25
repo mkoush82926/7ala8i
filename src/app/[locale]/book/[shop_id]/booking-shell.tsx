@@ -5,10 +5,16 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { BookingEngine } from "@/components/booking/booking-engine";
 import { Skeleton } from "@/components/ui/skeleton";
+import { buttonClasses } from "@/components/ui/recipes";
 import { useTranslation } from "@/hooks/use-translation";
 import type { PublicBookingSecurity } from "@/lib/otp/config";
 
-/** Page chrome for /[locale]/book/[shop_id]: one header, one exit, the engine. */
+/**
+ * Focus chrome for /[locale]/book/[shop_id] (§6.5): no marketplace nav, one
+ * sticky header (shop name centred, one exit at the inline-end) and the
+ * engine. The in-flow step header owns "back"; the engine lays out its own
+ * summary aside once the flow is wide enough.
+ */
 export function BookingShell({
   shopId, shopName, security,
 }: { shopId: string; shopName: string | null; security?: PublicBookingSecurity }) {
@@ -16,67 +22,45 @@ export function BookingShell({
   const shopHref = href(`/shop/${shopId}`);
 
   return (
-    <div
-      dir={dir}
-      style={{ minHeight: "100dvh", background: "var(--bg-secondary)", color: "var(--text-primary)", fontFamily: FF }}
-    >
+    <div dir={dir} className="min-h-dvh bg-page text-ink" style={{ fontFamily: FF }}>
       <a href="#booking-main" className="skip-link">{t.booking.skipToBooking}</a>
 
-      <header
-        style={{
-          position: "sticky", top: 0, zIndex: 50, height: 60,
-          background: "var(--bg-primary)", borderBottom: "1px solid var(--border-subtle)",
-          display: "flex", alignItems: "center",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 760, width: "100%", margin: "0 auto", padding: "0 16px",
-            display: "grid", gridTemplateColumns: "44px minmax(0, 1fr) 44px", alignItems: "center", gap: 8,
-          }}
-        >
+      <header className="sticky top-0 z-50 h-16 border-b border-line bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
+        <div className="mx-auto grid h-full w-full max-w-6xl grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2 px-4 sm:px-6">
           {/* Symmetry spacer: the in-flow step header owns "back"; this bar only exits. */}
           <span aria-hidden="true" />
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, textAlign: "center" }}>
-            <span
-              style={{
-                fontWeight: 900, fontSize: 16, maxWidth: "100%",
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              }}
-            >
+          <div className="flex min-w-0 flex-col items-center text-center">
+            <span className="max-w-full truncate text-[15px] font-semibold text-ink">
               {shopName || t.booking.bookAppointment}
             </span>
-            {shopName && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>
-                {t.booking.bookAppointment}
-              </span>
-            )}
+            {shopName && <span className="text-meta text-ink-muted">{t.booking.bookAppointment}</span>}
           </div>
 
           <Link
             href={shopHref}
             aria-label={t.booking.exitBooking}
-            className="focus-ring"
-            style={{
-              width: 44, height: 44, borderRadius: 10, display: "inline-flex", alignItems: "center",
-              justifyContent: "center", color: "var(--text-secondary)",
-            }}
+            className={buttonClasses({ variant: "ghost", size: "icon" })}
           >
-            <X size={20} aria-hidden="true" />
+            <X aria-hidden="true" />
           </Link>
         </div>
       </header>
 
-      <main id="booking-main" style={{ paddingTop: 20, paddingBottom: 32 }}>
-        <div style={{ maxWidth: 760, width: "100%", margin: "0 auto", padding: "0 16px" }}>
+      <main id="booking-main" className="pb-10 pt-6 lg:pt-10">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           {/* BookingEngine reads ?service(s)= ?staff= ?src= ?entry= ?reschedule= via useSearchParams. */}
           <Suspense
             fallback={
-              <div role="status" aria-busy="true" aria-label={t.common.loading}>
-                <Skeleton variant="text" style={{ height: 14, width: 120, marginBottom: 12 }} />
-                <Skeleton variant="text" style={{ height: 32, width: "60%", marginBottom: 24 }} />
-                <Skeleton variant="card" style={{ height: 240, width: "100%" }} />
+              <div role="status" aria-busy="true" aria-label={t.common.loading} className="mx-auto max-w-3xl">
+                <Skeleton className="mb-6 h-1 w-full rounded-full" />
+                <Skeleton className="mb-3 h-3.5 w-32" />
+                <Skeleton className="mb-6 h-8 w-3/5" />
+                <div className="flex flex-col gap-2.5">
+                  {Array.from({ length: 4 }, (_, i) => (
+                    <Skeleton key={i} variant="card" className="h-[76px] w-full rounded-xl" />
+                  ))}
+                </div>
               </div>
             }
           >

@@ -6,7 +6,7 @@ import { formatHijri, fromHijri, hijriMonthNames, isHijriSupported, toHijri } fr
 import { cn } from "@/lib/utils";
 
 const selectCls =
-  "h-11 min-w-0 rounded-[var(--radius-inputs)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-2 text-sm text-[var(--text-primary)] outline-none focus-visible:border-[var(--accent-brass)]";
+  "h-11 min-w-0 rounded-lg border border-line-strong bg-card px-2 text-sm text-ink outline-none focus-visible:border-brand";
 
 /**
  * A date the owner can enter on the Gregorian or the Hijri (Umm al-Qura)
@@ -106,14 +106,14 @@ export function HijriDateField({
         />
       )}
       {value && (
-        <span className="text-[12px] text-[var(--text-muted)]">
+        <span className="text-[12px] text-ink-muted">
           {useHijri
             ? formatDate(`${value}T12:00:00Z`, { weekday: "short", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
             : formatHijri(value, locale)}
         </span>
       )}
       {missing && (
-        <span role="alert" className="text-[12px] text-[var(--accent-rose)]">
+        <span role="alert" className="text-[12px] text-danger-text">
           {t.shifts.hijriInvalid}
         </span>
       )}

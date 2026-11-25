@@ -5,6 +5,7 @@ import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
 import { Dialog, DialogFooter } from "@/components/ui/dialog";
+import { buttonClasses, spinnerClasses } from "./recipes";
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -89,12 +90,12 @@ export function ConfirmDialog({
           {isDestructive && (
             <span
               aria-hidden="true"
-              className="mt-[-2px] inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-cards)] bg-[var(--accent-rose-muted)]"
+              className="mt-[-2px] inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-danger-soft text-danger-text"
             >
-              <AlertTriangle size={18} className="text-[var(--accent-rose)]" />
+              <AlertTriangle size={20} />
             </span>
           )}
-          <span className="pt-1">{title}</span>
+          <span className={cn(isDestructive && "pt-1.5")}>{title}</span>
         </span>
       }
       description={description}
@@ -110,7 +111,7 @@ export function ConfirmDialog({
             type="button"
             onClick={handleClose}
             disabled={busy}
-            className="btn btn-secondary text-[14px]"
+            className={buttonClasses({ variant: "secondary" })}
           >
             {cancelLabel ?? t.common.cancel}
           </button>
@@ -120,13 +121,10 @@ export function ConfirmDialog({
             onClick={handleConfirm}
             disabled={busy}
             aria-busy={busy || undefined}
-            className={cn("btn text-[14px]", isDestructive ? "btn-destructive" : "btn-primary")}
+            className={buttonClasses({ variant: isDestructive ? "destructive" : "primary" })}
           >
             {busy && (
-              <span
-                aria-hidden="true"
-                className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin"
-              />
+              <span aria-hidden="true" className={spinnerClasses} />
             )}
             <span>{busy ? t.common.processing : (confirmLabel ?? t.common.confirm)}</span>
           </button>
@@ -137,7 +135,7 @@ export function ConfirmDialog({
       {error && (
         <p
           role="alert"
-          className="mt-1 rounded-[var(--radius-inputs)] bg-[var(--accent-rose-muted)] px-3 py-2 text-[13px] text-[var(--accent-rose)]"
+          className="mt-1 rounded-lg bg-danger-soft px-3 py-2 text-[13px] font-medium text-danger-text"
         >
           {error}
         </p>

@@ -69,7 +69,7 @@ export function LocationMap({ lat, lng, fallback, onChange, onUnavailable }: Loc
         map.current = m;
         m.addControl(new ml.NavigationControl({ showCompass: false }), isRTL ? "top-left" : "top-right");
 
-        const mk = new ml.Marker({ draggable: true, color: "#7c5a26" }).setLngLat([start.lng, start.lat]).addTo(m);
+        const mk = new ml.Marker({ draggable: true, color: "#0F766E" }).setLngLat([start.lng, start.lat]).addTo(m);
         mk.getElement().setAttribute("aria-label", t.start.location.pinLabel);
         marker.current = mk;
         mk.on("dragend", () => {
@@ -120,8 +120,7 @@ export function LocationMap({ lat, lng, fallback, onChange, onUnavailable }: Loc
       ref={el}
       role="application"
       aria-label={t.start.location.mapLabel}
-      className="h-[260px] w-full overflow-hidden rounded-[var(--radius-lg)] border sm:h-[320px]"
-      style={{ borderColor: "var(--border-subtle)", background: "var(--bg-secondary)" }}
+      className="aspect-[4/3] w-full overflow-hidden rounded-2xl border border-line bg-sunken shadow-xs sm:aspect-[16/10]"
     />
   );
 }

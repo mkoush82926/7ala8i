@@ -1,41 +1,50 @@
 "use client";
 
 // Small shared pieces of the search cards: rating, distance chip, next slot,
-// badges and the matching-service rows.
+// badges and the matching-service rows (§5.4 compact service row).
 
 import React from "react";
-import { BadgeCheck, Clock, Home, Navigation, Sparkles, Star, Trophy, Baby } from "lucide-react";
+import { BadgeCheck, Clock, Home, Navigation, Sparkles, Trophy, Baby } from "lucide-react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
-import { Pill } from "@/components/ui/pill";
+import { Pill, type PillTone } from "@/components/ui/pill";
 import { Price } from "@/components/ui/price";
 import { BookingCta } from "@/components/ui/booking-cta";
+import { RatingStars } from "@/components/ui/rating-stars";
 import { formatLocalizedNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { distanceParts, roundRating, serviceName, slotDay, weekdayLabel, type MatchedService, type NextSlot } from "@/lib/search";
 
+/** Compact "★ 4.9 (312)" for meta lines, with one spoken label. */
 export function RatingText({ rating }: { rating: { avg: number; count: number } | null }) {
   const { t, locale } = useTranslation();
   if (!rating) return null;
   const avg = formatLocalizedNumber(roundRating(rating.avg), locale, "auto", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const count = formatLocalizedNumber(rating.count, locale);
   return (
-    <span className="inline-flex items-center gap-1">
-      <Star size={13} aria-hidden="true" className="fill-[var(--accent-brass)] text-[var(--accent-brass)]" />
-      <span aria-hidden="true">
-        <span className="font-semibold text-[var(--text-primary)]">{avg}</span> ({count})
-      </span>
-      <span className="sr-only">{interpolate(t.explore.ratingCount, { rating: avg, count })}</span>
-    </span>
+    <RatingStars
+      compact
+      size="xs"
+      rating={rating.avg}
+      value={avg}
+      count={`(${count})`}
+      label={interpolate(t.explore.ratingCount, { rating: avg, count })}
+    />
   );
 }
 
-export function DistanceChip({ km }: { km: number | null }) {
+/** Distance pill; `onPhoto` for the card media, neutral elsewhere. */
+export function DistanceChip({ km, onPhoto = false }: { km: number | null; onPhoto?: boolean }) {
   const { t, locale } = useTranslation();
   const parts = distanceParts(km);
   if (!parts) return null;
   const value = formatLocalizedNumber(parts.value, locale, "auto", { maximumFractionDigits: 1 });
   return (
-    <Pill size="sm" tone="neutral" icon={<Navigation />}>
+    <Pill
+      size={onPhoto ? "md" : "sm"}
+      tone={onPhoto ? "on-photo" : "neutral"}
+      icon={<Navigation />}
+      className={onPhoto ? "h-7" : undefined}
+    >
       {interpolate(parts.unit === "m" ? t.search.distanceM : t.search.distanceKm, { value })}
     </Pill>
   );
@@ -46,7 +55,7 @@ export function NextSlotText({ slot, className }: { slot: NextSlot | null; class
   const { t, locale, formatTime } = useTranslation();
   if (!slot) {
     return (
-      <span data-dynamic className={cn("text-[13px] text-[var(--text-muted)]", className)}>
+      <span data-dynamic className={cn("text-meta text-ink-muted", className)}>
         {t.search.noSlotSoon}
       </span>
     );
@@ -61,9 +70,12 @@ export function NextSlotText({ slot, className }: { slot: NextSlot | null; class
         : interpolate(t.search.nextSlotLater, { day: weekdayLabel(slot.localDate, locale), time });
   return (
     // data-dynamic: live availability, masked in visual snapshots.
-    <span data-dynamic className={cn("inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--accent-text)]", className)}>
-      <Clock size={14} aria-hidden="true" />
-      <bdi>{text}</bdi>
+    <span
+      data-dynamic
+      className={cn("inline-flex min-w-0 items-center gap-1.5 text-sm font-medium text-success-text [&_svg]:shrink-0", className)}
+    >
+      <Clock size={15} aria-hidden="true" />
+      <bdi className="truncate">{text}</bdi>
     </span>
   );
 }
@@ -76,7 +88,26 @@ const BADGE_ICON: Record<string, React.ReactNode> = {
   kids: <Baby />,
 };
 
-export function Badges({ badges, max = 3 }: { badges: string[]; max?: number }) {
+const BADGE_TONE: Record<string, PillTone> = {
+  verified: "brand",
+  top_rated: "accent",
+};
+
+/**
+ * Highlight pills. `onPhoto` renders them as white chips over the card
+ * photo (photos don't theme); otherwise brand / accent / neutral fills.
+ */
+export function Badges({
+  badges,
+  max = 3,
+  onPhoto = false,
+  className,
+}: {
+  badges: string[];
+  max?: number;
+  onPhoto?: boolean;
+  className?: string;
+}) {
   const { t } = useTranslation();
   const label: Record<string, string> = {
     verified: t.search.badgeVerified,
@@ -88,10 +119,15 @@ export function Badges({ badges, max = 3 }: { badges: string[]; max?: number }) 
   const shown = badges.filter((b) => label[b]).slice(0, max);
   if (shown.length === 0) return null;
   return (
-    <ul className="flex flex-wrap gap-1.5" aria-label={t.search.badgesLabel}>
+    <ul className={cn("flex flex-wrap gap-1.5", className)} aria-label={t.search.badgesLabel}>
       {shown.map((b) => (
-        <li key={b}>
-          <Pill size="sm" tone={b === "verified" || b === "top_rated" ? "brass" : "neutral"} icon={BADGE_ICON[b]}>
+        <li key={b} className="max-w-full">
+          <Pill
+            size={onPhoto ? "md" : "sm"}
+            tone={onPhoto ? "on-photo" : (BADGE_TONE[b] ?? "neutral")}
+            icon={BADGE_ICON[b]}
+            className={onPhoto ? "h-7" : undefined}
+          >
             {label[b]}
           </Pill>
         </li>
@@ -115,21 +151,21 @@ export function ServiceRows({
   const { t, locale, formatDuration } = useTranslation();
   if (services.length === 0) return null;
   return (
-    <ul className="divide-y divide-[var(--border-subtle)] border-y border-[var(--border-subtle)]">
+    <ul className="divide-y divide-line">
       {services.map((s) => {
         const name = serviceName(s, locale);
         return (
-          <li key={s.id} className="flex items-center gap-3 py-2.5">
+          <li key={s.id} className="flex items-center gap-3 py-2.5 first:pt-1 last:pb-1">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[14px] font-medium text-[var(--text-primary)]">{name}</p>
-              <p className="flex flex-wrap items-baseline gap-x-1.5 text-[12.5px] text-[var(--text-secondary)]">
-                {s.duration > 0 && <span>{formatDuration(s.duration)}</span>}
+              <p className="truncate text-sm font-medium text-ink">{name}</p>
+              <p className="flex flex-wrap items-baseline gap-x-1.5 text-meta text-ink-muted">
+                {s.duration > 0 && <span className="tabular-nums">{formatDuration(s.duration)}</span>}
                 {s.duration > 0 && (
-                  <span aria-hidden="true" className="text-[var(--text-muted)]">
+                  <span aria-hidden="true" className="text-ink-disabled">
                     ·
                   </span>
                 )}
-                <Price amount={s.price} from={s.priceType === "from"} className="text-[12.5px]" />
+                <Price amount={s.price} from={s.priceType === "from"} className="text-[13px] text-ink-soft" />
               </p>
             </div>
             <BookingCta

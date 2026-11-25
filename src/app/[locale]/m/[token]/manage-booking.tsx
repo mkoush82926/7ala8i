@@ -24,8 +24,10 @@ import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
-import { Pill } from "@/components/ui/pill";
+import { Pill, type PillTone } from "@/components/ui/pill";
+import { buttonClasses, cardClasses, textareaClasses } from "@/components/ui/recipes";
 import { toast } from "@/components/ui/toast";
+import { placeholderFill, placeholderInitials } from "@/components/ui/photo-frame";
 import { formatJOD } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { getAvailableSlots, type AvailableSlot, type RpcClient as AvailabilityClient } from "@/lib/availability";
@@ -46,18 +48,28 @@ import {
 
 type Rpc = (fn: string, args?: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { message?: string } | null }>;
 
-const card = "rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 sm:p-5";
-const actionBtn =
-  "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-secondary)] disabled:opacity-50";
+const card = cardClasses({ elevation: "card", className: "p-5 sm:p-6" });
+const actionBtn = buttonClasses({ variant: "secondary", className: "w-full" });
 
-const STATE_TONE: Record<ManageState, "ink" | "brass" | "success" | "danger" | "neutral"> = {
-  upcoming: "success",
-  pending: "brass",
-  cancelled: "danger",
-  completed: "ink",
+// §5.5 status tones: confirmed → brand, pending → warning, completed → success,
+// no-show → danger, cancelled/past → neutral. Always icon + label.
+const STATE_TONE: Record<ManageState, PillTone> = {
+  upcoming: "brand",
+  pending: "warning",
+  cancelled: "neutral",
+  completed: "success",
   no_show: "danger",
   past: "neutral",
-  in_progress: "ink",
+  in_progress: "brand",
+};
+const STATE_ICON: Record<ManageState, typeof MapPin> = {
+  upcoming: CheckCircle2,
+  pending: Clock3,
+  cancelled: XCircle,
+  completed: CheckCircle2,
+  no_show: AlertCircle,
+  past: CalendarClock,
+  in_progress: Scissors,
 };
 
 export function ManageBookingView({ token }: { token: string | null }) {
@@ -200,6 +212,7 @@ export function ManageBookingView({ token }: { token: string | null }) {
   }
 
   const st = manageState(booking);
+  const shopFill = placeholderFill(booking.shop.id);
   const active = st === "upcoming" || st === "pending";
   const deadlineHours = hoursUntil(booking.policy.deadline);
   const landmark = locale === "ar" ? booking.shop.landmarkAr || booking.shop.landmarkEn : booking.shop.landmarkEn || booking.shop.landmarkAr;
@@ -225,33 +238,44 @@ export function ManageBookingView({ token }: { token: string | null }) {
 
   return (
     <Frame>
-      <header className="flex flex-col gap-2">
-        <p className="m-0 text-sm font-medium text-[var(--text-secondary)]">
-          {booking.clientName ? interpolate(tm.greeting, { name: booking.clientName }) : tm.title}
-        </p>
-        <h1
-          className="m-0 text-[24px] font-extrabold leading-tight text-[var(--text-primary)] sm:text-[28px]"
-          style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.01em") }}
-        >
-          {shopName}
-        </h1>
-        <div>
-          <Pill tone={STATE_TONE[st]} size="md">
+      <header className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill tone={STATE_TONE[st]} size="md" icon={React.createElement(STATE_ICON[st], { "aria-hidden": true })}>
             {tm.states[st]}
           </Pill>
+          <span className="text-meta text-ink-muted">
+            {booking.clientName ? interpolate(tm.greeting, { name: booking.clientName }) : tm.title}
+          </span>
+        </div>
+        <div>
+          <h1
+            className="text-h1 m-0 text-ink"
+            style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "-0.02em") }}
+          >
+            {fmtDate(booking.startTime)}
+          </h1>
+          <p className="m-0 mt-1 text-lg font-semibold tabular-nums text-ink-soft">
+            <bdi>
+              {fmtTime(booking.startTime)} – {fmtTime(booking.endTime)}
+            </bdi>
+          </p>
         </div>
       </header>
 
       <section aria-label={tm.detailsLabel} className={cn(card, "flex flex-col gap-4")}>
-        <Row icon={CalendarClock} label={tm.whenLabel}>
-          <span className="font-semibold">{fmtDate(booking.startTime)}</span>
-          <span className="text-[var(--text-secondary)]">
-            {" · "}
-            <bdi>
-              {fmtTime(booking.startTime)} – {fmtTime(booking.endTime)}
-            </bdi>
+        <div className="flex items-center gap-3 border-b border-line pb-4">
+          <span
+            aria-hidden="true"
+            className="grid size-12 shrink-0 place-items-center rounded-lg text-base font-extrabold"
+            style={{
+              backgroundImage: `repeating-linear-gradient(135deg, ${shopFill.hatch} 0 2px, transparent 2px 12px), ${shopFill.bg}`,
+              color: shopFill.fg,
+            }}
+          >
+            {placeholderInitials(shopName)}
           </span>
-        </Row>
+          <p className="text-title m-0 min-w-0 truncate text-ink">{shopName}</p>
+        </div>
         {services && (
           <Row icon={Scissors} label={tm.servicesLabel}>
             {services}
@@ -266,92 +290,104 @@ export function ManageBookingView({ token }: { token: string | null }) {
           </Row>
         )}
         {booking.price != null && booking.price > 0 && (
-          <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-3 text-sm">
-            <span className="text-[var(--text-secondary)]">{tm.totalLabel}</span>
-            <span className="font-bold text-[var(--text-primary)]">
+          <div className="flex items-center justify-between border-t border-line pt-4">
+            <span className="text-[15px] font-semibold text-ink">{tm.totalLabel}</span>
+            <span className="text-lg font-bold tabular-nums text-ink">
               <bdi>{formatJOD(booking.price, locale)}</bdi>
             </span>
           </div>
         )}
       </section>
 
+      {active && policyText && (
+        <div className="flex items-start gap-3 rounded-xl bg-sunken p-4 text-sm text-ink-soft">
+          <Clock3 size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-muted" />
+          <p className="m-0">
+            {policyText}
+            {booking.policy.feePercent > 0 && ` ${interpolate(tm.policyFee, { percent: booking.policy.feePercent })}`}
+            {booking.canCancel && deadlineHours > 0 && deadlineHours < 24 && ` ${interpolate(tm.policyHoursLeft, { hours: deadlineHours })}`}
+          </p>
+        </div>
+      )}
+
       {active && (
         <section aria-label={tm.actionsLabel} className="flex flex-col gap-3">
           {booking.canConfirm && (
-            <button type="button" className="btn btn-primary min-h-12 w-full" onClick={confirm} disabled={busy === "confirm"}>
-              {busy === "confirm" ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <CheckCircle2 size={18} aria-hidden="true" />}
+            <button
+              type="button"
+              className={buttonClasses({ variant: "primary", size: "lg", fullWidth: true })}
+              onClick={confirm}
+              disabled={busy === "confirm"}
+              aria-busy={busy === "confirm" || undefined}
+            >
+              {busy === "confirm" ? <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" />}
               {tm.confirmCta}
             </button>
           )}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <button type="button" className={actionBtn} onClick={() => setMoveOpen(true)} disabled={!booking.canReschedule}>
-              <CalendarClock size={16} aria-hidden="true" />
+            <button
+              type="button"
+              className={buttonClasses({ variant: booking.canConfirm ? "secondary" : "primary", size: "lg", fullWidth: true })}
+              onClick={() => setMoveOpen(true)}
+              disabled={!booking.canReschedule}
+            >
+              <CalendarClock aria-hidden="true" />
               {tm.rescheduleCta}
             </button>
             <button
               type="button"
-              className={cn(actionBtn, "text-[var(--color-error)]")}
+              className={buttonClasses({ variant: "destructive-soft", size: "lg", fullWidth: true })}
               onClick={() => setCancelOpen(true)}
               disabled={!booking.canCancel}
             >
-              <XCircle size={16} aria-hidden="true" />
+              <XCircle aria-hidden="true" />
               {tm.cancelCta}
             </button>
           </div>
-          {policyText && (
-            <p className="m-0 flex items-start gap-2 text-sm text-[var(--text-secondary)]">
-              <Clock3 size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
-              <span>
-                {policyText}
-                {booking.policy.feePercent > 0 && ` ${interpolate(tm.policyFee, { percent: booking.policy.feePercent })}`}
-                {booking.canCancel && deadlineHours > 0 && deadlineHours < 24 && ` ${interpolate(tm.policyHoursLeft, { hours: deadlineHours })}`}
-              </span>
-            </p>
-          )}
         </section>
       )}
 
-      <section aria-label={tm.moreLabel} className={cn(card, "flex flex-col gap-2")}>
+      <section aria-label={tm.moreLabel} className={cn(card, "flex flex-col gap-3")}>
         {active && calendar && (
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button type="button" className={cn(actionBtn, "flex-1")} onClick={downloadIcs}>
-              <CalendarPlus size={16} aria-hidden="true" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button type="button" className={actionBtn} onClick={downloadIcs}>
+              <CalendarPlus aria-hidden="true" />
               {tm.addToCalendar}
             </button>
-            <a className={cn(actionBtn, "flex-1")} href={calendar.google} target="_blank" rel="noopener noreferrer">
-              <CalendarPlus size={16} aria-hidden="true" />
+            <a className={actionBtn} href={calendar.google} target="_blank" rel="noopener noreferrer">
+              <CalendarPlus aria-hidden="true" />
               {tm.googleCalendar}
             </a>
           </div>
         )}
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {directions && (
-            <a className={cn(actionBtn, "flex-1")} href={directions} target="_blank" rel="noopener noreferrer">
-              <Navigation size={16} aria-hidden="true" className="rtl:-scale-x-100" />
+            <a className={actionBtn} href={directions} target="_blank" rel="noopener noreferrer">
+              <Navigation aria-hidden="true" className="rtl:-scale-x-100" />
               {tm.directions}
             </a>
           )}
           {waHref && (
-            <a className={cn(actionBtn, "flex-1")} href={waHref} target="_blank" rel="noopener noreferrer">
-              <MessageCircle size={16} aria-hidden="true" />
+            <a className={actionBtn} href={waHref} target="_blank" rel="noopener noreferrer">
+              <MessageCircle aria-hidden="true" />
               {tm.messageShop}
             </a>
           )}
           {booking.shop.phone && (
-            <a className={cn(actionBtn, "flex-1")} href={`tel:${booking.shop.phone}`}>
-              <Phone size={16} aria-hidden="true" />
+            <a className={actionBtn} href={`tel:${booking.shop.phone}`}>
+              <Phone aria-hidden="true" />
               {tm.callShop}
             </a>
           )}
         </div>
         {!active && bookAgainHref && (
-          <Link href={bookAgainHref} className="btn btn-primary mt-1 min-h-11 w-full">
+          <Link href={bookAgainHref} className={buttonClasses({ variant: "primary", size: "lg", fullWidth: true, className: "mt-1" })}>
             {tm.bookAgain}
           </Link>
         )}
       </section>
 
-      <p className="m-0 text-center text-xs text-[var(--text-muted)]">{tm.privacyNote}</p>
+      <p className="text-meta m-0 text-center text-ink-muted">{tm.privacyNote}</p>
 
       <ConfirmDialog
         open={cancelOpen}
@@ -364,8 +400,8 @@ export function ManageBookingView({ token }: { token: string | null }) {
         cancelLabel={tm.cancelKeep}
       >
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-[var(--text-primary)]">
-            {tm.cancelReasonLabel} <span className="text-[var(--text-muted)]">({t.common.optional})</span>
+          <span className="font-semibold text-ink">
+            {tm.cancelReasonLabel} <span className="text-ink-muted">({t.common.optional})</span>
           </span>
           <textarea
             value={reason}
@@ -373,7 +409,7 @@ export function ManageBookingView({ token }: { token: string | null }) {
             rows={2}
             maxLength={500}
             placeholder={tm.cancelReasonPlaceholder}
-            className="focus-ring w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-3 text-sm text-[var(--text-primary)]"
+            className={textareaClasses({ className: "min-h-20" })}
           />
         </label>
       </ConfirmDialog>
@@ -401,8 +437,8 @@ export function ManageBookingView({ token }: { token: string | null }) {
 function Frame({ children }: { children: React.ReactNode }) {
   const { dir, FF } = useTranslation();
   return (
-    <main dir={dir} style={{ fontFamily: FF }} className="min-h-dvh bg-[var(--bg-secondary)] px-4 py-6 sm:py-10">
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-4">{children}</div>
+    <main dir={dir} style={{ fontFamily: FF }} className="min-h-dvh bg-page px-4 py-8 sm:py-12">
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-5">{children}</div>
     </main>
   );
 }
@@ -410,12 +446,12 @@ function Frame({ children }: { children: React.ReactNode }) {
 function Row({ icon: Icon, label, children }: { icon: typeof MapPin; label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
+      <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-text">
         <Icon size={16} aria-hidden="true" />
       </span>
-      <div className="min-w-0 text-sm text-[var(--text-primary)]">
-        <p className="m-0 text-xs font-medium text-[var(--text-muted)]">{label}</p>
-        <p className="m-0 mt-0.5 break-words">{children}</p>
+      <div className="min-w-0 text-[15px] text-ink">
+        <p className="text-meta m-0 text-ink-muted">{label}</p>
+        <p className="m-0 mt-0.5 break-words font-medium">{children}</p>
       </div>
     </div>
   );
@@ -508,11 +544,11 @@ function RescheduleDialog({
       description={tm.rescheduleDescription}
       footer={
         <DialogFooter>
-          <button type="button" className="btn btn-secondary min-h-11" onClick={onClose} disabled={saving}>
+          <button type="button" className={buttonClasses({ variant: "secondary" })} onClick={onClose} disabled={saving}>
             {t.common.cancel}
           </button>
-          <button type="button" className="btn btn-primary min-h-11" onClick={save} disabled={!picked || saving}>
-            {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+          <button type="button" className={buttonClasses({ variant: "primary" })} onClick={save} disabled={!picked || saving} aria-busy={saving || undefined}>
+            {saving && <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
             {picked ? interpolate(tm.rescheduleConfirm, { time: fmtTime(picked.startIso) }) : tm.pickTime}
           </button>
         </DialogFooter>
@@ -520,7 +556,7 @@ function RescheduleDialog({
     >
       <div className="flex flex-col gap-4">
         {booking.barber && (
-          <div role="radiogroup" aria-label={tm.barberLabel} className="flex gap-1 rounded-xl bg-[var(--bg-secondary)] p-1">
+          <div role="radiogroup" aria-label={tm.barberLabel} className="flex gap-1 rounded-full bg-sunken p-1">
             {[false, true].map((v) => (
               <button
                 key={String(v)}
@@ -529,8 +565,8 @@ function RescheduleDialog({
                 aria-checked={anyBarber === v}
                 onClick={() => setAnyBarber(v)}
                 className={cn(
-                  "focus-ring min-h-11 flex-1 rounded-lg px-3 text-sm font-medium transition-colors",
-                  anyBarber === v ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-muted)]",
+                  "focus-ring min-h-10 flex-1 rounded-full px-3 text-sm font-semibold transition-colors",
+                  anyBarber === v ? "bg-card text-ink shadow-xs" : "text-ink-muted hover:text-ink",
                 )}
               >
                 {v ? tm.anyBarberOption : interpolate(tm.sameBarber, { name: booking.barber!.name })}
@@ -540,7 +576,7 @@ function RescheduleDialog({
         )}
 
         <div>
-          <p className="m-0 mb-2 text-sm font-semibold text-[var(--text-primary)]">{tm.pickDay}</p>
+          <p className="m-0 mb-2 text-sm font-semibold text-ink">{tm.pickDay}</p>
           <div role="radiogroup" aria-label={tm.pickDay} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             {dates.map((d) => {
               const noon = `${d}T12:00:00Z`;
@@ -553,14 +589,14 @@ function RescheduleDialog({
                   aria-checked={on}
                   onClick={() => setDate(d)}
                   className={cn(
-                    "focus-ring flex min-h-14 min-w-14 shrink-0 flex-col items-center justify-center rounded-xl border px-2 text-xs transition-colors",
+                    "focus-ring flex h-16 w-14 shrink-0 flex-col items-center justify-center rounded-2xl border px-2 text-xs transition-colors",
                     on
-                      ? "border-[var(--cta-bg)] bg-[var(--cta-bg)] text-[var(--cta-fg)]"
-                      : "border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)]",
+                      ? "border-inverse bg-inverse text-on-inverse"
+                      : "border-line bg-card text-ink hover:border-ink",
                   )}
                 >
                   <span>{fmtDate(noon, { weekday: "short", timeZone: "UTC" })}</span>
-                  <span className="text-base font-bold">{fmtDate(noon, { day: "numeric", timeZone: "UTC" })}</span>
+                  <span className="text-lg font-bold tabular-nums">{fmtDate(noon, { day: "numeric", timeZone: "UTC" })}</span>
                 </button>
               );
             })}
@@ -568,7 +604,7 @@ function RescheduleDialog({
         </div>
 
         <div aria-live="polite">
-          <p className="m-0 mb-2 text-sm font-semibold text-[var(--text-primary)]">{tm.pickTime}</p>
+          <p className="m-0 mb-2 text-sm font-semibold text-ink">{tm.pickTime}</p>
           {slotsError ? (
             <EmptyState
               size="sm"
@@ -579,7 +615,7 @@ function RescheduleDialog({
           ) : slots === null ? (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" aria-busy="true" aria-label={t.common.loading}>
               {Array.from({ length: 8 }, (_, i) => (
-                <Skeleton key={i} className="h-11 rounded-xl" />
+                <Skeleton key={i} className="h-11 rounded-full" />
               ))}
             </div>
           ) : slots.length === 0 ? (
@@ -596,10 +632,10 @@ function RescheduleDialog({
                     aria-checked={on}
                     onClick={() => setPicked(s)}
                     className={cn(
-                      "focus-ring min-h-11 rounded-xl border text-sm font-semibold transition-colors",
+                      "focus-ring h-11 rounded-full border text-sm font-semibold tabular-nums transition-colors",
                       on
-                        ? "border-[var(--cta-bg)] bg-[var(--cta-bg)] text-[var(--cta-fg)]"
-                        : "border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]",
+                        ? "border-brand bg-brand text-on-brand"
+                        : "border-line-strong bg-card text-ink hover:border-ink",
                     )}
                   >
                     <bdi>{fmtTime(s.startIso)}</bdi>
@@ -611,7 +647,7 @@ function RescheduleDialog({
         </div>
 
         {error && (
-          <p role="alert" className="m-0 flex items-start gap-2 text-sm text-[var(--color-error)]">
+          <p role="alert" className="m-0 flex items-start gap-2 rounded-xl bg-danger-soft p-3 text-sm font-medium text-danger-text">
             <AlertCircle size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
             {error}
           </p>

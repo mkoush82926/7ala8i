@@ -13,14 +13,18 @@ import { POSTER_MM, type PosterLang, type PosterSize } from "./link-utils";
 
 export const POSTER_UNITS = 1000;
 
-/** Fixed print colours (paper output, not themed): Ink & Brass. */
+/**
+ * Fixed print colours (paper output, never themed): Deep Teal & Sand light
+ * hexes from DESIGN_SYSTEM_V2 §2.2. Teal on sand is 5.1:1, so the URL stays
+ * readable in small print.
+ */
 export const POSTER_COLORS = {
-  paper: "#fbf7ef",
-  ink: "#1c1611",
-  brass: "#a67c3d",
-  brassText: "#7c5a26",
-  muted: "#5a5147",
-  white: "#ffffff",
+  paper: "#F8F7F4",
+  ink: "#0F172A",
+  brand: "#0F766E",
+  brandText: "#0F766E",
+  muted: "#5B6B7F",
+  white: "#FFFFFF",
 } as const;
 
 export type PosterFont = "ar" | "en";
@@ -156,7 +160,7 @@ export function posterLayout(input: PosterInput): PosterLayout {
   els.push({ kind: "rect", id: "paper", x: 0, y: 0, w: W, h: H, fill: c.paper });
   const bandH = Math.round(H * 0.2);
   els.push({ kind: "rect", id: "band", x: 0, y: 0, w: W, h: bandH, fill: c.ink });
-  els.push({ kind: "rect", id: "rule", x: W / 2 - 60, y: bandH - 46, w: 120, h: 8, fill: c.brass, radius: 4 });
+  els.push({ kind: "rect", id: "rule", x: W / 2 - 60, y: bandH - 46, w: 120, h: 8, fill: c.brand, radius: 4 });
   els.push(text("name", name, bandH * 0.47, 92, 900, c.white, nameFont, 860, 30));
 
   // Headlines (one per language).
@@ -168,7 +172,7 @@ export function posterLayout(input: PosterInput): PosterLayout {
     y += i === 0 ? 80 : 64;
   });
 
-  // QR in a white card with a brass frame.
+  // QR in a white card with a teal frame.
   const qrCard = 560;
   const cardY = y + 4;
   els.push({
@@ -179,7 +183,7 @@ export function posterLayout(input: PosterInput): PosterLayout {
     w: qrCard,
     h: qrCard,
     fill: c.white,
-    stroke: c.brass,
+    stroke: c.brand,
     strokeWidth: 10,
     radius: 36,
   });
@@ -196,9 +200,9 @@ export function posterLayout(input: PosterInput): PosterLayout {
   });
 
   // URL and footer.
-  els.push(text("url", input.url, Math.min(y + 20, H - 130), 34, 700, c.brassText, "en", 880));
+  els.push(text("url", input.url, Math.min(y + 20, H - 130), 34, 700, c.brandText, "en", 880));
   const footer = (primary === "ar" ? input.ar : input.en).footer;
-  els.push({ kind: "rect", id: "footer-rule", x: 120, y: H - 92, w: W - 240, h: 2, fill: c.brass });
+  els.push({ kind: "rect", id: "footer-rule", x: 120, y: H - 92, w: W - 240, h: 2, fill: c.brand });
   els.push(text("footer", footer, H - 52, 26, 600, c.muted, primary, 760));
 
   return { width: W, height: H, elements: els };

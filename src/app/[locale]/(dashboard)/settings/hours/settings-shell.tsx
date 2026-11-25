@@ -3,8 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, Lock } from "lucide-react";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import { Lock } from "lucide-react";
+import { useTranslation } from "@/hooks/use-translation";
+import { SettingsSubpageHeader } from "@/components/settings/settings-subpage-header";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { ListSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -29,7 +30,7 @@ export function BusinessSettingsShell({
   subtitle: string;
   children: React.ReactNode;
 }) {
-  const { t, isRTL, FFD, href } = useTranslation();
+  const { t, href } = useTranslation();
   const tn = t.settingsPages;
   const pathname = usePathname();
   const hydrated = useWorkspaceStore((s) => s.hydrated);
@@ -42,28 +43,16 @@ export function BusinessSettingsShell({
   ];
 
   return (
-    <div className="page-enter mx-auto flex w-full max-w-3xl flex-col gap-5 pb-24">
-      <header className="flex items-start gap-3">
-        <Link
-          href={href("/settings")}
-          aria-label={tn.back}
-          className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-secondary)]"
-        >
-          <ArrowLeft size={16} aria-hidden="true" className="rtl:-scale-x-100" />
-        </Link>
-        <div className="min-w-0">
-          <h1
-            className="m-0 text-[24px] font-extrabold text-[var(--text-primary)] sm:text-[28px]"
-            style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.014em") }}
-          >
-            {title}
-          </h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p>
-        </div>
-      </header>
+    <div className="page-enter mx-auto flex w-full max-w-3xl flex-col gap-5 pb-24 lg:gap-6">
+      <SettingsSubpageHeader
+        title={title}
+        subtitle={subtitle}
+        backHref={href("/settings")}
+        backLabel={tn.back}
+      />
 
-      <nav aria-label={tn.navLabel} className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <ul role="list" className="m-0 flex w-max list-none gap-1 rounded-xl bg-[var(--bg-secondary)] p-1">
+      <nav aria-label={tn.navLabel} className="no-scrollbar -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <ul role="list" className="m-0 flex w-max list-none gap-1 rounded-full bg-sunken p-1">
           {links.map((l) => {
             const target = href(`/settings/${l.id}`);
             const active = l.id === page || pathname === target;
@@ -73,10 +62,10 @@ export function BusinessSettingsShell({
                   href={target}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "focus-ring inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-medium transition-colors",
+                    "focus-ring inline-flex min-h-10 items-center rounded-full px-5 text-sm font-semibold transition-colors duration-150",
                     active
-                      ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
-                      : "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
+                      ? "bg-card text-ink shadow-xs"
+                      : "text-ink-muted hover:text-ink",
                   )}
                 >
                   {l.label}

@@ -22,7 +22,7 @@ export function ReportActions({
   const [dialog, setDialog] = useState<Pending>(null);
   const c = ADMIN_COPY.reviews;
   const btn =
-    "inline-flex h-10 items-center rounded-[var(--radius)] border px-3 text-[13px] font-semibold focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]";
+    "inline-flex h-10 items-center rounded-full border px-4 text-[13px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -31,14 +31,14 @@ export function ReportActions({
           <button
             type="button"
             onClick={() => setDialog("hide")}
-            className={`${btn} border-[var(--accent-rose)] text-[var(--accent-rose)] hover:bg-[var(--accent-rose-muted)]`}
+            className={`${btn} border-danger text-danger-text hover:bg-danger-soft`}
           >
             {c.hide}
           </button>
           <button
             type="button"
             onClick={() => setDialog("dismiss")}
-            className={`${btn} border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[var(--border-hover)]`}
+            className={`${btn} border-line text-ink hover:border-ink-soft`}
           >
             {c.dismiss}
           </button>
@@ -48,7 +48,7 @@ export function ReportActions({
         <button
           type="button"
           onClick={() => setDialog("restore")}
-          className={`${btn} border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[var(--border-hover)]`}
+          className={`${btn} border-line text-ink hover:border-ink-soft`}
         >
           {c.restore}
         </button>

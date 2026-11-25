@@ -117,7 +117,7 @@ function PrayerForm({ onClose, onApplied }: Omit<PrayerSettingsDialogProps, "ope
     limits: { min: number; max: number },
     disabled: boolean,
   ) => (
-    <label className="flex flex-col gap-1 text-[12px] text-[var(--text-muted)]">
+    <label className="flex flex-col gap-1 text-[12px] text-ink-muted">
       {label}
       <input
         type="number"
@@ -150,7 +150,7 @@ function PrayerForm({ onClose, onApplied }: Omit<PrayerSettingsDialogProps, "ope
           {t.calendar.prayerLoadError}
         </p>
       )}
-      <ul className="divide-y divide-[var(--border-subtle)] rounded-[var(--radius-md)] border border-[var(--border-subtle)]">
+      <ul className="divide-y divide-line rounded-xl border border-line">
         {rules.map((rule) => {
           const checkId = `${id}-${rule.prayer}`;
           return (
@@ -160,13 +160,13 @@ function PrayerForm({ onClose, onApplied }: Omit<PrayerSettingsDialogProps, "ope
                   <input
                     id={checkId}
                     type="checkbox"
-                    className="h-5 w-5 accent-[var(--accent-brass)]"
+                    className="h-5 w-5 rounded-[6px] border-line-strong text-brand focus:ring-2 focus:ring-brand/30 focus:ring-offset-0"
                     checked={rule.enabled}
                     onChange={(e) => patch(rule.prayer, { enabled: e.target.checked })}
                   />
-                  <span className="text-[15px] font-medium text-[var(--text-primary)]">{names[rule.prayer]}</span>
+                  <span className="text-[15px] font-medium text-ink">{names[rule.prayer]}</span>
                 </label>
-                <span className="text-[13px] tabular-nums text-[var(--text-secondary)]">
+                <span className="text-[13px] tabular-nums text-ink-soft">
                   {interpolate(t.calendar.prayerToday, { time: formatTime(today[rule.prayer]) })}
                 </span>
               </div>
@@ -175,10 +175,10 @@ function PrayerForm({ onClose, onApplied }: Omit<PrayerSettingsDialogProps, "ope
                 {numberField(rule, "start_offset_minutes", t.calendar.prayerOffset, RULE_LIMITS.offset, !rule.enabled)}
                 {rule.prayer === "dhuhr" &&
                   numberField(rule, "jumuah_minutes", t.calendar.jumuahMinutes, RULE_LIMITS.jumuah, false)}
-                <label className="flex min-h-[40px] cursor-pointer items-center gap-2 text-[13px] text-[var(--text-secondary)]">
+                <label className="flex min-h-[40px] cursor-pointer items-center gap-2 text-[13px] text-ink-soft">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 accent-[var(--accent-brass)]"
+                    className="h-4 w-4 rounded-[6px] border-line-strong text-brand focus:ring-2 focus:ring-brand/30 focus:ring-offset-0"
                     checked={rule.allow_online}
                     onChange={(e) => patch(rule.prayer, { allow_online: e.target.checked })}
                   />
@@ -186,13 +186,13 @@ function PrayerForm({ onClose, onApplied }: Omit<PrayerSettingsDialogProps, "ope
                 </label>
               </div>
               {rule.prayer === "dhuhr" && (
-                <p className="text-[12px] text-[var(--text-muted)]">{t.calendar.jumuahHint}</p>
+                <p className="text-[12px] text-ink-muted">{t.calendar.jumuahHint}</p>
               )}
             </li>
           );
         })}
       </ul>
-      <p className="flex items-start gap-2 text-[12px] text-[var(--text-muted)]">
+      <p className="flex items-start gap-2 text-[12px] text-ink-muted">
         <Moon size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
         {t.calendar.prayerMethodNote}
       </p>

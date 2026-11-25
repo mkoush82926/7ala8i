@@ -5,6 +5,7 @@ import { Check, Copy } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { buttonClasses } from "@/components/ui/recipes";
 
 /** Copies text, falling back to a hidden textarea when the Clipboard API is blocked. */
 export async function copyText(value: string): Promise<boolean> {
@@ -32,13 +33,10 @@ export async function copyText(value: string): Promise<boolean> {
   }
 }
 
-export const BUTTON =
-  "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
-export const BUTTON_SECONDARY = cn(
-  BUTTON,
-  "border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]",
-);
-export const BUTTON_PRIMARY = cn(BUTTON, "border-transparent bg-[var(--cta-bg)] text-[var(--cta-fg)] hover:opacity-90");
+/** v2 pill buttons (§5.1) for links/anchors that look like buttons in this folder. */
+export const BUTTON = buttonClasses({ variant: "secondary", size: "md", className: "text-sm" });
+export const BUTTON_SECONDARY = BUTTON;
+export const BUTTON_PRIMARY = buttonClasses({ variant: "primary", size: "md", className: "text-sm" });
 
 export function CopyButton({ value, label, copiedMessage, className }: {
   value: string;
@@ -81,10 +79,10 @@ export function CopyField({ label, value, hint, multiline = false, copyLabel }: 
   const id = useId();
   const hintId = `${id}-hint`;
   const field =
-    "w-full min-w-0 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-3 text-sm text-[var(--text-primary)] focus-ring";
+    "w-full min-w-0 rounded-lg border border-line bg-sunken px-3.5 text-sm text-ink tabular-nums focus-ring";
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-semibold text-[var(--text-primary)]">{label}</label>
+      <label htmlFor={id} className="text-sm font-semibold text-ink">{label}</label>
       <div className={cn("flex gap-2", multiline ? "flex-col" : "flex-col sm:flex-row")}>
         {multiline ? (
           <textarea
@@ -105,12 +103,12 @@ export function CopyField({ label, value, hint, multiline = false, copyLabel }: 
             value={value}
             aria-describedby={hint ? hintId : undefined}
             onFocus={(e) => e.currentTarget.select()}
-            className={cn(field, "min-h-11 flex-1 text-start")}
+            className={cn(field, "min-h-11 flex-1 truncate text-start")}
           />
         )}
         <CopyButton value={value} label={copyLabel ?? label} className={multiline ? "self-start" : "shrink-0"} />
       </div>
-      {hint && <p id={hintId} className="m-0 text-xs text-[var(--text-muted)]">{hint}</p>}
+      {hint && <p id={hintId} className="m-0 text-[13px] text-ink-muted">{hint}</p>}
     </div>
   );
 }

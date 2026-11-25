@@ -88,17 +88,17 @@ export function PublishPanel({
         <div>
           <div className="flex items-baseline justify-between gap-3">
             <p className="text-sm font-bold">{pp.completeness}</p>
-            <p className="text-2xl font-black tabular-nums">{formatNumber(summary.score)}%</p>
+            <p className="text-stat tabular-nums">{formatNumber(summary.score)}%</p>
           </div>
           <div
-            className="mt-2 h-2 rounded-full bg-[var(--bg-secondary)] overflow-hidden"
+            className="mt-2 h-2 rounded-full bg-sunken overflow-hidden"
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={summary.score}
             aria-label={pp.completeness}
           >
-            <div className="h-full rounded-full bg-[var(--accent-brass)] transition-all" style={{ width: `${summary.score}%` }} />
+            <div className="h-full rounded-full bg-brand transition-[width] duration-500 ease-enter motion-reduce:transition-none" style={{ width: `${summary.score}%` }} />
           </div>
           <ul className="mt-4 space-y-2">
             {CHECKLIST.map((item) => {
@@ -107,11 +107,11 @@ export function PublishPanel({
               return (
                 <li key={item.key} className="flex items-center gap-2.5 text-sm">
                   {done ? (
-                    <CheckCircle2 size={18} aria-hidden="true" className="shrink-0 text-[var(--accent-mint)]" />
+                    <CheckCircle2 size={18} aria-hidden="true" className="shrink-0 text-success" />
                   ) : (
-                    <Circle size={18} aria-hidden="true" className="shrink-0 text-[var(--text-muted)]" />
+                    <Circle size={18} aria-hidden="true" className="shrink-0 text-ink-muted" />
                   )}
-                  <span className={cn("flex-1 min-w-0", done ? "text-[var(--text-secondary)]" : "text-[var(--text-primary)] font-semibold")}>
+                  <span className={cn("flex-1 min-w-0", done ? "text-ink-muted" : "text-ink font-semibold")}>
                     {label(item.key)}
                     <span className="sr-only"> — {done ? pp.itemDone : pp.itemMissing}</span>
                   </span>
@@ -121,7 +121,7 @@ export function PublishPanel({
                     </Pill>
                   )}
                   {!done && (
-                    <a href={target} className="focus-ring text-xs font-bold text-[var(--accent-text)] underline underline-offset-2">
+                    <a href={target} className="focus-ring text-xs font-bold text-brand-text underline underline-offset-2">
                       {pp.fix}
                     </a>
                   )}
@@ -146,12 +146,12 @@ export function PublishPanel({
             label={pp.marketplaceToggle}
             description={state.marketplace_visible ? pp.marketplaceListedDesc : pp.marketplaceLinkOnlyDesc}
           />
-          <Link href={publicHref} target="_blank" className="focus-ring inline-flex items-center gap-2 text-sm font-bold text-[var(--accent-text)] underline underline-offset-2">
+          <Link href={publicHref} target="_blank" className="focus-ring inline-flex items-center gap-2 text-sm font-bold text-brand-text underline underline-offset-2">
             {state.is_published ? pp.viewPublicPage : pp.previewPage}
             <ExternalLink size={14} aria-hidden="true" />
           </Link>
           {summary.next && (
-            <p className="text-sm text-[var(--text-secondary)]">
+            <p className="text-sm text-ink-muted">
               {interpolate(pp.nextStep, { item: label(summary.next.key) })}
             </p>
           )}

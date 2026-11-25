@@ -10,7 +10,7 @@ import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY } from "./copy-field";
 import { POSTER_LANGS, POSTER_MM, POSTER_SIZES, displayUrl, posterFileName, posterPixels, type PosterLang, type PosterSize } from "./link-utils";
-import { posterLayout, toPercent, type PosterInput, type PosterLayout } from "./poster-layout";
+import { POSTER_COLORS, posterLayout, toPercent, type PosterInput, type PosterLayout } from "./poster-layout";
 import { downloadBlob, renderPosterPng } from "./poster-png";
 
 const PRINT_CLASS = "halaqy-poster-print";
@@ -40,7 +40,7 @@ function PosterPreview({ layout, value, label }: { layout: PosterLayout; value: 
       role="img"
       aria-label={label}
       dir="ltr"
-      className={cn(PRINT_CLASS, "relative w-full overflow-hidden rounded-lg border border-[var(--border-subtle)] shadow-sm")}
+      className={cn(PRINT_CLASS, "relative w-full overflow-hidden rounded-2xl border border-line shadow-raised")}
       style={{ aspectRatio: `${W} / ${H}`, containerType: "inline-size" }}
     >
       {layout.elements.map((el) => {
@@ -76,7 +76,7 @@ function PosterPreview({ layout, value, label }: { layout: PosterLayout; value: 
                 aspectRatio: "1 / 1",
               }}
             >
-              <QRCodeSVG value={value} size={512} level="Q" marginSize={0} bgColor="#ffffff" fgColor="#1c1611"
+              <QRCodeSVG value={value} size={512} level="Q" marginSize={0} bgColor="#FFFFFF" fgColor={POSTER_COLORS.ink}
                 style={{ width: "100%", height: "100%", display: "block" }} />
             </div>
           );
@@ -117,16 +117,16 @@ function Segmented<T extends string>({ label, value, options, onChange }: {
   const name = useId();
   return (
     <fieldset className="m-0 flex min-w-0 flex-col gap-1.5 border-0 p-0">
-      <legend className="mb-1.5 p-0 text-sm font-semibold text-[var(--text-primary)]">{label}</legend>
-      <div className="flex flex-wrap gap-1 rounded-xl bg-[var(--bg-secondary)] p-1">
+      <legend className="mb-1.5 p-0 text-sm font-semibold text-ink">{label}</legend>
+      <div className="flex flex-wrap gap-1 rounded-full bg-sunken p-1">
         {options.map((o) => (
           <label
             key={o.value}
             className={cn(
-              "relative inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-lg px-3 text-sm font-medium transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--accent-brass)]",
+              "relative inline-flex min-h-10 flex-1 cursor-pointer items-center justify-center rounded-full px-3 text-sm font-semibold transition-colors duration-150 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus",
               value === o.value
-                ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
-                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
+                ? "bg-card text-ink shadow-xs"
+                : "text-ink-muted hover:text-ink",
             )}
           >
             <input
@@ -195,17 +195,17 @@ export function QrPoster({ url, shopName, shopNameAr, slug }: QrPosterProps) {
   const langLabel = (l: PosterLang) => (l === "both" ? tp.langBoth : l === "ar" ? tp.langAr : tp.langEn);
 
   return (
-    <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,260px)] md:items-start">
+    <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,280px)] md:items-start">
       <style>{printCss(size)}</style>
       <div className="flex flex-col gap-4">
         <Segmented label={tp.size} value={size} onChange={setSize}
           options={POSTER_SIZES.map((s) => ({ value: s, label: sizeLabel(s) }))} />
         <Segmented label={tp.language} value={lang} onChange={setLang}
           options={POSTER_LANGS.map((l) => ({ value: l, label: langLabel(l) }))} />
-        <p className="m-0 text-xs text-[var(--text-muted)]">{size === "a4" ? tp.sizeA4Hint : tp.sizeA5Hint}</p>
+        <p className="m-0 text-[13px] text-ink-muted">{size === "a4" ? tp.sizeA4Hint : tp.sizeA5Hint}</p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <button type="button" className={BUTTON_PRIMARY} onClick={downloadPng} disabled={busy} aria-busy={busy}>
-            {busy ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}
+            {busy ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}
             <span>{tp.downloadPng}</span>
           </button>
           <button type="button" className={BUTTON_SECONDARY} onClick={() => window.print()}>
@@ -213,16 +213,16 @@ export function QrPoster({ url, shopName, shopNameAr, slug }: QrPosterProps) {
             <span>{tp.printPdf}</span>
           </button>
         </div>
-        <p className="m-0 text-xs text-[var(--text-muted)]">{tp.printHint}</p>
+        <p className="m-0 text-[13px] text-ink-muted">{tp.printHint}</p>
       </div>
 
-      <div className="mx-auto w-full max-w-[260px]">
+      <div className="mx-auto w-full max-w-[260px] rounded-2xl bg-sunken p-4 md:max-w-[280px]">
         <PosterPreview layout={layout} value={url} label={tp.previewLabel} />
       </div>
 
       {/* High-resolution QR source for the PNG export. */}
       <div aria-hidden="true" className="hidden">
-        <QRCodeCanvas ref={qrRef} value={url} size={1024} level="Q" marginSize={0} bgColor="#ffffff" fgColor="#1c1611" />
+        <QRCodeCanvas ref={qrRef} value={url} size={1024} level="Q" marginSize={0} bgColor="#FFFFFF" fgColor={POSTER_COLORS.ink} />
       </div>
     </div>
   );

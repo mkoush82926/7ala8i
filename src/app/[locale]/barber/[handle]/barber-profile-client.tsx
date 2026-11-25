@@ -9,8 +9,12 @@ import { toast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
 import { MetaLine } from "@/components/ui/meta-line";
-import { META_SEPARATOR } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { Pill } from "@/components/ui/pill";
+import { StickyBar } from "@/components/ui/sticky-bar";
+import { BrandedPlaceholder, PhotoFrame } from "@/components/ui/photo-frame";
+import { pluralLabel } from "@/components/ui/booking-cta";
+import { buttonClasses, cardClasses, containerClasses, focusRing, textLinkClasses } from "@/components/ui/recipes";
 import { BarberAvatar } from "@/components/shop/team-grid";
 import { ServicesSection } from "@/components/shop/services-section";
 import { PortfolioGrid } from "@/components/shop/portfolio-grid";
@@ -33,19 +37,20 @@ function languageName(code: string, locale: string): string {
 
 function BarberSkeleton() {
   return (
-    <SkeletonGroup className="min-h-dvh bg-[var(--bg-primary)]">
-      <div className="h-16" />
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-4">
-        <div className="flex items-center gap-4">
-          <Skeleton variant="circle" className="w-24 h-24" />
-          <div className="space-y-2 flex-1">
-            <Skeleton className="h-7 w-48" />
-            <Skeleton className="h-4 w-32" />
-          </div>
+    <SkeletonGroup className="min-h-dvh bg-page">
+      <div className="h-16 border-b border-line bg-card" />
+      <div className="md:mx-auto md:max-w-7xl md:px-6 md:pt-6 lg:px-8">
+        <Skeleton className="aspect-[3/1] h-auto min-h-[120px] w-full rounded-none md:rounded-2xl" />
+      </div>
+      <div className={cn(containerClasses, "space-y-4")}>
+        <Skeleton variant="circle" className="-mt-12 size-24 ring-4 ring-page md:-mt-16 md:size-32" />
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-4 w-40" />
+        <div className="space-y-3 pt-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
         </div>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} variant="card" className="h-16" />
-        ))}
       </div>
     </SkeletonGroup>
   );
@@ -60,7 +65,7 @@ export default function BarberProfileClient({
   initialData: BarberProfileData | null;
   src?: string | null;
 }) {
-  const { t, dir, isRTL, FF, FFD, href, locale, formatDate, formatNumber } = useTranslation();
+  const { t, dir, isRTL, FF, href, locale, formatDate, formatNumber } = useTranslation();
   const [data, setData] = useState<BarberProfileData | null>(initialData);
   const [status, setStatus] = useState<"loading" | "ok" | "not_found" | "error">(initialData ? "ok" : "loading");
 
@@ -86,7 +91,7 @@ export default function BarberProfileClient({
   if (status !== "ok" || !data) {
     const isError = status === "error";
     return (
-      <main className="min-h-dvh bg-[var(--bg-primary)] flex items-center justify-center p-4" dir={dir} style={{ fontFamily: FF }}>
+      <main className="flex min-h-dvh items-center justify-center bg-page p-4" dir={dir} style={{ fontFamily: FF }}>
         <EmptyState
           icon={UserRound}
           size="lg"
@@ -110,10 +115,6 @@ export default function BarberProfileClient({
   const stickyHref = barberBookingHref({ locale, shopId: shop.id, barberId: barber.id, entry: "profile_sticky", src });
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
   const fromPrice = minPrice(services);
-  const ratingText =
-    barber.rating_count > 0 && barber.rating_avg != null
-      ? `${formatNumber(barber.rating_avg, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${formatNumber(barber.rating_count)})`
-      : null;
   const languages = barber.languages.map((l) => languageName(l, locale));
   const bookLabel = interpolate(t.barberPage.bookWith, { name: barber.full_name.split(" ")[0] });
 
@@ -128,194 +129,230 @@ export default function BarberProfileClient({
     }
   };
 
+  const ratingValue =
+    barber.rating_count > 0 && barber.rating_avg != null
+      ? formatNumber(barber.rating_avg, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+      : null;
+  const firstName = barber.full_name.split(" ")[0];
+  const fromLabel = fromPrice != null ? t.primitives.fromPrice.replace("{price}", formatJOD(fromPrice, { locale, trimZeros: true })) : null;
+
   return (
-    <div className="min-h-dvh bg-[var(--bg-primary)] text-[var(--text-primary)]" dir={dir} style={{ fontFamily: FF }}>
-      <header className="fixed top-0 inset-x-0 z-40 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border-subtle)]">
-        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-          <Link href={shopHref} className="focus-ring flex items-center gap-1.5 h-10 px-2 rounded-[8px] text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] min-w-0">
-            <BackIcon size={18} aria-hidden="true" className="shrink-0" />
+    <div className="min-h-dvh bg-page text-ink" dir={dir} style={{ fontFamily: FF }}>
+      <header className="fixed inset-x-0 top-0 z-40 h-16 border-b border-line bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75">
+        <div className={cn(containerClasses, "flex h-full items-center justify-between gap-3")}>
+          <Link href={shopHref} className={buttonClasses({ variant: "ghost", size: "sm", className: "-ms-2 min-w-0 max-w-[70%]" })}>
+            <BackIcon aria-hidden="true" className="shrink-0" />
             <span className="truncate">{interpolate(t.barberPage.backToShop, { shop: shopName })}</span>
           </Link>
-          <button
-            type="button"
-            onClick={share}
-            aria-label={t.common.share}
-            className="focus-ring w-10 h-10 shrink-0 rounded-[8px] border border-[var(--border-subtle)] flex items-center justify-center hover:border-[var(--accent-brass)]"
-          >
-            <Share2 size={18} aria-hidden="true" />
+          <button type="button" onClick={share} aria-label={t.common.share} className={buttonClasses({ variant: "secondary", size: "icon-sm" })}>
+            <Share2 aria-hidden="true" />
           </button>
         </div>
       </header>
 
-      <main className="pt-16 pb-28 lg:pb-16">
+      <main className="pb-28 pt-16 lg:pb-20">
         {preview && (
-          <div role="status" className="bg-[var(--bg-secondary)] border-b border-[var(--border-subtle)]">
-            <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3 text-sm">
-              <Eye size={16} aria-hidden="true" className="shrink-0 text-[var(--accent-text)]" />
+          <div role="status" className="border-b border-brand-soft-line bg-brand-soft text-brand-pressed dark:text-brand-text">
+            <div className={cn(containerClasses, "flex items-center gap-3 py-3 text-sm")}>
+              <Eye size={16} aria-hidden="true" className="shrink-0" />
               <p className="flex-1 font-semibold">{t.shopProfile.previewBanner}</p>
             </div>
           </div>
         )}
 
-        <div className="max-w-3xl mx-auto px-4">
-          {/* ── Header ── */}
-          <section className="py-8 flex flex-col sm:flex-row sm:items-center gap-5" aria-labelledby="barber-name">
-            <BarberAvatar barber={barber} size={104} priority />
-            <div className="min-w-0 flex-1">
-              <h1 id="barber-name" className="text-3xl font-black break-words" style={{ fontFamily: FFD }}>
+        {/* ── Banner + overlapping avatar ── */}
+        <div className="md:mx-auto md:w-full md:max-w-7xl md:px-6 md:pt-6 lg:px-8">
+          {shop.cover_url ? (
+            <PhotoFrame
+              src={shop.cover_url}
+              alt=""
+              ratio="3/1"
+              seed={shop.id}
+              sizes="(min-width: 1280px) 1216px, 100vw"
+              priority
+              className="min-h-[120px] md:rounded-2xl"
+            />
+          ) : (
+            <div className="relative aspect-[3/1] min-h-[120px] overflow-hidden md:rounded-2xl">
+              <BrandedPlaceholder fill="teal" hideInitials />
+            </div>
+          )}
+        </div>
+
+        <div className={containerClasses}>
+          <section aria-labelledby="barber-name" className="relative flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
+            <div className="-mt-12 shrink-0 md:-mt-16">
+              <BarberAvatar barber={barber} size={96} priority className="ring-4 ring-page md:hidden" />
+              <BarberAvatar barber={barber} size={128} priority className="hidden ring-4 ring-page md:block" />
+            </div>
+            <div className="min-w-0 flex-1 md:pt-4">
+              <h1 id="barber-name" className="text-h1 break-words text-ink">
                 {barber.full_name}
               </h1>
-              <MetaLine
-                items={[
-                  title,
-                  ratingText
-                    ? {
-                        key: "rating",
-                        icon: <Star size={13} aria-hidden="true" style={{ color: "var(--accent-brass)", fill: "var(--accent-brass)" }} />,
-                        label: ratingText,
-                      }
-                    : null,
-                  barber.years_experience != null && barber.years_experience > 0
-                    ? interpolate(t.barberPage.yearsExperience, { count: formatNumber(barber.years_experience) })
-                    : null,
-                ]}
-                className="mt-1 text-sm text-[var(--text-secondary)]"
-              />
-              <p className="mt-1 text-sm">
+              <p className="mt-1 text-[15px] text-ink-soft">
+                {title}
+                <span aria-hidden="true" className="mx-1.5 text-ink-disabled">·</span>
                 {t.barberPage.worksAt}{" "}
-                <Link href={shopHref} className="focus-ring font-bold text-[var(--accent-text)] underline underline-offset-2">
+                <Link href={shopHref} className={cn(textLinkClasses, focusRing, "rounded-sm")}>
                   {shopName}
                 </Link>
               </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {ratingValue && (
+                  <RatingStars
+                    rating={barber.rating_avg!}
+                    size="sm"
+                    value={ratingValue}
+                    count={`(${formatNumber(barber.rating_count)})`}
+                    label={`${interpolate(t.shopPage.ratingLabel, { rating: ratingValue })} · ${pluralLabel(t.primitives.reviewsCount, barber.rating_count, locale, formatNumber(barber.rating_count))}`}
+                  />
+                )}
+                {barber.years_experience != null && barber.years_experience > 0 && (
+                  <Pill tone="neutral" size="md">
+                    {interpolate(t.barberPage.yearsExperience, { count: formatNumber(barber.years_experience) })}
+                  </Pill>
+                )}
+              </div>
               <NextAvailable
                 shopId={shop.id}
                 serviceId={services[0]?.id ?? null}
                 barberId={barber.id}
                 timeZone={shop.timezone || "Asia/Amman"}
-                className="mt-3 text-sm font-semibold"
+                className="mt-3 text-sm font-semibold text-success-text"
               />
             </div>
-            <Link
-              href={bookHref}
-              prefetch={false}
-              className="focus-ring hidden lg:inline-flex items-center justify-center h-12 px-6 rounded-full bg-[var(--cta-bg)] text-[var(--cta-fg)] font-bold hover:opacity-90"
-            >
-              {bookLabel}
-            </Link>
+            <div className="hidden shrink-0 items-center gap-2 lg:flex lg:pt-5">
+              <Link href={bookHref} prefetch={false} className={buttonClasses({ variant: "primary", size: "lg" })}>
+                {bookLabel}
+              </Link>
+            </div>
           </section>
 
-          <div className="space-y-12">
-            {(bio || languages.length > 0) && (
-              <section aria-labelledby="barber-about">
-                <h2 id="barber-about" className="text-xl font-black mb-3">
-                  {t.barberPage.about}
+          <div className="mt-10 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-12">
+            <div className="min-w-0 space-y-14">
+              {(bio || languages.length > 0) && (
+                <section aria-labelledby="barber-about">
+                  <h2 id="barber-about" className="text-h2 mb-4 text-ink">
+                    {t.barberPage.about}
+                  </h2>
+                  {bio && <p className="max-w-[65ch] whitespace-pre-line text-[15px] leading-7 text-ink-soft">{bio}</p>}
+                  {languages.length > 0 && (
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold text-ink">{t.barberPage.languages}</span>
+                      {languages.map((l) => (
+                        <Pill key={l} tone="neutral" size="md">
+                          {l}
+                        </Pill>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              <section aria-labelledby="barber-services">
+                <h2 id="barber-services" className="text-h2 mb-4 text-ink">
+                  {t.barberPage.services}
                 </h2>
-                {bio && <p className="text-[15px] leading-relaxed text-[var(--text-secondary)] whitespace-pre-line">{bio}</p>}
-                {languages.length > 0 && (
-                  <p className="mt-3 text-sm">
-                    <span className="font-bold">{t.barberPage.languages}:</span>{" "}
-                    <span className="text-[var(--text-secondary)]">{languages.join(isRTL ? "، " : ", ")}</span>
-                  </p>
+                {services.length === 0 ? (
+                  <EmptyState icon={Scissors} size="sm" title={t.shopPage.noServices} />
+                ) : (
+                  <ServicesSection services={services} categories={categories} shopId={shop.id} src={src} barberId={barber.id} currency={shop.currency || "JOD"} />
                 )}
               </section>
-            )}
 
-            <section aria-labelledby="barber-services">
-              <h2 id="barber-services" className="text-xl font-black mb-4">
-                {t.barberPage.services}
-              </h2>
-              {services.length === 0 ? (
-                <EmptyState icon={Scissors} size="sm" title={t.shopPage.noServices} />
-              ) : (
-                <ServicesSection services={services} categories={categories} shopId={shop.id} src={src} barberId={barber.id} currency={shop.currency || "JOD"} />
+              {portfolio.length > 0 && (
+                <section aria-labelledby="barber-work">
+                  <h2 id="barber-work" className="text-h2 mb-4 text-ink">
+                    {t.barberPage.work}
+                  </h2>
+                  <PortfolioGrid items={portfolio} services={services} />
+                </section>
               )}
-            </section>
 
-            {portfolio.length > 0 && (
-              <section aria-labelledby="barber-work">
-                <h2 id="barber-work" className="text-xl font-black mb-4">
-                  {t.barberPage.work}
+              <section aria-labelledby="barber-reviews">
+                <h2 id="barber-reviews" className="text-h2 mb-4 text-ink">
+                  {t.barberPage.reviews}
                 </h2>
-                <PortfolioGrid items={portfolio} services={services} />
+                {reviews.length === 0 ? (
+                  <EmptyState icon={Star} size="sm" title={interpolate(t.barberPage.noReviews, { name: firstName })} />
+                ) : (
+                  <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {reviews.map((r) => {
+                      const svc = (isRTL && r.service_name_ar) || r.service_name;
+                      const name = r.reviewer_name?.trim() || t.shopPage.anonymousReviewer;
+                      return (
+                        <li key={r.id} className={cardClasses({ className: "flex flex-col gap-3 p-5" })}>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-ink">{name}</p>
+                            <MetaLine items={[formatDate(r.created_at, "medium"), svc]} as="p" className="text-meta" />
+                          </div>
+                          <RatingStars rating={r.rating} size="sm" label={interpolate(t.shopPage.ratingLabel, { rating: r.rating })} />
+                          {r.comment && <p className="line-clamp-4 break-words text-[15px] leading-6 text-ink-soft">{r.comment}</p>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </section>
-            )}
 
-            <section aria-labelledby="barber-reviews">
-              <h2 id="barber-reviews" className="text-xl font-black mb-4">
-                {t.barberPage.reviews}
-              </h2>
-              {reviews.length === 0 ? (
-                <EmptyState icon={Star} size="sm" title={interpolate(t.barberPage.noReviews, { name: barber.full_name.split(" ")[0] })} />
-              ) : (
-                <ul className="space-y-4">
-                  {reviews.map((r) => {
-                    const svc = (isRTL && r.service_name_ar) || r.service_name;
-                    return (
-                      <li key={r.id} className="rounded-[12px] border border-[var(--border-subtle)] p-5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <RatingStars rating={r.rating} size={13} label={interpolate(t.shopPage.ratingLabel, { rating: r.rating })} />
-                          <MetaLine
-                            items={[r.reviewer_name?.trim() || t.shopPage.anonymousReviewer, formatDate(r.created_at, "medium"), svc]}
-                            as="span"
-                            className="text-xs text-[var(--text-secondary)]"
-                          />
-                        </div>
-                        {r.comment && <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed break-words">{r.comment}</p>}
+              {colleagues.length > 0 && (
+                <section aria-labelledby="barber-colleagues">
+                  <h2 id="barber-colleagues" className="text-h2 mb-4 text-ink">
+                    {interpolate(t.barberPage.otherBarbers, { shop: shopName })}
+                  </h2>
+                  <ul className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
+                    {colleagues.map((c) => (
+                      <li key={c.id} className="w-24 shrink-0">
+                        <Link
+                          href={barberPath(c.handle!, locale)}
+                          className={cn(focusRing, "group flex flex-col items-center gap-2 rounded-xl p-1 text-center")}
+                        >
+                          <BarberAvatar barber={c} size={72} className="ring-2 ring-transparent transition-shadow group-hover:ring-line-strong" />
+                          <span className="line-clamp-1 text-sm font-semibold text-ink">{c.full_name}</span>
+                        </Link>
                       </li>
-                    );
-                  })}
-                </ul>
+                    ))}
+                  </ul>
+                </section>
               )}
-            </section>
+            </div>
 
-            {colleagues.length > 0 && (
-              <section aria-labelledby="barber-colleagues">
-                <h2 id="barber-colleagues" className="text-xl font-black mb-4">
-                  {interpolate(t.barberPage.otherBarbers, { shop: shopName })}
-                </h2>
-                <ul className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-                  {colleagues.map((c) => (
-                    <li key={c.id} className="shrink-0 w-24">
-                      <Link href={barberPath(c.handle!, locale)} className="focus-ring flex flex-col items-center gap-2 text-center rounded-[8px] p-1">
-                        <BarberAvatar barber={c} size={64} />
-                        <span className="text-xs font-bold line-clamp-1">{c.full_name}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+            {/* ── Desktop booking card ── */}
+            <aside className="hidden lg:sticky lg:top-24 lg:block" aria-label={t.shopPage.bookingBar}>
+              <div className={cardClasses({ elevation: "raised", className: "space-y-5 rounded-2xl p-6" })}>
+                <div className="flex items-center gap-3">
+                  <BarberAvatar barber={barber} size={56} />
+                  <div className="min-w-0">
+                    <p className="text-h3 truncate text-ink">{barber.full_name}</p>
+                    <p className="text-meta truncate text-ink-muted">{shopName}</p>
+                  </div>
+                </div>
+                {fromLabel && (
+                  <p className="border-y border-line py-4 text-2xl font-bold tabular-nums text-ink">{fromLabel}</p>
+                )}
+                <Link href={bookHref} prefetch={false} className={buttonClasses({ variant: "primary", size: "lg", fullWidth: true })}>
+                  {bookLabel}
+                </Link>
+                <Link href={shopHref} className={buttonClasses({ variant: "secondary", size: "md", fullWidth: true })}>
+                  {shopName}
+                </Link>
+              </div>
+            </aside>
           </div>
         </div>
       </main>
 
-      {/* Mobile sticky booking bar (BookingCta styling; carries ?barber=) */}
-      <div
-        role="region"
-        aria-label={t.primitives.bookingSummaryLabel}
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/95 backdrop-blur lg:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3"
-      >
-        <div className="mx-auto flex max-w-screen-sm items-center gap-3 px-4">
-          <p className="min-w-0 flex-1 truncate text-sm font-semibold">
-            <bdi>{barber.full_name}</bdi>
-            {fromPrice != null && (
-              <>
-                <span aria-hidden="true" className="mx-1.5 text-[var(--text-muted)]">
-                  {META_SEPARATOR}
-                </span>
-                <bdi>{t.primitives.fromPrice.replace("{price}", formatJOD(fromPrice, { locale, trimZeros: true }))}</bdi>
-              </>
-            )}
-          </p>
-          <Link
-            href={stickyHref}
-            prefetch={false}
-            className={cn("focus-ring inline-flex items-center justify-center h-12 px-6 rounded-full bg-[var(--cta-bg)] text-[var(--cta-fg)] font-bold whitespace-nowrap hover:opacity-90")}
-          >
+      {/* Mobile sticky booking bar (carries ?staff=) */}
+      <StickyBar
+        label={t.primitives.bookingSummaryLabel}
+        title={<bdi>{barber.full_name}</bdi>}
+        subtitle={fromLabel ? <bdi>{fromLabel}</bdi> : undefined}
+        action={
+          <Link href={stickyHref} prefetch={false} className={buttonClasses({ variant: "primary", size: "xl", className: "max-w-[220px] flex-1" })}>
             {t.primitives.bookNow}
           </Link>
-        </div>
-      </div>
+        }
+      />
     </div>
   );
 }

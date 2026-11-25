@@ -6,6 +6,8 @@ import { useTranslation } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
 import { currentPlatform, isStandalone, registerServiceWorker } from "@/lib/push/client";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { focusRing } from "@/components/ui/recipes";
 import { installMode, readDismissedUntil, snoozeInstall, type InstallMode } from "./install-logic";
 
 /** Chrome's beforeinstallprompt event (not in lib.dom). */
@@ -108,62 +110,55 @@ export function InstallPrompt({ variant = "card", ignoreSnooze = false, classNam
   const isIos = mode === "ios";
   const titleId = "pwa-install-title";
 
+  const compact = variant === "compact";
+
   return (
     <section
       aria-labelledby={titleId}
       className={cn(
-        "relative flex gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)]",
-        variant === "compact" ? "items-center p-3" : "items-start p-4",
+        "relative flex gap-3 rounded-xl border border-line bg-card text-ink",
+        compact ? "items-center py-3 pe-12 ps-3 sm:gap-4" : "items-start p-4 pe-12 lg:p-5 lg:pe-14",
         className,
       )}
     >
       <span
         aria-hidden="true"
-        className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-secondary)] text-[var(--accent-text)]"
+        className={cn(
+          "bg-hatch-ink grid shrink-0 place-items-center bg-brand-soft text-brand-text",
+          compact ? "size-10 rounded-lg" : "size-12 rounded-xl",
+        )}
       >
-        <BellRing size={18} />
+        <BellRing size={compact ? 18 : 22} />
       </span>
-      <div className="min-w-0 flex-1 pe-8">
-        <h2 id={titleId} className="m-0 text-sm font-bold">
+      <div className={cn("min-w-0 flex-1", compact && !isIos && "sm:flex sm:items-center sm:justify-between sm:gap-4")}>
+        <h2 id={titleId} className="m-0 text-[15px] font-semibold leading-snug text-ink">
           {isIos ? tp.iosTitle : tp.title}
         </h2>
-        {variant === "card" && (
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">{isIos ? tp.iosBody : tp.body}</p>
-        )}
-        {isIos && variant === "card" && (
-          <ol className="mt-3 flex list-none flex-col gap-2 p-0 text-sm">
-            <li className="flex items-center gap-2">
-              <Share size={16} aria-hidden="true" className="shrink-0 text-[var(--accent-text)]" />
-              <span>{tp.iosStepShare}</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <SquarePlus size={16} aria-hidden="true" className="shrink-0 text-[var(--accent-text)]" />
-              <span>{tp.iosStepAdd}</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <BellRing size={16} aria-hidden="true" className="shrink-0 text-[var(--accent-text)]" />
-              <span>{tp.iosStepOpen}</span>
-            </li>
+        {!compact && <p className="m-0 mt-1 text-sm text-ink-muted">{isIos ? tp.iosBody : tp.body}</p>}
+        {isIos && !compact && (
+          <ol className="m-0 mt-3 flex list-none flex-col gap-2 p-0 text-sm text-ink-soft">
+            {[
+              { icon: Share, text: tp.iosStepShare },
+              { icon: SquarePlus, text: tp.iosStepAdd },
+              { icon: BellRing, text: tp.iosStepOpen },
+            ].map(({ icon: Icon, text }, i) => (
+              <li key={i} className="flex items-center gap-3">
+                <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-full bg-sunken text-brand-text">
+                  <Icon size={16} />
+                </span>
+                <span>{text}</span>
+              </li>
+            ))}
           </ol>
         )}
         {!isIos && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={install}
-              disabled={busy}
-              aria-busy={busy || undefined}
-              className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--cta-bg)] px-5 text-sm font-bold text-[var(--cta-fg)] hover:opacity-90 disabled:opacity-60"
-            >
+          <div className={cn("flex flex-wrap gap-2", compact ? "mt-2 sm:mt-0 sm:shrink-0" : "mt-3")}>
+            <Button size="sm" onClick={install} loading={busy}>
               {tp.install}
-            </button>
-            <button
-              type="button"
-              onClick={dismiss}
-              className="focus-ring inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
-            >
+            </Button>
+            <Button size="sm" variant="ghost" onClick={dismiss}>
               {tp.notNow}
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -171,9 +166,13 @@ export function InstallPrompt({ variant = "card", ignoreSnooze = false, classNam
         type="button"
         onClick={dismiss}
         aria-label={tp.dismissLabel}
-        className="focus-ring absolute end-2 top-2 inline-flex size-11 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+        className={cn(
+          "absolute end-1 grid size-11 place-items-center rounded-full text-ink-muted transition-colors duration-150 hover:bg-sunken hover:text-ink motion-reduce:transition-none",
+          compact ? "top-1/2 -translate-y-1/2" : "top-1",
+          focusRing,
+        )}
       >
-        <X size={16} aria-hidden="true" />
+        <X size={18} aria-hidden="true" />
       </button>
     </section>
   );

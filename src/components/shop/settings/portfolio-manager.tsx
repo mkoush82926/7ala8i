@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import { buttonClasses } from "@/components/ui/recipes";
 import { ImagePlus, Loader2, Pencil, Star, Trash2 } from "lucide-react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
@@ -146,7 +147,7 @@ export function PortfolioManager({
         aria-hidden="true"
         onChange={(e) => void onFiles(e.target.files)}
       />
-      <button type="button" className="btn btn-secondary" disabled={!!uploading || remaining === 0} onClick={() => fileRef.current?.click()}>
+      <button type="button" className={buttonClasses({ variant: "secondary" })} disabled={!!uploading || remaining === 0} onClick={() => fileRef.current?.click()}>
         {uploading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <ImagePlus size={16} aria-hidden="true" />}
         {uploading
           ? interpolate(pp.uploadingProgress, { done: formatNumber(uploading.done), total: formatNumber(uploading.total) })
@@ -167,12 +168,12 @@ export function PortfolioManager({
             const by = barberName(item.barber_id);
             const alt = caption || interpolate(pp.workNumber, { n: formatNumber(i + 1) });
             return (
-              <li key={item.id} className="overflow-hidden rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]">
+              <li key={item.id} className="overflow-hidden rounded-lg border border-line bg-sunken">
                 <div className="relative aspect-square">
                   <ShopImage src={item.url} blurData={item.blur_data} alt={alt} fill sizes="(min-width: 1024px) 22vw, (min-width: 640px) 30vw, 50vw" className="object-cover" />
                   {item.is_featured && (
                     <span className="absolute top-2 start-2">
-                      <Pill tone="brass" size="sm" icon={<Star size={12} aria-hidden="true" />}>
+                      <Pill tone="accent" size="sm" icon={<Star size={12} aria-hidden="true" />}>
                         {pp.featured}
                       </Pill>
                     </span>
@@ -180,8 +181,8 @@ export function PortfolioManager({
                 </div>
                 <div className="flex items-center gap-1 p-2">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-semibold text-[var(--text-primary)]">{by ?? pp.wholeShop}</p>
-                    <p className="truncate text-xs text-[var(--text-secondary)]">{serviceName(item.service_id) ?? caption ?? ""}</p>
+                    <p className="truncate text-xs font-semibold text-ink">{by ?? pp.wholeShop}</p>
+                    <p className="truncate text-xs text-ink-muted">{serviceName(item.service_id) ?? caption ?? ""}</p>
                   </div>
                   {canManage(item) && (
                     <>
@@ -283,10 +284,10 @@ function PortfolioEditor({
       size="md"
       footer={
         <DialogFooter>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <button type="button" className={buttonClasses({ variant: "secondary" })} onClick={onClose}>
             {t.common.cancel}
           </button>
-          <button type="button" className="btn btn-primary" disabled={saving} onClick={() => void save()}>
+          <button type="button" className={buttonClasses({ variant: "primary" })} disabled={saving} onClick={() => void save()}>
             {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
             {t.common.save}
           </button>

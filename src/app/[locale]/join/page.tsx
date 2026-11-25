@@ -7,6 +7,9 @@ import { AlertCircle, Check, Loader2, LogOut, Users } from "lucide-react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
+import { buttonClasses, focusRing } from "@/components/ui/recipes";
+import { cn } from "@/lib/utils";
 import { AuthCard, AuthHeader, AuthShell } from "../auth/_components/auth-shell";
 
 type JoinStatus = "loading" | "auth_required" | "ready" | "accepting" | "success" | "already_member" | "error";
@@ -157,27 +160,25 @@ function JoinContent() {
       <AuthCard>
         <div aria-live="polite">
           {status === "loading" && (
-            <div role="status" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "32px 0" }}>
-              <Loader2 size={28} className="animate-spin" aria-hidden="true" style={{ color: "var(--accent-mint)" }} />
-              <p style={{ fontSize: 14, color: "var(--text-secondary)", margin: 0 }}>{t.auth.inviteChecking}</p>
+            <div role="status" className="flex flex-col items-center gap-3 py-8">
+              <Loader2 size={28} className="animate-spin text-brand-text motion-reduce:animate-none" aria-hidden="true" />
+              <p className="m-0 text-sm text-ink-muted">{t.auth.inviteChecking}</p>
             </div>
           )}
 
           {status === "auth_required" && (
             <>
               <AuthHeader icon={Users} align="center" title={t.auth.inviteTitle} subtitle={t.auth.inviteSubtitle} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div className="flex flex-col gap-3">
                 <Link
                   href={href(`/auth/signup?next=${encodeURIComponent(nextPath)}`)}
-                  className="btn btn-primary"
-                  style={{ width: "100%", minHeight: 52 }}
+                  className={buttonClasses({ variant: "primary", size: "xl", fullWidth: true })}
                 >
                   {t.auth.createAccount}
                 </Link>
                 <Link
                   href={href(`/auth/login?next=${encodeURIComponent(nextPath)}`)}
-                  className="btn btn-secondary"
-                  style={{ width: "100%", minHeight: 48 }}
+                  className={buttonClasses({ variant: "secondary", size: "lg", fullWidth: true })}
                 >
                   {t.auth.inviteHaveAccount}
                 </Link>
@@ -193,44 +194,25 @@ function JoinContent() {
                 title={shopName ? interpolate(t.auth.inviteReadyTitle, { shop: shopName }) : t.auth.inviteTitle}
                 subtitle={interpolate(t.auth.inviteReadyBody, { role: roleText })}
               />
-              <button
-                type="button"
-                className="btn btn-primary"
+              <Button
+                size="xl"
+                fullWidth
                 onClick={handleAccept}
-                disabled={status === "accepting"}
-                aria-busy={status === "accepting" || undefined}
-                style={{ width: "100%", minHeight: 52 }}
+                loading={status === "accepting"}
               >
-                {status === "accepting" ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" aria-hidden="true" />
-                    {t.auth.inviteAccepting}
-                  </>
-                ) : (
-                  t.auth.inviteAccept
-                )}
-              </button>
+                {status === "accepting" ? t.auth.inviteAccepting : t.auth.inviteAccept}
+              </Button>
               {email && (
-                <p style={{ marginTop: 16, fontSize: 13, textAlign: "center", color: "var(--text-muted)" }}>
+                <p className="mt-4 text-center text-[13px] text-ink-muted">
                   {interpolate(t.auth.inviteSignedInAs, { email })}{" "}
                   <button
                     type="button"
                     onClick={handleSwitchAccount}
                     disabled={status === "accepting"}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      color: "var(--text-secondary)",
-                      fontWeight: 700,
-                      textDecoration: "underline",
-                      textUnderlineOffset: 3,
-                      cursor: "pointer",
-                      fontSize: 13,
-                    }}
+                    className={cn(
+                      "inline-flex cursor-pointer items-center gap-1 rounded-sm border-0 bg-transparent p-0 text-[13px] font-bold text-ink-soft underline underline-offset-2 hover:text-ink disabled:opacity-45",
+                      focusRing,
+                    )}
                   >
                     <LogOut size={13} aria-hidden="true" />
                     {t.auth.inviteSwitchAccount}
@@ -253,7 +235,7 @@ function JoinContent() {
                     : interpolate(t.auth.inviteJoinedTeam, { role: roleText })
                 }
               />
-              <a href={href("/")} className="btn btn-primary" style={{ width: "100%", minHeight: 52 }}>
+              <a href={href("/")} className={buttonClasses({ variant: "primary", size: "xl", fullWidth: true })}>
                 {t.auth.inviteGoDashboard}
               </a>
             </>
@@ -262,7 +244,7 @@ function JoinContent() {
           {status === "error" && (
             <>
               <AuthHeader icon={AlertCircle} tone="error" align="center" title={t.auth.inviteErrorTitle} subtitle={errorText(errorCode)} />
-              <Link href={href("/for-business")} className="btn btn-secondary" style={{ width: "100%", minHeight: 48 }}>
+              <Link href={href("/for-business")} className={buttonClasses({ variant: "secondary", size: "lg", fullWidth: true })}>
                 {t.auth.backHome}
               </Link>
             </>

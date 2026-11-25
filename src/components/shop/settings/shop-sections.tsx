@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { buttonClasses } from "@/components/ui/recipes";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
@@ -41,14 +42,14 @@ function SaveBar({ dirty, saving, onSave, onReset }: { dirty: boolean; saving: b
   return (
     <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
       {dirty && (
-        <span className="me-auto text-xs font-semibold text-[var(--text-secondary)]" role="status">
+        <span className="me-auto text-xs font-semibold text-ink-muted" role="status">
           {pp.unsaved}
         </span>
       )}
-      <button type="button" className="btn btn-ghost" disabled={!dirty || saving} onClick={onReset}>
+      <button type="button" className={buttonClasses({ variant: "ghost" })} disabled={!dirty || saving} onClick={onReset}>
         {pp.discard}
       </button>
-      <button type="button" className="btn btn-primary" disabled={!dirty || saving} onClick={onSave}>
+      <button type="button" className={buttonClasses({ variant: "primary" })} disabled={!dirty || saving} onClick={onSave}>
         {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
         {t.common.save}
       </button>
@@ -266,8 +267,8 @@ export function LocationSection({
           />
         </div>
         {shop.address && (
-          <p className="text-xs text-[var(--text-secondary)]">
-            {pp.addressFromGeneral} <span className="font-semibold text-[var(--text-primary)]">{shop.address}</span>
+          <p className="text-xs text-ink-muted">
+            {pp.addressFromGeneral} <span className="font-semibold text-ink">{shop.address}</span>
           </p>
         )}
       </fieldset>
@@ -331,8 +332,8 @@ export function AmenitiesSection({
                 className={cn(
                   "focus-ring inline-flex min-h-[40px] items-center gap-2 rounded-full border px-3.5 text-sm font-semibold transition-colors disabled:opacity-60",
                   on
-                    ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)]"
-                    : "border-[var(--border-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]",
+                    ? "border-inverse bg-inverse text-on-inverse"
+                    : "border-line-strong text-ink hover:bg-sunken",
                 )}
               >
                 <AmenityIcon name={a.icon} size={16} />

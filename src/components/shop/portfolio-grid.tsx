@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
+import { buttonClasses } from "@/components/ui/recipes";
 import { localizedText } from "./lib/media";
 import type { BarberData, PortfolioItem, ServiceData } from "./lib/types";
 import { ShopImage } from "./shop-image";
@@ -43,25 +44,25 @@ export function PortfolioGrid({
 
   return (
     <>
-      <ul className="grid grid-cols-3 gap-1.5 sm:gap-2">
+      <ul className="grid grid-cols-3 gap-1 overflow-hidden rounded-xl sm:gap-2 sm:rounded-none">
         {visible.map((img, i) => (
-          <li key={img.id} className="relative aspect-square overflow-hidden rounded-[8px] bg-[var(--bg-secondary)]">
-            <button type="button" onClick={() => setOpen(i)} aria-label={img.alt} className="focus-ring absolute inset-0 group">
+          <li key={img.id} className="relative aspect-square overflow-hidden bg-sunken sm:rounded-lg">
+            <button type="button" onClick={() => setOpen(i)} aria-label={img.alt} className="focus-ring-inset group absolute inset-0">
               <ShopImage
                 src={img.url}
                 blurData={img.blurData}
                 alt=""
                 fill
                 sizes="(min-width: 1024px) 240px, 33vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                className="object-cover transition-transform duration-500 ease-standard group-hover:scale-[1.04] motion-reduce:transform-none"
               />
             </button>
           </li>
         ))}
       </ul>
       {!expanded && images.length > limit && (
-        <div className="mt-4 text-center">
-          <button type="button" className="btn btn-secondary" onClick={() => setExpanded(true)}>
+        <div className="mt-5 flex justify-center">
+          <button type="button" className={buttonClasses({ variant: "secondary", className: "w-full sm:w-auto" })} onClick={() => setExpanded(true)}>
             {interpolate(t.shopProfile.showAllWork, { count: formatNumber(images.length) })}
           </button>
         </div>

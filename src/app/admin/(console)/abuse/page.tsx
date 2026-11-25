@@ -21,7 +21,7 @@ function asBanLists(value: unknown): BanLists {
 
 function When({ value }: { value: string }) {
   return (
-    <time dateTime={value} title={formatDateTime(value)} className="text-[12px] text-[var(--text-muted)]">
+    <time dateTime={value} title={formatDateTime(value)} className="text-[12px] text-ink-muted">
       {ADMIN_COPY.abuse.since(formatRelative(value))}
     </time>
   );
@@ -54,16 +54,16 @@ export default async function AdminAbusePage() {
             </div>
           )}
           {lists.phones.length === 0 ? (
-            <p className="py-2 text-[14px] text-[var(--text-secondary)]">{c.phonesEmpty}</p>
+            <p className="py-2 text-[14px] text-ink-soft">{c.phonesEmpty}</p>
           ) : (
-            <ul className="divide-y divide-[var(--border-subtle)]">
+            <ul className="divide-y divide-line">
               {lists.phones.map((p) => (
                 <li key={p.phone_key} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
                     <p className="text-[14px] font-medium tabular-nums" dir="ltr">
                       {p.phone_hint ?? p.phone_key}
                     </p>
-                    <p className="mt-0.5 break-words text-[13px] text-[var(--text-secondary)]">“{p.reason}”</p>
+                    <p className="mt-0.5 break-words text-[13px] text-ink-soft">“{p.reason}”</p>
                     <When value={p.created_at} />
                   </div>
                   {isAdmin && <UnbanPhoneButton phoneKey={p.phone_key} hint={p.phone_hint ?? p.phone_key} />}
@@ -75,11 +75,11 @@ export default async function AdminAbusePage() {
 
         <Section id="profiles" title={c.profilesTitle} description={c.profilesBody}>
           <ProfileSearch canBan={isAdmin} />
-          <h3 className="mb-2 mt-6 text-[14px] font-semibold text-[var(--text-primary)]">{c.bannedProfiles}</h3>
+          <h3 className="mb-2 mt-6 text-[14px] font-semibold text-ink">{c.bannedProfiles}</h3>
           {lists.profiles.length === 0 ? (
-            <p className="py-2 text-[14px] text-[var(--text-secondary)]">{c.bannedProfilesEmpty}</p>
+            <p className="py-2 text-[14px] text-ink-soft">{c.bannedProfilesEmpty}</p>
           ) : (
-            <ul className="divide-y divide-[var(--border-subtle)]">
+            <ul className="divide-y divide-line">
               {lists.profiles.map((p) => (
                 <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
@@ -89,7 +89,7 @@ export default async function AdminAbusePage() {
                         {ADMIN_COPY.shop.banned}
                       </Pill>
                     </p>
-                    <p className="text-[12px] text-[var(--text-muted)]">
+                    <p className="text-[12px] text-ink-muted">
                       {c.roleLabels[p.role] ?? p.role}
                       {p.phone_masked ? (
                         <>
@@ -110,19 +110,19 @@ export default async function AdminAbusePage() {
 
         <Section id="shops" title={c.shopsTitle}>
           {lists.shops.length === 0 ? (
-            <p className="py-2 text-[14px] text-[var(--text-secondary)]">{c.shopsEmpty}</p>
+            <p className="py-2 text-[14px] text-ink-soft">{c.shopsEmpty}</p>
           ) : (
-            <ul className="divide-y divide-[var(--border-subtle)]">
+            <ul className="divide-y divide-line">
               {lists.shops.map((s) => (
                 <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
                     <Link
                       href={`/admin/shops/${s.id}`}
-                      className="rounded text-[14px] font-medium text-[var(--text-primary)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+                      className="rounded text-[14px] font-medium text-ink underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                     >
                       {s.name}
                     </Link>
-                    <p className="text-[12px] text-[var(--text-muted)]" dir="ltr">
+                    <p className="text-[12px] text-ink-muted" dir="ltr">
                       /{s.slug}
                     </p>
                   </div>

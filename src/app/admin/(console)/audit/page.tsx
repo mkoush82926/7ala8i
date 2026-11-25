@@ -16,8 +16,8 @@ import { ErrorPanel, PageHeader, Pagination, Section } from "../../_components/u
 export const metadata = { title: ADMIN_COPY.audit.title };
 
 const controlCls =
-  "h-11 w-full rounded-[var(--radius)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 text-[14px] text-[var(--text-primary)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]";
-const labelCls = "mb-1 block text-[12px] font-medium text-[var(--text-secondary)]";
+  "h-11 w-full rounded-lg border border-line-strong bg-card px-4 text-[14px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+const labelCls = "mb-1 block text-[12px] font-medium text-ink-soft";
 
 export default async function AdminAuditPage({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
   const sp = await searchParams;
@@ -44,7 +44,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
         method="get"
         action="/admin/audit"
         role="search"
-        className="mb-4 grid gap-3 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:grid-cols-[1fr_1fr_1.4fr_auto] sm:items-end"
+        className="mb-4 grid gap-3 rounded-xl border border-line bg-card p-4 sm:grid-cols-[1fr_1fr_1.4fr_auto] sm:items-end"
       >
         <div>
           <label htmlFor="audit-action" className={labelCls}>

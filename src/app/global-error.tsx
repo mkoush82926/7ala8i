@@ -14,14 +14,19 @@ import ar from "@/i18n/ar";
  * src/instrumentation.ts.
  */
 
+// Design System v2 light hexes (docs/DESIGN_SYSTEM_V2.md §2.2).
 const C = {
-  paper: "#ffffff",
-  cream: "#f7f1e4",
-  border: "#ede3cd",
-  ink: "#1c1611",
-  slate: "#5a5147",
-  muted: "#746a5b",
-  primary: "#7c4a1e",
+  card: "#FFFFFF",
+  page: "#F8F7F4",
+  line: "#E5E2DA",
+  lineStrong: "#848EA0",
+  ink: "#0F172A",
+  inkSoft: "#334155",
+  muted: "#5B6B7F",
+  brand: "#0F766E",
+  brandHover: "#115E59",
+  dangerSoft: "#FEE2E2",
+  dangerText: "#991B1B",
 };
 
 function detectLocale(pathname: string | null): "en" | "ar" {
@@ -61,7 +66,7 @@ export default function GlobalError({
     justifyContent: "center",
     minHeight: 44,
     padding: "0 22px",
-    borderRadius: 10,
+    borderRadius: 9999,
     fontWeight: 600,
     fontSize: 15,
     fontFamily: "inherit",
@@ -75,9 +80,9 @@ export default function GlobalError({
         <title>{t.error.title}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="robots" content="noindex" />
-        <style>{`a:focus-visible,button:focus-visible{outline:2px solid ${C.primary};outline-offset:2px}`}</style>
+        <style>{`a:focus-visible,button:focus-visible{outline:2px solid ${C.brand};outline-offset:2px}.ge-primary:hover{background:${C.brandHover}!important}.ge-secondary:hover{border-color:${C.ink}!important}`}</style>
       </head>
-      <body style={{ margin: 0, fontFamily: font, background: C.paper, color: C.ink }}>
+      <body style={{ margin: 0, fontFamily: font, background: C.page, color: C.ink }}>
         <main
           aria-labelledby="global-error-title"
           style={{
@@ -90,46 +95,62 @@ export default function GlobalError({
             textAlign: "center",
           }}
         >
-          <div style={{ width: "100%", maxWidth: 420 }}>
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 440,
+              boxSizing: "border-box",
+              padding: "40px 24px",
+              background: C.card,
+              border: `1px solid ${C.line}`,
+              borderRadius: 20,
+              boxShadow: "0 1px 2px rgb(15 23 42 / 0.04), 0 4px 12px -4px rgb(15 23 42 / 0.08)",
+            }}
+          >
             <div
               aria-hidden="true"
               style={{
                 width: 64,
                 height: 64,
                 margin: "0 auto 24px",
-                borderRadius: 16,
-                background: C.cream,
+                borderRadius: 20,
+                background: C.dangerSoft,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 28,
                 fontWeight: 800,
-                color: C.primary,
+                color: C.dangerText,
               }}
             >
               !
             </div>
-            <h1 id="global-error-title" style={{ fontSize: 22, fontWeight: 700, margin: "0 0 8px" }}>
+            <h1 id="global-error-title" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 700, margin: "0 0 8px" }}>
               {t.error.title}
             </h1>
-            <p role="alert" style={{ fontSize: 15, lineHeight: 1.6, margin: "0 0 28px", color: C.slate }}>
+            <p role="alert" style={{ fontSize: 15, lineHeight: 1.6, margin: "0 0 28px", color: C.inkSoft }}>
               {t.error.message}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
               <button
                 type="button"
                 onClick={reset}
-                style={{ ...button, background: C.primary, color: C.paper, border: "none" }}
+                className="ge-primary"
+                style={{ ...button, background: C.brand, color: C.card, border: "none" }}
               >
                 {t.error.tryAgain}
               </button>
               {/* Full navigation (not <Link>) — the app shell itself failed. */}
-              <a href={`/${locale}`} style={{ ...button, background: C.paper, color: C.ink, border: `1px solid ${C.border}` }}>
+              <a
+                href={`/${locale}`}
+                className="ge-secondary"
+                style={{ ...button, background: C.card, color: C.ink, border: `1px solid ${C.lineStrong}` }}
+              >
                 {t.error.goHome}
               </a>
             </div>
             {error.digest && (
-              <p style={{ marginTop: 32, fontSize: 12, color: C.muted }}>
+              <p style={{ margin: "28px 0 0", fontSize: 12, color: C.muted }}>
                 {t.error.reference}:{" "}
                 <code dir="ltr" style={{ fontFamily: "ui-monospace, Menlo, monospace", userSelect: "all" }}>
                   {error.digest}

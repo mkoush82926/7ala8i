@@ -38,32 +38,35 @@ export function AdminShell({ session, children }: { session: AdminWhoAmI; childr
   const c = ADMIN_COPY.shell;
 
   return (
-    <div className="min-h-[100dvh] bg-[var(--bg-primary)]">
+    <div className="min-h-[100dvh] bg-page">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-[60] focus:rounded-[var(--radius)] focus:bg-[var(--bg-elevated)] focus:px-4 focus:py-2 focus:shadow-[var(--shadow-focus)]"
+        className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-[60] focus:rounded-full focus:bg-card focus:px-4 focus:py-2 focus:shadow-float focus:outline-2 focus:outline-focus"
       >
         {c.skipToContent}
       </a>
 
-      <div className="sticky top-0 z-40 bg-[var(--bg-primary)]">
+      <div className="sticky top-0 z-40 bg-card">
       {session.impersonation && <ImpersonationBanner session={session.impersonation} />}
 
-      <header className="border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/95 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-3 px-4 lg:px-6">
+      <header className="border-b border-line bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75">
+        <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-4 lg:px-6">
+          {/* Ink console badge: staff always know they're in the back office. */}
           <Link
             href="/admin"
-            className="flex items-baseline gap-2 rounded-[var(--radius)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+            className="flex items-center gap-2.5 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
-            <span className="text-[17px] font-bold tracking-tight text-[var(--text-primary)]">{c.brand}</span>
-            <span className="text-[13px] font-medium text-[var(--accent-text)]">{c.product}</span>
+            <span className="text-xl font-extrabold tracking-tight text-ink">{c.brand}</span>
+            <span className="inline-flex h-6 items-center rounded-full bg-inverse px-2.5 text-xs font-semibold text-on-inverse">
+              {c.product}
+            </span>
           </Link>
           <div className="ms-auto flex items-center gap-2">
-            <span className="hidden text-[13px] text-[var(--text-secondary)] sm:inline">
+            <span className="hidden text-[13px] text-ink-soft sm:inline">
               {c.signedInAs}{" "}
-              <span className="font-medium text-[var(--text-primary)]">{session.full_name ?? ADMIN_COPY.common.dash}</span>
+              <span className="font-medium text-ink">{session.full_name ?? ADMIN_COPY.common.dash}</span>
             </span>
-            <span className="rounded-full border border-[var(--border-subtle)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
+            <span className="inline-flex h-6 items-center rounded-full bg-brand-soft px-2.5 text-xs font-semibold text-brand-pressed">
               {c.roles[session.role] ?? session.role}
             </span>
             <button
@@ -71,13 +74,13 @@ export function AdminShell({ session, children }: { session: AdminWhoAmI; childr
               onClick={toggleTheme}
               aria-label={theme === "dark" ? c.themeLight : c.themeDark}
               title={theme === "dark" ? c.themeLight : c.themeDark}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+              className="inline-flex size-10 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             >
               {theme === "dark" ? <Sun size={18} aria-hidden /> : <Moon size={18} aria-hidden />}
             </button>
             <Link
               href="/"
-              className="hidden h-10 items-center rounded-[var(--radius)] px-3 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] md:inline-flex"
+              className="hidden h-10 items-center rounded-full border border-line-strong px-4 text-sm font-semibold text-ink transition-colors hover:border-ink hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus md:inline-flex"
             >
               {c.exit}
             </Link>
@@ -94,10 +97,10 @@ export function AdminShell({ session, children }: { session: AdminWhoAmI; childr
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]",
+                      "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
                       active
-                        ? "bg-[var(--text-primary)] text-[var(--bg-primary)]"
-                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]",
+                        ? "border-inverse bg-inverse text-on-inverse"
+                        : "border-line bg-card text-ink-soft hover:border-ink-soft hover:text-ink",
                     )}
                   >
                     <item.icon size={15} aria-hidden />
@@ -112,8 +115,8 @@ export function AdminShell({ session, children }: { session: AdminWhoAmI; childr
       </div>
 
       <div className="mx-auto flex max-w-[1280px] gap-8 px-4 lg:px-6">
-        <nav aria-label={c.navLabel} className="hidden w-52 shrink-0 py-6 lg:block">
-          <ul className="sticky top-20 flex flex-col gap-0.5">
+        <nav aria-label={c.navLabel} className="hidden w-56 shrink-0 py-6 lg:block">
+          <ul className="sticky top-24 flex flex-col gap-0.5">
             {NAV.map((item) => {
               const active = isActivePath(pathname, item.href, item.exact);
               return (
@@ -122,13 +125,13 @@ export function AdminShell({ session, children }: { session: AdminWhoAmI; childr
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex h-10 items-center gap-2.5 rounded-[var(--radius)] px-3 text-[14px] font-medium focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]",
+                      "flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
                       active
-                        ? "bg-[var(--bg-secondary)] text-[var(--text-primary)]"
-                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]",
+                        ? "bg-brand-soft font-semibold text-brand-pressed"
+                        : "text-ink-soft hover:bg-sunken hover:text-ink",
                     )}
                   >
-                    <item.icon size={17} aria-hidden className={active ? "text-[var(--accent-text)]" : undefined} />
+                    <item.icon size={18} aria-hidden className={active ? "text-brand-text" : "text-ink-muted"} />
                     {item.label}
                   </Link>
                 </li>
@@ -136,7 +139,7 @@ export function AdminShell({ session, children }: { session: AdminWhoAmI; childr
             })}
           </ul>
         </nav>
-        <main id="main" tabIndex={-1} className="min-w-0 flex-1 py-6 pb-24 focus:outline-none">
+        <main id="main" tabIndex={-1} className="min-w-0 flex-1 py-6 pb-24 focus:outline-none lg:py-8">
           {children}
         </main>
       </div>

@@ -12,7 +12,7 @@ import { ToastContainer } from "@/components/ui/toast";
  * authenticated app shell — the only surfaces with a theme toggle and the
  * only ones whose styles are fully token-driven. Public pages (landing,
  * explore, shop, booking, auth, customer portal, legal) are designed for the
- * light "Ink & Brass" palette and always render light.
+ * light "Deep Teal & Sand" palette and always render light.
  */
 export const THEMED_SEGMENTS = [
   "", // dashboard overview at /{locale}

@@ -3,12 +3,15 @@
 import { useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { QRCodeCanvas } from "qrcode.react";
-import { CalendarDays, Check, Copy, Download, ExternalLink, ImagePlus, MessageCircle, Share2 } from "lucide-react";
+import { CalendarDays, Check, ChevronRight, Copy, Download, ExternalLink, ImagePlus, MessageCircle, Share2 } from "lucide-react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
 import { Confetti } from "@/components/ui/confetti";
+import { Button } from "@/components/ui/button";
+import { buttonClasses, focusRing, labelClasses } from "@/components/ui/recipes";
+import { cn } from "@/lib/utils";
 import { bookingLink, qrFileName, whatsappShareUrl } from "../_lib/wizard";
-import { StepHeader, cardClass, cardStyle } from "./ui";
+import { StepHeader, cardClass } from "./ui";
 
 const noopSubscribe = () => () => {};
 
@@ -76,112 +79,122 @@ export function ShareScreen({
     }
   }
 
+  const nextLinks = [
+    { href: `${href("/settings/profile")}#photos`, icon: ImagePlus, title: s.share.nextPhotos, body: s.share.nextPhotosBody },
+    { href: href("/calendar"), icon: CalendarDays, title: s.share.nextCalendar, body: s.share.nextCalendarBody },
+  ];
+
   return (
     <div>
       {celebrate && <Confetti trigger />}
-      <StepHeader
-        eyebrow={s.share.eyebrow}
-        title={interpolate(s.share.title, { name: shopName })}
-        subtitle={marketplaceVisible ? s.share.subtitleMarketplace : s.share.subtitleLinkOnly}
-      />
+      <div className="mb-2 flex justify-center sm:justify-start">
+        <span
+          aria-hidden
+          className="grid size-16 place-items-center rounded-full bg-success-soft text-success-text"
+        >
+          <Check size={30} strokeWidth={2.5} />
+        </span>
+      </div>
+      <div className="text-center sm:text-start">
+        <StepHeader
+          eyebrow={s.share.eyebrow}
+          title={interpolate(s.share.title, { name: shopName })}
+          subtitle={marketplaceVisible ? s.share.subtitleMarketplace : s.share.subtitleLinkOnly}
+        />
+      </div>
 
-      <div className={`${cardClass} p-4`} style={cardStyle}>
-        <p className="field-label">{s.share.linkLabel}</p>
+      <div className={cn(cardClass, "p-4 shadow-card sm:p-5")}>
+        <p className={labelClasses}>{s.share.linkLabel}</p>
         <div className="flex items-stretch gap-2">
           <output
             dir="ltr"
-            className="field-input flex min-w-0 flex-1 items-center truncate !py-2 text-[15px]"
+            className="flex h-12 min-w-0 flex-1 items-center truncate rounded-lg border border-line bg-sunken px-4 text-[15px] font-medium text-ink"
             aria-label={s.share.linkLabel}
           >
             {link || "…"}
           </output>
-          <button type="button" onClick={copy} className="btn btn-secondary shrink-0 !px-3.5" disabled={!link}>
-            {copied ? <Check size={18} aria-hidden /> : <Copy size={18} aria-hidden />}
+          <Button
+            variant="secondary"
+            className="h-12 shrink-0 px-4"
+            onClick={copy}
+            disabled={!link}
+            icon={copied ? <Check aria-hidden /> : <Copy aria-hidden />}
+          >
             <span>{copied ? s.share.copiedShort : s.share.copy}</span>
-          </button>
+          </Button>
         </div>
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <a
             href={whatsappShareUrl(message)}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-primary w-full"
+            className={buttonClasses({ variant: "primary", fullWidth: true })}
             aria-disabled={!link || undefined}
           >
-            <MessageCircle size={18} aria-hidden />
+            <MessageCircle aria-hidden />
             {s.share.whatsapp}
           </a>
           {canShare ? (
-            <button type="button" onClick={nativeShare} className="btn btn-secondary w-full" disabled={!link}>
-              <Share2 size={18} aria-hidden />
+            <Button variant="secondary" fullWidth onClick={nativeShare} disabled={!link} icon={<Share2 aria-hidden />}>
               {s.share.more}
-            </button>
+            </Button>
           ) : (
-            <a href={link || undefined} target="_blank" rel="noopener noreferrer" className="btn btn-secondary w-full">
-              <ExternalLink size={18} aria-hidden />
+            <a href={link || undefined} target="_blank" rel="noopener noreferrer" className={buttonClasses({ variant: "secondary", fullWidth: true })}>
+              <ExternalLink aria-hidden />
               {s.share.preview}
             </a>
           )}
         </div>
       </div>
 
-      <div className={`${cardClass} mt-4 flex flex-col items-center gap-3 p-5 sm:flex-row sm:items-center sm:gap-5`} style={cardStyle}>
-        <div ref={qrWrap} className="rounded-lg bg-white p-3" aria-hidden={!link}>
+      <div className={cn(cardClass, "mt-4 flex flex-col items-center gap-4 p-5 shadow-card sm:flex-row sm:items-center sm:gap-6")}>
+        <div ref={qrWrap} className="rounded-xl border border-line bg-white p-3" aria-hidden={!link}>
           {link ? (
             <QRCodeCanvas
               value={link}
               size={168}
               level="M"
               marginSize={0}
-              fgColor="#1c1611"
+              fgColor="#0F172A"
               bgColor="#ffffff"
               role="img"
               aria-label={interpolate(s.share.qrAlt, { name: shopName })}
             />
           ) : (
-            <div className="h-[168px] w-[168px]" />
+            <div className="size-[168px]" />
           )}
         </div>
         <div className="text-center sm:text-start">
-          <p className="text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
-            {s.share.qrTitle}
-          </p>
-          <p className="mt-1 text-[13px]" style={{ color: "var(--text-muted)" }}>
-            {s.share.qrBody}
-          </p>
-          <button type="button" onClick={downloadQr} className="btn btn-secondary mt-3" disabled={!link}>
-            <Download size={18} aria-hidden />
+          <p className="text-title text-ink">{s.share.qrTitle}</p>
+          <p className="mt-1 text-[13px] text-ink-muted">{s.share.qrBody}</p>
+          <Button variant="secondary" size="sm" className="mt-3" onClick={downloadQr} disabled={!link} icon={<Download aria-hidden />}>
             {s.share.qrDownload}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <h2 className="mb-2 mt-8 text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
-        {s.share.nextTitle}
-      </h2>
-      <div className="flex flex-col gap-2.5">
-        <Link href={`${href("/settings/profile")}#photos`} className={`${cardClass} flex items-center gap-3 p-3.5 focus-visible:outline-none focus-visible:ring-2`} style={cardStyle}>
-          <ImagePlus size={20} aria-hidden style={{ color: "var(--accent-text)" }} />
-          <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-medium" style={{ color: "var(--text-primary)" }}>
-              {s.share.nextPhotos}
+      <h2 className="text-h3 mb-3 mt-10 text-ink">{s.share.nextTitle}</h2>
+      <div className="flex flex-col gap-3">
+        {nextLinks.map(({ href: to, icon: Icon, title, body }) => (
+          <Link
+            key={to}
+            href={to}
+            className={cn(
+              cardClass,
+              "group flex items-center gap-3 p-4 no-underline transition-[border-color,box-shadow] duration-150 hover:border-ink-soft hover:shadow-raised",
+              focusRing,
+            )}
+          >
+            <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand-text">
+              <Icon size={20} />
             </span>
-            <span className="block text-[13px]" style={{ color: "var(--text-muted)" }}>
-              {s.share.nextPhotosBody}
+            <span className="min-w-0 flex-1">
+              <span className="text-title block text-ink">{title}</span>
+              <span className="block text-[13px] text-ink-muted">{body}</span>
             </span>
-          </span>
-        </Link>
-        <Link href={href("/calendar")} className={`${cardClass} flex items-center gap-3 p-3.5 focus-visible:outline-none focus-visible:ring-2`} style={cardStyle}>
-          <CalendarDays size={20} aria-hidden style={{ color: "var(--accent-text)" }} />
-          <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-medium" style={{ color: "var(--text-primary)" }}>
-              {s.share.nextCalendar}
-            </span>
-            <span className="block text-[13px]" style={{ color: "var(--text-muted)" }}>
-              {s.share.nextCalendarBody}
-            </span>
-          </span>
-        </Link>
+            <ChevronRight size={18} aria-hidden className="shrink-0 text-ink-muted rtl:rotate-180" />
+          </Link>
+        ))}
       </div>
     </div>
   );

@@ -21,7 +21,7 @@ export function ShopStatePills({ shop }: { shop: Pick<AdminShopRow, "is_publishe
         </Pill>
       )}
       {num(shop.open_reports) > 0 && (
-        <Pill tone="brass" size="sm">
+        <Pill tone="warning" size="sm">
           {c.openReports(num(shop.open_reports))}
         </Pill>
       )}

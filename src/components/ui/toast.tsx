@@ -113,10 +113,12 @@ export function getToasts(): readonly ToastRecord[] {
   return toasts;
 }
 
+// v2 (§5.15): toasts sit on the inverse (ink) surface; icon colours use the
+// on-inverse tokens so they stay AA in both themes.
 const iconColors: Record<ToastType, string> = {
-  success: "text-[var(--accent-mint)]",
-  error: "text-[var(--accent-rose)]",
-  info: "text-[var(--accent-brass)]",
+  success: "text-on-inverse-brand",
+  error: "text-on-inverse-danger",
+  info: "text-on-inverse/80",
 };
 
 function ToastItem({ toast: item, closeLabel }: { toast: ToastRecord; closeLabel: string }) {
@@ -143,10 +145,10 @@ function ToastItem({ toast: item, closeLabel }: { toast: ToastRecord; closeLabel
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 24, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 12, scale: 0.97 }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8, transition: { duration: 0.18, ease: [0.3, 0, 0.8, 0.15] } }}
+      transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
@@ -155,12 +157,8 @@ function ToastItem({ toast: item, closeLabel }: { toast: ToastRecord; closeLabel
       }}
       data-type={item.type}
       className={cn(
-        "pointer-events-auto flex w-full items-start gap-3 px-4 py-3 rounded-[var(--radius-md,12px)]",
-        "bg-[var(--bg-elevated)] text-[var(--text-primary)]",
-        "border border-[var(--border-subtle)] shadow-[0_8px_24px_rgba(28,22,17,0.12)]",
-        item.type === "error" && "border-s-[3px] border-s-[var(--accent-rose)]",
-        item.type === "success" && "border-s-[3px] border-s-[var(--accent-mint)]",
-        "sm:min-w-[320px] sm:max-w-[460px]",
+        "pointer-events-auto flex w-[min(420px,calc(100vw-32px))] items-start gap-3 rounded-xl px-4 py-3",
+        "bg-inverse text-on-inverse text-sm shadow-float",
       )}
     >
       <span className="mt-0.5 shrink-0" aria-hidden="true">
@@ -181,7 +179,7 @@ function ToastItem({ toast: item, closeLabel }: { toast: ToastRecord; closeLabel
           <Icon size={20} className={iconColors[item.type]} />
         )}
       </span>
-      <p className="flex-1 min-w-0 pt-px text-[14px] leading-snug text-[var(--text-primary)] break-words">
+      <p className="min-w-0 flex-1 pt-px leading-5 break-words">
         {item.message}
       </p>
       {item.action && (
@@ -191,7 +189,7 @@ function ToastItem({ toast: item, closeLabel }: { toast: ToastRecord; closeLabel
             item.action?.onClick();
             dismissToast(item.id);
           }}
-          className="shrink-0 -my-1 h-8 px-2.5 rounded-[var(--radius-buttons)] text-[13px] font-semibold text-[var(--accent-text)] hover:bg-[var(--bg-secondary)] cursor-pointer"
+          className="-my-1 h-8 shrink-0 cursor-pointer rounded-full px-2.5 text-sm font-semibold text-on-inverse-brand hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-inverse-brand"
         >
           {item.action.label}
         </button>
@@ -200,7 +198,7 @@ function ToastItem({ toast: item, closeLabel }: { toast: ToastRecord; closeLabel
         type="button"
         onClick={() => dismissToast(item.id)}
         aria-label={closeLabel}
-        className="shrink-0 -my-1 -me-2 inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-buttons)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors cursor-pointer"
+        className="-my-1 -me-2 inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-on-inverse/70 transition-colors hover:bg-on-inverse/10 hover:text-on-inverse focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-inverse-brand motion-reduce:transition-none"
       >
         <X size={16} aria-hidden="true" />
       </button>
@@ -280,8 +278,11 @@ export function ToastContainer() {
         aria-label={t.common.notifications}
         className={cn(
           "pointer-events-none fixed z-[120] flex flex-col items-center gap-2",
-          "inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))]",
-          "sm:inset-x-0 sm:bottom-6 sm:mx-auto sm:w-fit",
+          // Bottom-centre on phones, lifted above a sticky bottom bar
+          // (--toast-offset, set via :has([data-sticky-bar])); bottom-end on desktop.
+          "inset-x-4 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+var(--toast-offset,0px))]",
+          "sm:inset-x-0 sm:mx-auto sm:w-fit",
+          "lg:inset-x-auto lg:end-6 lg:bottom-6 lg:mx-0 lg:items-end",
         )}
       >
         <AnimatePresence mode="popLayout" initial={false}>

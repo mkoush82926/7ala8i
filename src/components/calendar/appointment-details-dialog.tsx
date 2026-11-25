@@ -81,47 +81,47 @@ export function AppointmentDetailsDialog({
     >
       {a && (
         <div className="space-y-5">
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[14px]">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl border border-line bg-sunken/50 p-4 text-sm">
             <div>
-              <dt className="text-[12px] text-[var(--text-muted)]">{t.calendar.status}</dt>
+              <dt className="text-xs font-semibold text-ink-muted">{t.calendar.status}</dt>
               <dd className="mt-1">
                 <StatusPill status={a.status} />
               </dd>
             </div>
             <div>
-              <dt className="text-[12px] text-[var(--text-muted)]">{t.calendar.barber}</dt>
-              <dd className="mt-1 text-[var(--text-primary)]">{barberName}</dd>
+              <dt className="text-xs font-semibold text-ink-muted">{t.calendar.barber}</dt>
+              <dd className="mt-1 font-medium text-ink">{barberName}</dd>
             </div>
             <div>
-              <dt className="text-[12px] text-[var(--text-muted)]">{t.calendar.service}</dt>
-              <dd className="mt-1 text-[var(--text-primary)]">{services || "—"}</dd>
+              <dt className="text-xs font-semibold text-ink-muted">{t.calendar.service}</dt>
+              <dd className="mt-1 font-medium text-ink">{services || "—"}</dd>
             </div>
             <div>
-              <dt className="text-[12px] text-[var(--text-muted)]">{t.calendar.duration}</dt>
-              <dd className="mt-1 text-[var(--text-primary)]">{formatDuration(a.durationMinutes)}</dd>
+              <dt className="text-xs font-semibold text-ink-muted">{t.calendar.duration}</dt>
+              <dd className="mt-1 font-medium text-ink">{formatDuration(a.durationMinutes)}</dd>
             </div>
             <div>
-              <dt className="text-[12px] text-[var(--text-muted)]">{t.calendar.price}</dt>
-              <dd className="mt-1 font-semibold tabular-nums text-[var(--text-primary)]">
+              <dt className="text-xs font-semibold text-ink-muted">{t.calendar.price}</dt>
+              <dd className="mt-1 font-semibold tabular-nums text-ink">
                 {formatCurrency(a.price, a.currency)}
               </dd>
             </div>
             {(a.arrivedAt || a.startedAt) && (
-              <div className="col-span-2 flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-[var(--text-secondary)]">
+              <div className="col-span-2 flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-ink-soft">
                 {a.arrivedAt && <span>{interpolate(t.calendar.arrivedAt, { time: formatTime(a.arrivedAt) })}</span>}
                 {a.startedAt && <span>{interpolate(t.calendar.startedAt, { time: formatTime(a.startedAt) })}</span>}
               </div>
             )}
             {a.notes && (
               <div className="col-span-2">
-                <dt className="text-[12px] text-[var(--text-muted)]">{t.calendar.notes}</dt>
-                <dd className="mt-1 whitespace-pre-wrap text-[var(--text-secondary)]">{a.notes}</dd>
+                <dt className="text-xs font-semibold text-ink-muted">{t.calendar.notes}</dt>
+                <dd className="mt-1 whitespace-pre-wrap text-ink-soft">{a.notes}</dd>
               </div>
             )}
           </dl>
 
           {a.status === "no_show" && canEdit && onUndoNoShow && (
-            <div className="border-t border-[var(--border-subtle)] pt-4">
+            <div className="border-t border-line pt-4">
               <button
                 type="button"
                 className="btn btn-secondary w-full"
@@ -136,7 +136,7 @@ export function AppointmentDetailsDialog({
           )}
 
           {active && (
-            <div className="space-y-3 border-t border-[var(--border-subtle)] pt-4">
+            <div className="space-y-3 border-t border-line pt-4">
               {/* Front desk: check in, then seat */}
               {onStatus && (allowed.includes("arrived") || allowed.includes("in_chair")) && (
                 <div className="grid grid-cols-2 gap-2">
@@ -237,7 +237,7 @@ export function AppointmentDetailsDialog({
                 {allowed.includes("cancelled") && (
                   <button
                     type="button"
-                    className="btn btn-ghost text-[var(--accent-rose)]"
+                    className="btn btn-ghost text-danger-text"
                     disabled={!!busy}
                     onClick={() => onCancel(a)}
                   >
@@ -247,7 +247,7 @@ export function AppointmentDetailsDialog({
                 )}
               </div>
               {allowed.includes("no_show") && !noShowAllowed && (
-                <p id="no-show-too-early" className="text-[12px] text-[var(--text-muted)]">
+                <p id="no-show-too-early" className="text-[12px] text-ink-muted">
                   {t.calendar.noShowTooEarly}
                 </p>
               )}

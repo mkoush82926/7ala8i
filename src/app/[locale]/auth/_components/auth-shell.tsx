@@ -1,127 +1,179 @@
 "use client";
 
 // Shared building blocks for every auth screen (login, signup, forgot/reset
-// password, join). One layout, one field style (globals.css .auth-input /
-// .field-*), logical properties only — so LTR and RTL render identically.
+// password, join, the /start account step). One layout, one field style
+// (globals.css .auth-input / .field-*, v2 values), logical properties only —
+// so LTR and RTL render identically.
 
 import React, { useId, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
-import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, Globe, Loader2, type LucideIcon } from "lucide-react";
-import { useTranslation, headingTracking, FONT_EN_DISPLAY } from "@/hooks/use-translation";
+import { motion, useReducedMotion } from "framer-motion";
+import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, Globe, Info, type LucideIcon } from "lucide-react";
+import { useTranslation, FONT_EN_DISPLAY } from "@/hooks/use-translation";
+import { cn } from "@/lib/utils";
+import {
+  buttonClasses,
+  errorTextClasses,
+  focusRing,
+  helperClasses,
+  labelClasses,
+  spinnerClasses,
+  textLinkClasses,
+} from "@/components/ui/recipes";
 import { passwordStrength } from "../auth-errors";
 
 // ─── Layout ───
+//
+// Design System v2 §6.8: on desktop a 50/50 split — the form column (white,
+// card-less) and a deep-teal brand panel with the sand-stripe hatch and a
+// "how it works" card. Phones get the form only.
 
 interface AuthShellProps {
   children: React.ReactNode;
   /** Optional link shown in the top bar (e.g. "Sign in" on the signup page). */
   navLink?: { href: string; label: string };
-  /** Card width: "sm" ≈ 440px (forms), "lg" ≈ 960px (role picker). */
+  /** Form width: "sm" ≈ 448px (forms), "md" ≈ 512px (role picker), "lg" ≈ 768px. */
   width?: "sm" | "md" | "lg";
 }
 
-const WIDTHS = { sm: 440, md: 520, lg: 960 } as const;
+const WIDTHS = { sm: "max-w-md", md: "max-w-lg", lg: "max-w-3xl" } as const;
 
 export function AuthShell({ children, navLink, width = "sm" }: AuthShellProps) {
   const { t, FF, dir, locale, href, switchLocale } = useTranslation();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const reduceMotion = useReducedMotion();
   const otherLocale = locale === "ar" ? "en" : "ar";
   const query = searchParams?.toString();
   const switchHref = `${switchLocale(pathname || "/", otherLocale)}${query ? `?${query}` : ""}`;
+  const showVisual = width !== "lg";
 
   return (
     <div
       dir={dir}
-      style={{
-        minHeight: "100dvh",
-        display: "flex",
-        flexDirection: "column",
-        background: "var(--bg-secondary)",
-        color: "var(--text-primary)",
-        fontFamily: FF,
-      }}
+      className={cn("min-h-dvh bg-card text-ink", showVisual && "lg:grid lg:grid-cols-2")}
+      style={{ fontFamily: FF }}
     >
       <a href="#auth-main" className="skip-link">
         {t.auth.skipToForm}
       </a>
-      <nav
-        className="auth-nav"
-        aria-label={t.auth.navLabel}
-        style={{ background: "var(--bg-primary)", borderBottom: "1px solid var(--border-subtle)" }}
-      >
-        <Link
-          href={href("/landing")}
-          dir="ltr"
-          className="focus-ring"
-          style={{
-            fontFamily: FONT_EN_DISPLAY,
-            fontSize: 22,
-            fontWeight: 800,
-            letterSpacing: "0.012em",
-            color: "var(--text-primary)",
-            textDecoration: "none",
-            borderRadius: 6,
-          }}
+
+      <div className="flex min-h-dvh flex-col">
+        <nav
+          aria-label={t.auth.navLabel}
+          className="sticky top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-line bg-card/90 px-4 backdrop-blur supports-[backdrop-filter]:bg-card/75 sm:px-6 lg:static lg:border-transparent lg:bg-card lg:px-10 lg:backdrop-blur-none"
         >
-          Halaqy.
-        </Link>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Link
-            href={switchHref}
-            hrefLang={otherLocale}
-            lang={otherLocale}
-            aria-label={t.auth.switchLanguage}
-            className="btn btn-ghost focus-ring"
-            style={{ minHeight: 40, padding: "0 12px", fontSize: 14, color: "var(--text-secondary)" }}
-            onClick={() => {
-              try {
-                document.cookie = `NEXT_LOCALE=${otherLocale}; path=/; max-age=31536000; samesite=lax`;
-              } catch {
-                /* ignore */
-              }
-            }}
+            href={href("/landing")}
+            dir="ltr"
+            className={cn("rounded-md text-xl font-extrabold tracking-tight text-ink no-underline", focusRing)}
+            style={{ fontFamily: FONT_EN_DISPLAY }}
           >
-            <Globe size={16} aria-hidden="true" />
-            <span>{t.topbar.language}</span>
+            Halaqy<span className="text-brand-text">.</span>
           </Link>
-          {navLink && (
+          <div className="flex items-center gap-1 sm:gap-2">
             <Link
-              href={navLink.href}
-              className="btn btn-secondary"
-              style={{ borderRadius: 9999, minHeight: 40, padding: "0 16px", fontSize: 14 }}
+              href={switchHref}
+              hrefLang={otherLocale}
+              lang={otherLocale}
+              aria-label={t.auth.switchLanguage}
+              className={buttonClasses({ variant: "ghost", size: "sm" })}
+              onClick={() => {
+                try {
+                  document.cookie = `NEXT_LOCALE=${otherLocale}; path=/; max-age=31536000; samesite=lax`;
+                } catch {
+                  /* ignore */
+                }
+              }}
             >
-              {navLink.label}
+              <Globe aria-hidden="true" />
+              <span>{t.topbar.language}</span>
             </Link>
-          )}
-        </div>
-      </nav>
+            {navLink && (
+              <Link href={navLink.href} className={buttonClasses({ variant: "secondary", size: "sm" })}>
+                {navLink.label}
+              </Link>
+            )}
+          </div>
+        </nav>
 
-      <main id="auth-main" tabIndex={-1} className="auth-main" style={{ outline: "none" }}>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.25, 1, 0.5, 1] }}
-          style={{ width: "100%", maxWidth: WIDTHS[width] }}
+        <main
+          id="auth-main"
+          tabIndex={-1}
+          className="flex flex-1 justify-center px-4 pb-12 pt-8 outline-none sm:px-6 sm:pt-12 lg:items-center lg:px-10 lg:py-12"
         >
-          {children}
-        </motion.div>
-      </main>
+          <motion.div
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: reduceMotion ? 0.12 : 0.28, ease: [0.05, 0.7, 0.1, 1] }}
+            className={cn("w-full", WIDTHS[width])}
+          >
+            {children}
+          </motion.div>
+        </main>
 
-      <footer className="auth-footer" style={{ textAlign: "center" }}>
-        <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0 }}>
-          {t.auth.copyright.replace("{year}", String(new Date().getFullYear()))}
-        </p>
-      </footer>
+        <footer className="px-4 pb-8 text-center sm:px-6 lg:px-10 lg:text-start">
+          <p className="m-0 text-xs text-ink-muted">
+            {t.auth.copyright.replace("{year}", String(new Date().getFullYear()))}
+          </p>
+        </footer>
+      </div>
+
+      {showVisual && <AuthVisual />}
     </div>
   );
 }
 
-/** White card used inside AuthShell. */
+/** Desktop brand panel: teal fill + sand stripe, headline and a 3-step card. */
+function AuthVisual() {
+  const { t } = useTranslation();
+  const steps = [
+    { title: t.search.howStep1Title, body: t.search.howStep1Body },
+    { title: t.search.howStep2Title, body: t.search.howStep2Body },
+    { title: t.search.howStep3Title, body: t.search.howStep3Body },
+  ];
+  return (
+    <aside aria-hidden="true" className="relative hidden overflow-hidden bg-[#134E4A] lg:block">
+      <div className="sticky top-0 flex h-dvh flex-col justify-between p-10 xl:p-14">
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "linear-gradient(135deg,#0F766E 0%,#134E4A 100%)" }}
+        />
+        <div className="bg-hatch pointer-events-none absolute inset-0" />
+        <div
+          className="pointer-events-none absolute -end-24 -top-24 size-[420px] rounded-full opacity-40"
+          style={{ background: "radial-gradient(closest-side, rgb(94 234 212 / 0.35), transparent)" }}
+        />
+
+        <p className="relative max-w-md text-[40px] font-bold leading-[48px] tracking-tight text-white rtl:text-[36px] rtl:font-extrabold rtl:leading-[56px] rtl:tracking-normal xl:text-[48px] xl:leading-[56px] rtl:xl:text-[42px] rtl:xl:leading-[64px]">
+          {t.search.heroTitle}
+        </p>
+
+        <div className="relative max-w-md rounded-2xl bg-white/95 p-6 text-[#0F172A] shadow-float">
+          <p className="mb-4 text-base font-semibold">{t.search.howTitle}</p>
+          <ol className="space-y-4">
+            {steps.map((step, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#E6F2F0] text-sm font-bold tabular-nums text-[#134E4A]">
+                  {i + 1}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">{step.title}</span>
+                  <span className="mt-0.5 block text-[13px] leading-5 text-[#5B6B7F]">{step.body}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/** Form wrapper used inside AuthShell (card-less, per §6.8). */
 export function AuthCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`auth-card ${className}`.trim()}>{children}</div>;
+  return <div className={cn("w-full", className)}>{children}</div>;
 }
 
 interface AuthHeaderProps {
@@ -132,57 +184,22 @@ interface AuthHeaderProps {
   align?: "start" | "center";
 }
 
+const HEADER_TONES = {
+  neutral: "bg-brand-soft text-brand-text",
+  success: "bg-success-soft text-success-text",
+  error: "bg-danger-soft text-danger-text",
+} as const;
+
 export function AuthHeader({ title, subtitle, icon: Icon, tone = "neutral", align = "start" }: AuthHeaderProps) {
-  const { isRTL, FFD } = useTranslation();
-  const toneStyle =
-    tone === "success"
-      ? { background: "var(--accent-mint-muted)", color: "var(--accent-mint)" }
-      : tone === "error"
-        ? { background: "var(--accent-rose-muted)", color: "var(--accent-rose)" }
-        : { background: "var(--text-primary)", color: "var(--bg-primary)" };
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: align === "center" ? "center" : "flex-start",
-        textAlign: align === "center" ? "center" : "start",
-        marginBottom: 28,
-      }}
-    >
+    <div className={cn("mb-8 flex flex-col", align === "center" ? "items-center text-center" : "items-start text-start")}>
       {Icon && (
-        <div
-          aria-hidden="true"
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: 12,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 20,
-            ...toneStyle,
-          }}
-        >
-          <Icon size={22} />
+        <div aria-hidden="true" className={cn("bg-hatch-ink mb-5 grid size-14 place-items-center rounded-2xl", HEADER_TONES[tone])}>
+          <Icon size={26} />
         </div>
       )}
-      <h1
-        style={{
-          fontFamily: FFD,
-          fontSize: "clamp(24px, 6vw, 30px)",
-          fontWeight: 800,
-          lineHeight: 1.2,
-          letterSpacing: headingTracking(isRTL, "0.012em"),
-          color: "var(--text-primary)",
-          margin: "0 0 8px",
-        }}
-      >
-        {title}
-      </h1>
-      {subtitle && (
-        <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-secondary)", margin: 0 }}>{subtitle}</p>
-      )}
+      <h1 className="text-h1 mb-2 text-ink">{title}</h1>
+      {subtitle && <p className="text-body m-0 text-ink-muted">{subtitle}</p>}
     </div>
   );
 }
@@ -225,13 +242,13 @@ export function AuthField({
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-        <label htmlFor={id} className="field-label">
+      <div className="flex items-baseline justify-between gap-3">
+        <label htmlFor={id} className={labelClasses}>
           {label}
         </label>
         {labelAside}
       </div>
-      <div style={{ position: "relative" }}>
+      <div className="relative">
         {Icon && <Icon size={18} className="field-icon" aria-hidden="true" />}
         <input
           id={id}
@@ -243,13 +260,13 @@ export function AuthField({
         {action}
       </div>
       {error ? (
-        <p id={errorId} className="field-error" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <AlertCircle size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
+        <p id={errorId} className={errorTextClasses}>
+          <AlertCircle aria-hidden="true" />
           <span>{error}</span>
         </p>
       ) : null}
       {hint && !error ? (
-        <div id={hintId} style={{ marginTop: 6, fontSize: 13, color: "var(--text-muted)" }}>
+        <div id={hintId} className={helperClasses}>
           {hint}
         </div>
       ) : null}
@@ -283,7 +300,7 @@ export function PasswordField({ showStrength, hint, value, ...props }: PasswordF
       action={
         <button
           type="button"
-          className="field-action focus-ring"
+          className={cn("field-action", focusRing)}
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? t.auth.hidePassword : t.auth.showPassword}
           aria-pressed={visible}
@@ -301,25 +318,22 @@ export function PasswordStrength({ password }: { password: string }) {
   const score = passwordStrength(password);
   if (!score) return null;
   const labels = [t.auth.strengthWeak, t.auth.strengthWeak, t.auth.strengthFair, t.auth.strengthGood, t.auth.strengthStrong];
-  const colors = ["", "var(--accent-rose)", "var(--accent-brass)", "var(--accent-brass)", "var(--accent-mint)"];
+  const colors = ["", "bg-danger", "bg-warning", "bg-brand", "bg-success"];
   const label = labels[score];
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <div aria-hidden="true" style={{ display: "flex", gap: 4, flex: 1 }}>
+    <div className="flex items-center gap-2.5">
+      <div aria-hidden="true" className="flex flex-1 gap-1">
         {[1, 2, 3, 4].map((level) => (
           <span
             key={level}
-            style={{
-              flex: 1,
-              height: 4,
-              borderRadius: 9999,
-              background: level <= score ? colors[score] : "var(--border-subtle)",
-              transition: "background 0.2s",
-            }}
+            className={cn(
+              "h-1 flex-1 rounded-full transition-colors duration-200 motion-reduce:transition-none",
+              level <= score ? colors[score] : "bg-sunken-2",
+            )}
           />
         ))}
       </div>
-      <span aria-live="polite" style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+      <span aria-live="polite" className="whitespace-nowrap text-xs font-semibold text-ink-soft">
         {t.auth.passwordStrength.replace("{level}", label)}
       </span>
     </div>
@@ -335,30 +349,19 @@ export function AuthAlert({
   children: React.ReactNode;
   tone?: "error" | "success" | "info";
 }) {
-  const palette =
-    tone === "error"
-      ? { bg: "var(--accent-rose-muted)", fg: "var(--accent-rose)", Icon: AlertCircle }
-      : { bg: "var(--accent-mint-muted)", fg: "var(--text-primary)", Icon: CheckCircle2 };
-  const Icon = palette.Icon;
+  const Icon = tone === "error" ? AlertCircle : tone === "info" ? Info : CheckCircle2;
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
-      className={tone === "error" ? "error-shake" : undefined}
-      style={{
-        display: "flex",
-        gap: 10,
-        alignItems: "flex-start",
-        padding: "12px 14px",
-        borderRadius: 10,
-        background: palette.bg,
-        color: palette.fg,
-        fontSize: 14,
-        fontWeight: 500,
-        lineHeight: 1.5,
-      }}
+      className={cn(
+        "flex items-start gap-2.5 rounded-lg px-3.5 py-3 text-sm font-medium leading-5",
+        tone === "error" && "error-shake bg-danger-soft text-danger-text",
+        tone === "success" && "bg-success-soft text-success-text",
+        tone === "info" && "bg-brand-soft text-brand-pressed",
+      )}
     >
-      <Icon size={18} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1, color: tone === "error" ? undefined : "var(--accent-mint)" }} />
-      <div style={{ minWidth: 0 }}>{children}</div>
+      <Icon size={18} aria-hidden="true" className="mt-px shrink-0" />
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }
@@ -370,25 +373,24 @@ interface SubmitButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement
   arrow?: boolean;
 }
 
-export function SubmitButton({ loading, loadingLabel, arrow = true, children, disabled, style, ...props }: SubmitButtonProps) {
+export function SubmitButton({ loading, loadingLabel, arrow = true, children, disabled, className, ...props }: SubmitButtonProps) {
   return (
     <button
       type="submit"
-      className="btn btn-primary"
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      style={{ width: "100%", minHeight: 52, fontWeight: 600, ...style }}
+      className={buttonClasses({ variant: "primary", size: "xl", fullWidth: true, className })}
       {...props}
     >
       {loading ? (
         <>
-          <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+          <span aria-hidden="true" className={spinnerClasses} />
           <span>{loadingLabel ?? children}</span>
         </>
       ) : (
         <>
           <span>{children}</span>
-          {arrow && <ArrowRight size={16} aria-hidden="true" className="rtl:-scale-x-100" />}
+          {arrow && <ArrowRight aria-hidden="true" className="rtl:-scale-x-100" />}
         </>
       )}
     </button>
@@ -400,15 +402,15 @@ export function TermsNotice({ template }: { template: string }) {
   const { t, href } = useTranslation();
   const [before, rest = ""] = template.split("{terms}");
   const [middle, after = ""] = rest.split("{privacy}");
-  const linkStyle: React.CSSProperties = { color: "var(--text-secondary)", textDecoration: "underline", textUnderlineOffset: 2 };
+  const linkClass = cn("rounded-sm text-ink-soft underline underline-offset-2 hover:text-ink", focusRing);
   return (
-    <p style={{ textAlign: "center", marginTop: 20, fontSize: 12, lineHeight: 1.6, color: "var(--text-muted)" }}>
+    <p className="mt-6 text-center text-xs leading-5 text-ink-muted">
       {before}
-      <Link href={href("/terms")} style={linkStyle}>
+      <Link href={href("/terms")} className={linkClass}>
         {t.auth.terms}
       </Link>
       {middle}
-      <Link href={href("/privacy")} style={linkStyle}>
+      <Link href={href("/privacy")} className={linkClass}>
         {t.auth.privacyText}
       </Link>
       {after}
@@ -419,12 +421,9 @@ export function TermsNotice({ template }: { template: string }) {
 /** Small inline link-style text row ("Don't have an account? Create account"). */
 export function AuthFootnote({ text, linkLabel, linkHref }: { text: React.ReactNode; linkLabel: React.ReactNode; linkHref: string }) {
   return (
-    <p style={{ marginTop: 24, textAlign: "center", fontSize: 14, color: "var(--text-secondary)" }}>
+    <p className="mt-6 text-center text-sm text-ink-muted">
       {text}{" "}
-      <Link
-        href={linkHref}
-        style={{ color: "var(--text-primary)", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3, textDecorationColor: "var(--border-primary)" }}
-      >
+      <Link href={linkHref} className={cn("rounded-sm", textLinkClasses, focusRing)}>
         {linkLabel}
       </Link>
     </p>

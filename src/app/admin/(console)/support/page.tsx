@@ -72,7 +72,7 @@ export default async function AdminSupportPage() {
       />
 
       {!write && (
-        <p role="note" className="mb-5 rounded-[var(--radius)] bg-[var(--bg-secondary)] p-3 text-[13px] text-[var(--text-secondary)]">
+        <p role="note" className="mb-5 rounded-lg bg-sunken p-3 text-[13px] text-ink-soft">
           {c.readOnlyNote}
         </p>
       )}
@@ -98,7 +98,7 @@ export default async function AdminSupportPage() {
             <ul className="flex flex-wrap gap-2">
               {snap.publish_missing.map((m) => (
                 <li key={m}>
-                  <Pill tone="brass" size="sm">
+                  <Pill tone="warning" size="sm">
                     {c.missing[m] ?? m}
                   </Pill>
                 </li>
@@ -113,14 +113,14 @@ export default async function AdminSupportPage() {
 
         <Section id="services" title={c.servicesTitle}>
           {snap.services.length === 0 ? (
-            <p className="text-[14px] text-[var(--text-secondary)]">{c.servicesEmpty}</p>
+            <p className="text-[14px] text-ink-soft">{c.servicesEmpty}</p>
           ) : (
-            <ul className="divide-y divide-[var(--border-subtle)]">
+            <ul className="divide-y divide-line">
               {snap.services.map((s) => (
                 <li key={s.id} className="flex items-center justify-between gap-3 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate text-[14px] font-medium">{s.name}</p>
-                    <p className="text-[12px] text-[var(--text-muted)]">
+                    <p className="text-[12px] text-ink-muted">
                       {s.name_ar ? <span dir="rtl">{s.name_ar} · </span> : null}
                       {formatJodPlain(s.price)} · {c.minutes(num(s.duration))}
                       {!s.online_bookable ? ` · ${c.notBookable}` : ""}
@@ -142,13 +142,13 @@ export default async function AdminSupportPage() {
         <div className="grid gap-5 lg:grid-cols-2">
           <Section id="team" title={c.teamTitle}>
             {snap.team.length === 0 ? (
-              <p className="text-[14px] text-[var(--text-secondary)]">{ADMIN_COPY.shop.staffEmpty}</p>
+              <p className="text-[14px] text-ink-soft">{ADMIN_COPY.shop.staffEmpty}</p>
             ) : (
-              <ul className="divide-y divide-[var(--border-subtle)]">
+              <ul className="divide-y divide-line">
                 {snap.team.map((m) => (
                   <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
                     <span className="text-[14px] font-medium">{m.full_name}</span>
-                    <span className="flex items-center gap-2 text-[12px] text-[var(--text-muted)]">
+                    <span className="flex items-center gap-2 text-[12px] text-ink-muted">
                       {ADMIN_COPY.abuse.roleLabels[m.role] ?? m.role}
                       {!m.online_bookable && (
                         <Pill tone="neutral" size="sm">
@@ -164,9 +164,9 @@ export default async function AdminSupportPage() {
 
           <Section id="upcoming" title={c.upcomingTitle}>
             {snap.upcoming.length === 0 ? (
-              <p className="text-[14px] text-[var(--text-secondary)]">{c.upcomingEmpty}</p>
+              <p className="text-[14px] text-ink-soft">{c.upcomingEmpty}</p>
             ) : (
-              <ul className="divide-y divide-[var(--border-subtle)]">
+              <ul className="divide-y divide-line">
                 {snap.upcoming.map((a) => (
                   <li key={a.id} className="py-2.5">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -177,7 +177,7 @@ export default async function AdminSupportPage() {
                         {a.status}
                       </Pill>
                     </div>
-                    <p className="text-[12px] text-[var(--text-muted)]">
+                    <p className="text-[12px] text-ink-muted">
                       {[a.service_name, a.barber_name, a.client_first_name].filter(Boolean).join(" · ")}
                       {a.client_phone_masked ? (
                         <>
@@ -193,10 +193,10 @@ export default async function AdminSupportPage() {
           </Section>
         </div>
 
-        <p className="text-[13px] text-[var(--text-secondary)]">
+        <p className="text-[13px] text-ink-soft">
           <Link
             href={`/admin/audit?target=${snap.shop.id}`}
-            className="rounded underline underline-offset-2 focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+            className="rounded underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
             {ADMIN_COPY.overview.seeAll}
           </Link>

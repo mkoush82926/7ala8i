@@ -23,8 +23,8 @@ import {
   type TaxDraft,
 } from "./tax-logic";
 
-const card = "flex flex-col gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 sm:p-5";
-const h2 = "m-0 text-base font-bold text-[var(--text-primary)]";
+const card = "flex flex-col gap-5 rounded-xl border border-line bg-card p-4 sm:p-6";
+const h2 = "text-h3 m-0 text-ink";
 
 /** Tax registration, cash rounding and receipt numbering/footer. */
 export function TaxSettings() {
@@ -135,11 +135,11 @@ export function TaxSettings() {
             checked={d.isTaxRegistered}
             onChange={(e) => set({ isTaxRegistered: e.target.checked })}
             disabled={saving}
-            className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent-brass)]"
+            className="mt-1 h-4 w-4 shrink-0 accent-brand"
           />
           <span>
-            <span className="block text-sm font-semibold text-[var(--text-primary)]">{tt.registered}</span>
-            <span className="block text-[13px] text-[var(--text-secondary)]">{tt.registeredHint}</span>
+            <span className="block text-sm font-semibold text-ink">{tt.registered}</span>
+            <span className="block text-[13px] text-ink-soft">{tt.registeredHint}</span>
           </span>
         </label>
         <div className={cn("grid gap-3 sm:grid-cols-2", !d.isTaxRegistered && "opacity-60")}>
@@ -158,7 +158,7 @@ export function TaxSettings() {
               className="field-input tabular-nums"
               aria-describedby="tx-number-hint"
             />
-            <span id="tx-number-hint" className="text-[12px] text-[var(--text-muted)]">
+            <span id="tx-number-hint" className="text-[12px] text-ink-muted">
               {tt.taxNumberHint}
             </span>
           </div>
@@ -177,7 +177,7 @@ export function TaxSettings() {
             />
           </div>
         </div>
-        <p className="m-0 rounded-xl bg-[var(--bg-secondary)] p-3 text-[13px] text-[var(--text-secondary)]">
+        <p className="m-0 rounded-xl bg-sunken p-3 text-[13px] text-ink-soft">
           {d.isTaxRegistered && rate > 0
             ? interpolate(tt.inclusiveExample, {
                 price: formatJOD(example, locale),
@@ -194,7 +194,7 @@ export function TaxSettings() {
           <h2 id="tr-title" className={h2}>
             {tt.roundingTitle}
           </h2>
-          <p className="m-0 mt-1 text-sm text-[var(--text-secondary)]">{tt.roundingHelp}</p>
+          <p className="m-0 mt-1 text-sm text-ink-soft">{tt.roundingHelp}</p>
         </div>
         <div role="radiogroup" aria-labelledby="tr-title" className="flex flex-wrap gap-2">
           {CASH_ROUNDING_STEPS.map((step) => (
@@ -208,8 +208,8 @@ export function TaxSettings() {
               className={cn(
                 "focus-ring min-h-11 rounded-full border px-4 text-sm font-medium tabular-nums transition-colors",
                 d.cashRounding === step
-                  ? "border-[var(--text-primary)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
-                  : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-primary)]",
+                  ? "border-ink bg-sunken text-ink"
+                  : "border-line text-ink-soft hover:border-line-strong",
               )}
             >
               {step === 0 ? tt.roundingOff : formatJOD(step, locale)}
@@ -221,12 +221,12 @@ export function TaxSettings() {
       {/* ── Receipts ── */}
       <section aria-labelledby="rc-title" className={card}>
         <div className="flex items-start gap-3">
-          <Receipt size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--text-secondary)]" />
+          <Receipt size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-soft" />
           <div>
             <h2 id="rc-title" className={h2}>
               {tt.receiptsTitle}
             </h2>
-            <p className="m-0 mt-1 text-sm text-[var(--text-secondary)]">{tt.receiptsHelp}</p>
+            <p className="m-0 mt-1 text-sm text-ink-soft">{tt.receiptsHelp}</p>
           </div>
         </div>
         <div className="flex flex-col gap-1">
@@ -243,7 +243,7 @@ export function TaxSettings() {
             className="field-input uppercase sm:w-48"
             aria-describedby="rc-prefix-hint"
           />
-          <span id="rc-prefix-hint" className="text-[12px] text-[var(--text-muted)]">
+          <span id="rc-prefix-hint" className="text-[12px] text-ink-muted">
             {interpolate(tt.prefixHint, { example: receiptNumberPreview(d.receiptPrefix, 1) })}
           </span>
         </div>
@@ -281,7 +281,7 @@ export function TaxSettings() {
             />
           </div>
         </div>
-        <p className="m-0 text-[12px] text-[var(--text-muted)]">{tt.sequenceNote}</p>
+        <p className="m-0 text-[12px] text-ink-muted">{tt.sequenceNote}</p>
       </section>
 
       {error && (
@@ -291,7 +291,7 @@ export function TaxSettings() {
       )}
 
       {/* Sticky save within thumb reach on mobile. */}
-      <div className="sticky bottom-0 z-10 -mx-4 flex justify-end gap-2 border-t border-[var(--border-subtle)] bg-[var(--bg-primary)] px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
+      <div className="sticky bottom-0 z-10 -mx-4 flex justify-end gap-2 border-t border-line bg-card px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
         <button type="button" className="btn btn-secondary min-h-11 flex-1 sm:flex-none" onClick={() => setDraft(null)} disabled={saving || !dirty}>
           {tt.discard}
         </button>

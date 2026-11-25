@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import {
   AlertTriangle,
-  ArrowLeft,
   BellOff,
   BellRing,
   Laptop,
@@ -14,7 +12,9 @@ import {
   Tablet,
   Trash2,
 } from "lucide-react";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import { useTranslation } from "@/hooks/use-translation";
+import { SettingsSubpageHeader } from "@/components/settings/settings-subpage-header";
+import { buttonClasses } from "@/components/ui/recipes";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/toast";
@@ -78,14 +78,14 @@ function Switch({
       <span
         aria-hidden="true"
         className={cn(
-          "relative inline-block h-6 w-10 rounded-full transition-colors",
-          checked ? "bg-[var(--accent-brass)]" : "bg-[var(--border-primary)]",
+          "relative inline-block h-6 w-11 rounded-full transition-colors duration-150 motion-reduce:transition-none",
+          checked ? "bg-brand" : "bg-line-strong",
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 size-5 rounded-full bg-[var(--bg-primary)] shadow transition-[inset-inline-start]",
-            checked ? "start-[1.125rem]" : "start-0.5",
+            "absolute top-0.5 size-5 rounded-full bg-white shadow-xs transition-[inset-inline-start] duration-150 motion-reduce:transition-none",
+            checked ? "start-[22px]" : "start-0.5",
           )}
         />
       </span>
@@ -97,13 +97,13 @@ function Card({ title, hint, children, id }: { title: string; hint?: string; chi
   return (
     <section
       aria-labelledby={id}
-      className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 sm:p-5"
+      className="rounded-xl border border-line bg-card p-4 sm:p-6"
     >
-      <h2 id={id} className="m-0 text-base font-bold text-[var(--text-primary)]">
+      <h2 id={id} className="text-h3 m-0 text-ink">
         {title}
       </h2>
-      {hint && <p className="mt-1 text-sm text-[var(--text-secondary)]">{hint}</p>}
-      <div className="mt-4">{children}</div>
+      {hint && <p className="mt-1 text-sm text-ink-muted">{hint}</p>}
+      <div className="mt-5">{children}</div>
     </section>
   );
 }
@@ -118,10 +118,8 @@ const DEVICE_ICON: Record<DeviceKind, typeof Smartphone> = {
   other: Laptop,
 };
 
-const btnSecondary =
-  "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-4 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] disabled:opacity-60";
-const btnPrimary =
-  "focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--cta-bg)] px-5 text-sm font-bold text-[var(--cta-fg)] hover:opacity-90 disabled:opacity-60";
+const btnSecondary = buttonClasses({ variant: "secondary", className: "text-sm" });
+const btnPrimary = buttonClasses({ variant: "primary", className: "text-sm" });
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 
@@ -129,7 +127,7 @@ type LoadState = "loading" | "ready" | "error";
 
 /** Settings › Notifications (WS-1K): this device, per-event push/WhatsApp toggles, devices. */
 export function NotificationSettings() {
-  const { t, locale, isRTL, FFD, href, formatRelative } = useTranslation();
+  const { t, locale, href, formatRelative } = useTranslation();
   const tn = t.notificationSettings;
   const hydrated = useWorkspaceStore((s) => s.hydrated);
   const userId = useWorkspaceStore((s) => s.userId);
@@ -302,24 +300,7 @@ export function NotificationSettings() {
   // ── Render ──
 
   const header = (
-    <header className="flex items-start gap-3">
-      <Link
-        href={href("/settings")}
-        aria-label={tn.back}
-        className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-secondary)]"
-      >
-        <ArrowLeft size={16} aria-hidden="true" className="rtl:-scale-x-100" />
-      </Link>
-      <div className="min-w-0">
-        <h1
-          className="m-0 text-[24px] font-extrabold text-[var(--text-primary)] sm:text-[28px]"
-          style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.014em") }}
-        >
-          {tn.title}
-        </h1>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">{tn.subtitle}</p>
-      </div>
-    </header>
+    <SettingsSubpageHeader title={tn.title} subtitle={tn.subtitle} backHref={href("/settings")} backLabel={tn.back} />
   );
 
   let body: React.ReactNode;
@@ -386,7 +367,7 @@ export function NotificationSettings() {
         {/* ── Events × channels ── */}
         <Card id="ns-events" title={tn.eventsTitle} hint={tn.eventsHint}>
           <div role="table" aria-label={tn.eventsTitle} className="flex flex-col">
-            <div role="row" className="flex items-center gap-2 border-b border-[var(--border-subtle)] pb-2 text-xs font-semibold text-[var(--text-muted)]">
+            <div role="row" className="flex items-center gap-2 border-b border-line pb-2 text-xs font-semibold text-ink-muted">
               <span role="columnheader" className="flex-1">
                 {tn.eventColumn}
               </span>
@@ -398,10 +379,10 @@ export function NotificationSettings() {
               </span>
             </div>
             {STAFF_PUSH_EVENTS.map((event) => (
-              <div role="row" key={event} className="flex items-center gap-2 border-b border-[var(--border-subtle)] py-2 last:border-b-0">
+              <div role="row" key={event} className="flex items-center gap-2 border-b border-line py-2 last:border-b-0">
                 <div role="rowheader" className="min-w-0 flex-1">
-                  <p className="m-0 text-sm font-medium text-[var(--text-primary)]">{tn.events[event].label}</p>
-                  <p className="m-0 text-xs text-[var(--text-secondary)]">{tn.events[event].hint}</p>
+                  <p className="m-0 text-sm font-medium text-ink">{tn.events[event].label}</p>
+                  <p className="m-0 text-xs text-ink-soft">{tn.events[event].hint}</p>
                 </div>
                 {(["push", "whatsapp"] as const).map((channel) => (
                   <div role="cell" key={channel} className="flex w-14 justify-center">
@@ -416,12 +397,12 @@ export function NotificationSettings() {
               </div>
             ))}
           </div>
-          <p className="mt-3 flex items-start gap-2 text-xs text-[var(--text-secondary)]">
+          <p className="mt-3 flex items-start gap-2 text-xs text-ink-soft">
             <MessageCircle size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
             <span>{tn.whatsappHint}</span>
           </p>
           {!hasPhone && STAFF_PUSH_EVENTS.some((e) => matrix[e].whatsapp) && (
-            <p role="status" className="mt-2 flex items-start gap-2 text-xs font-medium text-[var(--accent-rose)]">
+            <p role="status" className="mt-2 flex items-start gap-2 text-xs font-medium text-danger-text">
               <AlertTriangle size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
               <span>{tn.noPhone}</span>
             </p>
@@ -439,10 +420,10 @@ export function NotificationSettings() {
                 const Icon = DEVICE_ICON[info.kind];
                 const isThis = d.endpoint === currentEndpoint;
                 return (
-                  <li key={d.id} className="flex items-center gap-3 rounded-xl bg-[var(--bg-secondary)] p-3">
-                    <Icon size={18} aria-hidden="true" className="shrink-0 text-[var(--text-secondary)]" />
+                  <li key={d.id} className="flex items-center gap-3 rounded-xl bg-sunken p-3">
+                    <Icon size={18} aria-hidden="true" className="shrink-0 text-ink-soft" />
                     <div className="min-w-0 flex-1">
-                      <p className="m-0 flex flex-wrap items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
+                      <p className="m-0 flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
                         <span>{tn.deviceKinds[info.kind]}</span>
                         {isThis && <Pill size="sm" tone="ink">{tn.thisDevice}</Pill>}
                         {isDeviceUnhealthy(d) && (
@@ -452,7 +433,7 @@ export function NotificationSettings() {
                         )}
                       </p>
                       <MetaLine
-                        className="text-xs text-[var(--text-secondary)]"
+                        className="text-xs text-ink-soft"
                         items={[
                           info.browser,
                           d.locale === "en" ? tn.alertLanguageEn : tn.alertLanguageAr,
@@ -464,7 +445,7 @@ export function NotificationSettings() {
                       type="button"
                       onClick={() => setRemoveTarget(d)}
                       aria-label={`${tn.removeDevice} · ${tn.deviceKinds[info.kind]}`}
-                      className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--bg-primary)] hover:text-[var(--accent-rose)]"
+                      className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-card hover:text-danger-text"
                     >
                       <Trash2 size={16} aria-hidden="true" />
                     </button>
@@ -517,15 +498,15 @@ function Notice({
   tone?: "neutral" | "danger";
 }) {
   return (
-    <div role="status" className="flex items-start gap-3 rounded-xl bg-[var(--bg-secondary)] p-3">
+    <div role="status" className="flex items-start gap-3 rounded-xl bg-sunken p-3">
       <Icon
         size={18}
         aria-hidden="true"
-        className={cn("mt-0.5 shrink-0", tone === "danger" ? "text-[var(--accent-rose)]" : "text-[var(--text-secondary)]")}
+        className={cn("mt-0.5 shrink-0", tone === "danger" ? "text-danger-text" : "text-ink-soft")}
       />
       <div className="min-w-0">
-        <p className="m-0 text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-        <p className="m-0 mt-0.5 text-sm text-[var(--text-secondary)]">{body}</p>
+        <p className="m-0 text-sm font-semibold text-ink">{title}</p>
+        <p className="m-0 mt-0.5 text-sm text-ink-soft">{body}</p>
       </div>
     </div>
   );

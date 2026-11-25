@@ -1,20 +1,34 @@
 "use client";
 
 import React from "react";
+import { Armchair, Check, CheckCheck, Clock, DoorOpen, Hourglass, UserX, XCircle, type LucideIcon } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
+import { Pill, type PillTone } from "@/components/ui/pill";
 import { normalizeAppointmentStatus, type AppointmentStatus } from "@/lib/types";
 import type { TranslationKeys } from "@/i18n/en";
-import { cn } from "@/lib/utils";
 
-const BADGE_CLASS: Record<AppointmentStatus, string> = {
-  pending: "badge-pending",
-  confirmed: "badge-upcoming",
-  completed: "badge-completed",
-  no_show: "badge-noshow",
-  cancelled: "badge-cancelled",
-  arrived: "badge-upcoming",
-  in_chair: "badge-upcoming",
-  awaiting_deposit: "badge-pending",
+/** v2 §5.5 tones: confirmed → brand, completed → success, pending → warning, no-show → danger, cancelled → neutral. */
+const TONE: Record<AppointmentStatus, PillTone> = {
+  pending: "warning",
+  confirmed: "brand",
+  completed: "success",
+  no_show: "danger",
+  cancelled: "neutral",
+  arrived: "brand",
+  in_chair: "brand",
+  awaiting_deposit: "warning",
+};
+
+/** Status is never colour alone: every tone carries an icon and a label. */
+const ICON: Record<AppointmentStatus, LucideIcon> = {
+  pending: Clock,
+  confirmed: Check,
+  completed: CheckCheck,
+  no_show: UserX,
+  cancelled: XCircle,
+  arrived: DoorOpen,
+  in_chair: Armchair,
+  awaiting_deposit: Hourglass,
 };
 
 export function statusLabel(t: TranslationKeys, status: AppointmentStatus): string {
@@ -51,9 +65,10 @@ export function StatusBadge({
 }) {
   const { t } = useTranslation();
   const s = normalizeAppointmentStatus(status) ?? "confirmed";
+  const Icon = paid ? CheckCheck : ICON[s];
   return (
-    <span className={cn("badge font-bold", paid ? "badge-completed" : BADGE_CLASS[s], className)}>
+    <Pill tone={paid ? "success" : TONE[s]} icon={<Icon />} className={className}>
       {paid ? t.dashboard.paid : statusLabel(t, s)}
-    </span>
+    </Pill>
   );
 }

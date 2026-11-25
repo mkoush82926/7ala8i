@@ -9,6 +9,8 @@
 import React, { useEffect, useState } from "react";
 import { Download, Share, X } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
+import { buttonClasses } from "@/components/ui/recipes";
+import { cn } from "@/lib/utils";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -38,7 +40,7 @@ function readDismissed(): number | null {
   }
 }
 
-export function PwaInstallPrompt() {
+export function PwaInstallPrompt({ className }: { className?: string }) {
   const { t } = useTranslation();
   const S = t.search;
   const [evt, setEvt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -91,19 +93,25 @@ export function PwaInstallPrompt() {
   return (
     <aside
       aria-labelledby="pwa-title"
-      className="mx-auto mt-10 flex w-full max-w-[1200px] items-start gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-4 sm:items-center"
+      className={cn(
+        "fade-slide-up flex w-full items-start gap-4 rounded-2xl border border-line bg-card p-4 shadow-card sm:items-center sm:p-5",
+        className,
+      )}
     >
-      <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--bg-primary)] text-[var(--accent-text)]">
-        {mode === "ios" ? <Share size={18} /> : <Download size={18} />}
+      <span
+        aria-hidden="true"
+        className="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-soft text-brand-text [&_svg]:size-5"
+      >
+        {mode === "ios" ? <Share /> : <Download />}
       </span>
       <div className="min-w-0 flex-1">
-        <p id="pwa-title" className="text-[15px] font-bold text-[var(--text-primary)]">
+        <p id="pwa-title" className="text-title text-ink">
           {S.installTitle}
         </p>
-        <p className="text-[13.5px] text-[var(--text-secondary)]">{mode === "ios" ? S.installIosHint : S.installBody}</p>
+        <p className="mt-0.5 text-sm text-ink-muted">{mode === "ios" ? S.installIosHint : S.installBody}</p>
       </div>
       {mode === "prompt" && (
-        <button type="button" onClick={install} className="btn btn-secondary !min-h-[40px] shrink-0 !rounded-full !px-4 !text-[14px]">
+        <button type="button" onClick={install} className={buttonClasses({ variant: "secondary", size: "sm", className: "h-10 px-4" })}>
           {S.installCta}
         </button>
       )}
@@ -111,9 +119,9 @@ export function PwaInstallPrompt() {
         type="button"
         onClick={dismiss}
         aria-label={S.installDismiss}
-        className="focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]"
+        className={buttonClasses({ variant: "ghost", size: "icon-sm", className: "-me-1" })}
       >
-        <X size={16} aria-hidden="true" />
+        <X aria-hidden="true" />
       </button>
     </aside>
   );

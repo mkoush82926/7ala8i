@@ -10,21 +10,17 @@ export interface StageMeta {
   color: string;
 }
 
+/**
+ * Stage hues from the v2 chart palette (theme-aware CSS vars). Used for dots,
+ * column accents and tints only — stage text is always ink, so contrast never
+ * depends on the hue.
+ */
 export const STAGE_COLORS: Record<LeadStage, string> = {
-  new: "var(--accent-blue)",
-  contacted: "var(--accent-lavender)",
-  booked: "var(--accent-amber)",
-  completed: "var(--accent-mint)",
-  regular: "var(--accent-rose)",
-};
-
-/** Pill classes for a stage badge (text + tinted background tokens). */
-export const STAGE_PILL: Record<LeadStage, string> = {
-  new: "text-[var(--accent-blue)] bg-[var(--accent-blue-muted)]",
-  contacted: "text-[var(--accent-lavender)] bg-[var(--accent-lavender-muted)]",
-  booked: "text-[var(--accent-amber)] bg-[var(--accent-amber-muted)]",
-  completed: "text-[var(--accent-mint)] bg-[var(--accent-mint-muted)]",
-  regular: "text-[var(--accent-rose)] bg-[var(--accent-rose-muted)]",
+  new: "var(--color-chart-2)",
+  contacted: "var(--color-chart-3)",
+  booked: "var(--color-chart-1)",
+  completed: "var(--color-success)",
+  regular: "var(--color-chart-4)",
 };
 
 /** Pipeline stages in order, with localised labels. */

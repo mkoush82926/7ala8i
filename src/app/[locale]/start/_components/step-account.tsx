@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Lock, Mail, MailCheck, Phone, User } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
+import { focusRing, textLinkClasses } from "@/components/ui/recipes";
+import { cn } from "@/lib/utils";
 import {
   AuthAlert,
   AuthField,
@@ -118,22 +120,19 @@ export function StepAccount({ phoneAuth }: { phoneAuth: boolean }) {
       <div className="text-center">
         <span
           aria-hidden
-          className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full"
-          style={{ background: "var(--bg-secondary)", color: "var(--accent-text)" }}
+          className="bg-hatch-ink mx-auto mb-5 grid size-16 place-items-center rounded-2xl bg-success-soft text-success-text"
         >
-          <MailCheck size={26} />
+          <MailCheck size={28} />
         </span>
         <StepHeader title={s.account.checkEmailTitle} />
-        <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+        <p className="text-body -mt-4 text-ink-soft">
           {before}
-          <strong dir="ltr" className="break-all" style={{ color: "var(--text-primary)" }}>
+          <strong dir="ltr" className="break-all font-semibold text-ink">
             {checkEmail}
           </strong>
           {after}
         </p>
-        <p className="mt-4 text-[13px]" style={{ color: "var(--text-muted)" }}>
-          {t.auth.checkSpam}
-        </p>
+        <p className="mt-4 text-[13px] text-ink-muted">{t.auth.checkSpam}</p>
       </div>
     );
   }
@@ -145,7 +144,11 @@ export function StepAccount({ phoneAuth }: { phoneAuth: boolean }) {
           title={s.account.otpTitle}
           subtitle={s.account.otpBody.replace("{phone}", "⁦" + otpPhone + "⁩")}
         />
-        {error && <AuthAlert>{errorText(error)}</AuthAlert>}
+        {error && (
+          <div className="mb-5">
+            <AuthAlert>{errorText(error)}</AuthAlert>
+          </div>
+        )}
         <TextField
           label={s.account.otpLabel}
           name="token"
@@ -155,6 +158,7 @@ export function StepAccount({ phoneAuth }: { phoneAuth: boolean }) {
           maxLength={8}
           value={otp}
           onChange={(e) => setOtp(e.target.value.replace(/[^\d٠-٩]/g, ""))}
+          inputClassName="h-14 text-center text-2xl font-bold tracking-[0.4em] tabular-nums sm:text-2xl"
           autoFocus
         />
         <div className="mt-6">
@@ -169,8 +173,12 @@ export function StepAccount({ phoneAuth }: { phoneAuth: boolean }) {
   return (
     <form ref={formRef} onSubmit={submit} noValidate>
       <StepHeader eyebrow={s.account.eyebrow} title={s.account.title} subtitle={s.account.subtitle} />
-      {error && <AuthAlert>{errorText(error)}</AuthAlert>}
-      <div className="flex flex-col gap-4">
+      {error && (
+        <div className="mb-5">
+          <AuthAlert>{errorText(error)}</AuthAlert>
+        </div>
+      )}
+      <div className="flex flex-col gap-5">
         <AuthField
           label={s.account.phoneLabel}
           icon={Phone}
@@ -209,12 +217,11 @@ export function StepAccount({ phoneAuth }: { phoneAuth: boolean }) {
         </SubmitButton>
       </div>
       <TermsNotice template={t.auth.signUpTerms} />
-      <p className="mt-4 text-center text-[14px]" style={{ color: "var(--text-secondary)" }}>
+      <p className="mt-4 text-center text-sm text-ink-muted">
         {s.account.haveAccount}{" "}
         <a
           href={href(`/auth/login?next=${encodeURIComponent(`/${locale}/start`)}`)}
-          className="font-medium underline underline-offset-2"
-          style={{ color: "var(--accent-text)" }}
+          className={cn("rounded-sm", textLinkClasses, focusRing)}
         >
           {t.auth.signInBtn}
         </a>

@@ -27,8 +27,8 @@ import {
   type OutboxRow,
 } from "@/lib/messaging/dashboard";
 
-const card = "flex flex-col gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 sm:p-5";
-const h2 = "m-0 text-base font-bold text-[var(--text-primary)]";
+const card = "flex flex-col gap-5 rounded-xl border border-line bg-card p-4 sm:p-6";
+const h2 = "text-h3 m-0 text-ink";
 
 type Filter = "action" | "scheduled" | "all";
 
@@ -146,7 +146,7 @@ export function MessagingActivity() {
             <span
               className={cn(
                 "inline-flex size-10 shrink-0 items-center justify-center rounded-full",
-                status.data?.live ? "bg-[var(--accent-mint-muted)] text-[var(--emerald)]" : "bg-[var(--accent-amber-muted)] text-[var(--amber)]",
+                status.data?.live ? "bg-brand-soft text-success-text" : "bg-warning-soft text-warning-text",
               )}
               aria-hidden="true"
             >
@@ -157,9 +157,9 @@ export function MessagingActivity() {
             <h2 id="msg-status" className={h2}>
               {status.data?.live ? tm.liveTitle : tm.manualTitle}
             </h2>
-            <p className="m-0 mt-1 text-sm text-[var(--text-secondary)]">{status.data?.live ? tm.liveHelp : tm.manualHelp}</p>
+            <p className="m-0 mt-1 text-sm text-ink-soft">{status.data?.live ? tm.liveHelp : tm.manualHelp}</p>
             {status.data?.lastRunAt && (
-              <p className="m-0 mt-1 text-xs text-[var(--text-muted)]">
+              <p className="m-0 mt-1 text-xs text-ink-muted">
                 {interpolate(tm.lastRun, { when: formatRelative(status.data.lastRunAt) })}
               </p>
             )}
@@ -174,14 +174,14 @@ export function MessagingActivity() {
             <h2 id="msg-month" className={h2}>
               {tm.monthTitle}
             </h2>
-            <p className="m-0 mt-1 text-sm text-[var(--text-secondary)]">{formatDate(`${month}T12:00:00`, { month: "long", year: "numeric" })}</p>
+            <p className="m-0 mt-1 text-sm text-ink-soft">{formatDate(`${month}T12:00:00`, { month: "long", year: "numeric" })}</p>
           </div>
           {c && (
             <p className="m-0 text-end">
-              <span className="block text-lg font-extrabold text-[var(--text-primary)]">
+              <span className="block text-lg font-extrabold text-ink">
                 <bdi>{formatJOD(filsToJod(c.costFils), locale)}</bdi>
               </span>
-              <span className="text-xs text-[var(--text-muted)]">{tm.estimatedCost}</span>
+              <span className="text-xs text-ink-muted">{tm.estimatedCost}</span>
             </p>
           )}
         </div>
@@ -193,7 +193,7 @@ export function MessagingActivity() {
           <>
             <div>
               <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="text-[var(--text-secondary)]">
+                <span className="text-ink-soft">
                   {interpolate(tm.allowanceUsed, { used: formatNumber(c.sentCount), total: formatNumber(c.allowance) })}
                 </span>
                 {usage.over && (
@@ -208,10 +208,10 @@ export function MessagingActivity() {
                 aria-valuemin={0}
                 aria-valuemax={c.allowance}
                 aria-valuenow={Math.min(c.sentCount, c.allowance)}
-                className="h-2 overflow-hidden rounded-full bg-[var(--bg-secondary)]"
+                className="h-2 overflow-hidden rounded-full bg-sunken"
               >
                 <div
-                  className={cn("h-full rounded-full", usage.over ? "bg-[var(--color-error)]" : "bg-[var(--accent-brass)]")}
+                  className={cn("h-full rounded-full", usage.over ? "bg-danger" : "bg-brand")}
                   style={{ width: `${Math.min(100, Math.round(usage.ratio * 100))}%` }}
                 />
               </div>
@@ -233,7 +233,7 @@ export function MessagingActivity() {
             <h2 id="msg-log" className={h2}>
               {tm.logTitle}
             </h2>
-            <p className="m-0 mt-1 text-sm text-[var(--text-secondary)]">{tm.logHelp}</p>
+            <p className="m-0 mt-1 text-sm text-ink-soft">{tm.logHelp}</p>
           </div>
           <button type="button" className="btn btn-secondary min-h-11 shrink-0" onClick={refreshAll} aria-label={tm.refresh}>
             <RefreshCw size={16} aria-hidden="true" className={cn(log.refreshing && "animate-spin")} />
@@ -252,8 +252,8 @@ export function MessagingActivity() {
               className={cn(
                 "focus-ring min-h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors",
                 filter === f.id
-                  ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)]"
-                  : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                  ? "border-ink bg-inverse text-on-inverse"
+                  : "border-line text-ink-soft hover:text-ink",
               )}
             >
               {f.label}
@@ -273,7 +273,7 @@ export function MessagingActivity() {
             description={filter === "action" ? tm.emptyActionHint : tm.emptyLogHint}
           />
         ) : (
-          <ul role="list" className="m-0 flex list-none flex-col divide-y divide-[var(--border-subtle)] p-0">
+          <ul role="list" className="m-0 flex list-none flex-col divide-y divide-line p-0">
             {log.data.map((row) => {
               const name = recipientName(row);
               const wa = needsManualSend(row, { live: status.data ? status.data.live : undefined }) ? fallbackWaLink(row, siteUrl) : null;
@@ -284,7 +284,7 @@ export function MessagingActivity() {
                 <li key={row.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-[var(--text-primary)]">{templateLabel}</span>
+                      <span className="text-sm font-semibold text-ink">{templateLabel}</span>
                       <Pill tone={statusTone(row.status)} size="sm">
                         {statusLabel}
                       </Pill>
@@ -294,7 +294,7 @@ export function MessagingActivity() {
                         </Pill>
                       )}
                     </div>
-                    <p className="m-0 mt-0.5 truncate text-xs text-[var(--text-muted)]">
+                    <p className="m-0 mt-0.5 truncate text-xs text-ink-muted">
                       {[name || tm.client, row.status === "queued" ? interpolate(tm.scheduledFor, { when: formatRelative(when) }) : formatRelative(when)]
                         .filter(Boolean)
                         .join(" · ")}
@@ -325,7 +325,7 @@ export function MessagingActivity() {
                       </button>
                       <button
                         type="button"
-                        className="focus-ring inline-flex size-11 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+                        className="focus-ring inline-flex size-11 items-center justify-center rounded-full text-ink-muted hover:bg-sunken hover:text-ink"
                         onClick={() => setDismissing(row)}
                         aria-label={tm.dismiss}
                         title={tm.dismiss}
@@ -358,9 +358,9 @@ export function MessagingActivity() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-[var(--bg-secondary)] p-3">
-      <dt className="text-xs text-[var(--text-muted)]">{label}</dt>
-      <dd className="m-0 mt-0.5 text-lg font-bold text-[var(--text-primary)]">
+    <div className="rounded-xl bg-sunken p-3">
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className="m-0 mt-0.5 text-lg font-bold text-ink">
         <bdi>{value}</bdi>
       </dd>
     </div>

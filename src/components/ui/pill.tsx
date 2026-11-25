@@ -1,36 +1,60 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { filterChipClasses } from "./recipes";
 
 /**
  * Small text pill for badges (Top rated, Deals, New, Verified, Quiet hours)
- * and statuses. Tones map to Ink & Brass tokens, so dark mode follows the theme.
+ * and statuses (§5.5). v2 pills are fill-only (no border).
  *
  * Colour is never the only signal: pass an `icon` (or rely on the label) for
- * statuses. Brass is reserved for promotional emphasis; the primary CTA owns
- * the solid brass fill.
+ * statuses. Teal is for selected/info; amber `accent` is for "Top rated" /
+ * "Popular" emphasis; the primary CTA owns the solid teal fill.
  *
- *   <Pill tone="brass" icon={<BadgeCheck aria-hidden className="size-3.5" />}>{t.x.verified}</Pill>
+ *   <Pill tone="brand" icon={<BadgeCheck aria-hidden />}>{t.x.verified}</Pill>
+ *   <Pill tone="accent" icon={<Star aria-hidden />}>{t.x.topRated}</Pill>
  *   <Pill tone="danger" icon={<XCircle aria-hidden />}>{t.calendar.cancelled}</Pill>
+ *   <Pill tone="on-photo">1.2 km</Pill>                      // on top of images
+ *   <FilterChip pressed={open} onClick={toggle}>Open now</FilterChip>
+ *
+ * `brass` is kept as an alias of `brand` for existing call sites.
  */
-export const PILL_TONES = ["ink", "brass", "success", "danger", "neutral"] as const;
+export const PILL_TONES = [
+  "ink",
+  "brand",
+  "brass",
+  "accent",
+  "success",
+  "warning",
+  "danger",
+  "neutral",
+  "on-photo",
+] as const;
 export type PillTone = (typeof PILL_TONES)[number];
 
 const TONE_CLASS: Record<PillTone, string> = {
-  ink: "bg-[var(--text-primary)] text-[var(--bg-primary)] border-transparent",
-  brass: "bg-[var(--accent-blue-muted)] text-[var(--accent-text)] border-[var(--accent-brass)]",
-  success: "bg-[var(--accent-mint-muted)] text-[var(--text-primary)] border-[var(--accent-mint)]",
-  danger: "bg-[var(--accent-rose-muted)] text-[var(--accent-rose)] border-[var(--accent-rose)]",
-  neutral: "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-subtle)]",
+  ink: "bg-inverse text-on-inverse",
+  brand: "bg-brand-soft text-brand-pressed",
+  brass: "bg-brand-soft text-brand-pressed",
+  accent: "bg-accent-soft text-warning-text",
+  success: "bg-success-soft text-success-text",
+  warning: "bg-warning-soft text-warning-text",
+  danger: "bg-danger-soft text-danger-text",
+  neutral: "bg-sunken text-ink-soft",
+  // Photos don't theme: fixed white chip with ink text in both modes.
+  "on-photo": "bg-white/92 text-[#0F172A] shadow-xs backdrop-blur-sm",
 };
 
 const SIZE_CLASS = {
   sm: "h-5 px-2 text-[11px] gap-1",
-  md: "h-6 px-2.5 text-xs gap-1.5",
+  md: "h-6 px-2.5 text-xs gap-1",
+  lg: "h-9 px-3.5 text-sm font-medium gap-1.5",
 } as const;
+
+export type PillSize = keyof typeof SIZE_CLASS;
 
 export interface PillProps extends Omit<React.HTMLAttributes<HTMLSpanElement>, "children"> {
   tone?: PillTone;
-  size?: keyof typeof SIZE_CLASS;
+  size?: PillSize;
   /** Leading icon; mark it aria-hidden (the label carries the meaning). */
   icon?: React.ReactNode;
   children: React.ReactNode;
@@ -41,7 +65,7 @@ export function Pill({ tone = "neutral", size = "md", icon, className, children,
     <span
       data-tone={tone}
       className={cn(
-        "inline-flex max-w-full shrink-0 items-center whitespace-nowrap rounded-full border font-semibold leading-none",
+        "inline-flex max-w-full shrink-0 items-center whitespace-nowrap rounded-full font-semibold leading-none",
         SIZE_CLASS[size],
         TONE_CLASS[tone],
         className,
@@ -55,6 +79,35 @@ export function Pill({ tone = "neutral", size = "md", icon, className, children,
       ) : null}
       <span className="truncate">{children}</span>
     </span>
+  );
+}
+
+export interface FilterChipProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
+  /** Selected state → aria-pressed; selected chips render ink-filled. */
+  pressed?: boolean;
+  icon?: React.ReactNode;
+  /** Optional trailing count/badge or chevron. */
+  trailing?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+/** Toggle chip for filter bars (§5.5): h-9 outline pill; selected = ink. */
+export function FilterChip({ pressed, icon, trailing, className, type = "button", children, ...rest }: FilterChipProps) {
+  return (
+    <button
+      type={type}
+      aria-pressed={pressed === undefined ? undefined : pressed}
+      className={cn(filterChipClasses, className)}
+      {...rest}
+    >
+      {icon ? (
+        <span aria-hidden="true" className="inline-flex shrink-0 items-center">
+          {icon}
+        </span>
+      ) : null}
+      <span className="truncate">{children}</span>
+      {trailing}
+    </button>
   );
 }
 

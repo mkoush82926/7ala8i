@@ -6,6 +6,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { interpolate, useTranslation } from "@/hooks/use-translation";
+import { Button } from "@/components/ui/button";
 import type { Lead } from "@/lib/types";
 import type { LeadStage } from "@/store/leads-store";
 import { LeadCard } from "./lead-card";
@@ -21,8 +22,9 @@ interface KanbanColumnProps {
 }
 
 /**
- * One pipeline stage. Fixed-width (snaps on phones), drop target for cards,
- * and a non-interactive hint when empty.
+ * One pipeline stage: a sunken lane (like the queue board) with white cards.
+ * Fixed-width (snaps on phones), drop target for cards, and a
+ * non-interactive hint when empty.
  */
 export function KanbanColumn({ stage, leads, onLeadClick, editable = false, onAdd }: KanbanColumnProps) {
   const { t } = useTranslation();
@@ -32,41 +34,40 @@ export function KanbanColumn({ stage, leads, onLeadClick, editable = false, onAd
   return (
     <section
       aria-labelledby={headingId}
+      data-over={isOver || undefined}
       className={cn(
-        "flex w-[min(284px,82vw)] shrink-0 snap-start flex-col rounded-[12px] outline-2 outline-offset-2 transition-[outline-color] duration-150",
-        isOver ? "outline outline-[var(--border-primary)]" : "outline-transparent",
+        "flex w-[min(288px,82vw)] shrink-0 snap-start flex-col rounded-xl bg-sunken p-2.5 ring-inset transition-[box-shadow,background-color] duration-150 motion-reduce:transition-none",
+        isOver ? "bg-brand-soft/60 ring-2 ring-brand" : "ring-0",
       )}
     >
-      {/* Column header */}
-      <div className="mb-3 flex items-center justify-between gap-2 px-1">
+      {/* Stage accent + header */}
+      <span aria-hidden="true" className="mx-1 mb-2.5 block h-1 rounded-full" style={{ background: stage.color }} />
+      <div className="mb-2.5 flex items-center justify-between gap-2 ps-1.5">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: stage.color }} aria-hidden="true" />
-          <h3 id={headingId} className="truncate text-[13px] font-bold text-[var(--text-primary)]">
+          <h3 id={headingId} className="truncate text-sm font-semibold text-ink">
             {stage.label}
             <span className="sr-only"> ({leads.length})</span>
           </h3>
-          <span
-            aria-hidden="true"
-            className="rounded-full bg-[var(--bg-secondary)] px-2 py-0.5 text-[11px] font-extrabold tabular-nums text-[var(--text-primary)]"
-          >
+          <span aria-hidden="true" className="rounded-full bg-card px-2 py-0.5 text-xs font-semibold tabular-nums text-ink-soft shadow-xs">
             {leads.length}
           </span>
         </div>
         {editable && onAdd && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={() => onAdd(stage.id)}
             aria-label={interpolate(t.leads.addToStage, { stage: stage.label })}
             title={interpolate(t.leads.addToStage, { stage: stage.label })}
-            className="inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
+            className="hover:bg-card"
           >
-            <Plus size={16} aria-hidden="true" />
-          </button>
+            <Plus aria-hidden="true" />
+          </Button>
         )}
       </div>
 
       {/* Cards */}
-      <div ref={setNodeRef} className="flex min-h-[120px] flex-1 flex-col gap-2 py-1">
+      <div ref={setNodeRef} className="flex min-h-[140px] flex-1 flex-col gap-2">
         <SortableContext items={leads.map((l) => l.id)} strategy={verticalListSortingStrategy}>
           {leads.map((lead) => (
             <LeadCard key={lead.id} lead={lead} draggable={editable} onClick={() => onLeadClick(lead)} />
@@ -76,10 +77,8 @@ export function KanbanColumn({ stage, leads, onLeadClick, editable = false, onAd
         {leads.length === 0 && (
           <div
             className={cn(
-              "rounded-[12px] border-2 border-dashed px-4 py-5 text-center text-[12px] font-semibold text-[var(--text-secondary)] transition-colors",
-              isOver
-                ? "border-[var(--border-primary)] bg-[var(--bg-secondary)]"
-                : "border-[var(--border-subtle)]",
+              "grid flex-1 place-items-center rounded-xl border-2 border-dashed px-4 py-6 text-center text-[13px] font-medium text-ink-muted transition-colors duration-150 motion-reduce:transition-none",
+              isOver ? "border-brand bg-card text-brand-text" : "border-line-strong/40",
             )}
           >
             {editable ? t.leads.dropHere : t.common.noData}

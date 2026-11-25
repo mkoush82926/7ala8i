@@ -52,7 +52,7 @@ export function ShiftsPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div role="tablist" aria-label={t.shifts.title} className="inline-flex w-full gap-1 rounded-xl bg-[var(--bg-secondary)] p-1 sm:w-fit">
+      <div role="tablist" aria-label={t.shifts.title} className="inline-flex w-full gap-1 rounded-full bg-sunken p-1 sm:w-fit">
         {tabs.map((tb, i) => (
           <button
             key={tb.id}
@@ -68,10 +68,10 @@ export function ShiftsPanel({
             onClick={() => setTab(tb.id)}
             onKeyDown={(e) => onKey(e, i)}
             className={cn(
-              "focus-ring min-h-11 flex-1 rounded-lg px-3 text-sm font-medium transition-colors sm:flex-none",
+              "focus-ring min-h-10 flex-1 rounded-full px-4 text-sm font-semibold transition-colors duration-150 sm:flex-none",
               tab === tb.id
-                ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
-                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
+                ? "bg-card text-ink shadow-xs"
+                : "text-ink-muted hover:text-ink",
             )}
           >
             {tb.label}

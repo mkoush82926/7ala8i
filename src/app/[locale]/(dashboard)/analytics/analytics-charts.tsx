@@ -2,7 +2,9 @@
 
 // Recharts-based charts for the Analytics page. This module is loaded with
 // next/dynamic (ssr: false) so recharts stays out of the route's first-load JS.
-// Colours come from CSS tokens, so the charts follow the light/dark theme.
+// Colours come from the v2 chart tokens (--color-chart-1..5, DESIGN_SYSTEM_V2
+// §2.2/§2.3), so the charts follow the light/dark theme. chart-1 (teal) is
+// always "this shop / this period".
 
 import React, { useId } from "react";
 import {
@@ -29,7 +31,7 @@ export interface RevenueTrendChartProps {
   height?: number;
 }
 
-const tick = { fill: "var(--text-secondary)", fontSize: 11 } as const;
+const tick = { fill: "var(--color-ink-muted)", fontSize: 12 } as const;
 
 export function RevenueTrendChart({
   data, isRTL, formatValue, formatAxis, caption, columnLabels, height = 240,
@@ -42,11 +44,11 @@ export function RevenueTrendChart({
           <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" style={{ stopColor: "var(--accent-brass)", stopOpacity: 0.28 }} />
-                <stop offset="100%" style={{ stopColor: "var(--accent-brass)", stopOpacity: 0 }} />
+                <stop offset="0%" style={{ stopColor: "var(--color-chart-1)", stopOpacity: 0.22 }} />
+                <stop offset="100%" style={{ stopColor: "var(--color-chart-1)", stopOpacity: 0 }} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+            <CartesianGrid stroke="var(--color-chart-grid)" vertical={false} />
             <XAxis
               dataKey="label"
               reversed={isRTL}
@@ -66,16 +68,20 @@ export function RevenueTrendChart({
               allowDecimals={false}
             />
             <Tooltip
-              cursor={{ stroke: "var(--border-primary)" }}
+              cursor={{ stroke: "var(--color-line-strong)", strokeDasharray: "4 4" }}
               contentStyle={{
-                background: "var(--bg-primary)",
-                border: "1px solid var(--border-subtle)",
+                background: "var(--color-inverse)",
+                border: "none",
                 borderRadius: 8,
-                fontSize: 12,
-                color: "var(--text-primary)",
+                boxShadow: "var(--shadow-raised)",
+                padding: "8px 12px",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--color-on-inverse)",
                 direction: isRTL ? "rtl" : "ltr",
               }}
-              labelStyle={{ color: "var(--text-secondary)", fontSize: 11 }}
+              itemStyle={{ color: "var(--color-on-inverse)" }}
+              labelStyle={{ color: "var(--color-on-inverse)", opacity: 0.75, fontSize: 12, fontWeight: 500 }}
               labelFormatter={(_label, payload) =>
                 (payload?.[0]?.payload as RevenuePoint | undefined)?.fullLabel ?? String(_label)
               }
@@ -84,11 +90,11 @@ export function RevenueTrendChart({
             <Area
               type="monotone"
               dataKey="revenue"
-              stroke="var(--text-primary)"
-              strokeWidth={2}
+              stroke="var(--color-chart-1)"
+              strokeWidth={2.5}
               fill={`url(#${gradientId})`}
               dot={false}
-              activeDot={{ r: 4, fill: "var(--text-primary)", stroke: "var(--bg-primary)", strokeWidth: 2 }}
+              activeDot={{ r: 5, fill: "var(--color-chart-1)", stroke: "var(--color-card)", strokeWidth: 2 }}
               isAnimationActive={false}
             />
           </AreaChart>
@@ -123,15 +129,15 @@ export interface SourceSlice {
   pct: number;
 }
 
-/** Token palette for categorical slices (light + dark aware). */
+/** Categorical slices: the v2 chart series, then neutrals (light + dark aware). */
 export const SLICE_COLORS = [
-  "var(--text-primary)",
-  "var(--accent-brass)",
-  "var(--accent-mint)",
-  "var(--text-secondary)",
-  "var(--border-primary)",
-  "var(--accent-rose)",
-  "var(--text-muted)",
+  "var(--color-chart-1)",
+  "var(--color-chart-2)",
+  "var(--color-chart-3)",
+  "var(--color-chart-4)",
+  "var(--color-chart-5)",
+  "var(--color-ink-soft)",
+  "var(--color-line-strong)",
 ];
 
 export function SourcesDonut({ data, size = 168 }: { data: SourceSlice[]; size?: number }) {
@@ -148,7 +154,7 @@ export function SourcesDonut({ data, size = 168 }: { data: SourceSlice[]; size?:
             paddingAngle={data.length > 1 ? 2 : 0}
             dataKey="count"
             nameKey="name"
-            stroke="var(--bg-primary)"
+            stroke="var(--color-card)"
             isAnimationActive={false}
           >
             {data.map((entry, i) => (

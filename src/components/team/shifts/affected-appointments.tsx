@@ -118,8 +118,8 @@ export function AffectedAppointments({ change, title }: { change: ScheduleChange
   }
 
   return (
-    <section aria-live="polite" className="flex flex-col gap-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-4">
-      <h4 className="m-0 text-sm font-bold text-[var(--text-primary)]">{title ?? t.shifts.affectedTitle}</h4>
+    <section aria-live="polite" className="flex flex-col gap-3 rounded-xl border border-line bg-sunken p-4">
+      <h4 className="m-0 text-sm font-bold text-ink">{title ?? t.shifts.affectedTitle}</h4>
 
       {query.initialLoading ? (
         <div className="flex flex-col gap-2">
@@ -136,24 +136,24 @@ export function AffectedAppointments({ change, title }: { change: ScheduleChange
           action={{ label: t.common.retry, onClick: query.refetch }}
         />
       ) : affected.length === 0 ? (
-        <p className="m-0 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <CheckCircle2 size={16} aria-hidden="true" className="text-[var(--accent-mint)]" />
+        <p className="m-0 flex items-center gap-2 text-sm text-ink-soft">
+          <CheckCircle2 size={16} aria-hidden="true" className="text-brand-text" />
           {t.shifts.affectedNone}
         </p>
       ) : (
         <>
-          <p className="m-0 text-sm text-[var(--text-secondary)]">{interpolate(t.shifts.affectedCount, { count: affected.length })}</p>
+          <p className="m-0 text-sm text-ink-soft">{interpolate(t.shifts.affectedCount, { count: affected.length })}</p>
           <ul role="list" className="m-0 flex list-none flex-col gap-2 p-0">
             {affected.map((a) => {
               const phone = a.clients?.phone;
               const result = results[a.id];
               const id = `aff-${a.id}`;
               return (
-                <li key={a.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-[var(--bg-primary)] px-3 py-2">
+                <li key={a.id} className="flex flex-wrap items-center gap-3 rounded-lg bg-card px-3 py-2">
                   <input
                     id={id}
                     type="checkbox"
-                    className="h-4 w-4 shrink-0 accent-[var(--accent-brass)]"
+                    className="h-4 w-4 shrink-0 accent-brand"
                     checked={chosen.has(a.id)}
                     disabled={!phone || sending}
                     onChange={(e) => {
@@ -164,10 +164,10 @@ export function AffectedAppointments({ change, title }: { change: ScheduleChange
                     }}
                   />
                   <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer">
-                    <span className="block truncate text-sm font-medium text-[var(--text-primary)]">
+                    <span className="block truncate text-sm font-medium text-ink">
                       {a.client_name || a.clients?.name || t.shifts.walkInClient}
                     </span>
-                    <span className="block text-[12px] text-[var(--text-secondary)]">
+                    <span className="block text-[12px] text-ink-soft">
                       {formatDate(a.start_time, { weekday: "short", day: "numeric", month: "short", timeZone: tz })} ·{" "}
                       {formatTime(a.start_time, { timeZone: tz })}
                       {a.service_name ? ` · ${a.service_name}` : ""}
@@ -187,7 +187,7 @@ export function AffectedAppointments({ change, title }: { change: ScheduleChange
                     </a>
                   )}
                   {result?.status === "queued" && (
-                    <span className="text-[12px] font-medium text-[var(--text-secondary)]">{t.shifts.queued}</span>
+                    <span className="text-[12px] font-medium text-ink-soft">{t.shifts.queued}</span>
                   )}
                 </li>
               );

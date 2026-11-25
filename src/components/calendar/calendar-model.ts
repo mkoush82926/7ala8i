@@ -364,33 +364,54 @@ export function scheduledIds(barberIds: string[], days: string[], s: ScheduleInp
 export type ColorSource = "barber" | "category" | "status";
 export const COLOR_SOURCES: readonly ColorSource[] = ["barber", "category", "status"];
 
-/** Ink & Brass companion hues, readable with dark text at 18% tint and as a 3px rail. */
-export const BARBER_PALETTE = ["#b08d57", "#4f6d7a", "#7a8f5b", "#a4574b", "#6b5b95", "#c98a3c", "#3f7f74", "#8a6f5a"] as const;
+/**
+ * Deep Teal & Sand companion hues for lanes and chips. Every hue is a
+ * mid-tone (relative luminance 0.14–0.29) so the 3px chip rail and the
+ * avatar ring stay ≥3:1 on both the white card and the dark card (#111E1C),
+ * and the 14% tint keeps ink text at AA in both themes. Stored per barber
+ * (barbers.calendar_color), so entries stay 6-digit hex.
+ */
+export const BARBER_PALETTE = ["#0D9488", "#3B6FB6", "#D97706", "#DB2777", "#65A30D", "#0891B2", "#C2410C", "#64748B"] as const;
+
+/** Lane / chip colour when nothing else applies (unassigned, unknown category). */
+export const NEUTRAL_COLOR = "#64748B";
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  haircut: "#b08d57",
-  fade: "#8a6f5a",
-  beard: "#4f6d7a",
-  shave: "#3f7f74",
-  kids: "#c98a3c",
-  styling: "#6b5b95",
-  colour: "#a4574b",
-  treatments: "#7a8f5b",
-  facial: "#7a8f5b",
-  packages: "#1c1611",
-  "home-service": "#4f6d7a",
+  haircut: "#0D9488",
+  fade: "#64748B",
+  beard: "#3B6FB6",
+  shave: "#0891B2",
+  kids: "#D97706",
+  styling: "#DB2777",
+  colour: "#C2410C",
+  treatments: "#65A30D",
+  facial: "#65A30D",
+  packages: "var(--color-ink-soft)",
+  "home-service": "#3B6FB6",
 };
 
+/** Rail colours per status (§5.12 hues as theme-safe mid-tones). */
 export const STATUS_COLORS: Record<AppointmentStatus, string> = {
-  pending: "#8c8478",
-  confirmed: "#4f6d7a",
-  awaiting_deposit: "#b08d57",
-  arrived: "#c98a3c",
-  in_chair: "#3f7f74",
-  completed: "#7a8f5b",
-  no_show: "#a4574b",
-  cancelled: "#8c8478",
+  pending: "#D97706",
+  confirmed: "#0D9488",
+  awaiting_deposit: "#C2410C",
+  arrived: "#3B6FB6",
+  in_chair: "#0F766E",
+  completed: "#16A34A",
+  no_show: "#DC2626",
+  cancelled: "#64748B",
 };
+
+/**
+ * Translucent / blended version of a calendar colour. Works for hex and
+ * CSS-var colours alike (chips, rails and avatar rings are themed this way
+ * instead of appending hex alpha digits).
+ *   tint("#0D9488", 14, "var(--color-card)") → opaque chip fill
+ *   tint(color, 20)                          → see-through wash
+ */
+export function tint(color: string, percent: number, base = "transparent"): string {
+  return `color-mix(in srgb, ${color} ${percent}%, ${base})`;
+}
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
@@ -405,8 +426,8 @@ export function cardColor(
   barberColors: Map<string, string>,
 ): string {
   if (source === "status") return STATUS_COLORS[appt.status];
-  if (source === "category") return (appt.categorySlug && CATEGORY_COLORS[appt.categorySlug]) || "#8c8478";
-  return (appt.barberId && barberColors.get(appt.barberId)) || "#8c8478";
+  if (source === "category") return (appt.categorySlug && CATEGORY_COLORS[appt.categorySlug]) || NEUTRAL_COLOR;
+  return (appt.barberId && barberColors.get(appt.barberId)) || NEUTRAL_COLOR;
 }
 
 // ─── Month density / week matrix ──────────────────────────────────────────

@@ -52,15 +52,31 @@ export function Price({
     : max != null && max !== amount
       ? formatJODRange(amount, max, opts)
       : formatJOD(amount, opts);
-  const text = from && !isFree ? t.primitives.fromPrice.replace("{price}", main) : main;
   const previous = was != null && Number.isFinite(was) && was > amount ? formatJOD(was, opts) : null;
+
+  // "from {price}" → muted prefix/suffix around the semibold amount (§5.18).
+  let before = "";
+  let after = "";
+  if (from && !isFree) {
+    const tpl = t.primitives.fromPrice;
+    const at = tpl.indexOf("{price}");
+    if (at === -1) before = `${tpl} `;
+    else {
+      before = tpl.slice(0, at);
+      after = tpl.slice(at + "{price}".length);
+    }
+  }
 
   return (
     <Tag className={cn("inline-flex items-baseline gap-1.5 tabular-nums", className)}>
-      <bdi className="font-semibold text-[var(--text-primary)]">{text}</bdi>
+      <bdi className={cn("font-semibold", previous ? "text-success-text" : "text-ink")}>
+        {before && <span className="font-normal text-ink-muted">{before}</span>}
+        {main}
+        {after && <span className="font-normal text-ink-muted">{after}</span>}
+      </bdi>
       {previous ? (
         <>
-          <s aria-hidden="true" className="text-xs text-[var(--text-muted)]">
+          <s aria-hidden="true" className="text-xs text-ink-muted">
             <bdi>{previous}</bdi>
           </s>
           <span className="sr-only">{t.primitives.priceWas.replace("{price}", previous)}</span>

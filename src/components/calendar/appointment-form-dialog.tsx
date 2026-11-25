@@ -340,11 +340,11 @@ function AppointmentForm({
         {services === null ? (
           <div className="grid gap-2 sm:grid-cols-2" aria-hidden="true">
             {[0, 1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-14 w-full rounded-[var(--radius-sm)]" />
+              <Skeleton key={i} className="h-14 w-full rounded-lg" />
             ))}
           </div>
         ) : services.length === 0 ? (
-          <p className="rounded-[var(--radius-sm)] border border-dashed border-[var(--border-subtle)] p-4 text-[13px] text-[var(--text-secondary)]">
+          <p className="rounded-lg border border-dashed border-line p-4 text-[13px] text-ink-soft">
             {servicesError ? t.error.message : t.calendar.noServices}
           </p>
         ) : (
@@ -355,21 +355,21 @@ function AppointmentForm({
                 <label
                   key={s.id}
                   className={cn(
-                    "flex min-h-[52px] cursor-pointer items-center gap-3 rounded-[var(--radius-sm)] border px-3 py-2 transition-colors focus-ring-within",
+                    "flex min-h-[56px] cursor-pointer items-center gap-3 rounded-xl border bg-card px-3.5 py-2.5 transition-[border-color,background-color,box-shadow] duration-150 focus-ring-within motion-reduce:transition-none",
                     checked
-                      ? "border-[var(--text-primary)] bg-[var(--bg-secondary)]"
-                      : "border-[var(--border-subtle)] hover:bg-[var(--bg-secondary)]",
+                      ? "border-brand bg-brand-soft/40 ring-1 ring-brand"
+                      : "border-line hover:border-ink-soft",
                   )}
                 >
                   <input
                     type="checkbox"
-                    className="h-4 w-4 shrink-0 accent-[var(--text-primary)]"
+                    className="size-5 shrink-0 rounded-[6px] border-line-strong text-brand focus:ring-2 focus:ring-brand/30 focus:ring-offset-0"
                     checked={checked}
                     onChange={() => toggleService(s.id)}
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[14px] text-[var(--text-primary)]">{serviceLabel(s)}</span>
-                    <span className="block text-[12px] text-[var(--text-muted)]">
+                    <span className="block truncate text-sm font-semibold text-ink">{serviceLabel(s)}</span>
+                    <span className="block text-[13px] tabular-nums text-ink-muted">
                       {formatDuration(s.duration)} · {formatCurrency(s.price, currency)}
                     </span>
                   </span>
@@ -469,10 +469,10 @@ function AppointmentForm({
 
       {/* Summary */}
       <div
-        className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-sm)] bg-[var(--bg-secondary)] px-4 py-3 text-[13px]"
+        className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sunken px-4 py-3 text-[13px]"
         aria-live="polite"
       >
-        <span className="flex items-center gap-2 text-[var(--text-secondary)]">
+        <span className="flex items-center gap-2 text-ink-soft">
           <Scissors size={14} aria-hidden="true" />
           {duration > 0 ? formatDuration(duration) : "—"}
           {start && end && duration > 0 && (
@@ -481,13 +481,13 @@ function AppointmentForm({
             </span>
           )}
         </span>
-        <span className="font-semibold text-[var(--text-primary)] tabular-nums">
+        <span className="font-semibold text-ink tabular-nums">
           {t.booking.total}: {formatCurrency(total, currency)}
         </span>
       </div>
 
       {formError && (
-        <p id={ids.error} role="alert" className="rounded-[var(--radius-sm)] border border-[var(--accent-rose)]/40 bg-[var(--accent-rose-muted)] px-4 py-3 text-[13px] text-[var(--accent-rose)]">
+        <p id={ids.error} role="alert" className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-[13px] text-danger-text">
           {formError}
         </p>
       )}

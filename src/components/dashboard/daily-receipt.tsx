@@ -1,11 +1,13 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
-import { FileText, CreditCard, Banknote, Download, Printer, AlertTriangle, RefreshCw, Wallet } from "lucide-react";
-import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { CreditCard, Banknote, Download, Printer, AlertTriangle, RefreshCw, Wallet } from "lucide-react";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { useDailySales, useShopSettings, type SaleItem } from "@/hooks/use-dashboard-data";
 import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Panel } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /** RFC 4180 cell escaping, plus a guard against spreadsheet formula injection. Pure. */
@@ -16,50 +18,37 @@ export function escapeCsvValue(value: string): string {
   return v;
 }
 
-// Translucent layers derived from the inverted card's own foreground, so the
-// card reads correctly in both themes (ink card in light, paper card in dark).
-const tint = (pct: number) => `color-mix(in srgb, var(--brand-on-primary) ${pct}%, transparent)`;
-
 function MethodRow({
   icon: Icon,
   label,
   count,
   total,
-  delay,
 }: {
   icon: typeof Banknote;
   label: string;
   count: number;
   total: string;
-  delay: number;
 }) {
   const { t } = useTranslation();
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="flex items-center justify-between gap-3 rounded-xl px-4 py-3.5 sm:px-5"
-      style={{ background: tint(8) }}
-    >
-      <div className="flex min-w-0 items-center gap-3.5">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl" style={{ background: tint(12) }}>
-          <Icon size={18} aria-hidden="true" />
+    <li className="flex items-center justify-between gap-3 py-3">
+      <div className="flex min-w-0 items-center gap-3">
+        <span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand-text">
+          <Icon size={18} />
         </span>
         <div className="min-w-0">
-          <p className="m-0 text-[14px] font-bold">{label}</p>
-          <p className="m-0 text-[12px] font-semibold" style={{ color: tint(65) }}>
-            {interpolate(t.dashboard.transactionsCount, { count })}
-          </p>
+          <p className="m-0 truncate text-sm font-semibold text-ink">{label}</p>
+          <p className="m-0 text-[13px] text-ink-muted">{interpolate(t.dashboard.transactionsCount, { count })}</p>
         </div>
       </div>
-      <span className="shrink-0 text-[16px] font-extrabold tabular-nums">{total}</span>
-    </motion.div>
+      <bdi className="shrink-0 text-[15px] font-semibold tabular-nums text-ink">{total}</bdi>
+    </li>
   );
 }
 
+/** Today's takings by payment method, the sales list, the day total and export (v2 panel). */
 export function DailyReceipt() {
-  const { t, isRTL, FFD, formatCurrency, formatTime, formatDate } = useTranslation();
+  const { t, formatCurrency, formatTime, formatDate } = useTranslation();
   const { sales, loading, error, refetch, refreshing } = useDailySales();
   const { currency } = useShopSettings();
   const money = (n: number) => formatCurrency(n, currency);
@@ -81,7 +70,7 @@ export function DailyReceipt() {
         .join(","),
     );
     // BOM so Excel opens Arabic names as UTF-8.
-    const csv = "﻿" + [header.map(escapeCsvValue).join(","), ...rows].join("\r\n");
+    const csv = "\uFEFF" + [header.map(escapeCsvValue).join(","), ...rows].join("\r\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
     const link = document.createElement("a");
     link.href = url;
@@ -92,130 +81,112 @@ export function DailyReceipt() {
     URL.revokeObjectURL(url);
   };
 
-  const shell =
-    "relative flex h-full flex-col overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--brand-primary)] p-6 text-[var(--brand-on-primary)] sm:p-8";
+  const panelProps = {
+    title: <span id="daily-receipt-title">{t.dashboard.dailySummaryTitle}</span>,
+    description: formatDate(new Date(), "weekdayDay"),
+    className: "flex h-full flex-col",
+    bodyClassName: "flex flex-1 flex-col",
+  };
 
   if (loading) {
     return (
-      <div className={shell}>
-        <SkeletonGroup className="flex flex-col gap-4 opacity-40">
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-5 w-40" />
-          <Skeleton variant="card" className="h-16" />
-          <Skeleton variant="card" className="h-16" />
-          <Skeleton className="mt-6 h-8 w-32" />
+      <Panel {...panelProps} aria-labelledby="daily-receipt-title">
+        <SkeletonGroup className="flex flex-col gap-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Skeleton className="size-10 shrink-0 rounded-lg" />
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <Skeleton className="h-4 w-16" />
+            </div>
+          ))}
+          <div className="mt-4 flex items-end justify-between border-t border-line pt-4">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-7 w-28" />
+          </div>
         </SkeletonGroup>
-      </div>
+      </Panel>
     );
   }
 
   if (error) {
     return (
-      <div className={cn(shell, "items-center justify-center gap-3.5 text-center")} role="alert">
-        <span className="grid size-11 place-items-center rounded-xl" style={{ background: tint(12) }}>
-          <AlertTriangle size={20} aria-hidden="true" />
-        </span>
-        <p className="m-0 text-[14px] font-bold">{t.dashboard.salesError}</p>
-        <p className="m-0 text-[12px]" style={{ color: tint(65) }}>{t.error.message}</p>
-        <button
-          type="button"
-          onClick={refetch}
-          className="btn min-h-11 px-5 text-[12px]"
-          style={{ background: tint(10), border: `1px solid ${tint(15)}`, color: "inherit" }}
-        >
-          <RefreshCw size={14} aria-hidden="true" />
-          {t.common.retry}
-        </button>
-      </div>
+      <Panel {...panelProps} aria-labelledby="daily-receipt-title">
+        <EmptyState
+          bare
+          size="sm"
+          tone="error"
+          icon={AlertTriangle}
+          title={t.dashboard.salesError}
+          description={t.error.message}
+          action={{ label: t.common.retry, onClick: refetch, icon: RefreshCw }}
+        />
+      </Panel>
     );
   }
 
-  const ghostBtn = "btn min-h-11 px-4 text-[12px] font-bold";
-  const ghostStyle: React.CSSProperties = { background: tint(10), border: `1px solid ${tint(15)}`, color: "inherit" };
-
   return (
-    <section aria-labelledby="daily-receipt-title" className={cn(shell, refreshing && "opacity-90")} aria-busy={refreshing || undefined}>
-      <div className="mb-6 flex items-start justify-between gap-3">
-        <div>
-          <p className="m-0 mb-1.5 text-[12px] font-bold" style={{ color: tint(60) }}>
-            {formatDate(new Date(), "weekdayDay")}
-          </p>
-          <h2
-            id="daily-receipt-title"
-            className="m-0 text-[18px] font-extrabold"
-            style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.01em") }}
-          >
-            {t.dashboard.dailySummary}
-          </h2>
-        </div>
-        <span className="grid size-9 place-items-center rounded-xl" style={{ background: tint(10) }}>
-          <FileText size={16} aria-hidden="true" />
-        </span>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-3">
-        <MethodRow icon={Banknote} label={t.dashboard.cash} count={cash.length} total={money(sum(cash))} delay={0.05} />
-        <MethodRow icon={CreditCard} label={t.dashboard.card} count={card.length} total={money(sum(card))} delay={0.1} />
-        {other.length > 0 && (
-          <MethodRow icon={Wallet} label={t.dashboard.otherMethods} count={other.length} total={money(sum(other))} delay={0.15} />
-        )}
-
-        {sales.length === 0 ? (
-          <p className="m-0 py-2 text-center text-[13px]" style={{ color: tint(60) }}>
-            {t.dashboard.noSalesToday}
-          </p>
-        ) : (
-          <ul className="m-0 mt-1 max-h-56 list-none overflow-y-auto p-0 pt-3" style={{ borderTop: `1px solid ${tint(12)}` }}>
-            {sales.map((sale, i) => (
-              <li
-                key={sale.id}
-                className="flex items-center justify-between gap-3 py-2"
-                style={{ borderBottom: i < sales.length - 1 ? `1px solid ${tint(7)}` : "none" }}
-              >
-                <div className="min-w-0">
-                  <p className="m-0 truncate text-[13px] font-bold">{sale.clientName || sale.service}</p>
-                  <p className="m-0 text-[11px] tabular-nums" style={{ color: tint(60) }}>
-                    {formatTime(sale.soldAt)} · {methodLabel(sale.paymentMethod)}
-                  </p>
-                </div>
-                <span className="shrink-0 text-[13px] font-bold tabular-nums">{money(sale.amount)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="mt-5 pt-5" style={{ borderTop: `1px solid ${tint(12)}` }}>
-        <div className="mb-4 flex items-end justify-between gap-3">
-          <p className="m-0 text-[12px] font-bold" style={{ color: tint(60) }}>
-            {t.dashboard.totalVolume}
-          </p>
-          <span
-            className="text-[26px] font-black leading-none tabular-nums sm:text-[28px]"
-            style={{ fontFamily: FFD }}
-          >
-            {money(total)}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2.5">
-          <button type="button" onClick={() => window.print()} className={ghostBtn} style={ghostStyle} aria-label={t.dashboard.printSummary}>
-            <Printer size={14} aria-hidden="true" />
-            {t.common.pdf}
-          </button>
-          <button
-            type="button"
+    <Panel
+      {...panelProps}
+      aria-labelledby="daily-receipt-title"
+      aria-busy={refreshing || undefined}
+      className={cn(panelProps.className, "transition-opacity duration-200 motion-reduce:transition-none", refreshing && "opacity-80")}
+      action={
+        <>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => window.print()}
+            aria-label={t.dashboard.printSummary}
+            title={t.dashboard.printSummary}
+            icon={<Printer aria-hidden="true" />}
+          />
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={handleExportCSV}
             disabled={sales.length === 0}
-            className={cn(ghostBtn, "disabled:opacity-50")}
-            style={ghostStyle}
             aria-label={t.dashboard.exportCsv}
-          >
-            <Download size={14} aria-hidden="true" />
-            {t.common.csv}
-          </button>
+            title={t.dashboard.exportCsv}
+            icon={<Download aria-hidden="true" />}
+          />
+        </>
+      }
+    >
+      <ul className="m-0 list-none divide-y divide-line p-0">
+        <MethodRow icon={Banknote} label={t.dashboard.cash} count={cash.length} total={money(sum(cash))} />
+        <MethodRow icon={CreditCard} label={t.dashboard.card} count={card.length} total={money(sum(card))} />
+        {other.length > 0 && (
+          <MethodRow icon={Wallet} label={t.dashboard.otherMethods} count={other.length} total={money(sum(other))} />
+        )}
+      </ul>
+
+      {sales.length === 0 ? (
+        <p className="m-0 mt-2 rounded-lg bg-sunken px-4 py-3 text-center text-sm text-ink-muted">{t.dashboard.noSalesToday}</p>
+      ) : (
+        <ul className="m-0 mt-2 max-h-56 list-none overflow-y-auto rounded-lg bg-sunken/60 p-0 px-3">
+          {sales.map((sale) => (
+            <li key={sale.id} className="flex items-center justify-between gap-3 border-b border-line py-2.5 last:border-b-0">
+              <div className="min-w-0">
+                <p className="m-0 truncate text-sm font-medium text-ink">{sale.clientName || sale.service}</p>
+                <p className="m-0 text-xs tabular-nums text-ink-muted">
+                  {formatTime(sale.soldAt)} · {methodLabel(sale.paymentMethod)}
+                </p>
+              </div>
+              <bdi className="shrink-0 text-sm font-semibold tabular-nums text-ink">{money(sale.amount)}</bdi>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-auto pt-4">
+        <div className="flex items-end justify-between gap-3 border-t border-line pt-4">
+          <p className="m-0 text-sm font-medium text-ink-muted">{t.dashboard.totalVolume}</p>
+          <bdi className="text-stat text-ink">{money(total)}</bdi>
         </div>
       </div>
-    </section>
+    </Panel>
   );
 }

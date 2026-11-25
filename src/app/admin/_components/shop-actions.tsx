@@ -24,8 +24,8 @@ import {
 import { ReasonDialog } from "./reason-dialog";
 
 const inputCls =
-  "h-11 w-full rounded-[var(--radius)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] aria-[invalid=true]:border-[var(--accent-rose)]";
-const labelCls = "mb-1.5 block text-[13px] font-medium text-[var(--text-primary)]";
+  "h-11 w-full rounded-lg border border-line-strong bg-card px-4 text-[15px] text-ink placeholder:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus aria-[invalid=true]:border-danger";
+const labelCls = "mb-1.5 block text-[13px] font-medium text-ink";
 
 // ─── Suspension ────────────────────────────────────────────────────────────
 export function SuspendControl({ shopId, suspended }: { shopId: string; suspended: boolean }) {
@@ -74,7 +74,7 @@ export function ProfileBanButton({
         type="button"
         onClick={() => setOpen(true)}
         disabled={disabled}
-        className="inline-flex h-9 items-center rounded-[var(--radius)] border border-[var(--border-subtle)] px-3 text-[13px] font-medium text-[var(--text-primary)] hover:border-[var(--border-hover)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-9 items-center rounded-full border border-line-strong bg-card px-3.5 text-[13px] font-semibold transition-colors text-ink hover:border-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50"
       >
         {banned ? c.unbanProfile : c.banProfile}
       </button>
@@ -185,30 +185,30 @@ export function PlanPanel({ shopId, plan, canEdit }: { shopId: string; plan: Pla
       {plan ? (
         <dl className="grid grid-cols-2 gap-3 text-[14px] sm:grid-cols-4">
           <div>
-            <dt className="text-[12px] text-[var(--text-muted)]">{c.planLabel}</dt>
+            <dt className="text-[12px] text-ink-muted">{c.planLabel}</dt>
             <dd className="font-medium">{c.codes[plan.plan_code] ?? plan.plan_code}</dd>
           </div>
           <div>
-            <dt className="text-[12px] text-[var(--text-muted)]">{c.trialEndsLabel}</dt>
+            <dt className="text-[12px] text-ink-muted">{c.trialEndsLabel}</dt>
             <dd>{plan.trial_ends_at ? formatDate(plan.trial_ends_at) : ADMIN_COPY.common.dash}</dd>
           </div>
           <div>
-            <dt className="text-[12px] text-[var(--text-muted)]">{c.maxBarbersLabel}</dt>
+            <dt className="text-[12px] text-ink-muted">{c.maxBarbersLabel}</dt>
             <dd className="tabular-nums">{plan.max_barbers ?? ADMIN_COPY.common.dash}</dd>
           </div>
           <div>
-            <dt className="text-[12px] text-[var(--text-muted)]">{c.messagesLabel}</dt>
+            <dt className="text-[12px] text-ink-muted">{c.messagesLabel}</dt>
             <dd className="tabular-nums">{plan.monthly_message_allowance ?? ADMIN_COPY.common.dash}</dd>
           </div>
           {plan.note && (
             <div className="col-span-2 sm:col-span-4">
-              <dt className="text-[12px] text-[var(--text-muted)]">{c.noteLabel}</dt>
+              <dt className="text-[12px] text-ink-muted">{c.noteLabel}</dt>
               <dd className="whitespace-pre-line">{plan.note}</dd>
             </div>
           )}
         </dl>
       ) : (
-        <p className="text-[14px] text-[var(--text-secondary)]">{c.none}</p>
+        <p className="text-[14px] text-ink-soft">{c.none}</p>
       )}
 
       {canEdit && (
@@ -267,7 +267,7 @@ export function PlanPanel({ shopId, plan, canEdit }: { shopId: string; plan: Pla
               className={inputCls}
             />
             {err("trial_ends_at") && (
-              <p id={`${id}-trial-err`} className="mt-1 text-[12px] text-[var(--accent-rose)]">
+              <p id={`${id}-trial-err`} className="mt-1 text-[12px] text-danger-text">
                 {c.errors.trialRequired}
               </p>
             )}
@@ -286,7 +286,7 @@ export function PlanPanel({ shopId, plan, canEdit }: { shopId: string; plan: Pla
               aria-describedby={`${id}-barbers-hint`}
               className={inputCls}
             />
-            <p id={`${id}-barbers-hint`} className={`mt-1 text-[12px] ${err("max_barbers") ? "text-[var(--accent-rose)]" : "text-[var(--text-muted)]"}`}>
+            <p id={`${id}-barbers-hint`} className={`mt-1 text-[12px] ${err("max_barbers") ? "text-danger-text" : "text-ink-muted"}`}>
               {err("max_barbers") ? c.errors.barbers : c.blankMeansDefault}
             </p>
           </div>
@@ -304,7 +304,7 @@ export function PlanPanel({ shopId, plan, canEdit }: { shopId: string; plan: Pla
               aria-describedby={`${id}-msgs-hint`}
               className={inputCls}
             />
-            <p id={`${id}-msgs-hint`} className={`mt-1 text-[12px] ${err("monthly_message_allowance") ? "text-[var(--accent-rose)]" : "text-[var(--text-muted)]"}`}>
+            <p id={`${id}-msgs-hint`} className={`mt-1 text-[12px] ${err("monthly_message_allowance") ? "text-danger-text" : "text-ink-muted"}`}>
               {err("monthly_message_allowance") ? c.errors.messages : c.blankMeansDefault}
             </p>
           </div>
@@ -319,12 +319,12 @@ export function PlanPanel({ shopId, plan, canEdit }: { shopId: string; plan: Pla
               rows={2}
               maxLength={500}
               aria-invalid={err("note")}
-              className="w-full rounded-[var(--radius)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2 text-[15px] text-[var(--text-primary)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+              className="w-full rounded-lg border border-line-strong bg-card px-4 py-2 text-[15px] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
             />
           </div>
         </div>
         {!checked.ok && errors.length === 0 && values.plan_code === "trial" && !values.trial_ends_at && (
-          <p className="text-[12px] text-[var(--text-muted)]">{c.errors.trialRequired}</p>
+          <p className="text-[12px] text-ink-muted">{c.errors.trialRequired}</p>
         )}
       </ReasonDialog>
 

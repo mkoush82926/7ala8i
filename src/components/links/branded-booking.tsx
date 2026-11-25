@@ -4,7 +4,7 @@ import React, { Suspense } from "react";
 import { Languages, MapPin, MessageCircle, Phone } from "lucide-react";
 import { BookingEngine } from "@/components/booking/booking-engine";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { buildWaLink } from "@/lib/messaging-stub";
 import { cn } from "@/lib/utils";
 import type { PublicBookingSecurity } from "@/lib/otp/config";
@@ -13,17 +13,17 @@ import { welcomeFor, type LinkAccent } from "./link-utils";
 import { shopDisplayName, shopLandmark, type BrandedShop } from "./branded-shop";
 
 const ACCENT_CLASS: Record<LinkAccent, string> = {
-  ink: "bg-[var(--brand-primary)] text-[var(--brand-on-primary)]",
-  brass: "bg-[var(--cta-bg)] text-[var(--cta-fg)]",
-  paper: "bg-[var(--bg-primary)] text-[var(--text-primary)] border-b border-[var(--border-subtle)]",
+  ink: "bg-inverse text-on-inverse",
+  brass: "bg-brand text-on-brand",
+  paper: "bg-card text-ink border-b border-line",
 };
 
 const ICON_BUTTON =
-  "focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-lg border transition-colors";
+  "focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full border transition-colors duration-150";
 
 function iconButtonTone(accent: LinkAccent): string {
   return accent === "paper"
-    ? "border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+    ? "border-line bg-card text-ink hover:bg-sunken"
     : "border-white/25 bg-white/10 text-current hover:bg-white/20";
 }
 
@@ -47,7 +47,7 @@ export function BrandedBooking({
   embed?: boolean;
   altLocaleHref: string;
 }) {
-  const { t, locale, dir, isRTL, FF, FFD, href } = useTranslation();
+  const { t, locale, dir, FF, FFD, href } = useTranslation();
   const tl = t.links;
   const pageKey = (locale === "ar" ? shop.slug_ar || shop.slug : shop.slug) || shop.id;
   const brandedHref = href(`/b/${encodeURIComponent(pageKey)}`);
@@ -79,7 +79,7 @@ export function BrandedBooking({
 
   if (embed) {
     return (
-      <div dir={dir} className="min-h-dvh bg-[var(--bg-primary)] text-[var(--text-primary)]" style={{ fontFamily: FF }}>
+      <div dir={dir} className="min-h-dvh bg-card text-ink" style={{ fontFamily: FF }}>
         <LinkVisitBeacon shopId={shop.id} src={src} entry={entry} />
         <main id="booking-main" aria-label={interpolate(tl.page.bookAt, { name })} className="mx-auto w-full max-w-[760px] px-4 py-4">
           {engine}
@@ -89,14 +89,14 @@ export function BrandedBooking({
   }
 
   return (
-    <div dir={dir} className="min-h-dvh bg-[var(--bg-secondary)] text-[var(--text-primary)]" style={{ fontFamily: FF }}>
+    <div dir={dir} className="min-h-dvh bg-page text-ink" style={{ fontFamily: FF }}>
       <LinkVisitBeacon shopId={shop.id} src={src} entry={entry} />
       <a href="#booking-main" className="skip-link">{t.booking.skipToBooking}</a>
 
       <header className={cn("relative", ACCENT_CLASS[theme.accent])}>
         {cover && (
           <div className="mx-auto w-full max-w-[760px] sm:px-4 sm:pt-4">
-            <div className="relative aspect-[16/9] max-h-[220px] w-full overflow-hidden bg-[var(--bg-secondary)] sm:rounded-xl">
+            <div className="relative aspect-[16/9] max-h-[260px] w-full overflow-hidden bg-sunken sm:rounded-2xl">
               {/* eslint-disable-next-line @next/next/no-img-element -- any https cover URL, sized by CSS */}
               <img src={cover} alt={interpolate(tl.page.coverAlt, { name })} className="size-full object-cover" fetchPriority="high" />
             </div>
@@ -109,15 +109,15 @@ export function BrandedBooking({
             <img
               src={logo}
               alt={interpolate(tl.page.logoAlt, { name })}
-              className={cn("size-14 shrink-0 rounded-xl border-2 border-[var(--bg-primary)] bg-[var(--bg-primary)] object-cover", cover && "-mt-10")}
+              className={cn("size-14 shrink-0 rounded-xl border-2 border-card bg-card object-cover shadow-xs", cover && "-mt-10")}
             />
           ) : (
             <span
               aria-hidden="true"
               className={cn(
-                "inline-flex size-14 shrink-0 items-center justify-center rounded-xl text-2xl font-black",
-                theme.accent === "paper" ? "bg-[var(--brand-primary)] text-[var(--brand-on-primary)]" : "bg-white/15 text-current",
-                cover && "-mt-10 border-2 border-[var(--bg-primary)]",
+                "inline-flex size-14 shrink-0 items-center justify-center rounded-xl text-2xl font-extrabold",
+                theme.accent === "paper" ? "bg-inverse text-on-inverse" : "bg-white/15 text-current",
+                cover && "-mt-10 border-2 border-card",
               )}
             >
               {initial}
@@ -126,10 +126,7 @@ export function BrandedBooking({
 
           <div className="min-w-0 flex-1">
             <p className="m-0 text-xs font-semibold opacity-80">{tl.page.eyebrow}</p>
-            <h1
-              className="m-0 truncate text-xl font-black sm:text-2xl"
-              style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.01em") }}
-            >
+            <h1 className="text-h2 m-0 truncate" style={{ fontFamily: FFD }}>
               {name}
             </h1>
             {landmark && (
@@ -154,7 +151,7 @@ export function BrandedBooking({
             )}
             <a href={altLocaleHref} hrefLang={locale === "ar" ? "en" : "ar"} lang={locale === "ar" ? "en" : "ar"}
               aria-label={tl.page.switchLanguage}
-              className={cn(ICON_BUTTON, "w-auto gap-1 px-3 text-sm font-bold", iconButtonTone(theme.accent))}>
+              className={cn(ICON_BUTTON, "w-auto gap-1.5 px-4 text-sm font-semibold", iconButtonTone(theme.accent))}>
               <Languages size={16} aria-hidden="true" />
               <span>{tl.page.otherLanguage}</span>
             </a>
@@ -168,11 +165,11 @@ export function BrandedBooking({
         )}
       </header>
 
-      <main id="booking-main" aria-label={interpolate(tl.page.bookAt, { name })} className="pb-8 pt-5">
+      <main id="booking-main" aria-label={interpolate(tl.page.bookAt, { name })} className="pb-10 pt-6">
         <div className="mx-auto w-full max-w-[760px] px-4">{engine}</div>
       </main>
 
-      <footer className="mx-auto w-full max-w-[760px] px-4 pb-8 text-center text-xs text-[var(--text-muted)]">
+      <footer className="mx-auto w-full max-w-[760px] border-t border-line px-4 py-6 text-center text-[13px] text-ink-muted">
         {tl.page.poweredBy}
       </footer>
     </div>

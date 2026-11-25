@@ -141,7 +141,7 @@ export function WeeklyHoursPanel({
   }
 
   const timeInput =
-    "h-11 w-full min-w-0 rounded-[var(--radius-inputs)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-2 text-center text-sm text-[var(--text-primary)] outline-none focus-visible:border-[var(--accent-brass)] sm:w-28 disabled:opacity-50";
+    "h-11 w-full min-w-0 rounded-lg border border-line-strong bg-card px-2 text-center text-sm text-ink outline-none focus-visible:border-brand sm:w-28 disabled:opacity-50";
 
   return (
     <div className="flex flex-col gap-3">
@@ -153,8 +153,8 @@ export function WeeklyHoursPanel({
             <div
               key={day.day_of_week}
               className={cn(
-                "flex flex-col gap-2 rounded-[var(--radius-inputs)] border border-[var(--border-subtle)] p-3",
-                day.is_working ? "bg-[var(--bg-secondary)]" : "bg-[var(--bg-primary)]",
+                "flex flex-col gap-2 rounded-lg border border-line p-3",
+                day.is_working ? "bg-sunken" : "bg-card",
               )}
             >
               <div className="flex flex-wrap items-center gap-3">
@@ -163,12 +163,12 @@ export function WeeklyHoursPanel({
                     type="checkbox"
                     checked={day.is_working}
                     onChange={(e) => updateDay(day.day_of_week, { is_working: e.target.checked })}
-                    className="h-4 w-4 shrink-0 accent-[var(--accent-mint)]"
+                    className="h-4 w-4 shrink-0 accent-brand"
                   />
-                  <span className={cn("text-sm font-medium", day.is_working ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]")}>
+                  <span className={cn("text-sm font-medium", day.is_working ? "text-ink" : "text-ink-muted")}>
                     {label}
                   </span>
-                  {!day.is_working && <span className="text-[12px] text-[var(--text-muted)]">· {t.team.dayOff}</span>}
+                  {!day.is_working && <span className="text-[12px] text-ink-muted">· {t.team.dayOff}</span>}
                 </label>
 
                 {day.is_working && (
@@ -180,7 +180,7 @@ export function WeeklyHoursPanel({
                       onChange={(e) => e.target.value && updateDay(day.day_of_week, { start_time: withSeconds(e.target.value) })}
                       className={timeInput}
                     />
-                    <span aria-hidden="true" className="text-[var(--text-muted)]">–</span>
+                    <span aria-hidden="true" className="text-ink-muted">–</span>
                     <input
                       type="time"
                       aria-label={`${label} — ${t.team.endTime}`}
@@ -193,8 +193,8 @@ export function WeeklyHoursPanel({
               </div>
 
               {day.is_working && (
-                <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-[var(--border-subtle)] pt-2">
-                  <span className="w-full text-[12px] font-medium text-[var(--text-muted)] sm:w-auto">{t.team.breakLabel}</span>
+                <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-line pt-2">
+                  <span className="w-full text-[12px] font-medium text-ink-muted sm:w-auto">{t.team.breakLabel}</span>
                   <div className="flex flex-1 items-center gap-2 sm:flex-none">
                     <input
                       type="time"
@@ -203,7 +203,7 @@ export function WeeklyHoursPanel({
                       onChange={(e) => updateDay(day.day_of_week, { break_start: e.target.value ? withSeconds(e.target.value) : null })}
                       className={timeInput}
                     />
-                    <span aria-hidden="true" className="text-[var(--text-muted)]">–</span>
+                    <span aria-hidden="true" className="text-ink-muted">–</span>
                     <input
                       type="time"
                       aria-label={`${label} — ${t.team.breakEnd}`}
@@ -216,7 +216,7 @@ export function WeeklyHoursPanel({
                     <button
                       type="button"
                       onClick={() => updateDay(day.day_of_week, { break_start: null, break_end: null })}
-                      className="focus-ring min-h-[44px] rounded px-2 text-[12px] font-medium text-[var(--text-muted)] underline transition-colors hover:text-[var(--accent-rose)]"
+                      className="focus-ring min-h-[44px] rounded px-2 text-[12px] font-medium text-ink-muted underline transition-colors hover:text-danger-text"
                       aria-label={`${label} — ${t.team.clearBreak}`}
                     >
                       {t.team.clearBreak}

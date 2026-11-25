@@ -14,5 +14,5 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-dvh bg-[var(--bg-primary)]">{children}</div>;
+  return <div className="min-h-dvh bg-page">{children}</div>;
 }

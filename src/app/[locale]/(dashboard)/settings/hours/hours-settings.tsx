@@ -50,8 +50,8 @@ type ListEntry =
   | { type: "closed"; key: string; ids: string[]; start: string; end: string; noteEn: string | null; noteAr: string | null }
   | { type: "special"; key: string; group: SpecialGroup };
 
-const card = "flex flex-col gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 sm:p-5";
-const h2 = "m-0 text-base font-bold text-[var(--text-primary)]";
+const card = "flex flex-col gap-5 rounded-xl border border-line bg-card p-4 sm:p-6";
+const h2 = "text-h3 m-0 text-ink";
 
 /**
  * Shop-wide hours exceptions: closures (Eid, holidays) and special hours
@@ -196,12 +196,12 @@ export function HoursSettings() {
       {/* ── Hijri presets ── */}
       <section aria-labelledby="hp-title" className={card}>
         <div className="flex items-start gap-3">
-          <Moon size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--text-secondary)]" />
+          <Moon size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-soft" />
           <div>
             <h2 id="hp-title" className={h2}>
               {ts.presetsTitle}
             </h2>
-            <p className="m-0 mt-1 text-sm text-[var(--text-secondary)]">{ts.presetsHelp}</p>
+            <p className="m-0 mt-1 text-sm text-ink-soft">{ts.presetsHelp}</p>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
@@ -247,13 +247,13 @@ export function HoursSettings() {
           </div>
         </div>
         {preset ? (
-          <div className="flex flex-col gap-3 rounded-xl bg-[var(--bg-secondary)] p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 rounded-xl bg-sunken p-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="m-0 text-sm font-semibold text-[var(--text-primary)]">
+              <p className="m-0 text-sm font-semibold text-ink">
                 {range(preset.start, preset.end)} · {interpolate(ts.daysCount, { count: preset.days })}
               </p>
-              <p className="m-0 text-[12px] text-[var(--text-muted)]">{hijriRangeLabel(preset.start, preset.end)}</p>
-              <p className="m-0 mt-1 text-[12px] text-[var(--text-secondary)]">
+              <p className="m-0 text-[12px] text-ink-muted">{hijriRangeLabel(preset.start, preset.end)}</p>
+              <p className="m-0 mt-1 text-[12px] text-ink-soft">
                 {preset.kind === "closed" ? ts.presetClosed : `${ts.presetSpecial} `}
                 {preset.kind === "special" && <span dir="ltr">{segmentsLabel(preset.segments)}</span>}
               </p>
@@ -267,7 +267,7 @@ export function HoursSettings() {
             {ts.hijriInvalid}
           </p>
         )}
-        <p className="m-0 text-[12px] text-[var(--text-muted)]">{ts.moonSightingNote}</p>
+        <p className="m-0 text-[12px] text-ink-muted">{ts.moonSightingNote}</p>
       </section>
 
       {/* ── New exception ── */}
@@ -293,8 +293,8 @@ export function HoursSettings() {
               className={cn(
                 "focus-ring flex min-h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors",
                 kind === o.id
-                  ? "border-[var(--text-primary)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
-                  : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-primary)]",
+                  ? "border-ink bg-sunken text-ink"
+                  : "border-line text-ink-soft hover:border-line-strong",
               )}
             >
               <o.icon size={16} aria-hidden="true" />
@@ -304,10 +304,10 @@ export function HoursSettings() {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <span id="hf-cal" className="text-[13px] font-semibold text-[var(--text-secondary)]">
+          <span id="hf-cal" className="text-[13px] font-semibold text-ink-soft">
             {ts.calendar}
           </span>
-          <div role="radiogroup" aria-labelledby="hf-cal" className="inline-flex rounded-lg bg-[var(--bg-secondary)] p-1">
+          <div role="radiogroup" aria-labelledby="hf-cal" className="inline-flex rounded-full bg-sunken p-1">
             {(["gregorian", "hijri"] as const).map((c) => (
               <button
                 key={c}
@@ -316,8 +316,8 @@ export function HoursSettings() {
                 aria-checked={calendar === c}
                 onClick={() => setCalendar(c)}
                 className={cn(
-                  "focus-ring min-h-9 rounded-md px-3 text-sm font-medium",
-                  calendar === c ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-muted)]",
+                  "focus-ring min-h-9 rounded-full px-4 text-sm font-semibold transition-colors duration-150",
+                  calendar === c ? "bg-card text-ink shadow-xs" : "text-ink-muted hover:text-ink",
                 )}
               >
                 {c === "gregorian" ? ts.calendarGregorian : ts.calendarHijri}
@@ -363,7 +363,7 @@ export function HoursSettings() {
             <input id="hf-note-en" dir="ltr" lang="en" value={noteEn} maxLength={200} onChange={(e) => setNoteEn(e.target.value)} className="field-input" />
           </div>
         </fieldset>
-        <p className="m-0 text-[12px] text-[var(--text-muted)]">{ts.notesHelp}</p>
+        <p className="m-0 text-[12px] text-ink-muted">{ts.notesHelp}</p>
 
         {error && (
           <p role="alert" className="field-error m-0">
@@ -397,27 +397,27 @@ export function HoursSettings() {
               const b = e.type === "closed" ? e.end : e.group.end;
               const n = e.type === "closed" ? note(e.noteEn, e.noteAr) : note(e.group.noteEn, e.group.noteAr);
               return (
-                <li key={e.key} className="flex items-center gap-3 rounded-xl border border-[var(--border-subtle)] px-3 py-2">
+                <li key={e.key} className="flex items-center gap-3 rounded-xl border border-line px-3 py-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-[var(--text-primary)]">{range(a, b)}</span>
+                      <span className="text-sm font-semibold text-ink">{range(a, b)}</span>
                       <Pill tone={closed ? "danger" : "neutral"} size="sm" icon={closed ? <CalendarX2 size={12} aria-hidden="true" /> : <Clock size={12} aria-hidden="true" />}>
                         {closed ? ts.typeClosed : ts.typeSpecial}
                       </Pill>
                     </div>
-                    <span className="block text-[12px] text-[var(--text-muted)]">{hijriRangeLabel(a, b)}</span>
+                    <span className="block text-[12px] text-ink-muted">{hijriRangeLabel(a, b)}</span>
                     {e.type === "special" && !e.group.isClosed && (
-                      <span className="block text-[12px] text-[var(--text-secondary)]" dir="ltr">
+                      <span className="block text-[12px] text-ink-soft" dir="ltr">
                         {segmentsLabel(e.group.segments)}
                       </span>
                     )}
-                    {n && <span className="block truncate text-[12px] text-[var(--text-secondary)]">{n}</span>}
+                    {n && <span className="block truncate text-[12px] text-ink-soft">{n}</span>}
                   </div>
                   <button
                     type="button"
                     onClick={() => setToDelete(e)}
                     aria-label={interpolate(ts.deleteExceptionFor, { range: entryLabel(e) })}
-                    className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--accent-rose)]"
+                    className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-sunken hover:text-danger-text"
                   >
                     <Trash2 size={16} aria-hidden="true" />
                   </button>
@@ -434,7 +434,7 @@ export function HoursSettings() {
           <h2 id="hb-title" className={h2}>
             {ts.bannerPreview}
           </h2>
-          <p className="m-0 text-sm text-[var(--text-secondary)]">{ts.bannerPreviewHelp}</p>
+          <p className="m-0 text-sm text-ink-soft">{ts.bannerPreviewHelp}</p>
           <ClosureBanner key={list.data?.length ?? 0} shopId={shopId} timezone={tz} />
         </section>
       )}

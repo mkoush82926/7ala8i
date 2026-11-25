@@ -1,8 +1,8 @@
 "use client";
 
-// Interactive islands for the server-rendered landing page:
-//   • LandingShell    — the scroll-snap container, reveal-on-scroll, keyboard scrolling
-//   • LandingNav      — floating pill nav (inline links ≥768px, menu below), auth-aware CTA
+// Interactive islands for the server-rendered for-business page (§6.10):
+//   • LandingShell    — page wrapper with reveal-on-scroll (normal document scrolling)
+//   • LandingNav      — sticky marketing nav (inline links ≥768px, menu below), auth-aware CTA
 //   • BackgroundVideo — lazy, poster-first ambient video
 // Everything else on the page is static HTML rendered on the server.
 
@@ -12,31 +12,14 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+import { buttonClasses, focusRing } from "@/components/ui/recipes";
+import { Wordmark } from "@/components/search/site-footer";
 
 // ─── Scroll container ────────────────────────────────────────────────────────
 
 export function LandingShell({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
-
-  // Desktop only: the snap container is the scroller, so stop the document
-  // itself from rubber-banding behind it. Phones keep normal behaviour.
-  useEffect(() => {
-    if (!window.matchMedia("(min-width: 768px)").matches) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
-
-  // Native keyboard scrolling (Space, PageDown, arrows) acts on the focused
-  // scroller — give the container focus unless something else already has it.
-  useEffect(() => {
-    const el = ref.current;
-    if (el && (document.activeElement === document.body || document.activeElement === null)) {
-      el.focus({ preventScroll: true });
-    }
-  }, []);
 
   // Reveal-on-scroll for every `.reveal` block (CSS in globals.css; reduced
   // motion shows them immediately).
@@ -64,12 +47,7 @@ export function LandingShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div
-      ref={ref}
-      tabIndex={-1}
-      className="landing-snap-container"
-      style={{ outline: "none", position: "relative", overflowX: "hidden", background: "var(--bg-primary)", color: "var(--text-primary)" }}
-    >
+    <div ref={ref} className="relative min-h-dvh overflow-x-clip bg-page text-ink">
       {children}
     </div>
   );
@@ -95,10 +73,7 @@ function useViewer(): Viewer {
         // The authoritative role lives in profiles (invited staff keep a
         // "customer" signup role in their user metadata).
         const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-        const role =
-          (profile as { role?: string } | null)?.role ??
-          (user.user_metadata as { role?: string } | undefined)?.role ??
-          null;
+        const role = (profile as { role?: string } | null)?.role ?? (user.user_metadata as { role?: string } | undefined)?.role ?? null;
         if (alive) setViewer({ status: "signed-in", role });
       })
       .catch(() => alive && setViewer({ status: "guest", role: null }));
@@ -172,50 +147,45 @@ export function LandingNav() {
   );
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 px-4 pt-3 sm:pt-4" style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}>
-      <nav
-        aria-label={t.landing.navPrimary}
-        className="mx-auto flex max-w-[1100px] items-center justify-between gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]/95 py-2.5 ps-5 pe-2.5 backdrop-blur"
-        style={{ boxShadow: "0 0 24px 0 rgba(166,124,61,0.15)" }}
-      >
-        <Link
-          href={href("/landing")}
-          aria-label={t.landing.homeLink}
-          dir="ltr"
-          className="rounded-md text-[18px] font-bold text-[var(--text-primary)] no-underline"
-          style={{ fontFamily: "var(--font-bdo-grotesk), system-ui, sans-serif", letterSpacing: "0.008em" }}
-        >
-          Halaqy<span className="text-[var(--accent-brass)]">.</span>
+    <header
+      className="sticky top-0 z-40 border-b border-line bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      <nav aria-label={t.landing.navPrimary} className="mx-auto flex h-16 w-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+        <Link href={href("/landing")} aria-label={t.landing.homeLink} className={cn("shrink-0 rounded-lg", focusRing)}>
+          <Wordmark />
         </Link>
 
         {/* Inline links — tablets and up */}
-        <ul className="hidden items-center gap-6 md:flex">
+        <ul className="ms-4 hidden items-center gap-1 md:flex">
           {links.map((link) => (
             <li key={link.href}>
-              <a href={link.href} className="nav-link text-[15px]">
+              <a href={link.href} className={buttonClasses({ variant: "ghost", size: "sm", className: "text-[15px]" })}>
                 {link.label}
               </a>
             </li>
           ))}
         </ul>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {languageLink("btn btn-ghost hidden md:inline-flex !min-h-[40px] !px-3 !text-[14px]")}
+        <div className="ms-auto flex items-center gap-1.5 sm:gap-2">
+          {languageLink(buttonClasses({ variant: "ghost", size: "sm", className: "h-10 px-3" }))}
           {viewer.status === "guest" && (
-            <Link href={href("/auth/login")} className="btn btn-ghost hidden md:inline-flex !min-h-[40px] !px-3 !text-[14px]">
+            <Link
+              href={href("/auth/login")}
+              className={buttonClasses({ variant: "ghost", size: "sm", className: "hidden h-10 px-3 md:inline-flex" })}
+            >
               {t.landing.navLogin}
             </Link>
           )}
           <Link
             href={cta.href}
-            className="btn btn-primary hidden md:inline-flex !min-h-[44px] !rounded-full !px-6 !text-[14px] !font-bold"
+            className={buttonClasses({ variant: "primary", size: "sm", className: "hidden h-10 px-5 md:inline-flex" })}
             aria-busy={viewer.status === "loading" || undefined}
           >
             {cta.label}
           </Link>
 
-          {/* Phones: language + menu toggle */}
-          {languageLink("btn btn-ghost md:hidden !min-h-[44px] !px-3 !text-[14px]")}
+          {/* Phones: menu toggle */}
           <button
             ref={toggleRef}
             type="button"
@@ -223,28 +193,23 @@ export function LandingNav() {
             aria-label={menuOpen ? t.landing.navMenuClose : t.landing.navMenuOpen}
             aria-expanded={menuOpen}
             aria-controls={panelId}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] md:hidden"
+            className={buttonClasses({ variant: "ghost", size: "icon", className: "text-ink md:hidden" })}
           >
-            {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+            {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
           </button>
         </div>
       </nav>
 
       {/* Menu panel — phones only */}
-      <div
-        id={panelId}
-        ref={panelRef}
-        hidden={!menuOpen}
-        className="mx-auto mt-3 max-w-[1100px] md:hidden"
-      >
-        <div className="fade-slide-up flex flex-col gap-1 rounded-3xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 shadow-[0_24px_60px_-20px_rgba(28,22,17,0.22)]">
+      <div id={panelId} ref={panelRef} hidden={!menuOpen} className="px-4 pb-4 md:hidden">
+        <div className="fade-slide-up flex flex-col rounded-2xl border border-line bg-card p-2 shadow-float">
           <ul className="flex flex-col">
             {links.map((link) => (
               <li key={link.href}>
                 <a
                   href={link.href}
                   onClick={() => closeMenu()}
-                  className="block rounded-lg px-2 py-3 text-[16px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                  className={cn("flex h-12 items-center rounded-lg px-3 text-base font-medium text-ink hover:bg-sunken", focusRing)}
                 >
                   {link.label}
                 </a>
@@ -255,24 +220,20 @@ export function LandingNav() {
                 <Link
                   href={href("/auth/login")}
                   onClick={() => closeMenu()}
-                  className="block rounded-lg px-2 py-3 text-[16px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                  className={cn("flex h-12 items-center rounded-lg px-3 text-base font-medium text-ink hover:bg-sunken", focusRing)}
                 >
                   {t.landing.navLogin}
                 </Link>
               </li>
             )}
           </ul>
-          <div className="my-2 h-px bg-[var(--border-subtle)]" />
-          <Link
-            href={cta.href}
-            onClick={() => closeMenu()}
-            className="btn btn-primary w-full !min-h-[48px] !rounded-full !text-[15px] !font-bold"
-          >
+          <div className="mx-3 my-2 h-px bg-line" />
+          <Link href={cta.href} onClick={() => closeMenu()} className={buttonClasses({ variant: "primary", size: "lg", fullWidth: true })}>
             {cta.label}
           </Link>
         </div>
       </div>
-    </div>
+    </header>
   );
 }
 

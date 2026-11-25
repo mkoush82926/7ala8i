@@ -7,7 +7,8 @@ import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { MetaLine } from "@/components/ui/meta-line";
 import { normalizePhone, type WizardDraft, type WizardStep } from "../_lib/wizard";
 import type { AreaOption, CityOption } from "./start-wizard";
-import { StepHeader, cardClass, cardStyle } from "./ui";
+import { buttonClasses, checkboxClasses } from "@/components/ui/recipes";
+import { Notice, StepHeader, cardClass } from "./ui";
 
 export function StepPublish({
   draft,
@@ -83,33 +84,24 @@ export function StepPublish({
     <div>
       <StepHeader title={s.publish.title} subtitle={s.publish.subtitle} />
       {publishError && (
-        <div
-          role="alert"
-          className="mb-4 rounded-[var(--radius-lg)] border px-4 py-3 text-[14px]"
-          style={{ borderColor: "var(--accent-rose)", color: "var(--accent-rose)", background: "var(--accent-rose-muted)" }}
-        >
+        <Notice tone="error" className="mb-4">
           {publishError}
-        </div>
+        </Notice>
       )}
-      <ul className={cn(cardClass, "divide-y")} style={{ ...cardStyle }}>
+      <ul className={cn(cardClass, "divide-y divide-line overflow-hidden shadow-xs")}>
         {rows.map(({ step, icon: Icon, title, detail }) => (
-          <li key={step} className="flex items-start gap-3 p-3.5" style={{ borderColor: "var(--border-subtle)" }}>
-            <Icon size={18} aria-hidden className="mt-0.5 shrink-0" style={{ color: "var(--text-muted)" }} />
+          <li key={step} className="flex items-center gap-3 p-3.5 sm:p-4">
+            <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand-text">
+              <Icon size={18} />
+            </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-medium" style={{ color: "var(--text-primary)" }}>
-                {title}
-              </p>
-              {detail && (
-                <div className="truncate text-[13px]" style={{ color: "var(--text-muted)" }}>
-                  {detail}
-                </div>
-              )}
+              <p className="text-title truncate text-ink">{title}</p>
+              {detail && <div className="text-meta truncate">{detail}</div>}
             </div>
             <button
               type="button"
               onClick={() => onEdit(step)}
-              className="shrink-0 text-[14px] font-medium underline underline-offset-2"
-              style={{ color: "var(--accent-text)" }}
+              className={buttonClasses({ variant: "ghost", size: "sm", className: "-me-2 shrink-0 text-brand-text" })}
               aria-label={`${s.publish.edit} · ${s.steps[step]}`}
             >
               {s.publish.edit}
@@ -118,35 +110,35 @@ export function StepPublish({
         ))}
       </ul>
 
-      <fieldset className="mt-6">
-        <legend className="mb-2 text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
-          {s.publish.visibilityTitle}
-        </legend>
-        <div className="flex flex-col gap-2.5">
+      <fieldset className="mt-8">
+        <legend className="text-h3 mb-3 text-ink">{s.publish.visibilityTitle}</legend>
+        <div className="flex flex-col gap-3">
           {[
             { v: true, icon: Globe2, title: s.publish.marketplaceTitle, body: s.publish.marketplaceBody },
             { v: false, icon: Link2, title: s.publish.linkOnlyTitle, body: s.publish.linkOnlyBody },
           ].map(({ v, icon: Icon, title, body }) => (
             <label
               key={String(v)}
-              className={cn(cardClass, "flex cursor-pointer items-start gap-3 p-3.5 focus-within:ring-2")}
-              style={{ ...cardStyle, borderColor: visible === v ? "var(--text-primary)" : "var(--border-subtle)" }}
+              className={cn(
+                cardClass,
+                "flex cursor-pointer items-start gap-3 p-4 transition-[border-color,background-color,box-shadow] duration-150 ease-standard motion-reduce:transition-none",
+                "hover:border-ink-soft has-[:checked]:border-brand has-[:checked]:bg-brand-soft/40 has-[:checked]:ring-1 has-[:checked]:ring-brand",
+                "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus",
+              )}
             >
               <input
                 type="radio"
                 name="visibility"
-                className="mt-1 h-4 w-4 shrink-0 accent-[var(--cta-bg)]"
+                className={cn(checkboxClasses, "mt-0.5 shrink-0 rounded-full accent-[var(--color-brand)] focus-visible:outline-none")}
                 checked={visible === v}
                 onChange={() => setVisible(v)}
               />
               <span className="min-w-0">
-                <span className="flex items-center gap-2 text-[15px] font-medium" style={{ color: "var(--text-primary)" }}>
-                  <Icon size={16} aria-hidden />
+                <span className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+                  <Icon size={16} aria-hidden className="text-brand-text" />
                   {title}
                 </span>
-                <span className="mt-0.5 block text-[13px]" style={{ color: "var(--text-muted)" }}>
-                  {body}
-                </span>
+                <span className="mt-0.5 block text-[13px] text-ink-muted">{body}</span>
               </span>
             </label>
           ))}

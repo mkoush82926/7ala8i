@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, Loader2, Mail, MessageCircle, Pencil, Phone,
   Search, Trash2, UserPlus, Users, X, CalendarPlus, AlertCircle,
 } from "lucide-react";
-import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabase } from "@/hooks/use-supabase";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
@@ -28,15 +28,27 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TableRowsSkeleton, Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
+import { Pill, type PillTone } from "@/components/ui/pill";
+import { buttonClasses, fieldIconClasses, focusRing, inputClasses } from "@/components/ui/recipes";
 
 // Keystrokes shouldn't each fire a new request — wait for a short pause.
 const SEARCH_DEBOUNCE_MS = 300;
 
+// Initials avatars rotate through the brand tints (teal · sand · amber).
 const AVATAR_TONES = [
-  "bg-[var(--bg-secondary)] text-[var(--text-primary)]",
-  "bg-[var(--border-subtle)] text-[var(--text-primary)]",
-  "bg-[var(--text-primary)] text-[var(--bg-primary)]",
+  "bg-brand-soft text-brand-pressed",
+  "bg-sunken-2 text-ink-soft",
+  "bg-accent-soft text-warning-text",
 ] as const;
+
+const STATUS_TONE: Record<string, PillTone> = {
+  pending: "warning",
+  confirmed: "brand",
+  completed: "success",
+  no_show: "danger",
+  cancelled: "neutral",
+};
 
 const PHONE_DIGITS_MIN = 7;
 const PHONE_DIGITS_MAX = 15;
@@ -76,7 +88,7 @@ export default function ClientsPage() {
 }
 
 function ClientsView() {
-  const { t, isRTL, FF, formatCurrency, href } = useTranslation();
+  const { t, formatCurrency, href } = useTranslation();
   const shopId = useWorkspaceStore((s) => s.shopId);
   const currency = useWorkspaceStore((s) => s.currency);
   const hydrated = useWorkspaceStore((s) => s.hydrated);
@@ -203,25 +215,22 @@ function ClientsView() {
   const showListSkeleton = !hydrated || (!!shopId && initialLoading);
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8 fade-slide-up">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="flex flex-col gap-5 lg:gap-6 fade-slide-up">
+      {/* ── Page header: title + count · search · the one primary action ── */}
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <h2
-            className="m-0 text-[24px] sm:text-[28px] font-extrabold text-[var(--text-primary)]"
-            style={{ fontFamily: FF, letterSpacing: headingTracking(isRTL, "0.014em") }}
-          >
-            {t.sidebar.clients}
-          </h2>
-          <p className="mt-1.5 text-sm text-[var(--text-secondary)]" aria-live="polite">
-            {showListSkeleton ? " " : interpolate(t.clients.subtitle, { count: totalCount })}
+          <h1 className="text-h2 text-ink">{t.sidebar.clients}</h1>
+          <p className="mt-1 min-h-6 text-[15px] text-ink-muted tabular-nums" aria-live="polite">
+            {showListSkeleton ? " " : interpolate(t.clients.subtitle, { count: totalCount })}
           </p>
         </div>
 
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
+        <div className="flex w-full items-center gap-2 lg:w-auto">
           {/* Search — stays mounted across refetches so focus/caret never drop */}
-          <div className="relative w-full sm:w-[300px]" role="search">
-            <Search size={18} className="field-icon" aria-hidden="true" />
+          <div className="relative min-w-0 flex-1 lg:w-80 lg:flex-none" role="search">
+            <span aria-hidden="true" className={fieldIconClasses}>
+              <Search />
+            </span>
             <input
               ref={searchRef}
               type="search"
@@ -238,7 +247,10 @@ function ClientsView() {
                   clearSearch();
                 }
               }}
-              className="field-input has-icon has-action !min-h-[44px] [&::-webkit-search-cancel-button]:hidden"
+              className={inputClasses({
+                withIcon: true,
+                className: "h-11 rounded-full pe-12 [&::-webkit-search-cancel-button]:hidden",
+              })}
             />
             {inputValue ? (
               <button
@@ -248,7 +260,7 @@ function ClientsView() {
                 aria-label={t.clients.clearSearch}
               >
                 {refreshing ? (
-                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                  <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
                 ) : (
                   <X size={16} aria-hidden="true" />
                 )}
@@ -256,21 +268,21 @@ function ClientsView() {
             ) : null}
           </div>
 
-          <button
-            type="button"
-            className="btn btn-primary shrink-0"
+          <Button
             onClick={() => setFormState({ mode: "create" })}
             disabled={!shopId}
+            icon={<UserPlus aria-hidden="true" />}
+            aria-label={t.clients.newClient}
+            className="max-sm:w-11 max-sm:px-0"
           >
-            <UserPlus size={16} aria-hidden="true" />
-            {t.clients.newClient}
-          </button>
+            <span className="hidden sm:inline">{t.clients.newClient}</span>
+          </Button>
         </div>
-      </div>
+      </header>
 
       {/* ── List ── */}
       {showListSkeleton ? (
-        <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+        <div className="overflow-hidden rounded-xl border border-line bg-card">
           <TableRowsSkeleton rows={8} columns={4} />
         </div>
       ) : !shopId ? (
@@ -307,11 +319,20 @@ function ClientsView() {
         <div
           aria-busy={refreshing || undefined}
           className={cn(
-            "overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-primary)] transition-opacity",
+            "overflow-hidden rounded-xl border border-line bg-card transition-opacity duration-200",
             refreshing && "opacity-60",
           )}
         >
-          <ul className="divide-y divide-[var(--border-subtle)]" aria-label={t.sidebar.clients}>
+          {/* Column captions (desktop only; the rows carry their own labels). */}
+          <div
+            aria-hidden="true"
+            className="hidden items-center gap-2 border-b border-line bg-sunken/60 py-2.5 ps-6 pe-6 text-xs font-semibold text-ink-muted sm:flex"
+          >
+            <span className="flex-1 ps-14">{t.clients.name}</span>
+            <span className="w-32 text-end">{t.clients.totalSpent}</span>
+            <span className="w-11 shrink-0 lg:w-9" />
+          </div>
+          <ul className="divide-y divide-line" aria-label={t.sidebar.clients}>
             {clients.map((client, i) => (
               <ClientListItem
                 key={client.id}
@@ -328,11 +349,14 @@ function ClientsView() {
             ))}
           </ul>
           {error && (
-            <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] px-4 py-3 text-sm text-[var(--accent-rose)]">
-              <span>{t.clients.loadErrorTitle}</span>
-              <button type="button" className="btn btn-ghost !min-h-[36px] !px-3 !text-sm" onClick={refetch}>
+            <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-danger-soft px-4 py-3 text-sm font-medium text-danger-text">
+              <span className="flex items-center gap-2">
+                <AlertCircle size={16} aria-hidden="true" />
+                {t.clients.loadErrorTitle}
+              </span>
+              <Button variant="ghost" size="sm" onClick={refetch}>
                 {t.common.retry}
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -344,20 +368,20 @@ function ClientsView() {
           className="flex flex-col-reverse items-center gap-3 sm:flex-row sm:justify-between"
           aria-label={t.clients.pagination}
         >
-          <p className="text-sm font-medium text-[var(--text-secondary)]" aria-live="polite">
+          <p className="text-sm text-ink-muted tabular-nums" aria-live="polite">
             {interpolate(t.clients.pageRange, { from: rangeFrom, to: rangeTo, total: totalCount })}
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1 || refreshing}
               aria-label={t.clients.previousPage}
-              className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-buttons)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-30"
+              className={buttonClasses({ variant: "secondary", size: "icon" })}
             >
               <ChevronLeft size={18} aria-hidden="true" className="rtl:-scale-x-100" />
             </button>
-            <span className="min-w-[96px] px-2 text-center text-sm font-semibold text-[var(--text-primary)]" aria-current="page">
+            <span className="min-w-[96px] px-2 text-center text-sm font-semibold text-ink tabular-nums" aria-current="page">
               {interpolate(t.clients.pageOf, { page, pages: totalPages })}
             </span>
             <button
@@ -365,7 +389,7 @@ function ClientsView() {
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages || refreshing}
               aria-label={t.clients.nextPage}
-              className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-buttons)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] disabled:cursor-not-allowed disabled:opacity-30"
+              className={buttonClasses({ variant: "secondary", size: "icon" })}
             >
               <ChevronRight size={18} aria-hidden="true" className="rtl:-scale-x-100" />
             </button>
@@ -426,40 +450,40 @@ function ClientListItem({
 }) {
   const contact = client.phone || client.email || noContact;
   return (
-    <li className="group flex items-center gap-2 pe-3 transition-colors hover:bg-[var(--bg-secondary)] focus-within:bg-[var(--bg-secondary)] sm:pe-5">
+    <li className="group flex items-center gap-2 pe-3 transition-colors duration-150 hover:bg-sunken/60 focus-within:bg-sunken/60 active:bg-sunken sm:pe-6">
       <button
         type="button"
         onClick={onOpen}
         aria-label={openLabel}
-        className="focus-ring-inset flex min-w-0 flex-1 cursor-pointer items-center gap-3 py-3.5 ps-4 text-start sm:gap-4 sm:ps-6"
+        className="focus-ring-inset flex min-h-16 min-w-0 flex-1 cursor-pointer items-center gap-3 py-3 ps-4 text-start sm:gap-4 sm:ps-6"
       >
         <span
           aria-hidden="true"
           className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold",
+            "flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-bold",
             tone,
           )}
         >
           {getInitials(client.name) || "?"}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-bold leading-snug text-[var(--text-primary)]">
+          <span className="block truncate text-[15px] font-semibold leading-5 text-ink">
             {client.name}
           </span>
-          <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] text-[var(--text-secondary)]">
-            <span className="truncate" dir={client.phone ? "ltr" : undefined}>{contact}</span>
+          <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] text-ink-muted">
+            <span className="truncate tabular-nums" dir={client.phone ? "ltr" : undefined}>{contact}</span>
             {client.email && client.phone && (
-              <Mail size={12} className="shrink-0 text-[var(--accent-brass)]" aria-label={emailLabel} role="img" />
+              <Mail size={12} className="shrink-0 text-brand-text" aria-label={emailLabel} role="img" />
             )}
           </span>
           {/* Spend on phones sits under the contact line */}
-          <span className="mt-0.5 block text-[12px] text-[var(--text-muted)] sm:hidden">
-            {spentLabel}: <span className="font-semibold text-[var(--text-secondary)]">{spent}</span>
+          <span className="mt-0.5 block text-xs text-ink-muted sm:hidden">
+            {spentLabel}: <span className="font-semibold text-ink-soft tabular-nums">{spent}</span>
           </span>
         </span>
-        <span className="hidden shrink-0 text-end sm:block">
-          <span className="block text-[11px] font-semibold text-[var(--text-muted)]">{spentLabel}</span>
-          <span className="text-sm font-extrabold text-[var(--text-primary)]">{spent}</span>
+        <span className="hidden w-32 shrink-0 text-end sm:block">
+          <span className="sr-only">{spentLabel}: </span>
+          <span className="text-[15px] font-semibold text-ink tabular-nums">{spent}</span>
         </span>
       </button>
 
@@ -468,11 +492,12 @@ function ClientListItem({
           href={`tel:${client.phone.replace(/[^\d+]/g, "")}`}
           aria-label={callLabel}
           title={callLabel}
-          className="focus-ring inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-secondary)] transition-opacity hover:text-[var(--text-primary)] lg:h-9 lg:w-9 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
+          className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-line bg-card text-ink-soft transition-[opacity,color,background-color] duration-150 hover:bg-sunken hover:text-ink lg:size-9 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
         >
           <Phone size={15} aria-hidden="true" />
         </a>
       )}
+      {!client.phone && <span aria-hidden="true" className="hidden w-11 shrink-0 sm:block lg:w-9" />}
     </li>
   );
 }
@@ -528,14 +553,12 @@ function ClientDrawer({
       footer={
         client ? (
           <DialogFooter>
-            <button type="button" className="btn btn-ghost text-[var(--accent-rose)]" onClick={() => onDelete(client)}>
-              <Trash2 size={16} aria-hidden="true" />
+            <Button variant="destructive-soft" onClick={() => onDelete(client)} icon={<Trash2 aria-hidden="true" />}>
               {t.clients.deleteClient}
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={() => onEdit(client)}>
-              <Pencil size={16} aria-hidden="true" />
+            </Button>
+            <Button variant="secondary" onClick={() => onEdit(client)} icon={<Pencil aria-hidden="true" />}>
               {t.clients.editClient}
-            </button>
+            </Button>
           </DialogFooter>
         ) : null
       }
@@ -546,14 +569,14 @@ function ClientDrawer({
           <div className="flex items-center gap-4">
             <span
               aria-hidden="true"
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--text-primary)] text-lg font-bold text-[var(--bg-primary)]"
+              className="flex size-[72px] shrink-0 items-center justify-center rounded-full bg-brand text-2xl font-bold text-on-brand"
             >
               {getInitials(client.name) || "?"}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-xl font-bold text-[var(--text-primary)]">{client.name}</p>
+              <p className="text-h3 truncate text-ink">{client.name}</p>
               {client.created_at && (
-                <p className="text-[13px] text-[var(--text-muted)]">
+                <p className="mt-0.5 text-[13px] text-ink-muted">
                   {interpolate(t.clients.addedOn, { date: formatDate(client.created_at, "medium") })}
                 </p>
               )}
@@ -563,7 +586,7 @@ function ClientDrawer({
           {/* Quick actions */}
           <div className="grid grid-cols-2 gap-2">
             <a
-              className={cn("btn btn-primary", !whatsappDigits && "pointer-events-none opacity-50")}
+              className={buttonClasses({ variant: "primary", className: cn(!whatsappDigits && "pointer-events-none opacity-45") })}
               href={whatsappDigits ? `https://wa.me/${whatsappDigits}` : undefined}
               target="_blank"
               rel="noopener noreferrer"
@@ -572,10 +595,9 @@ function ClientDrawer({
               <MessageCircle size={16} aria-hidden="true" />
               {t.clients.whatsapp}
             </a>
-            <button type="button" className="btn btn-secondary" onClick={() => onBook(client)}>
-              <CalendarPlus size={16} aria-hidden="true" />
+            <Button variant="secondary" onClick={() => onBook(client)} icon={<CalendarPlus aria-hidden="true" />}>
               {t.clients.newBooking}
-            </button>
+            </Button>
           </div>
 
           {/* Stats */}
@@ -585,9 +607,9 @@ function ClientDrawer({
               { label: t.clients.visits, value: history.initialLoading ? null : String(visits) },
               { label: t.clients.lastVisit, value: history.initialLoading ? null : lastVisit ? formatDate(lastVisit, "dayMonth") : "—" },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-[var(--radius-md,10px)] border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-3">
-                <dt className="text-[11px] font-semibold text-[var(--text-muted)]">{stat.label}</dt>
-                <dd className="mt-1 truncate text-[15px] font-bold text-[var(--text-primary)]">
+              <div key={stat.label} className="rounded-xl bg-sunken p-3">
+                <dt className="truncate text-xs font-semibold text-ink-muted">{stat.label}</dt>
+                <dd className="mt-1 truncate text-base font-bold text-ink tabular-nums">
                   {stat.value ?? <Skeleton className="h-4 w-10" />}
                 </dd>
               </div>
@@ -595,17 +617,17 @@ function ClientDrawer({
           </dl>
 
           {/* Contact */}
-          <dl className="flex flex-col gap-3">
+          <dl className="flex flex-col gap-3 rounded-xl border border-line p-4">
             <ContactField icon={Phone} label={t.clients.phone}>
               {client.phone ? (
-                <a href={`tel:${client.phone.replace(/[^\d+]/g, "")}`} dir="ltr" className="text-[var(--text-primary)] underline-offset-2 hover:underline">
+                <a href={`tel:${client.phone.replace(/[^\d+]/g, "")}`} dir="ltr" className={cn("rounded-sm text-ink tabular-nums underline-offset-4 hover:underline", focusRing)}>
                   {client.phone}
                 </a>
               ) : "—"}
             </ContactField>
             <ContactField icon={Mail} label={t.clients.email}>
               {client.email ? (
-                <a href={`mailto:${client.email}`} dir="ltr" className="break-all text-[var(--text-primary)] underline-offset-2 hover:underline">
+                <a href={`mailto:${client.email}`} dir="ltr" className={cn("break-all rounded-sm text-ink underline-offset-4 hover:underline", focusRing)}>
                   {client.email}
                 </a>
               ) : "—"}
@@ -620,7 +642,7 @@ function ClientDrawer({
           {client.notes && (
             <section>
               <h3 className="field-label">{t.clients.notes}</h3>
-              <p className="whitespace-pre-wrap rounded-[var(--radius-inputs)] border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-3 text-sm text-[var(--text-secondary)]">
+              <p className="whitespace-pre-wrap rounded-xl bg-sunken p-4 text-sm leading-6 text-ink-soft">
                 {client.notes}
               </p>
             </section>
@@ -635,33 +657,35 @@ function ClientDrawer({
                 <Skeleton className="h-12 w-full" />
               </div>
             ) : history.error ? (
-              <div role="alert" className="flex items-center justify-between gap-3 rounded-[var(--radius-inputs)] border border-[var(--border-subtle)] p-3 text-sm text-[var(--accent-rose)]">
+              <div role="alert" className="flex items-center justify-between gap-3 rounded-xl bg-danger-soft p-3 text-sm font-medium text-danger-text">
                 <span>{t.clients.historyError}</span>
-                <button type="button" className="btn btn-ghost !min-h-[36px] !px-3 !text-sm" onClick={history.refetch}>
+                <Button variant="ghost" size="sm" onClick={history.refetch}>
                   {t.common.retry}
-                </button>
+                </Button>
               </div>
             ) : rows.length === 0 ? (
-              <p className="rounded-[var(--radius-inputs)] border border-dashed border-[var(--border-subtle)] p-4 text-center text-sm text-[var(--text-muted)]">
+              <p className="rounded-xl border border-dashed border-line p-5 text-center text-sm text-ink-muted">
                 {t.clients.noHistory}
               </p>
             ) : (
-              <ul className="divide-y divide-[var(--border-subtle)] rounded-[var(--radius-inputs)] border border-[var(--border-subtle)]">
+              <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line">
                 {rows.map((apt) => (
-                  <li key={apt.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                  <li key={apt.id} className="flex items-center justify-between gap-3 px-4 py-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                      <p className="truncate text-sm font-semibold text-ink">
                         {apt.service_name || "—"}
                       </p>
-                      <p className="text-[12px] text-[var(--text-muted)]">
+                      <p className="mt-0.5 text-[13px] text-ink-muted tabular-nums">
                         {formatDate(apt.start_time, "dayMonth")} · {formatTime(apt.start_time)}
                       </p>
                     </div>
-                    <div className="shrink-0 text-end">
-                      <p className="text-sm font-bold text-[var(--text-primary)]">
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <p className="text-sm font-semibold text-ink tabular-nums">
                         {formatCurrency(Number(apt.price) || 0, apt.currency || currency, { trimZeros: true })}
                       </p>
-                      <p className="text-[12px] text-[var(--text-secondary)]">{statusLabel(apt.status)}</p>
+                      <Pill size="sm" tone={STATUS_TONE[normalizeAppointmentStatus(apt.status) ?? ""] ?? "neutral"}>
+                        {statusLabel(apt.status)}
+                      </Pill>
                     </div>
                   </li>
                 ))}
@@ -683,10 +707,12 @@ function ContactField({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <Icon size={16} className="mt-0.5 shrink-0 text-[var(--text-muted)]" aria-hidden="true" />
+      <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-lg bg-sunken text-ink-muted">
+        <Icon size={16} />
+      </span>
       <div className="min-w-0">
-        <dt className="text-[12px] font-semibold text-[var(--text-muted)]">{label}</dt>
-        <dd className="text-sm font-medium text-[var(--text-primary)]">{children}</dd>
+        <dt className="text-xs font-semibold text-ink-muted">{label}</dt>
+        <dd className="text-sm font-medium text-ink">{children}</dd>
       </div>
     </div>
   );
@@ -794,19 +820,19 @@ function ClientFormDialog({
       size="md"
       footer={
         <DialogFooter>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={saving}>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
             {t.common.cancel}
-          </button>
-          <button type="submit" form={formId} className="btn btn-primary" disabled={saving} aria-busy={saving || undefined}>
-            {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+          </Button>
+          <Button type="submit" form={formId} loading={saving}>
             {saving ? t.common.processing : isEdit ? t.common.save : t.clients.addClient}
-          </button>
+          </Button>
         </DialogFooter>
       }
     >
       <form id={formId} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4" aria-describedby={formError ? ids.formErr : undefined}>
         {formError && (
-          <p id={ids.formErr} role="alert" className="rounded-[var(--radius-inputs)] bg-[var(--accent-rose-muted)] px-3 py-2 text-sm text-[var(--accent-rose)]">
+          <p id={ids.formErr} role="alert" className="flex items-start gap-2 rounded-lg bg-danger-soft px-3 py-2.5 text-sm font-medium text-danger-text">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
             {formError}
           </p>
         )}
@@ -851,7 +877,7 @@ function ClientFormDialog({
           </div>
           <div>
             <label htmlFor={ids.email} className="field-label">
-              {t.clients.email} <span className="text-[var(--text-muted)]">({t.common.optional})</span>
+              {t.clients.email} <span className="font-normal text-ink-muted">({t.common.optional})</span>
             </label>
             <input
               ref={emailRef}
@@ -873,7 +899,7 @@ function ClientFormDialog({
 
         <div>
           <label htmlFor={ids.source} className="field-label">
-            {t.clients.source} <span className="text-[var(--text-muted)]">({t.common.optional})</span>
+            {t.clients.source} <span className="font-normal text-ink-muted">({t.common.optional})</span>
           </label>
           <select id={ids.source} className="field-input" value={values.source} onChange={set("source")}>
             <option value="">—</option>
@@ -888,7 +914,7 @@ function ClientFormDialog({
 
         <div>
           <label htmlFor={ids.notes} className="field-label">
-            {t.clients.notes} <span className="text-[var(--text-muted)]">({t.common.optional})</span>
+            {t.clients.notes} <span className="font-normal text-ink-muted">({t.common.optional})</span>
           </label>
           <textarea
             id={ids.notes}

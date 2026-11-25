@@ -11,19 +11,19 @@ export default function AdminNotFound() {
     <main
       id="main"
       aria-labelledby="nf-title"
-      className="flex min-h-[100dvh] items-center justify-center bg-[var(--bg-primary)] px-4 py-12"
+      className="flex min-h-[100dvh] items-center justify-center bg-card px-4 py-12"
     >
       <div className="w-full max-w-md text-center">
         <p
           aria-hidden="true"
-          className="mb-4 select-none text-[56px] font-extrabold leading-none tracking-tight text-[var(--border-subtle)]"
+          className="mb-4 select-none text-[56px] font-extrabold leading-none tracking-tight text-line"
         >
           404
         </p>
-        <h1 id="nf-title" className="text-xl font-semibold text-[var(--text-primary)]">
+        <h1 id="nf-title" className="text-xl font-semibold text-ink">
           {c.notFoundTitle}
         </h1>
-        <p className="mt-2 text-[15px] text-[var(--text-secondary)]">{c.notFoundBody}</p>
+        <p className="mt-2 text-[15px] text-ink-soft">{c.notFoundBody}</p>
         <Link href="/" className="btn btn-secondary mt-6">
           {c.notFoundCta}
         </Link>

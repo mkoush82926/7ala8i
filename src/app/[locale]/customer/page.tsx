@@ -3,30 +3,42 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
-  CalendarCheck,
   CalendarClock,
   CalendarDays,
   CalendarX,
   CheckCircle2,
   Compass,
   History,
-  LogOut,
+  Info,
+  Phone,
   Repeat,
   Star,
-  UserRound,
-  Info,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 import type { MyAppointment } from "@/lib/supabase/database.types";
 import { toast } from "@/components/ui/toast";
 import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton, SkeletonGroup } from "@/components/ui/skeleton";
-import { coverForShop, shopInitials } from "../shop/shop-utils";
+import { Pill, type PillTone } from "@/components/ui/pill";
+import { Button } from "@/components/ui/button";
+import { PhotoFrame } from "@/components/ui/photo-frame";
+import { RatingInput } from "@/components/ui/rating-stars";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import {
+  buttonClasses,
+  errorTextClasses,
+  helperClasses,
+  inputClasses,
+  labelClasses,
+  textareaClasses,
+} from "@/components/ui/recipes";
+import { cn } from "@/lib/utils";
+import { PortalShell } from "./_components/portal-shell";
 import {
   cancellationState,
   classifyAppointment,
@@ -51,17 +63,16 @@ const REASON_MAX = 200;
 
 function AppointmentSkeleton() {
   return (
-    <div className="rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-5">
-      <div className="flex items-start gap-4">
-        <Skeleton className="w-[52px] h-[52px] rounded-[12px] shrink-0" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-3.5 w-1/3" />
-          <Skeleton className="h-5 w-2/3" />
-          <Skeleton className="h-3.5 w-1/2" />
-        </div>
-        <div className="space-y-2 shrink-0">
-          <Skeleton className="h-3.5 w-12" />
-          <Skeleton className="h-4 w-16" />
+    <div className="overflow-hidden rounded-2xl border border-line bg-card sm:grid sm:grid-cols-[200px_minmax(0,1fr)]">
+      <Skeleton className="aspect-[3/1] w-full rounded-none sm:aspect-auto sm:h-full sm:min-h-[180px]" />
+      <div className="space-y-3 p-4 sm:p-5">
+        <Skeleton variant="pill" className="h-6 w-24" />
+        <Skeleton className="h-6 w-1/2" />
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-4 w-2/5" />
+        <div className="flex gap-2 border-t border-line pt-4">
+          <Skeleton variant="button" className="h-9 w-28" />
+          <Skeleton variant="button" className="h-9 w-24" />
         </div>
       </div>
     </div>
@@ -70,7 +81,8 @@ function AppointmentSkeleton() {
 
 export default function CustomerDashboard() {
   const router = useRouter();
-  const { t, dir, isRTL, FF, FFD, href, formatCurrency, formatDate, formatTime, formatNumber } = useTranslation();
+  const { t, href, formatCurrency, formatDate, formatTime, formatNumber } = useTranslation();
+  const reduceMotion = useReducedMotion();
   const [supabase] = useState(() => createClient());
 
   const [user, setUser] = useState<PortalUser | null>(null);
@@ -89,7 +101,6 @@ export default function CustomerDashboard() {
   // Review dialog
   const [reviewAppt, setReviewAppt] = useState<MyAppointment | null>(null);
   const [reviewRating, setReviewRating] = useState(0);
-  const [reviewHover, setReviewHover] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -201,7 +212,6 @@ export default function CustomerDashboard() {
     [status, grouped.upcoming.length, appointments, now],
   );
   const loading = status === "loading";
-  const initials = shopInitials(user?.full_name || user?.email || "U");
   const firstName = user?.full_name?.trim().split(/\s+/)[0] || "";
 
   // ─── Profile ───
@@ -244,7 +254,6 @@ export default function CustomerDashboard() {
   function openReview(appt: MyAppointment) {
     setReviewAppt(appt);
     setReviewRating(0);
-    setReviewHover(0);
     setReviewComment("");
     setReviewError(null);
   }
@@ -313,14 +322,14 @@ export default function CustomerDashboard() {
   }
 
   // ─── Rendering helpers ───
-  const statusBadge = (appt: MyAppointment) => {
+  const statusBadge = (appt: MyAppointment): { label: string; tone: PillTone } => {
     const s = statusOf(appt);
-    const map: Record<string, { label: string; color: string }> = {
-      confirmed: { label: t.customer.statusConfirmed, color: "var(--accent-text)" },
-      pending: { label: t.customer.statusPending, color: "var(--text-secondary)" },
-      completed: { label: t.customer.completed, color: "var(--accent-text)" },
-      no_show: { label: t.customer.statusNoShow, color: "var(--text-secondary)" },
-      cancelled: { label: t.customer.cancelled, color: "var(--accent-rose)" },
+    const map: Record<string, { label: string; tone: PillTone }> = {
+      confirmed: { label: t.customer.statusConfirmed, tone: "brand" },
+      pending: { label: t.customer.statusPending, tone: "warning" },
+      completed: { label: t.customer.completed, tone: "success" },
+      no_show: { label: t.customer.statusNoShow, tone: "danger" },
+      cancelled: { label: t.customer.cancelled, tone: "neutral" },
     };
     return map[s] ?? map.pending;
   };
@@ -333,402 +342,322 @@ export default function CustomerDashboard() {
     { key: "cancelled", label: t.customer.cancelled, count: grouped.cancelled.length, icon: CalendarX },
   ];
 
-  const onTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const forward = isRTL ? "ArrowLeft" : "ArrowRight";
-    const backward = isRTL ? "ArrowRight" : "ArrowLeft";
-    let next = -1;
-    if (e.key === forward) next = (index + 1) % tabs.length;
-    else if (e.key === backward) next = (index - 1 + tabs.length) % tabs.length;
-    else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = tabs.length - 1;
-    if (next < 0) return;
-    e.preventDefault();
-    setActiveTab(tabs[next].key);
-    document.getElementById(`tab-${tabs[next].key}`)?.focus();
+  const cancelInfo = cancelTarget ? cancellationState(cancelTarget, now) : null;
+  const enter = (i: number) =>
+    reduceMotion
+      ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.12 } }
+      : {
+          initial: { opacity: 0, y: 8 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.28, ease: [0.05, 0.7, 0.1, 1] as const, delay: Math.min(i, 4) * 0.04 },
+        };
+
+  const deadlineText = (appt: MyAppointment, deadline: Date | string) =>
+    formatDate(deadline, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", ...zoned(appt) });
+
+  // Upcoming visit: large image-led card (§6.9).
+  const renderUpcoming = (appt: MyAppointment, i: number) => {
+    const badge = statusBadge(appt);
+    const cancelState = cancellationState(appt, now);
+    const detailHref = href(`/customer/${appt.id}`);
+    const subtitle = [appt.service_name, appt.barber_name].filter(Boolean).join(" · ");
+    return (
+      <motion.li
+        key={appt.id}
+        {...enter(i)}
+        className="group relative overflow-hidden rounded-2xl border border-line bg-card shadow-card transition-shadow duration-200 ease-standard hover:shadow-raised focus-within:shadow-raised sm:grid sm:grid-cols-[200px_minmax(0,1fr)]"
+      >
+        <PhotoFrame
+          alt=""
+          ratio="none"
+          seed={appt.shop_id}
+          fallbackName={appt.shop_name}
+          className="aspect-[3/1] sm:aspect-auto sm:h-full sm:min-h-[180px]"
+          initialsClassName="text-[28px] md:text-[34px]"
+        />
+        <div className="flex min-w-0 flex-col p-4 sm:p-5">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <Pill tone={badge.tone} size="md">
+              {badge.label}
+            </Pill>
+            <span className="text-meta">{interpolate(t.customer.reference, { ref: appt.id.slice(0, 7).toUpperCase() })}</span>
+          </div>
+          <p className="text-h3 m-0 tabular-nums text-ink">
+            <time dateTime={appt.start_time}>
+              {formatDate(appt.start_time, { weekday: "short", day: "numeric", month: "short", ...zoned(appt) })}
+              <span aria-hidden="true" className="mx-1.5 text-ink-disabled">·</span>
+              {formatTime(appt.start_time, zoned(appt))}
+            </time>
+          </p>
+          <h3 className="text-title m-0 mt-1 truncate text-ink">
+            {/* Stretched link → appointment details; action buttons sit above it. */}
+            <Link
+              href={detailHref}
+              aria-label={interpolate(t.customer.viewDetailsFor, { shop: appt.shop_name })}
+              className="no-underline after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-focus"
+            >
+              {appt.shop_name}
+            </Link>
+          </h3>
+          <div className="mt-0.5 flex items-baseline justify-between gap-3">
+            {subtitle ? <p className="text-meta m-0 min-w-0 truncate">{subtitle}</p> : <span />}
+            <p className="text-price m-0 shrink-0 whitespace-nowrap text-ink">
+              {formatCurrency(Number(appt.price) || 0, appt.currency || "JOD")}
+            </p>
+          </div>
+
+          {cancelState.deadline && (
+            <p className="m-0 mt-3 flex items-start gap-1.5 text-[13px] leading-[18px] text-ink-muted">
+              <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
+              {cancelState.canCancel
+                ? interpolate(t.customer.freeCancelUntil, { date: deadlineText(appt, cancelState.deadline) })
+                : interpolate(t.customer.cancelWindowClosed, { hours: cancelState.policyHours })}
+            </p>
+          )}
+
+          {/* Actions (z-10 keeps them above the stretched link) */}
+          <div className="relative z-10 mt-4 flex flex-wrap gap-2 border-t border-line pt-4 sm:mt-auto">
+            {cancelState.canCancel ? (
+              <>
+                <Link
+                  href={href(`/book/${appt.shop_id}?reschedule=${appt.id}`)}
+                  className={buttonClasses({ variant: "secondary", size: "sm", className: "flex-1 sm:flex-none" })}
+                >
+                  <CalendarClock aria-hidden="true" />
+                  {t.customer.reschedule}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCancelReason("");
+                    setCancelTarget(appt);
+                  }}
+                  className={buttonClasses({ variant: "destructive-soft", size: "sm", className: "flex-1 sm:flex-none" })}
+                >
+                  {t.customer.cancel}
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href={detailHref} className={buttonClasses({ variant: "secondary", size: "sm", className: "flex-1 sm:flex-none" })}>
+                  {t.customer.details}
+                </Link>
+                {appt.shop_phone && (
+                  <a
+                    href={`tel:${appt.shop_phone.replace(/[^\d+]/g, "")}`}
+                    className={buttonClasses({ variant: "soft", size: "sm", className: "flex-1 sm:flex-none" })}
+                  >
+                    <Phone aria-hidden="true" />
+                    {t.customer.callShop}
+                  </a>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </motion.li>
+    );
   };
 
-  const cancelInfo = cancelTarget ? cancellationState(cancelTarget, now) : null;
-
-  return (
-    <div className="min-h-dvh bg-[var(--bg-primary)] text-[var(--text-primary)]" style={{ fontFamily: FF }} dir={dir}>
-      {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:flex flex-col fixed top-0 start-0 h-full w-[240px] bg-[var(--bg-primary)] border-e border-[var(--border-subtle)] z-40">
-        <div className="px-5 pt-5 pb-4 border-b border-[var(--border-subtle)]">
-          <Link href={href("/landing")} className="text-lg font-black text-[var(--text-primary)] rounded-sm" style={{ fontFamily: FFD }}>
-            Halaqy.
-          </Link>
+  // Past / cancelled: compact list rows with "Book again" (§6.9).
+  const renderRow = (appt: MyAppointment, i: number) => {
+    const badge = statusBadge(appt);
+    const detailHref = href(`/customer/${appt.id}`);
+    const s = statusOf(appt);
+    const meta = [
+      formatDate(appt.start_time, { day: "numeric", month: "short", year: "numeric", ...zoned(appt) }),
+      formatTime(appt.start_time, zoned(appt)),
+      appt.service_name,
+    ].filter(Boolean) as string[];
+    return (
+      <motion.li
+        key={appt.id}
+        {...enter(i)}
+        className="relative flex flex-col gap-3 px-4 py-4 transition-colors duration-150 hover:bg-sunken/60 focus-within:bg-sunken/60 sm:flex-row sm:items-center sm:gap-4 sm:px-5"
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <PhotoFrame
+            alt=""
+            ratio="1/1"
+            seed={appt.shop_id}
+            fallbackName={appt.shop_name}
+            rounded="lg"
+            className="size-12 shrink-0"
+            initialsClassName="text-base md:text-base"
+          />
+          <div className="min-w-0 flex-1">
+            <h3 className="text-title m-0 truncate text-ink">
+              <Link
+                href={detailHref}
+                aria-label={interpolate(t.customer.viewDetailsFor, { shop: appt.shop_name })}
+                className="no-underline after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-focus"
+              >
+                {appt.shop_name}
+              </Link>
+            </h3>
+            <p className="text-meta m-0 mt-0.5 truncate tabular-nums">{meta.join(" · ")}</p>
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <span className="text-price whitespace-nowrap text-ink">
+              {formatCurrency(Number(appt.price) || 0, appt.currency || "JOD")}
+            </span>
+            {s !== "completed" && (
+              <Pill tone={badge.tone} size="sm">
+                {badge.label}
+              </Pill>
+            )}
+          </div>
         </div>
 
-        <div className="px-4 py-4 border-b border-[var(--border-subtle)]">
-          {loading && !user ? (
-            <SkeletonGroup className="flex items-center gap-3">
-              <Skeleton variant="avatar" />
-              <div className="flex-1 space-y-1.5">
-                <Skeleton className="h-3 w-2/3" />
-                <Skeleton className="h-2.5 w-1/2" />
-              </div>
-            </SkeletonGroup>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div
-                aria-hidden="true"
-                className="w-10 h-10 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] flex items-center justify-center font-bold text-sm shrink-0"
-              >
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <p className="text-[13px] font-bold text-[var(--text-primary)] truncate">{user?.full_name || user?.email}</p>
-                {user?.full_name && <p className="text-[11px] text-[var(--text-secondary)] truncate">{user.email}</p>}
-              </div>
+        <div className="relative z-10 flex flex-wrap gap-2 ps-[60px] sm:ps-0">
+          <Link href={href(`/book/${appt.shop_id}`)} className={buttonClasses({ variant: "soft", size: "sm" })}>
+            <Repeat aria-hidden="true" />
+            {t.customer.bookAgain}
+          </Link>
+          {s === "completed" && !appt.has_review && (
+            <button type="button" onClick={() => openReview(appt)} className={buttonClasses({ variant: "secondary", size: "sm" })}>
+              <Star aria-hidden="true" className="fill-accent text-accent" />
+              {t.customer.review}
+            </button>
+          )}
+          {appt.has_review && (
+            <Pill tone="success" size="lg" icon={<CheckCircle2 aria-hidden="true" />}>
+              {t.customer.reviewed}
+            </Pill>
+          )}
+        </div>
+      </motion.li>
+    );
+  };
+
+  const stats = [
+    { label: t.customer.upcoming, value: grouped.upcoming.length, icon: CalendarClock },
+    { label: t.customer.completed, value: completedCount, icon: CheckCircle2 },
+    { label: t.customer.thisMonth, value: thisMonthCount, icon: CalendarDays },
+  ];
+
+  return (
+    <>
+      <PortalShell
+        active="bookings"
+        profile={{ name: user?.full_name, detail: user?.email || user?.phone, loading }}
+        onSignOut={() => setLogoutConfirm(true)}
+      >
+        {/* Header */}
+        <div className="mb-6 flex flex-col gap-1">
+          <p className="m-0 text-sm font-medium text-ink-muted">
+            {firstName ? interpolate(t.customer.welcomeName, { name: firstName }) : t.customerAccount.eyebrow}
+          </p>
+          <h1 className="text-h1 m-0 text-ink">{t.customer.myAppointments}</h1>
+        </div>
+
+        {/* Stats */}
+        <dl className="mb-6 grid grid-cols-3 gap-2 sm:gap-4">
+          {stats.map(({ label, value, icon: Icon }) => (
+            <div key={label} className="flex min-w-0 flex-col rounded-xl border border-line bg-card p-3 shadow-card sm:p-4">
+              <span aria-hidden="true" className="mb-2 hidden size-8 place-items-center rounded-lg bg-brand-soft text-brand-text sm:grid">
+                <Icon size={16} />
+              </span>
+              {/* dt first for screen readers; shown under the number. */}
+              <dt className="order-last truncate text-xs font-medium text-ink-muted sm:text-sm">{label}</dt>
+              <dd className="text-stat m-0 mb-0.5 text-ink">
+                {loading ? <Skeleton className="h-8 w-10" /> : formatNumber(value)}
+              </dd>
             </div>
+          ))}
+        </dl>
+
+        {/* Tabs */}
+        <SegmentedControl
+          semantics="tabs"
+          variant="underline"
+          idPrefix="appts"
+          ariaLabel={t.customer.appointmentsTabs}
+          value={activeTab}
+          onChange={setActiveTab}
+          options={tabs.map((tab) => ({
+            value: tab.key,
+            label: tab.label,
+            badge:
+              tab.count > 0 ? (
+                <span
+                  className={cn(
+                    "ms-0.5 inline-grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums",
+                    activeTab === tab.key ? "bg-inverse text-on-inverse" : "bg-sunken text-ink-muted",
+                  )}
+                >
+                  {formatNumber(tab.count)}
+                </span>
+              ) : undefined,
+          }))}
+        />
+
+        <div id={`appts-panel-${activeTab}`} role="tabpanel" aria-labelledby={`appts-tab-${activeTab}`} className="mt-5">
+          {/* Rebooking nudge */}
+          {activeTab === "upcoming" && nudge && (
+            <div className="mb-4 flex flex-col gap-3 rounded-2xl bg-brand-soft p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-full bg-brand text-on-brand">
+                  <Repeat size={18} />
+                </span>
+                <p className="m-0 min-w-0 text-[15px] font-semibold text-brand-pressed dark:text-ink">
+                  {interpolate(t.customer.rebookNudge, { barber: nudge.barberName || t.customer.yourBarber })}
+                </p>
+              </div>
+              <Link href={href(`/book/${nudge.shopId}`)} className={buttonClasses({ variant: "primary", size: "sm", className: "self-start sm:self-auto" })}>
+                {t.customer.bookAgain}
+              </Link>
+            </div>
+          )}
+
+          {loading ? (
+            <SkeletonGroup className="flex flex-col gap-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <AppointmentSkeleton key={i} />
+              ))}
+            </SkeletonGroup>
+          ) : status === "error" ? (
+            <EmptyState
+              icon={CalendarX}
+              tone="error"
+              title={t.customer.loadErrorTitle}
+              description={t.customer.loadErrorDesc}
+              action={{ label: t.common.retry, onClick: load }}
+            />
+          ) : displayList.length === 0 ? (
+            <EmptyState
+              icon={activeTab === "upcoming" ? CalendarDays : activeTab === "past" ? History : CalendarX}
+              title={activeTab === "upcoming" ? t.customer.noUpcoming : activeTab === "past" ? t.customer.noPast : t.customer.noCancelled}
+              description={activeTab === "upcoming" ? t.customer.noUpcomingDesc : activeTab === "past" ? t.customer.noPastDesc : undefined}
+              action={{ label: t.customer.exploreShops, href: href("/explore"), icon: Compass }}
+            />
+          ) : activeTab === "upcoming" ? (
+            <ul className="m-0 flex list-none flex-col gap-4 p-0">{displayList.map(renderUpcoming)}</ul>
+          ) : (
+            <ul className="m-0 list-none divide-y divide-line overflow-hidden rounded-xl border border-line bg-card p-0 shadow-card">
+              {displayList.map(renderRow)}
+            </ul>
           )}
         </div>
 
-        <nav aria-label={t.customer.accountNav} className="px-2.5 py-3 flex-1 overflow-y-auto space-y-0.5">
-          <Link href={href("/customer")} aria-current="page" className="portal-nav-item active">
-            <CalendarDays size={19} aria-hidden="true" />
-            {t.customer.myAppointments}
-          </Link>
-          <Link href={href("/explore")} className="portal-nav-item">
-            <Compass size={19} aria-hidden="true" />
-            {t.customer.discoverShops}
-          </Link>
-          <Link href={href("/customer/account")} className="portal-nav-item">
-            <UserRound size={19} aria-hidden="true" />
-            {t.customerAccount.navLabel}
-          </Link>
-        </nav>
-
-        <div className="px-2.5 pt-3 pb-5">
-          <button type="button" onClick={() => setLogoutConfirm(true)} className="portal-nav-item" style={{ color: "var(--accent-rose)" }}>
-            <LogOut size={19} aria-hidden="true" />
-            {t.customer.signOut}
-          </button>
-        </div>
-      </aside>
-
-      {/* ── Mobile top bar ── */}
-      <header className="lg:hidden fixed top-0 inset-x-0 z-50 h-16 px-4 flex items-center justify-between bg-[var(--bg-primary)] border-b border-[var(--border-subtle)]">
-        <Link href={href("/landing")} className="text-[17px] font-black text-[var(--text-primary)] rounded-sm" style={{ fontFamily: FFD }}>
-          Halaqy.
-        </Link>
-        <div className="flex items-center gap-2">
-          <Link href={href("/explore")} className="btn btn-primary text-[13px]" style={{ minHeight: 38, padding: "0 14px" }}>
-            {t.customer.bookNow}
-          </Link>
-          <button
-            type="button"
-            onClick={() => setLogoutConfirm(true)}
-            aria-label={t.customer.signOut}
-            className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--bg-secondary)] text-[var(--text-secondary)]"
-          >
-            <LogOut size={18} aria-hidden="true" />
-          </button>
-        </div>
-      </header>
-
-      {/* ── Main ── */}
-      <div className="lg:ps-[240px]">
-        <main id="main" className="pt-16 lg:pt-0 pb-28 lg:pb-12">
-          <div className="max-w-[760px] mx-auto px-4 sm:px-5">
-            {/* Header */}
-            <div className="pt-8 pb-6">
-              <p
-                className="text-[11px] font-bold text-[var(--text-secondary)] mb-1"
-                style={{ letterSpacing: headingTracking(isRTL, "0.08em") }}
-              >
-                {firstName ? interpolate(t.customer.welcomeName, { name: firstName }) : t.customer.welcomeBack}
-              </p>
-              <h1 className="font-black text-[var(--text-primary)] m-0" style={{ fontSize: "clamp(24px, 4vw, 34px)", fontFamily: FFD }}>
-                {t.customer.myAppointments}
-              </h1>
-            </div>
-
-            {/* Stats */}
-            <dl className="grid grid-cols-3 gap-2.5 sm:gap-3 mb-8">
-              {[
-                { label: t.customer.completed, value: completedCount, icon: CheckCircle2 },
-                { label: t.customer.upcoming, value: grouped.upcoming.length, icon: CalendarClock },
-                { label: t.customer.thisMonth, value: thisMonthCount, icon: CalendarDays },
-              ].map(({ label, value, icon: Icon }) => (
-                <div key={label} className="flex flex-col rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-3 sm:px-4 sm:py-3.5 min-w-0">
-                  <Icon size={16} aria-hidden="true" className="text-[var(--accent-brass)]" />
-                  {/* dt first for screen readers; shown under the number. */}
-                  <dt className="order-last text-[11px] font-semibold text-[var(--text-secondary)] truncate">{label}</dt>
-                  <dd className="text-2xl font-black text-[var(--text-primary)] mt-1 mb-0.5 ms-0 tabular-nums" style={{ fontFamily: FFD }}>
-                    {loading ? <Skeleton className="h-7 w-8" /> : formatNumber(value)}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-
-            {/* CTA */}
-            <div className="rounded-[12px] bg-[var(--bg-secondary)] px-5 py-5 sm:px-7 sm:py-6 mb-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-[17px] font-black text-[var(--text-primary)] mb-1">{t.customer.readyForNext}</h2>
-                <p className="text-[13px] text-[var(--text-secondary)] m-0">{t.customer.browseShops}</p>
+        {/* Next-visit CTA */}
+        {status === "ok" && (
+          <div className="mt-10 flex flex-col gap-4 rounded-2xl border border-line bg-card p-5 shadow-card sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex min-w-0 items-start gap-4">
+              <span aria-hidden="true" className="bg-hatch-ink grid size-12 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand-text">
+                <Compass size={22} />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-h3 m-0 mb-1 text-ink">{t.customer.readyForNext}</h2>
+                <p className="m-0 text-sm text-ink-muted">{t.customer.browseShops}</p>
               </div>
-              <Link href={href("/explore")} className="btn btn-primary text-[13px] shrink-0 self-start sm:self-auto" style={{ minHeight: 40 }}>
-                {t.customer.exploreShops}
-              </Link>
             </div>
-
-            {/* Tabs */}
-            <div role="tablist" aria-label={t.customer.appointmentsTabs} className="flex border-b border-[var(--border-subtle)] overflow-x-auto no-scrollbar">
-              {tabs.map((tab, i) => {
-                const selected = activeTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    id={`tab-${tab.key}`}
-                    type="button"
-                    role="tab"
-                    aria-selected={selected}
-                    aria-controls="appointments-panel"
-                    tabIndex={selected ? 0 : -1}
-                    onClick={() => setActiveTab(tab.key)}
-                    onKeyDown={(e) => onTabKeyDown(e, i)}
-                    className={`portal-tab-btn${selected ? " active" : ""}`}
-                  >
-                    {tab.label}
-                    {tab.count > 0 && (
-                      <span
-                        className="ms-1.5 text-[11px] font-bold px-1.5 py-px rounded-full tabular-nums"
-                        style={{
-                          background: selected ? "var(--bg-secondary)" : "transparent",
-                          color: selected ? "var(--text-primary)" : "var(--text-secondary)",
-                        }}
-                      >
-                        {formatNumber(tab.count)}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div id="appointments-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="mt-4">
-              {/* Rebooking nudge */}
-              {activeTab === "upcoming" && nudge && (
-                <div className="flex items-center gap-3.5 rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-4 py-4 sm:px-5 mb-4">
-                  <span aria-hidden="true" className="w-10 h-10 rounded-full bg-[var(--text-primary)] text-[var(--bg-primary)] flex items-center justify-center shrink-0">
-                    <Repeat size={18} />
-                  </span>
-                  <p className="flex-1 min-w-0 text-[13px] font-bold text-[var(--text-primary)] m-0">
-                    {interpolate(t.customer.rebookNudge, { barber: nudge.barberName || t.customer.yourBarber })}
-                  </p>
-                  <Link href={href(`/book/${nudge.shopId}`)} className="btn btn-primary text-[12px] shrink-0" style={{ minHeight: 36, padding: "0 14px" }}>
-                    {t.customer.bookAgain}
-                  </Link>
-                </div>
-              )}
-
-              {loading ? (
-                <SkeletonGroup className="flex flex-col gap-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <AppointmentSkeleton key={i} />
-                  ))}
-                </SkeletonGroup>
-              ) : status === "error" ? (
-                <EmptyState
-                  icon={CalendarX}
-                  tone="error"
-                  title={t.customer.loadErrorTitle}
-                  description={t.customer.loadErrorDesc}
-                  action={{ label: t.common.retry, onClick: load }}
-                />
-              ) : displayList.length === 0 ? (
-                <EmptyState
-                  icon={activeTab === "upcoming" ? CalendarDays : activeTab === "past" ? History : CalendarX}
-                  title={activeTab === "upcoming" ? t.customer.noUpcoming : activeTab === "past" ? t.customer.noPast : t.customer.noCancelled}
-                  description={activeTab === "upcoming" ? t.customer.noUpcomingDesc : activeTab === "past" ? t.customer.noPastDesc : undefined}
-                  action={activeTab === "upcoming" ? { label: t.customer.exploreShops, href: href("/explore") } : undefined}
-                />
-              ) : (
-                <ul className="flex flex-col gap-3">
-                  {displayList.map((appt, i) => {
-                    const badge = statusBadge(appt);
-                    const cancelState = cancellationState(appt, now);
-                    const isUpcoming = activeTab === "upcoming";
-                    const cover = coverForShop(appt.shop_id);
-                    const detailHref = href(`/customer/${appt.id}`);
-                    const subtitle = [appt.service_name, appt.barber_name].filter(Boolean).join(" · ");
-                    return (
-                      <motion.li
-                        key={appt.id}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.25, delay: Math.min(i, 6) * 0.04 }}
-                        className="relative rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-primary)] hover:border-[var(--accent-brass)] focus-within:border-[var(--accent-brass)] transition-colors"
-                      >
-                        <div className="p-4 sm:p-5">
-                          <div className="flex items-start gap-3.5 sm:gap-4">
-                            <div
-                              aria-hidden="true"
-                              className="w-[52px] h-[52px] rounded-[12px] shrink-0 flex items-center justify-center font-extrabold"
-                              style={{ background: cover.bg, color: cover.fg, fontFamily: FFD }}
-                            >
-                              {shopInitials(appt.shop_name)}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--bg-secondary)]" style={{ color: badge.color }}>
-                                  {badge.label}
-                                </span>
-                                <span className="text-[11px] text-[var(--text-muted)]">
-                                  {interpolate(t.customer.reference, { ref: appt.id.slice(0, 7).toUpperCase() })}
-                                </span>
-                              </div>
-                              <h3 className="font-extrabold text-[15px] leading-snug text-[var(--text-primary)] m-0 truncate" style={{ fontFamily: FFD }}>
-                                {/* Stretched link → appointment details; action buttons sit above it. */}
-                                <Link
-                                  href={detailHref}
-                                  aria-label={interpolate(t.customer.viewDetailsFor, { shop: appt.shop_name })}
-                                  className="after:absolute after:inset-0 after:rounded-[12px] after:content-[''] focus-visible:outline-none"
-                                >
-                                  {appt.shop_name}
-                                </Link>
-                              </h3>
-                              {subtitle && <p className="text-[13px] text-[var(--text-secondary)] mt-0.5 mb-0 truncate">{subtitle}</p>}
-                            </div>
-
-                            <div className="text-end shrink-0">
-                              <p className="font-bold text-sm text-[var(--text-primary)] m-0">
-                                <time dateTime={appt.start_time}>{formatDate(appt.start_time, { day: "numeric", month: "short", ...zoned(appt) })}</time>
-                              </p>
-                              <p className="text-xs text-[var(--text-secondary)] my-px">{formatTime(appt.start_time, zoned(appt))}</p>
-                              <p className="font-extrabold text-sm text-[var(--text-primary)] m-0 whitespace-nowrap">
-                                {formatCurrency(Number(appt.price) || 0, appt.currency || "JOD")}
-                              </p>
-                            </div>
-                          </div>
-
-                          {isUpcoming && cancelState.deadline && (
-                            <p className="relative flex items-start gap-1.5 mt-3 mb-0 text-xs text-[var(--text-secondary)]">
-                              <Info size={13} aria-hidden="true" className="shrink-0 mt-px" />
-                              {cancelState.canCancel
-                                ? interpolate(t.customer.freeCancelUntil, {
-                                    date: formatDate(cancelState.deadline, {
-                                      weekday: "short",
-                                      day: "numeric",
-                                      month: "short",
-                                      hour: "numeric",
-                                      minute: "2-digit",
-                                      ...zoned(appt),
-                                    }),
-                                  })
-                                : interpolate(t.customer.cancelWindowClosed, { hours: cancelState.policyHours })}
-                            </p>
-                          )}
-
-                          {/* Actions (z-10 keeps them above the stretched link) */}
-                          <div className="relative z-10 flex gap-2 mt-4 pt-3 border-t border-[var(--border-subtle)]">
-                            {isUpcoming ? (
-                              cancelState.canCancel ? (
-                                <>
-                                  <Link
-                                    href={href(`/book/${appt.shop_id}?reschedule=${appt.id}`)}
-                                    className="flex-1 inline-flex items-center justify-center min-h-[40px] rounded-[8px] bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs font-bold hover:text-[var(--text-primary)] transition-colors"
-                                  >
-                                    {t.customer.reschedule}
-                                  </Link>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setCancelReason("");
-                                      setCancelTarget(appt);
-                                    }}
-                                    className="flex-1 inline-flex items-center justify-center min-h-[40px] rounded-[8px] text-xs font-bold border transition-colors"
-                                    style={{ background: "var(--accent-rose-muted)", color: "var(--accent-rose)", borderColor: "var(--accent-rose-muted)" }}
-                                  >
-                                    {t.customer.cancel}
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <Link
-                                    href={detailHref}
-                                    className="flex-1 inline-flex items-center justify-center min-h-[40px] rounded-[8px] bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs font-bold"
-                                  >
-                                    {t.customer.details}
-                                  </Link>
-                                  {appt.shop_phone && (
-                                    <a
-                                      href={`tel:${appt.shop_phone.replace(/[^\d+]/g, "")}`}
-                                      className="flex-1 inline-flex items-center justify-center min-h-[40px] rounded-[8px] bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold"
-                                    >
-                                      {t.customer.callShop}
-                                    </a>
-                                  )}
-                                </>
-                              )
-                            ) : (
-                              <>
-                                <Link
-                                  href={href(`/book/${appt.shop_id}`)}
-                                  className="flex-1 inline-flex items-center justify-center min-h-[40px] rounded-[8px] bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold hover:opacity-90 transition-opacity"
-                                >
-                                  {t.customer.bookAgain}
-                                </Link>
-                                {statusOf(appt) === "completed" && !appt.has_review && (
-                                  <button
-                                    type="button"
-                                    onClick={() => openReview(appt)}
-                                    className="flex-1 inline-flex items-center justify-center gap-1.5 min-h-[40px] rounded-[8px] bg-[var(--bg-secondary)] text-[var(--text-primary)] text-xs font-bold"
-                                  >
-                                    <Star size={14} aria-hidden="true" className="text-[var(--accent-brass)]" />
-                                    {t.customer.review}
-                                  </button>
-                                )}
-                                {appt.has_review && (
-                                  <span className="inline-flex items-center gap-1.5 px-3 min-h-[40px] rounded-full bg-[var(--bg-secondary)] text-xs font-bold text-[var(--accent-text)]">
-                                    <CheckCircle2 size={14} aria-hidden="true" />
-                                    {t.customer.reviewed}
-                                  </span>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </motion.li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
+            <Link href={href("/explore")} className={buttonClasses({ variant: "secondary", size: "md", className: "shrink-0 self-start sm:self-auto" })}>
+              {t.customer.exploreShops}
+            </Link>
           </div>
-        </main>
-      </div>
-
-      {/* ── Mobile bottom nav ── */}
-      <nav
-        aria-label={t.customer.accountNav}
-        className="lg:hidden fixed bottom-0 inset-x-0 z-50 flex justify-around items-center px-4 pt-2.5 bg-[var(--bg-primary)] border-t border-[var(--border-subtle)]"
-        style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
-      >
-        <Link href={href("/explore")} className="flex flex-col items-center gap-1 min-w-[64px] py-1 text-[11px] font-bold text-[var(--text-secondary)] rounded-[8px]">
-          <Compass size={21} aria-hidden="true" />
-          {t.customer.explore}
-        </Link>
-        <Link
-          href={href("/customer")}
-          aria-current="page"
-          className="flex flex-col items-center gap-1 min-w-[64px] py-1 text-[11px] font-bold text-[var(--text-primary)] rounded-[8px]"
-        >
-          <span aria-hidden="true" className="w-10 h-7 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center">
-            <CalendarCheck size={19} />
-          </span>
-          {t.explore.navBookings}
-        </Link>
-        <Link
-          href={href("/customer/account")}
-          className="flex flex-col items-center gap-1 min-w-[64px] py-1 text-[11px] font-bold text-[var(--text-secondary)] rounded-[8px]"
-        >
-          <UserRound size={21} aria-hidden="true" />
-          {t.explore.navAccount}
-        </Link>
-      </nav>
+        )}
+      </PortalShell>
 
       {/* ── Edit profile ── */}
       <Dialog
@@ -741,25 +670,25 @@ export default function CustomerDashboard() {
         closeOnEscape={!saving}
         footer={
           <DialogFooter>
-            <button type="button" className="btn btn-ghost" onClick={() => setEditProfile(false)} disabled={saving}>
+            <Button variant="ghost" onClick={() => setEditProfile(false)} disabled={saving}>
               {t.common.cancel}
-            </button>
-            <button type="submit" form="customer-profile-form" className="btn btn-primary" disabled={saving} aria-busy={saving}>
+            </Button>
+            <Button type="submit" form="customer-profile-form" loading={saving}>
               {saving ? t.customer.saving : t.common.save}
-            </button>
+            </Button>
           </DialogFooter>
         }
       >
-        <form id="customer-profile-form" onSubmit={handleSaveProfile} noValidate className="flex flex-col gap-4">
+        <form id="customer-profile-form" onSubmit={handleSaveProfile} noValidate className="flex flex-col gap-5">
           <div>
-            <label htmlFor="profile-name" className="field-label">
+            <label htmlFor="profile-name" className={labelClasses}>
               {t.customer.fullName}
             </label>
             <input
               id="profile-name"
               data-autofocus
               type="text"
-              className="field-input w-full"
+              className={inputClasses()}
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               autoComplete="name"
@@ -769,32 +698,31 @@ export default function CustomerDashboard() {
               aria-describedby={profileErrors.name ? "profile-name-error" : undefined}
             />
             {profileErrors.name && (
-              <p id="profile-name-error" className="field-error" role="alert">
+              <p id="profile-name-error" className={errorTextClasses} role="alert">
                 {profileErrors.name}
               </p>
             )}
           </div>
           <div>
-            <label htmlFor="profile-email" className="field-label">
+            <label htmlFor="profile-email" className={labelClasses}>
               {t.customer.email}
             </label>
             <input
               id="profile-email"
               type="email"
-              className="field-input w-full"
+              className={inputClasses({ className: "bg-sunken text-ink-soft hover:border-line-strong focus:ring-0" })}
               value={user?.email || ""}
               readOnly
               aria-readonly="true"
               aria-describedby="profile-email-hint"
               dir="ltr"
-              style={{ opacity: 0.75 }}
             />
-            <p id="profile-email-hint" className="text-xs text-[var(--text-muted)] mt-1.5 mb-0">
+            <p id="profile-email-hint" className={cn(helperClasses, "mb-0")}>
               {t.customer.emailReadOnly}
             </p>
           </div>
           <div>
-            <label htmlFor="profile-phone" className="field-label">
+            <label htmlFor="profile-phone" className={labelClasses}>
               {t.customer.phone}
             </label>
             <input
@@ -803,7 +731,7 @@ export default function CustomerDashboard() {
               inputMode="tel"
               autoComplete="tel"
               dir="ltr"
-              className="field-input w-full text-start"
+              className={inputClasses({ className: "text-start tabular-nums" })}
               value={editPhone}
               onChange={(e) => setEditPhone(e.target.value)}
               maxLength={20}
@@ -811,7 +739,7 @@ export default function CustomerDashboard() {
               aria-describedby={profileErrors.phone ? "profile-phone-error" : undefined}
             />
             {profileErrors.phone && (
-              <p id="profile-phone-error" className="field-error" role="alert">
+              <p id="profile-phone-error" className={errorTextClasses} role="alert">
                 {profileErrors.phone}
               </p>
             )}
@@ -830,53 +758,32 @@ export default function CustomerDashboard() {
         closeOnEscape={!submittingReview}
         footer={
           <DialogFooter>
-            <button type="button" className="btn btn-ghost" onClick={closeReview} disabled={submittingReview}>
+            <Button variant="ghost" onClick={closeReview} disabled={submittingReview}>
               {t.common.cancel}
-            </button>
-            <button
-              type="submit"
-              form="customer-review-form"
-              className="btn btn-primary"
-              disabled={submittingReview || reviewRating === 0}
-              aria-busy={submittingReview}
-            >
+            </Button>
+            <Button type="submit" form="customer-review-form" loading={submittingReview} disabled={reviewRating === 0}>
               {submittingReview ? t.customer.submitting : t.customer.submitReview}
-            </button>
+            </Button>
           </DialogFooter>
         }
       >
         <form id="customer-review-form" onSubmit={handleSubmitReview} noValidate>
-          <fieldset className="border-0 p-0 m-0 mb-5">
-            <legend className="field-label">{t.customer.ratingLabel}</legend>
-            <div className="flex justify-center gap-2" onMouseLeave={() => setReviewHover(0)}>
-              {[1, 2, 3, 4, 5].map((star) => {
-                const lit = star <= (reviewHover || reviewRating);
-                return (
-                  <button
-                    key={star}
-                    type="button"
-                    data-autofocus={star === 1 ? true : undefined}
-                    onClick={() => {
-                      setReviewRating(star);
-                      setReviewError(null);
-                    }}
-                    onMouseEnter={() => setReviewHover(star)}
-                    aria-label={interpolate(t.customer.starLabel, { count: star })}
-                    aria-pressed={reviewRating === star}
-                    className="p-1.5 rounded-[8px] transition-transform active:scale-90"
-                  >
-                    <Star
-                      size={36}
-                      aria-hidden="true"
-                      strokeWidth={1.5}
-                      style={{ color: lit ? "var(--accent-brass)" : "var(--border-primary)", fill: lit ? "var(--accent-brass)" : "transparent" }}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-          <label htmlFor="review-comment" className="field-label">
+          <div className="mb-6 flex flex-col items-center gap-2 rounded-xl bg-sunken px-4 py-5">
+            <p id="review-rating-label" className="m-0 text-sm font-semibold text-ink">
+              {t.customer.ratingLabel}
+            </p>
+            <RatingInput
+              value={reviewRating}
+              onChange={(n) => {
+                setReviewRating(n);
+                setReviewError(null);
+              }}
+              label={t.customer.ratingLabel}
+              getStarLabel={(n) => interpolate(t.customer.starLabel, { count: n })}
+              disabled={submittingReview}
+            />
+          </div>
+          <label htmlFor="review-comment" className={labelClasses}>
             {t.customer.reviewCommentLabel}
           </label>
           <textarea
@@ -887,14 +794,13 @@ export default function CustomerDashboard() {
             maxLength={REVIEW_MAX}
             rows={4}
             aria-describedby="review-comment-count"
-            className="field-input w-full resize-none py-3"
-            style={{ height: "auto" }}
+            className={textareaClasses({ className: "resize-none" })}
           />
-          <p id="review-comment-count" className="text-xs text-[var(--text-muted)] text-end mt-1 mb-0 tabular-nums">
+          <p id="review-comment-count" className="mb-0 mt-1.5 text-end text-xs tabular-nums text-ink-muted">
             {formatNumber(reviewComment.length)}/{formatNumber(REVIEW_MAX)}
           </p>
           {reviewError && (
-            <p className="field-error" role="alert">
+            <p className={errorTextClasses} role="alert">
               {reviewError}
             </p>
           )}
@@ -914,13 +820,13 @@ export default function CustomerDashboard() {
       >
         {cancelTarget && (
           <div className="space-y-3 text-start">
-            <p className="text-sm text-[var(--text-primary)] font-semibold m-0">
+            <p className="m-0 text-sm font-semibold text-ink">
               {cancelTarget.shop_name} ·{" "}
               {formatDate(cancelTarget.start_time, { weekday: "short", day: "numeric", month: "short", ...zoned(cancelTarget) })}{" "}
               {formatTime(cancelTarget.start_time, zoned(cancelTarget))}
             </p>
             {cancelInfo?.deadline && cancelInfo.canCancel && (
-              <p className="text-xs text-[var(--text-secondary)] m-0">
+              <p className="m-0 text-[13px] text-ink-muted">
                 {interpolate(t.customer.freeCancelUntil, {
                   date: formatDate(cancelInfo.deadline, {
                     weekday: "short",
@@ -934,13 +840,13 @@ export default function CustomerDashboard() {
               </p>
             )}
             <div>
-              <label htmlFor="cancel-reason" className="field-label">
+              <label htmlFor="cancel-reason" className={labelClasses}>
                 {t.customer.cancelReasonLabel}
               </label>
               <input
                 id="cancel-reason"
                 type="text"
-                className="field-input w-full"
+                className={inputClasses()}
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value.slice(0, REASON_MAX))}
                 placeholder={t.customer.cancelReasonPlaceholder}
@@ -960,6 +866,6 @@ export default function CustomerDashboard() {
         description={t.customer.signOutDesc}
         confirmLabel={t.customer.signOut}
       />
-    </div>
+    </>
   );
 }

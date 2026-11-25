@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { BookingCta, buildBookingHref } from "@/components/ui/booking-cta";
-import { MetaLine } from "@/components/ui/meta-line";
+import { buttonClasses, focusRing, pressable } from "@/components/ui/recipes";
 import { formatJOD } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { barberBookingHref } from "./lib/booking";
@@ -34,7 +34,7 @@ export function ServicesSection({
   barberId?: string | null;
   currency?: string;
 }) {
-  const { t, locale, formatDuration, formatCurrency } = useTranslation();
+  const { t, locale, formatDuration, formatCurrency, formatNumber } = useTranslation();
   const groups = useMemo(() => groupServicesByCategory(services, categories), [services, categories]);
   const tabs = useMemo(
     () => [
@@ -68,7 +68,7 @@ export function ServicesSection({
   return (
     <div>
       {showTabs && (
-        <div role="tablist" aria-label={t.booking.services} className="flex gap-2 overflow-x-auto no-scrollbar pb-3 -mx-1 px-1">
+        <div role="tablist" aria-label={t.booking.services} className="no-scrollbar -mx-1 mb-2 flex gap-2 overflow-x-auto px-1 pb-2">
           {tabs.map((tab, i) => {
             const selected = tab.id === active.id;
             return (
@@ -83,10 +83,12 @@ export function ServicesSection({
                 onClick={() => setActiveId(tab.id)}
                 onKeyDown={(e) => onTabKey(e, i)}
                 className={cn(
-                  "focus-ring shrink-0 h-9 px-4 rounded-full text-sm font-bold border transition-colors",
+                  "h-10 shrink-0 rounded-full border px-4 text-sm font-semibold",
+                  focusRing,
+                  pressable,
                   selected
-                    ? "bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]"
-                    : "bg-transparent text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--accent-brass)]",
+                    ? "border-inverse bg-inverse text-on-inverse"
+                    : "border-line bg-card text-ink-soft hover:border-ink-soft hover:text-ink",
                 )}
               >
                 {tab.label}
@@ -96,38 +98,49 @@ export function ServicesSection({
         </div>
       )}
 
-      <ul id="svc-panel" role={showTabs ? "tabpanel" : undefined} aria-labelledby={showTabs ? `svc-tab-${active.id}` : undefined} className="divide-y divide-[var(--border-subtle)] border-y border-[var(--border-subtle)]">
+      <ul
+        id="svc-panel"
+        role={showTabs ? "tabpanel" : undefined}
+        aria-labelledby={showTabs ? `svc-tab-${active.id}` : undefined}
+        className="flex flex-col"
+      >
         {rows.map((service) => {
           const name = (locale === "ar" && service.name_ar) || service.name;
           return (
-            <li key={service.id} className="flex items-center justify-between gap-3 py-4">
-              <div className="min-w-0">
-                <h3 className="font-bold text-[15px] text-[var(--text-primary)] break-words">{name}</h3>
-                <MetaLine
-                  items={[service.duration > 0 ? formatDuration(service.duration) : null, service.price > 0 ? price(service.price) : t.shopProfile.priceOnRequest]}
-                  className="mt-0.5 text-sm text-[var(--text-secondary)]"
-                />
+            <li key={service.id} className="flex items-center gap-4 border-b border-line py-4 last:border-b-0">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-title break-words text-ink">{name}</h3>
+                {service.duration > 0 && <p className="text-meta mt-0.5 text-ink-muted">{formatDuration(service.duration)}</p>}
               </div>
-              {barberId ? (
-                <Link
-                  href={barberBookingHref({ locale, shopId, barberId, entry: "service_row", src, services: [service.id] })}
-                  prefetch={false}
-                  aria-label={interpolate(t.shopPage.bookServiceLabel, { service: name })}
-                  className="focus-ring shrink-0 inline-flex items-center justify-center h-9 min-w-[4.5rem] px-4 rounded-full border border-[var(--border-primary)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent-brass)]"
-                >
-                  {t.primitives.book}
-                </Link>
-              ) : (
-                <BookingCta
-                  shop={shopId}
-                  entry="service_row"
-                  src={src}
-                  services={[service.id]}
-                  variant="inline"
-                  ariaLabel={interpolate(t.shopPage.bookServiceLabel, { service: name })}
-                  className="shrink-0"
-                />
-              )}
+              <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+                <span className="text-price text-end text-ink">
+                  {service.price > 0 ? (
+                    <bdi>{price(service.price)}</bdi>
+                  ) : (
+                    <span className="text-sm font-normal text-ink-muted">{t.shopProfile.priceOnRequest}</span>
+                  )}
+                </span>
+                {barberId ? (
+                  <Link
+                    href={barberBookingHref({ locale, shopId, barberId, entry: "service_row", src, services: [service.id] })}
+                    prefetch={false}
+                    aria-label={interpolate(t.shopPage.bookServiceLabel, { service: name })}
+                    className={buttonClasses({ variant: "soft", size: "sm", className: "relative z-10 min-w-[4.5rem] px-4" })}
+                  >
+                    {t.primitives.book}
+                  </Link>
+                ) : (
+                  <BookingCta
+                    shop={shopId}
+                    entry="service_row"
+                    src={src}
+                    services={[service.id]}
+                    variant="inline"
+                    ariaLabel={interpolate(t.shopPage.bookServiceLabel, { service: name })}
+                    className="shrink-0"
+                  />
+                )}
+              </div>
             </li>
           );
         })}
@@ -137,10 +150,10 @@ export function ServicesSection({
         <Link
           href={barberId ? barberBookingHref({ locale, shopId, barberId, entry: "see_all", src }) : buildBookingHref({ locale, shop: shopId, entry: "see_all", src })}
           prefetch={false}
-          className="focus-ring mt-4 inline-flex items-center gap-1 text-sm font-bold text-[var(--accent-text)] underline-offset-4 hover:underline"
+          className={buttonClasses({ variant: "secondary", size: "md", className: "mt-4 w-full sm:w-auto" })}
         >
-          {interpolate(t.shopProfile.seeAllServices, { count: active.services.length })}
-          <ChevronRight size={16} aria-hidden="true" className="rtl:-scale-x-100" />
+          {interpolate(t.shopProfile.seeAllServices, { count: formatNumber(active.services.length) })}
+          <ChevronRight aria-hidden="true" className="rtl:rotate-180" />
         </Link>
       )}
     </div>

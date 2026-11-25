@@ -1,5 +1,41 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
+
+/**
+ * tailwind-merge taught the v2 design-system scale (globals.css), so `cn()`
+ * resolves conflicts correctly:
+ *   - typography helpers (text-h2, text-meta …) are font sizes, not colours,
+ *     so `cn("text-h2", "text-ink")` keeps both;
+ *   - elevation (shadow-card, shadow-raised …) are shadow sizes, so
+ *     `cn("shadow-card", "shadow-none")` keeps only the last;
+ *   - radii (rounded-xs … rounded-3xl) and easings (ease-standard …).
+ */
+export const DS_TEXT_SIZES = [
+  "display",
+  "h1",
+  "h2",
+  "h3",
+  "title",
+  "body-lg",
+  "body",
+  "ui",
+  "meta",
+  "micro",
+  "stat",
+  "price",
+] as const;
+export const DS_SHADOWS = ["xs", "card", "raised", "float", "search", "bar"] as const;
+
+const twMerge = extendTailwindMerge({
+  extend: {
+    theme: {
+      text: [...DS_TEXT_SIZES],
+      shadow: [...DS_SHADOWS],
+      radius: ["xs", "3xl"],
+      ease: ["standard", "enter", "exit"],
+    },
+  },
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

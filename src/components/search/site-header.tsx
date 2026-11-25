@@ -1,16 +1,21 @@
 "use client";
 
-// Consumer header for the marketplace home and search pages: wordmark,
+// Consumer header for the marketplace home and search pages (§5.9): wordmark,
 // Explore, For business, language switch and an auth-aware action
-// (Sign in · My bookings · Dashboard). Phones get a compact menu.
+// (Sign in · My bookings · Dashboard). Phones get a compact menu panel.
+//
+// `transparentAtTop` lets the home hero show through until the page scrolls
+// 8px; the bar then gains its card background and hairline.
 
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Globe, Menu, X } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { buttonClasses, focusRing } from "@/components/ui/recipes";
+import { Wordmark } from "./site-footer";
 
 export type Viewer = { status: "loading" | "guest" | "signed-in"; role: string | null };
 
@@ -29,8 +34,7 @@ export function useViewer(): Viewer {
           return;
         }
         const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-        const role =
-          (profile as { role?: string } | null)?.role ?? (user.user_metadata as { role?: string } | undefined)?.role ?? null;
+        const role = (profile as { role?: string } | null)?.role ?? (user.user_metadata as { role?: string } | undefined)?.role ?? null;
         if (alive) setViewer({ status: "signed-in", role });
       })
       .catch(() => alive && setViewer({ status: "guest", role: null }));
@@ -41,12 +45,33 @@ export function useViewer(): Viewer {
   return viewer;
 }
 
-export function SiteHeader({ sticky = true, className }: { sticky?: boolean; className?: string }) {
+function useScrolled(threshold = 8): boolean {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > threshold);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, [threshold]);
+  return scrolled;
+}
+
+export function SiteHeader({
+  sticky = true,
+  transparentAtTop = false,
+  className,
+}: {
+  sticky?: boolean;
+  /** Home hero: no background until the page scrolls. */
+  transparentAtTop?: boolean;
+  className?: string;
+}) {
   const { t, locale, href, switchLocale } = useTranslation();
   const S = t.search;
   const pathname = usePathname() || `/${locale}/landing`;
   const router = useRouter();
   const viewer = useViewer();
+  const scrolled = useScrolled();
   const [open, setOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -96,33 +121,35 @@ export function SiteHeader({ sticky = true, className }: { sticky?: boolean; cla
     };
   }, [open, close]);
 
+  const solid = !transparentAtTop || scrolled || open;
+
   return (
     <header
+      data-scrolled={scrolled || undefined}
       className={cn(
-        "z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/95 backdrop-blur",
+        "z-40 border-b transition-[background-color,border-color,box-shadow] duration-200 ease-standard motion-reduce:transition-none",
+        solid ? "border-line bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75" : "border-transparent bg-transparent",
         sticky && "sticky top-0",
         className,
       )}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <nav aria-label={t.landing.navPrimary} className="mx-auto flex h-14 max-w-[1280px] items-center justify-between gap-3 px-4">
-        <Link
-          href={href("/landing")}
-          aria-label={S.homeLink}
-          dir="ltr"
-          className="focus-ring rounded-md text-[19px] font-bold text-[var(--text-primary)]"
-          style={{ fontFamily: "var(--font-bdo-grotesk), system-ui, sans-serif" }}
-        >
-          Halaqy<span className="text-[var(--accent-brass)]">.</span>
+      <nav aria-label={t.landing.navPrimary} className="mx-auto flex h-16 w-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+        <Link href={href("/landing")} aria-label={S.homeLink} className={cn("shrink-0 rounded-lg", focusRing)}>
+          <Wordmark />
         </Link>
 
-        <ul className="hidden items-center gap-6 md:flex">
+        <ul className="ms-4 hidden items-center gap-1 md:flex">
           {links.map((l) => (
             <li key={l.href}>
               <Link
                 href={l.href}
                 aria-current={pathname.startsWith(l.href) ? "page" : undefined}
-                className="nav-link text-[15px] aria-[current=page]:font-semibold aria-[current=page]:text-[var(--text-primary)]"
+                className={buttonClasses({
+                  variant: "ghost",
+                  size: "sm",
+                  className: "text-[15px] aria-[current=page]:bg-sunken aria-[current=page]:text-ink",
+                })}
               >
                 {l.label}
               </Link>
@@ -130,21 +157,22 @@ export function SiteHeader({ sticky = true, className }: { sticky?: boolean; cla
           ))}
         </ul>
 
-        <div className="flex items-center gap-1.5">
+        <div className="ms-auto flex items-center gap-1.5">
           <Link
             href={languageHref}
             hrefLang={other}
             lang={other}
             onClick={onLanguage}
             aria-label={t.landing.switchLanguage}
-            className="btn btn-ghost !min-h-[40px] !px-3 !text-[14px]"
+            className={buttonClasses({ variant: "ghost", size: "sm", className: "h-10 px-3" })}
           >
+            <Globe aria-hidden="true" />
             {t.topbar.language}
           </Link>
           <Link
             href={action.href}
             aria-busy={viewer.status === "loading" || undefined}
-            className="btn btn-secondary hidden !min-h-[40px] !rounded-full !px-5 !text-[14px] md:inline-flex"
+            className={buttonClasses({ variant: "secondary", size: "sm", className: "hidden h-10 px-4 md:inline-flex" })}
           >
             {action.label}
           </Link>
@@ -155,27 +183,42 @@ export function SiteHeader({ sticky = true, className }: { sticky?: boolean; cla
             aria-label={open ? t.landing.navMenuClose : t.landing.navMenuOpen}
             aria-expanded={open}
             aria-controls={panelId}
-            className="focus-ring flex h-10 w-10 items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] md:hidden"
+            className={buttonClasses({ variant: "ghost", size: "icon", className: "text-ink md:hidden" })}
           >
-            {open ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+            {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
           </button>
         </div>
       </nav>
 
-      <div id={panelId} ref={panelRef} hidden={!open} className="border-t border-[var(--border-subtle)] px-4 pb-4 md:hidden">
-        <ul className="flex flex-col pt-2">
-          {[...links, action].map((l) => (
-            <li key={l.href}>
-              <Link
-                href={l.href}
-                onClick={() => close()}
-                className="block rounded-lg px-2 py-3 text-[16px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
-              >
-                {l.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+      <div id={panelId} ref={panelRef} hidden={!open} className="px-4 pb-4 md:hidden">
+        <div className="fade-slide-up rounded-2xl border border-line bg-card p-2 shadow-float">
+          <ul className="flex flex-col">
+            {links.map((l) => (
+              <li key={l.href}>
+                <Link
+                  href={l.href}
+                  onClick={() => close()}
+                  aria-current={pathname.startsWith(l.href) ? "page" : undefined}
+                  className={cn(
+                    "flex h-12 items-center rounded-lg px-3 text-base font-medium text-ink hover:bg-sunken aria-[current=page]:font-semibold",
+                    focusRing,
+                  )}
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="mx-3 my-2 h-px bg-line" />
+          <Link
+            href={action.href}
+            onClick={() => close()}
+            aria-busy={viewer.status === "loading" || undefined}
+            className={buttonClasses({ variant: "primary", size: "lg", fullWidth: true })}
+          >
+            {action.label}
+          </Link>
+        </div>
       </div>
     </header>
   );

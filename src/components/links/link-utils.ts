@@ -134,6 +134,16 @@ export function ensureLinkEntry(
 
 export const LINK_ACCENTS = ["ink", "brass", "paper"] as const;
 export type LinkAccent = (typeof LINK_ACCENTS)[number];
+/**
+ * Light hexes behind each accent (snippets and swatches; DESIGN_SYSTEM_V2 §2.2).
+ * "brass" is a persisted value (booking_link_theme.accent) and is not renamed:
+ * it now means the Halaqy teal brand fill.
+ */
+export const LINK_ACCENT_HEX: Record<LinkAccent, string> = {
+  ink: "#0F172A",
+  brass: "#0F766E",
+  paper: "#FFFFFF",
+};
 export const WELCOME_MAX = 160;
 
 export interface BookingLinkTheme {
@@ -193,14 +203,17 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-/** Ink & Brass button for any website (inline styles: no stylesheet needed). */
+/**
+ * Button for any website (inline styles: no stylesheet needed). The persisted
+ * accent value "brass" is kept for stored themes but now renders Halaqy teal.
+ */
 export function buttonSnippet(url: string, label: string, accent: LinkAccent = "ink", dir: "ltr" | "rtl" = "ltr"): string {
-  const bg = accent === "brass" ? "#7c5a26" : accent === "paper" ? "#ffffff" : "#1c1611";
-  const fg = accent === "paper" ? "#1c1611" : "#ffffff";
-  const border = accent === "paper" ? "#1c1611" : bg;
+  const bg = accent === "brass" ? LINK_ACCENT_HEX.brass : accent === "paper" ? "#FFFFFF" : LINK_ACCENT_HEX.ink;
+  const fg = accent === "paper" ? LINK_ACCENT_HEX.ink : "#FFFFFF";
+  const border = accent === "paper" ? LINK_ACCENT_HEX.ink : bg;
   return [
     `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" dir="${dir}"`,
-    `   style="display:inline-block;padding:14px 28px;border-radius:8px;border:2px solid ${border};`,
+    `   style="display:inline-block;padding:14px 28px;border-radius:9999px;border:2px solid ${border};`,
     `          background:${bg};color:${fg};font:700 16px/1.2 system-ui,sans-serif;text-decoration:none">`,
     `  ${escapeHtml(label)}`,
     `</a>`,

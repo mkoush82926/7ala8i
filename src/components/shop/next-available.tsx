@@ -57,7 +57,7 @@ export function NextAvailable({
 
   return (
     <p className={className} aria-live="polite">
-      <CalendarClock size={16} aria-hidden="true" className="inline-block me-1.5 -mt-0.5 text-[var(--accent-text)]" />
+      <CalendarClock size={16} aria-hidden="true" className="me-1.5 -mt-0.5 inline-block text-success" />
       {text}
     </p>
   );

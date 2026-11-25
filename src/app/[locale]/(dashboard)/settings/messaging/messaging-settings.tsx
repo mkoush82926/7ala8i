@@ -23,10 +23,10 @@ import {
   type SettingsError,
 } from "@/lib/messaging/dashboard";
 
-const card = "flex flex-col gap-4 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 sm:p-5";
-const h2 = "m-0 text-base font-bold text-[var(--text-primary)]";
+const card = "flex flex-col gap-5 rounded-xl border border-line bg-card p-4 sm:p-6";
+const h2 = "text-h3 m-0 text-ink";
 const input =
-  "focus-ring min-h-11 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 text-sm text-[var(--text-primary)] disabled:opacity-50";
+  "focus-ring min-h-11 rounded-xl border border-line bg-card px-3 text-sm text-ink disabled:opacity-50";
 
 const REVIEW_DELAYS = [0, 30, 60, 120, 240, 1440] as const;
 
@@ -43,12 +43,12 @@ function Switch({ checked, onChange, label, id }: { checked: boolean; onChange: 
     >
       <span
         aria-hidden="true"
-        className={cn("relative inline-block h-6 w-10 rounded-full transition-colors", checked ? "bg-[var(--accent-brass)]" : "bg-[var(--border-primary)]")}
+        className={cn("relative inline-block h-6 w-11 rounded-full transition-colors duration-150 motion-reduce:transition-none", checked ? "bg-brand" : "bg-line-strong")}
       >
         <span
           className={cn(
-            "absolute top-0.5 size-5 rounded-full bg-[var(--bg-primary)] shadow transition-[inset-inline-start]",
-            checked ? "start-[1.125rem]" : "start-0.5",
+            "absolute top-0.5 size-5 rounded-full bg-white shadow-xs transition-[inset-inline-start] duration-150 motion-reduce:transition-none",
+            checked ? "start-[22px]" : "start-0.5",
           )}
         />
       </span>
@@ -60,8 +60,8 @@ function ToggleRow({ title, help, checked, onChange }: { title: string; help?: s
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <p className="m-0 text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-        {help && <p className="m-0 mt-0.5 text-sm text-[var(--text-secondary)]">{help}</p>}
+        <p className="m-0 text-sm font-semibold text-ink">{title}</p>
+        {help && <p className="m-0 mt-0.5 text-sm text-ink-soft">{help}</p>}
       </div>
       <Switch checked={checked} onChange={onChange} label={title} />
     </div>
@@ -167,8 +167,8 @@ export function MessagingSettingsForm() {
         </h2>
         <ToggleRow title={tm.enabledTitle} help={tm.enabledHelp} checked={form.messagingEnabled} onChange={(v) => patch({ messagingEnabled: v })} />
         <fieldset className="m-0 flex flex-col gap-2 border-0 p-0" disabled={!form.messagingEnabled}>
-          <legend className="mb-2 text-sm font-semibold text-[var(--text-primary)]">{tm.channelLabel}</legend>
-          <div role="radiogroup" aria-label={tm.channelLabel} className="flex gap-1 rounded-xl bg-[var(--bg-secondary)] p-1">
+          <legend className="mb-2 text-sm font-semibold text-ink">{tm.channelLabel}</legend>
+          <div role="radiogroup" aria-label={tm.channelLabel} className="flex gap-1 rounded-full bg-sunken p-1">
             {(["whatsapp", "sms"] as const).map((ch) => (
               <button
                 key={ch}
@@ -177,8 +177,8 @@ export function MessagingSettingsForm() {
                 aria-checked={form.channel === ch}
                 onClick={() => patch({ channel: ch })}
                 className={cn(
-                  "focus-ring min-h-11 flex-1 rounded-lg px-3 text-sm font-medium transition-colors disabled:opacity-50",
-                  form.channel === ch ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-muted)]",
+                  "focus-ring min-h-10 flex-1 rounded-full px-3 text-sm font-semibold transition-colors duration-150 disabled:opacity-45",
+                  form.channel === ch ? "bg-card text-ink shadow-xs" : "text-ink-muted hover:text-ink",
                 )}
               >
                 {ch === "whatsapp" ? tm.channelWhatsapp : tm.channelSms}
@@ -192,12 +192,12 @@ export function MessagingSettingsForm() {
       </section>
 
       {/* ── Reminders ── */}
-      <section aria-labelledby="msg-reminders" className={cn(card, invalid === "reminder_offsets" && "border-[var(--color-error)]")}>
+      <section aria-labelledby="msg-reminders" className={cn(card, invalid === "reminder_offsets" && "border-danger")}>
         <div>
           <h2 id="msg-reminders" className={h2}>
             {tm.remindersTitle}
           </h2>
-          <p className="m-0 mt-1 text-sm text-[var(--text-secondary)]">{interpolate(tm.remindersHelp, { max: MAX_OFFSETS })}</p>
+          <p className="m-0 mt-1 text-sm text-ink-soft">{interpolate(tm.remindersHelp, { max: MAX_OFFSETS })}</p>
         </div>
         <div role="group" aria-label={tm.remindersTitle} className="flex flex-wrap gap-2">
           {OFFSET_PRESETS.map((m) => {
@@ -213,8 +213,8 @@ export function MessagingSettingsForm() {
                 className={cn(
                   "focus-ring min-h-11 rounded-full border px-4 text-sm font-medium transition-colors disabled:opacity-40",
                   on
-                    ? "border-[var(--cta-bg)] bg-[var(--cta-bg)] text-[var(--cta-fg)]"
-                    : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                    ? "border-brand bg-brand text-on-brand"
+                    : "border-line text-ink-soft hover:text-ink",
                 )}
               >
                 {interpolate(tm.offsetBefore, { time: offsetLabel(m) })}
@@ -222,11 +222,11 @@ export function MessagingSettingsForm() {
             );
           })}
         </div>
-        {form.reminderOffsets.length === 0 && <p className="m-0 text-sm text-[var(--text-muted)]">{tm.noReminders}</p>}
+        {form.reminderOffsets.length === 0 && <p className="m-0 text-sm text-ink-muted">{tm.noReminders}</p>}
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-semibold text-[var(--text-primary)]">{tm.reviewDelayTitle}</span>
-          <span className="text-sm text-[var(--text-secondary)]">{tm.reviewDelayHelp}</span>
+          <span className="text-sm font-semibold text-ink">{tm.reviewDelayTitle}</span>
+          <span className="text-sm text-ink-soft">{tm.reviewDelayHelp}</span>
           <select
             className={cn(input, "sm:max-w-xs")}
             value={form.reviewDelayMinutes}
@@ -246,23 +246,23 @@ export function MessagingSettingsForm() {
       {/* ── Quiet hours ── */}
       <section
         aria-labelledby="msg-quiet"
-        className={cn(card, (invalid === "quiet_hours" || invalid === "jumuah") && "border-[var(--color-error)]")}
+        className={cn(card, (invalid === "quiet_hours" || invalid === "jumuah") && "border-danger")}
       >
         <div>
           <h2 id="msg-quiet" className={h2}>
             {tm.quietTitle}
           </h2>
-          <p className="m-0 mt-1 text-sm text-[var(--text-secondary)]">{tm.quietHelp}</p>
+          <p className="m-0 mt-1 text-sm text-ink-soft">{tm.quietHelp}</p>
         </div>
         <ToggleRow title={tm.quietNightTitle} checked={form.quietHours.enabled} onChange={(v) => patchQuiet({ enabled: v })} />
         {form.quietHours.enabled && (
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5 text-sm">
-              <span className="text-[var(--text-secondary)]">{tm.from}</span>
+              <span className="text-ink-soft">{tm.from}</span>
               <input type="time" className={input} value={form.quietHours.start} onChange={(e) => patchQuiet({ start: e.target.value })} required />
             </label>
             <label className="flex flex-col gap-1.5 text-sm">
-              <span className="text-[var(--text-secondary)]">{tm.until}</span>
+              <span className="text-ink-soft">{tm.until}</span>
               <input type="time" className={input} value={form.quietHours.end} onChange={(e) => patchQuiet({ end: e.target.value })} required />
             </label>
           </div>
@@ -271,7 +271,7 @@ export function MessagingSettingsForm() {
         {form.quietHours.jumuah && (
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5 text-sm">
-              <span className="text-[var(--text-secondary)]">{tm.from}</span>
+              <span className="text-ink-soft">{tm.from}</span>
               <input
                 type="time"
                 className={input}
@@ -281,20 +281,20 @@ export function MessagingSettingsForm() {
               />
             </label>
             <label className="flex flex-col gap-1.5 text-sm">
-              <span className="text-[var(--text-secondary)]">{tm.until}</span>
+              <span className="text-ink-soft">{tm.until}</span>
               <input type="time" className={input} value={form.quietHours.jumuahEnd} onChange={(e) => patchQuiet({ jumuahEnd: e.target.value })} required />
             </label>
           </div>
         )}
         {invalid && (invalid === "quiet_hours" || invalid === "jumuah") && (
-          <p role="alert" className="m-0 text-sm text-[var(--color-error)]">
+          <p role="alert" className="m-0 text-sm text-danger-text">
             {tm.errors[invalid]}
           </p>
         )}
       </section>
 
       <div className="sticky bottom-4 z-10 flex justify-end">
-        <button type="submit" className="btn btn-primary min-h-12 shadow-lg" disabled={saving || !dirty}>
+        <button type="submit" className="btn btn-primary min-h-12 shadow-raised" disabled={saving || !dirty}>
           {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
           {t.common.save}
         </button>

@@ -1,7 +1,11 @@
 /**
  * Pure helpers shared by the public shop page, the explore directory and the
  * customer portal. No React, no Supabase: safe on the server and in tests.
+ * (`coverForShop` reads the placeholder fills exported by the client
+ * photo-frame module, so call it from client components only.)
  */
+
+import { placeholderFill } from "@/components/ui/photo-frame";
 
 // ─── Cover tile (honest per-shop stand-in until shops have real photos) ───
 
@@ -12,23 +16,19 @@ export interface ShopCover {
   fg: string;
 }
 
-// Ink & Brass: ink, brass and warm umber. Tokens resolve to the light palette
-// on public routes (they are never dark-themed).
-const COVER_PALETTE: ShopCover[] = [
-  { bg: "var(--text-primary)", fg: "var(--bg-secondary)" },
-  { bg: "var(--accent-mint)", fg: "var(--on-accent)" },
-  { bg: "var(--text-secondary)", fg: "var(--bg-secondary)" },
-];
-
-function hashString(value: string): number {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
-  return hash;
-}
-
-/** Deterministic accent for a shop id (same shop → same colour everywhere). */
+/**
+ * Deterministic branded cover for a shop id (same shop → same cover
+ * everywhere), from the four v2 placeholder fills (§4: teal, sand, ink,
+ * amber) with the sand-stripe hatch layered on top. `bg` is a full CSS
+ * `background` value (gradient layers), so apply it with `background:`.
+ * Brand art, not a surface: identical in light and dark.
+ */
 export function coverForShop(id: string): ShopCover {
-  return COVER_PALETTE[hashString(id || "") % COVER_PALETTE.length];
+  const fill = placeholderFill(id || "");
+  return {
+    bg: `repeating-linear-gradient(135deg, ${fill.hatch} 0 2px, transparent 2px 12px), ${fill.bg}`,
+    fg: fill.fg,
+  };
 }
 
 /** "The Gentleman's Chair" → "TG"; Arabic names keep their first letters. */

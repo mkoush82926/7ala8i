@@ -6,7 +6,6 @@ import {
   Check,
   CheckCircle2,
   Copy,
-  Loader2,
   MessageCircle,
   Minus,
   Package,
@@ -21,6 +20,10 @@ import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
+import { FilterChip } from "@/components/ui/pill";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { checkboxClasses, focusRing } from "@/components/ui/recipes";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { formatJOD } from "@/lib/format";
@@ -72,10 +75,20 @@ type DraftDiscount = { type: DiscountSpec["type"]; value: string; reason: string
 type AddMode = null | "service" | "product" | "custom";
 
 const DICTS: Record<Locale, TranslationKeys> = { en, ar };
+// Dense POS fields: the v2 input recipe at h-11 (§5.2).
 const inputCls =
-  "h-11 w-full min-w-0 rounded-[var(--radius-inputs)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 text-sm text-[var(--text-primary)] outline-none focus-visible:border-[var(--accent-brass)] aria-[invalid=true]:border-[var(--accent-rose)]";
-const iconBtn =
-  "focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] disabled:opacity-40";
+  "h-11 w-full min-w-0 rounded-lg border border-line-strong bg-card px-3 text-base text-ink placeholder:text-ink-muted transition-[border-color,box-shadow] duration-150 hover:border-ink-soft focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/15 disabled:bg-sunken disabled:text-ink-disabled motion-reduce:transition-none sm:text-sm";
+const iconBtn = cn(
+  "inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors duration-150 hover:bg-sunken hover:text-ink disabled:pointer-events-none disabled:opacity-45 motion-reduce:transition-none",
+  focusRing,
+);
+const sectionTitle = "m-0 text-sm font-semibold text-ink";
+const fieldsetCls = "flex flex-col gap-2 rounded-xl border border-line bg-card p-3";
+const legendCls = "px-1 text-sm font-semibold text-ink";
+const quietAction = cn(
+  "inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-brand-text transition-colors duration-150 hover:bg-brand-soft disabled:pointer-events-none disabled:opacity-45 motion-reduce:transition-none [&_svg]:size-4",
+  focusRing,
+);
 
 function toSpec(d: DraftDiscount | null): (DiscountSpec & { reason?: string | null }) | null {
   if (!d) return null;
@@ -253,26 +266,25 @@ export function CheckoutDialog({
 
   const footer = receipt ? (
     <DialogFooter>
-      <button type="button" className="btn btn-primary w-full sm:w-auto" onClick={onClose} data-autofocus="">
+      <Button size="lg" className="w-full sm:w-auto" onClick={onClose} data-autofocus="">
         {tp.done}
-      </button>
+      </Button>
     </DialogFooter>
   ) : (
     <DialogFooter>
-      <button type="button" className="btn btn-secondary" onClick={close} disabled={busy}>
+      <Button variant="secondary" size="lg" onClick={close} disabled={busy}>
         {t.common.cancel}
-      </button>
-      <button
-        type="button"
-        className="btn btn-primary"
+      </Button>
+      <Button
+        size="lg"
         onClick={() => void charge()}
-        disabled={busy || !ready}
-        aria-busy={busy || undefined}
+        disabled={!ready}
+        loading={busy}
         aria-describedby={showIssues && issueText ? "checkout-issue" : undefined}
+        className="tabular-nums"
       >
-        {busy && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
         {busy ? t.common.processing : totals ? interpolate(tp.charge, { amount: money(Math.min(totals.paidTotal, totals.total)) }) : t.dashboard.markPaid}
-      </button>
+      </Button>
     </DialogFooter>
   );
 
@@ -307,11 +319,11 @@ export function CheckoutDialog({
         <div className="flex flex-col gap-5">
           {/* ── Lines ── */}
           <section aria-labelledby="co-items" className="flex flex-col gap-2">
-            <h3 id="co-items" className="m-0 text-[13px] font-semibold text-[var(--text-secondary)]">
+            <h3 id="co-items" className={sectionTitle}>
               {tp.items}
             </h3>
             {items!.length === 0 ? (
-              <p className="m-0 rounded-xl border border-dashed border-[var(--border-subtle)] p-4 text-center text-sm text-[var(--text-muted)]">
+              <p className="m-0 rounded-xl border border-dashed border-line-strong p-4 text-center text-sm text-ink-muted">
                 {tp.issueEmpty}
               </p>
             ) : (
@@ -341,24 +353,18 @@ export function CheckoutDialog({
               disabled={busy}
               currencyLabel={currency === "JOD" ? (locale === "ar" ? "د.أ" : "JD") : currency}
             />
-            <fieldset className="flex flex-col gap-2 rounded-xl border border-[var(--border-subtle)] p-3" disabled={busy}>
-              <legend className="px-1 text-[13px] font-semibold text-[var(--text-secondary)]">{tp.tip}</legend>
+            <fieldset className={fieldsetCls} disabled={busy}>
+              <legend className={legendCls}>{tp.tip}</legend>
               <div className="flex flex-wrap gap-2">
                 {[0.5, 1, 2].map((v) => (
-                  <button
+                  <FilterChip
                     key={v}
-                    type="button"
                     onClick={() => setTipAmount(String(v))}
-                    aria-pressed={tipValue === v}
-                    className={cn(
-                      "focus-ring min-h-11 rounded-full border px-3 text-sm font-medium tabular-nums transition-colors",
-                      tipValue === v
-                        ? "border-[var(--text-primary)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
-                        : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-primary)]",
-                    )}
+                    pressed={tipValue === v}
+                    className="h-11 tabular-nums"
                   >
                     {money(v)}
-                  </button>
+                  </FilterChip>
                 ))}
               </div>
               <input
@@ -389,7 +395,7 @@ export function CheckoutDialog({
           </section>
 
           {/* ── Totals ── */}
-          <dl className="m-0 flex flex-col gap-1.5 rounded-xl bg-[var(--bg-secondary)] px-4 py-3 text-sm">
+          <dl className="m-0 flex flex-col gap-2 rounded-xl bg-sunken px-4 py-3.5 text-sm">
             <Row label={tp.subtotal} value={money(totals.subtotal)} />
             {totals.discountTotal > 0 && <Row label={tp.discount} value={`−${money(totals.discountTotal)}`} />}
             {s.isTaxRegistered && (
@@ -397,9 +403,9 @@ export function CheckoutDialog({
             )}
             {totals.tipTotal > 0 && <Row label={tp.tip} value={money(totals.tipTotal)} />}
             {totals.roundingAdjustment !== 0 && <Row label={tp.rounding} value={money(totals.roundingAdjustment)} muted />}
-            <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-[var(--border-subtle)] pt-2">
-              <dt className="font-semibold text-[var(--text-primary)]">{tp.total}</dt>
-              <dd className="m-0 text-[18px] font-extrabold tabular-nums text-[var(--text-primary)]">{money(totals.total)}</dd>
+            <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-line pt-2.5">
+              <dt className="text-[15px] font-semibold text-ink">{tp.total}</dt>
+              <dd className="m-0 text-lg font-bold tabular-nums text-ink">{money(totals.total)}</dd>
             </div>
           </dl>
 
@@ -416,25 +422,25 @@ export function CheckoutDialog({
           />
 
           {s.cashRounding > 0 && (
-            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-[var(--text-secondary)]">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-ink-soft">
               <input
                 type="checkbox"
                 checked={applyRounding}
                 onChange={(e) => setApplyRounding(e.target.checked)}
                 disabled={busy}
-                className="h-4 w-4 accent-[var(--accent-brass)]"
+                className={checkboxClasses}
               />
               {interpolate(tp.cashRounding, { step: money(s.cashRounding) })}
             </label>
           )}
           {totals.balance > 0 && (
-            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-[var(--text-secondary)]">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-ink-soft">
               <input
                 type="checkbox"
                 checked={allowPartial}
                 onChange={(e) => setAllowPartial(e.target.checked)}
                 disabled={busy}
-                className="h-4 w-4 accent-[var(--accent-brass)]"
+                className={checkboxClasses}
               />
               {tp.allowPartial}
             </label>
@@ -454,8 +460,8 @@ export function CheckoutDialog({
 function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <dt className={muted ? "text-[var(--text-muted)]" : "text-[var(--text-secondary)]"}>{label}</dt>
-      <dd className={cn("m-0 tabular-nums", muted ? "text-[var(--text-muted)]" : "text-[var(--text-primary)]")}>{value}</dd>
+      <dt className={muted ? "text-ink-muted" : "text-ink-soft"}>{label}</dt>
+      <dd className={cn("m-0 tabular-nums", muted ? "text-ink-muted" : "text-ink")}>{value}</dd>
     </div>
   );
 }
@@ -489,17 +495,19 @@ function CartLineRow({
     : null;
 
   return (
-    <li className="flex flex-col gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-3">
-      <div className="flex items-center gap-2">
-        <Icon size={16} aria-hidden="true" className="shrink-0 text-[var(--text-muted)]" />
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--text-primary)]">{name}</span>
-        <span className="text-sm font-bold tabular-nums text-[var(--text-primary)]">{money(lineTotal)}</span>
+    <li className="flex flex-col gap-2.5 rounded-xl border border-line bg-card p-3">
+      <div className="flex items-center gap-3">
+        <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand-text">
+          <Icon size={16} />
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{name}</span>
+        <span className="text-[15px] font-semibold tabular-nums text-ink">{money(lineTotal)}</span>
         <button type="button" className={iconBtn} onClick={onRemove} disabled={disabled} aria-label={interpolate(tp.removeItem, { name })}>
           <Trash2 size={16} aria-hidden="true" />
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex items-center rounded-full border border-[var(--border-subtle)]" role="group" aria-label={interpolate(tp.quantityFor, { name })}>
+        <div className="inline-flex items-center rounded-full border border-line-strong bg-card" role="group" aria-label={interpolate(tp.quantityFor, { name })}>
           <button
             type="button"
             className={iconBtn}
@@ -509,7 +517,7 @@ function CartLineRow({
           >
             <Minus size={14} aria-hidden="true" />
           </button>
-          <span className="min-w-6 text-center text-sm font-semibold tabular-nums" aria-live="polite">
+          <span className="min-w-6 text-center text-sm font-semibold tabular-nums text-ink" aria-live="polite">
             {item.quantity}
           </span>
           <button
@@ -544,9 +552,9 @@ function CartLineRow({
           }}
           aria-expanded={showDiscount}
           disabled={disabled}
-          className="focus-ring inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          className={quietAction}
         >
-          <Tag size={14} aria-hidden="true" />
+          <Tag aria-hidden="true" />
           {showDiscount ? tp.removeDiscount : tp.addDiscount}
         </button>
       </div>
@@ -593,26 +601,19 @@ function DiscountEditor({
   const set = (patch: Partial<DraftDiscount>) => onChange({ ...d, value: text, ...patch });
 
   return (
-    <fieldset className={cn("flex flex-col gap-2", !bare && "rounded-xl border border-[var(--border-subtle)] p-3")} disabled={disabled}>
-      <legend className={cn("text-[13px] font-semibold text-[var(--text-secondary)]", bare ? "sr-only" : "px-1")}>{label}</legend>
+    <fieldset className={cn("flex flex-col gap-2", !bare && fieldsetCls)} disabled={disabled}>
+      <legend className={cn(legendCls, bare && "sr-only")}>{label}</legend>
       <div className="flex items-center gap-2">
-        <div role="radiogroup" aria-label={tp.discountType} className="inline-flex shrink-0 rounded-lg bg-[var(--bg-secondary)] p-1">
-          {(["amount", "percent"] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              role="radio"
-              aria-checked={d.type === type}
-              onClick={() => set({ type })}
-              className={cn(
-                "focus-ring inline-flex min-h-9 min-w-11 items-center justify-center rounded-md px-2 text-sm font-medium",
-                d.type === type ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-muted)]",
-              )}
-            >
-              {type === "percent" ? <Percent size={14} aria-label={tp.percent} /> : currencyLabel}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          ariaLabel={tp.discountType}
+          value={d.type}
+          onChange={(type) => set({ type })}
+          className="shrink-0"
+          options={[
+            { value: "amount", label: currencyLabel },
+            { value: "percent", label: <Percent size={14} aria-hidden="true" />, ariaLabel: tp.percent },
+          ]}
+        />
         <input
           id={`${id}-v`}
           inputMode="decimal"
@@ -690,9 +691,12 @@ function AddItem({ settings, disabled, onAdd }: { settings: CheckoutSettings; di
             type="button"
             disabled={disabled}
             onClick={() => setMode(o.id)}
-            className="focus-ring inline-flex min-h-11 items-center gap-1.5 rounded-full border border-dashed border-[var(--border-primary)] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+            className={cn(
+              "inline-flex min-h-11 items-center gap-1.5 rounded-full border border-dashed border-line-strong bg-card px-4 text-sm font-semibold text-ink-soft transition-colors duration-150 hover:border-ink hover:text-ink disabled:pointer-events-none disabled:opacity-45 motion-reduce:transition-none",
+              focusRing,
+            )}
           >
-            <Plus size={14} aria-hidden="true" />
+            <Plus size={16} aria-hidden="true" />
             {o.label}
           </button>
         ))}
@@ -709,7 +713,7 @@ function AddItem({ settings, disabled, onAdd }: { settings: CheckoutSettings; di
   const canAdd = mode === "custom" ? !!customName.trim() && parseMoneyInput(customPrice) !== null && customPrice !== "" : !!pick;
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-3">
+    <div className="flex flex-col gap-2 rounded-xl border border-line bg-sunken p-3">
       {mode === "custom" ? (
         <div className="grid gap-2 sm:grid-cols-[1fr_8rem]">
           <input
@@ -734,7 +738,7 @@ function AddItem({ settings, disabled, onAdd }: { settings: CheckoutSettings; di
           />
         </div>
       ) : list.length === 0 ? (
-        <p className="m-0 text-sm text-[var(--text-muted)]">{mode === "product" ? tp.noProducts : tp.noServices}</p>
+        <p className="m-0 text-sm text-ink-muted">{mode === "product" ? tp.noProducts : tp.noServices}</p>
       ) : (
         <select
           value={pick}
@@ -751,13 +755,12 @@ function AddItem({ settings, disabled, onAdd }: { settings: CheckoutSettings; di
         </select>
       )}
       <div className="flex justify-end gap-2">
-        <button type="button" className="btn btn-secondary min-h-11" onClick={reset}>
+        <Button variant="ghost" onClick={reset}>
           {t.common.cancel}
-        </button>
-        <button type="button" className="btn btn-secondary min-h-11" onClick={add} disabled={!canAdd}>
-          <Plus size={14} aria-hidden="true" />
+        </Button>
+        <Button variant="secondary" onClick={add} disabled={!canAdd} icon={<Plus aria-hidden="true" />}>
           {tp.add}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -803,14 +806,14 @@ function PaymentsEditor({
 
   return (
     <section aria-labelledby="co-pay" className="flex flex-col gap-3">
-      <h3 id="co-pay" className="m-0 text-[13px] font-semibold text-[var(--text-secondary)]">
+      <h3 id="co-pay" className={sectionTitle}>
         {tp.payments}
       </h3>
       <ul role="list" className="m-0 flex list-none flex-col gap-2 p-0">
         {drafts.map((d, i) => {
           const m = methods.find((x) => x.code === d.methodCode);
           return (
-            <li key={d.key} className="flex flex-col gap-2 rounded-xl border border-[var(--border-subtle)] p-3">
+            <li key={d.key} className="flex flex-col gap-2 rounded-xl border border-line bg-card p-3">
               <div className="flex items-center gap-2">
                 <select
                   value={d.methodCode}
@@ -853,8 +856,8 @@ function PaymentsEditor({
                 )}
               </div>
               {m?.kind === "cliq" && m.cliqAlias && (
-                <p className="m-0 text-[12px] text-[var(--text-secondary)]">
-                  {tp.cliqAlias}: <span dir="ltr" className="font-semibold text-[var(--text-primary)]">{m.cliqAlias}</span>
+                <p className="m-0 text-[13px] text-ink-muted">
+                  {tp.cliqAlias}: <span dir="ltr" className="font-semibold text-ink">{m.cliqAlias}</span>
                 </p>
               )}
               {m && m.kind !== "cash" && (
@@ -878,9 +881,9 @@ function PaymentsEditor({
           type="button"
           onClick={addSplit}
           disabled={disabled}
-          className="focus-ring inline-flex min-h-11 w-fit items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          className={cn(quietAction, "-ms-3 w-fit")}
         >
-          <Plus size={14} aria-hidden="true" />
+          <Plus aria-hidden="true" />
           {tp.splitPayment}
         </button>
       )}
@@ -888,15 +891,15 @@ function PaymentsEditor({
       <div
         aria-live="polite"
         className={cn(
-          "flex items-baseline justify-between gap-3 rounded-xl px-4 py-3",
-          settled ? "bg-[var(--accent-mint-muted)]" : over ? "bg-[var(--accent-rose-muted)]" : "bg-[var(--bg-secondary)]",
+          "flex items-center justify-between gap-3 rounded-xl px-4 py-3.5 transition-colors duration-200 motion-reduce:transition-none",
+          settled ? "bg-success-soft text-success-text" : over ? "bg-danger-soft text-danger-text" : "bg-sunken text-ink-soft",
         )}
       >
-        <span className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-secondary)]">
-          {settled ? <CheckCircle2 size={16} aria-hidden="true" /> : over ? <AlertCircle size={16} aria-hidden="true" /> : null}
+        <span className="flex items-center gap-2 text-sm font-semibold">
+          {settled ? <CheckCircle2 size={18} aria-hidden="true" /> : over ? <AlertCircle size={18} aria-hidden="true" /> : null}
           {settled ? tp.fullyPaid : over ? tp.overpaid : tp.remaining}
         </span>
-        <span className="text-[26px] font-extrabold tabular-nums text-[var(--text-primary)]">{money(Math.abs(balance))}</span>
+        <span className="text-stat tabular-nums">{money(Math.abs(balance))}</span>
       </div>
     </section>
   );
@@ -958,67 +961,60 @@ function ReceiptView({ receipt, phone, money }: { receipt: SaleReceipt; phone: s
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col items-center gap-1 rounded-xl bg-[var(--bg-secondary)] px-4 py-5 text-center">
-        <CheckCircle2 size={28} aria-hidden="true" className="text-[var(--accent-mint)]" />
-        <p className="m-0 text-[13px] font-semibold text-[var(--text-secondary)]">
+      <div className="flex flex-col items-center gap-1.5 rounded-xl bg-sunken px-4 py-6 text-center">
+        <span aria-hidden="true" className="mb-1 grid size-14 place-items-center rounded-full bg-success-soft text-success">
+          <CheckCircle2 size={28} />
+        </span>
+        <p className="m-0 text-sm font-semibold text-ink-soft">
           {receipt.status === "part_paid" ? tp.partPaid : tp.paid}
         </p>
-        <p className="m-0 text-[28px] font-extrabold tabular-nums text-[var(--text-primary)]">{money(receipt.total)}</p>
+        <p className="text-stat m-0 text-ink">{money(receipt.total)}</p>
         {receipt.receiptNumber && (
-          <p className="m-0 text-sm text-[var(--text-secondary)]">
-            {tp.receiptNo} <span dir="ltr" className="font-semibold text-[var(--text-primary)]">{receipt.receiptNumber}</span>
+          <p className="m-0 text-sm text-ink-soft">
+            {tp.receiptNo} <span dir="ltr" className="font-semibold text-ink">{receipt.receiptNumber}</span>
           </p>
         )}
-        {when && <p className="m-0 text-[12px] text-[var(--text-muted)]">{formatDate(when, { dateStyle: "medium", timeStyle: "short" })}</p>}
+        {when && <p className="text-meta m-0 text-ink-muted">{formatDate(when, { dateStyle: "medium", timeStyle: "short" })}</p>}
         {receipt.balance > 0 && (
-          <p className="m-0 text-sm font-semibold text-[var(--accent-rose)]">
+          <p className="m-0 text-sm font-semibold text-danger-text">
             {tp.remaining}: {money(receipt.balance)}
           </p>
         )}
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <span id="co-rlang" className="text-[13px] font-semibold text-[var(--text-secondary)]">
-          {tp.receiptLanguage}
-        </span>
-        <div role="radiogroup" aria-labelledby="co-rlang" className="inline-flex rounded-lg bg-[var(--bg-secondary)] p-1">
-          {(["ar", "en"] as const).map((l) => (
-            <button
-              key={l}
-              type="button"
-              role="radio"
-              aria-checked={lang === l}
-              onClick={() => setLang(l)}
-              lang={l}
-              className={cn(
-                "focus-ring min-h-9 rounded-md px-3 text-sm font-medium",
-                lang === l ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-muted)]",
-              )}
-            >
-              {l === "ar" ? "العربية" : "English"}
-            </button>
-          ))}
-        </div>
+        <span className="text-sm font-semibold text-ink">{tp.receiptLanguage}</span>
+        <SegmentedControl
+          ariaLabel={tp.receiptLanguage}
+          value={lang}
+          onChange={setLang}
+          options={(["ar", "en"] as const).map((l) => ({
+            value: l,
+            label: <span lang={l}>{l === "ar" ? "العربية" : "English"}</span>,
+          }))}
+        />
       </div>
 
       <pre
         dir={lang === "ar" ? "rtl" : "ltr"}
         lang={lang}
-        className="m-0 max-h-56 overflow-auto whitespace-pre-wrap rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-3 text-[13px] leading-relaxed text-[var(--text-primary)]"
+        className="m-0 max-h-56 overflow-auto whitespace-pre-wrap rounded-xl border border-line bg-card p-4 text-[13px] leading-relaxed text-ink"
         style={{ fontFamily: "inherit" }}
       >
         {text}
       </pre>
 
       <div className="grid gap-2 sm:grid-cols-2">
-        <button type="button" className="btn btn-secondary min-h-11" onClick={() => void send()} disabled={sending} aria-busy={sending || undefined}>
-          {sending ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <MessageCircle size={16} aria-hidden="true" />}
+        <Button variant="secondary" onClick={() => void send()} loading={sending} icon={<MessageCircle aria-hidden="true" />}>
           {phone ? tp.sendWhatsapp : tp.shareWhatsapp}
-        </button>
-        <button type="button" className="btn btn-secondary min-h-11" onClick={() => void copy()}>
-          {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => void copy()}
+          icon={copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+        >
           {copied ? tp.copied : tp.copyReceipt}
-        </button>
+        </Button>
       </div>
     </div>
   );

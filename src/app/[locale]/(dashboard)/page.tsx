@@ -2,13 +2,11 @@
 
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { isToday } from "date-fns";
 import {
   CheckCircle,
   UserX,
   XCircle,
-  Loader2,
   CalendarCheck,
   CalendarPlus,
   UserPlus,
@@ -21,16 +19,19 @@ import { DailyReceipt } from "@/components/dashboard/daily-receipt";
 import { CheckoutDialog, type CheckoutTarget } from "@/components/dashboard/checkout-dialog";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { ChartSkeleton, DashboardSkeleton, TableRowsSkeleton } from "@/components/ui/skeleton";
+import { Panel } from "@/components/ui/card";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "@/components/ui/toast";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import { useTranslation } from "@/hooks/use-translation";
+import type { TranslationKeys } from "@/i18n/en";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { usePos, useDashboardVersion, errorMessageFor } from "@/hooks/use-pos";
 import { useShopSettings } from "@/hooks/use-dashboard-data";
 import { createClient } from "@/lib/supabase/client";
-import { cn, getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 import { normalizeAppointmentStatus, type AppointmentStatus } from "@/lib/types";
 
 // recharts is ~100 kB; load it after the rest of the overview has painted.
@@ -54,7 +55,7 @@ type PendingAction = { kind: "cancel" | "no_show"; appt: Appt } | null;
 const UPCOMING_LIMIT = 8;
 
 function UpcomingAppointments() {
-  const { t, isRTL, FFD, href, formatCurrency, formatTime, formatDate } = useTranslation();
+  const { t, href, formatCurrency, formatTime, formatDate } = useTranslation();
   const shopId = useWorkspaceStore((s) => s.shopId);
   const barbers = useWorkspaceStore((s) => s.barbers);
   const version = useDashboardVersion();
@@ -145,76 +146,46 @@ function UpcomingAppointments() {
       barberId: a.barberId ?? null,
     });
 
-  function renderActions(a: Appt, compact = false) {
+  function renderActions(a: Appt) {
     const busy = loadingId === a.id;
-    const btn = cn(
-      "grid place-items-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-      compact ? "size-11" : "size-11 lg:size-9",
-    );
     return (
-      <div
-        className={cn(
-          "flex items-center gap-1.5",
-          !compact && "justify-end opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100",
-        )}
-      >
-        <button
-          type="button"
-          disabled={busy}
+      <div className="flex shrink-0 items-center gap-1">
+        <Button
+          variant="soft"
+          size="sm"
+          loading={busy}
           onClick={() => openCheckout(a)}
           aria-label={`${t.dashboard.markPaid}: ${a.client}`}
-          title={t.dashboard.markPaid}
-          className={cn(btn, "text-[var(--accent-text)] hover:bg-[var(--bg-secondary)]")}
+          icon={<CheckCircle aria-hidden="true" />}
         >
-          {busy ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <CheckCircle size={20} aria-hidden="true" />}
-        </button>
-        <button
-          type="button"
+          {t.dashboard.markPaid}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           disabled={busy}
           onClick={() => setPending({ kind: "no_show", appt: a })}
           aria-label={`${t.dashboard.markNoShow}: ${a.client}`}
           title={t.dashboard.markNoShow}
-          className={cn(btn, "text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]")}
-        >
-          <UserX size={20} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
+          icon={<UserX aria-hidden="true" />}
+        />
+        <Button
+          variant="ghost"
+          size="icon"
           disabled={busy}
           onClick={() => setPending({ kind: "cancel", appt: a })}
           aria-label={`${t.dashboard.cancelAppointment}: ${a.client}`}
           title={t.dashboard.cancelAppointment}
-          className={cn(btn, "text-[var(--accent-rose)] hover:bg-[var(--accent-rose-muted)]")}
-        >
-          <XCircle size={20} aria-hidden="true" />
-        </button>
+          icon={<XCircle aria-hidden="true" />}
+          className="hover:bg-danger-soft hover:text-danger-text"
+        />
       </div>
     );
   }
 
-  const cols = [
-    t.calendar.client,
-    t.calendar.service,
-    t.calendar.barber,
-    t.calendar.time,
-    t.dashboard.price,
-    t.calendar.status,
-  ];
-
   let body: React.ReactNode;
   if (initialLoading) {
-    body = (
-      <>
-        <div className="md:hidden">
-          <TableRowsSkeleton rows={4} columns={3} />
-        </div>
-        <table className="hidden w-full md:table">
-          <tbody>
-            <TableRowsSkeleton asRows rows={5} columns={7} />
-          </tbody>
-        </table>
-      </>
-    );
+    body = <TableRowsSkeleton rows={4} columns={4} />;
   } else if (error) {
     body = (
       <EmptyState
@@ -240,121 +211,65 @@ function UpcomingAppointments() {
     );
   } else {
     body = (
-      <>
-        {/* Phones: stacked cards with always-visible, 44px actions */}
-        <ul className="m-0 list-none divide-y divide-[var(--border-subtle)] p-0 md:hidden">
-          {appointments.map((a) => (
-            <li key={a.id} className="flex flex-col gap-3 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="m-0 truncate text-[15px] font-extrabold text-[var(--text-primary)]">{a.client}</p>
-                  <p className="m-0 mt-0.5 truncate text-[13px] text-[var(--text-secondary)]">
+      <ul className="m-0 list-none divide-y divide-line p-0">
+        {appointments.map((a) => {
+          const d = new Date(a.startTime);
+          const today = isToday(d);
+          // One line when the panel is wide (md–lg full width, 2xl beside the
+          // receipt); two lines on phones and in the narrower xl column.
+          return (
+            <li
+              key={a.id}
+              className="flex flex-col gap-3 px-4 py-3.5 transition-colors duration-150 hover:bg-sunken/50 motion-reduce:transition-none md:flex-row md:items-center md:gap-4 lg:px-5 xl:flex-col xl:items-stretch xl:gap-3 2xl:flex-row 2xl:items-center 2xl:gap-4"
+            >
+              <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center sm:gap-4">
+                <div className="w-16 shrink-0">
+                  <p className="m-0 text-[15px] font-semibold tabular-nums text-ink">{formatTime(d)}</p>
+                  <p className="m-0 text-xs text-ink-muted">{today ? t.common.today : formatDate(d, "dayMonth")}</p>
+                </div>
+                <span
+                  aria-hidden="true"
+                  className="hidden size-10 shrink-0 place-items-center rounded-full bg-sunken text-[13px] font-semibold text-ink-soft sm:grid"
+                >
+                  {getInitials(a.client || "?")}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="m-0 truncate text-[15px] font-semibold text-ink">{a.client}</p>
+                  <p className="text-meta m-0 truncate text-ink-muted">
                     {serviceName(a)} · {barberName(a.barberId)}
                   </p>
                 </div>
-                <div className="shrink-0 text-end">
-                  <p className="m-0 text-[14px] font-extrabold tabular-nums text-[var(--text-primary)]">
-                    {whenLabel(a.startTime)}
-                  </p>
-                  <p className="m-0 mt-0.5 text-[13px] font-semibold tabular-nums text-[var(--text-secondary)]">
-                    {formatCurrency(a.price, currency)}
-                  </p>
-                </div>
+                <bdi className="shrink-0 text-[15px] font-semibold tabular-nums text-ink">{formatCurrency(a.price, currency)}</bdi>
               </div>
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-2 md:justify-end xl:justify-between 2xl:justify-end">
                 <StatusBadge status={a.status} />
-                {renderActions(a, true)}
+                {renderActions(a)}
               </div>
             </li>
-          ))}
-        </ul>
-
-        {/* md+: table. One logical column order; `dir` mirrors it in Arabic. */}
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full border-collapse text-start">
-            <caption className="sr-only">{t.dashboard.upcomingAppointments}</caption>
-            <thead>
-              <tr className="bg-[var(--bg-secondary)]">
-                {cols.map((col, i) => (
-                  <th
-                    key={col}
-                    scope="col"
-                    className={cn(
-                      "px-5 py-4 text-start text-[11px] font-bold text-[var(--text-secondary)] lg:px-6",
-                      !isRTL && "uppercase tracking-[0.12em]",
-                      i === 2 && "hidden lg:table-cell",
-                    )}
-                  >
-                    {col}
-                  </th>
-                ))}
-                <th scope="col" className="px-5 py-4 text-end lg:px-6">
-                  <span className="sr-only">{t.dashboard.actions}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border-subtle)]">
-              {appointments.map((a) => (
-                <tr key={a.id} className="table-row-hover group transition-colors">
-                  <td className="px-5 py-4 lg:px-6">
-                    <div className="flex items-center gap-3">
-                      <span
-                        aria-hidden="true"
-                        className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-[12px] font-extrabold text-[var(--text-primary)]"
-                      >
-                        {getInitials(a.client || "?")}
-                      </span>
-                      <span className="text-[14px] font-extrabold text-[var(--text-primary)]">{a.client}</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-[14px] font-semibold text-[var(--text-primary)] lg:px-6">{serviceName(a)}</td>
-                  <td className="hidden px-5 py-4 text-[14px] font-semibold text-[var(--text-secondary)] lg:table-cell lg:px-6">
-                    {barberName(a.barberId)}
-                  </td>
-                  <td className="whitespace-nowrap px-5 py-4 text-[14px] font-bold tabular-nums text-[var(--text-primary)] lg:px-6">
-                    {whenLabel(a.startTime)}
-                  </td>
-                  <td className="whitespace-nowrap px-5 py-4 text-[14px] font-bold tabular-nums text-[var(--text-primary)] lg:px-6">
-                    {formatCurrency(a.price, currency)}
-                  </td>
-                  <td className="px-5 py-4 lg:px-6">
-                    <StatusBadge status={a.status} />
-                  </td>
-                  <td className="px-5 py-4 text-end lg:px-6">
-                    {renderActions(a)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </>
+          );
+        })}
+      </ul>
     );
   }
 
   return (
-    <section aria-labelledby="upcoming-title" className="mt-8">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2
-          id="upcoming-title"
-          className="m-0 text-[20px] font-extrabold text-[var(--text-primary)] sm:text-[22px]"
-          style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.012em") }}
-        >
-          {t.dashboard.upcomingAppointments}
-        </h2>
-        <Link
+    <Panel
+      aria-labelledby="upcoming-title"
+      flush
+      title={<span id="upcoming-title">{t.dashboard.upNext}</span>}
+      description={t.dashboard.upcomingAppointments}
+      action={
+        <ButtonLink
           href={href("/calendar")}
-          className={cn(
-            "nav-link inline-flex min-h-11 items-center gap-1.5 text-[12px] font-bold text-[var(--text-primary)]",
-            !isRTL && "uppercase tracking-[0.12em]",
-          )}
+          variant="ghost"
+          size="sm"
+          iconEnd={<ArrowRight aria-hidden="true" className="rtl:-scale-x-100" />}
         >
           {t.dashboard.viewSchedule}
-          <ArrowRight size={14} aria-hidden="true" className="rtl:-scale-x-100" />
-        </Link>
-      </div>
-
-      <div className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]">{body}</div>
+        </ButtonLink>
+      }
+    >
+      {body}
 
       <ConfirmDialog
         open={!!pending}
@@ -371,53 +286,59 @@ function UpcomingAppointments() {
         cancelLabel={t.dashboard.keepAppointment}
       />
       <CheckoutDialog target={checkout} onClose={() => setCheckout(null)} onConfirm={confirmCheckout} />
-    </section>
+    </Panel>
   );
+}
+
+function greetingFor(t: TranslationKeys, hour: number): string {
+  if (hour < 12) return t.topbar.goodMorning;
+  if (hour < 18) return t.topbar.goodAfternoon;
+  return t.topbar.goodEvening;
 }
 
 export default function DashboardPage() {
   const hydrated = useWorkspaceStore((s) => s.hydrated);
-  const { t, isRTL, FFD, href, formatDate } = useTranslation();
+  const shopName = useWorkspaceStore((s) => s.shopName);
+  const { t, href, formatDate } = useTranslation();
 
   if (!hydrated) return <DashboardSkeleton />;
 
-  return (
-    <div className="page-enter">
-      <header className="mb-8">
-        <div className="dashboard-header-flex">
-          <div>
-            <h1
-              className="m-0 text-[30px] font-extrabold leading-tight text-[var(--text-primary)] sm:text-[38px]"
-              style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.016em") }}
-            >
-              {t.dashboard.overviewTitle}
-            </h1>
-            <p className="m-0 mt-2.5 text-[14px] text-[var(--text-secondary)]">{formatDate(new Date(), "long")}</p>
-          </div>
+  const now = new Date();
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <Link href={href("/calendar")} className="btn btn-secondary">
-              <CalendarCheck size={16} aria-hidden="true" />
-              <span>{t.calendar.newBooking}</span>
-            </Link>
-            <Link href={href("/leads")} className="btn btn-secondary">
-              <UserPlus size={16} aria-hidden="true" />
-              <span>{t.dashboard.newLead}</span>
-            </Link>
-          </div>
+  return (
+    <div className="page-enter flex flex-col gap-6 lg:gap-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-h2 m-0 text-ink">{greetingFor(t, now.getHours())}</h1>
+          <p className="m-0 mt-1 text-[15px] text-ink-muted">
+            {formatDate(now, "long")}
+            {shopName && (
+              <>
+                <span aria-hidden="true" className="mx-1.5 text-ink-disabled">
+                  ·
+                </span>
+                <span className="font-medium text-ink-soft">{shopName}</span>
+              </>
+            )}
+          </p>
         </div>
+
+        <ButtonLink href={href("/leads")} variant="secondary" size="sm" icon={<UserPlus aria-hidden="true" />}>
+          {t.dashboard.newLead}
+        </ButtonLink>
       </header>
 
-      <div className="mb-8">
-        <MetricCards />
-      </div>
+      <MetricCards />
 
-      <div className="dashboard-main-grid">
-        <SalesChart />
-        <DailyReceipt />
+      <div className="grid gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-4 lg:gap-6">
+          <UpcomingAppointments />
+          <SalesChart />
+        </div>
+        <div className="min-w-0">
+          <DailyReceipt />
+        </div>
       </div>
-
-      <UpcomingAppointments />
     </div>
   );
 }

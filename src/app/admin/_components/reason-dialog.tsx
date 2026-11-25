@@ -115,7 +115,7 @@ export function ReasonDialog({
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         {children}
         <div>
-          <label htmlFor={`${id}-reason`} className="mb-1.5 block text-[13px] font-medium text-[var(--text-primary)]">
+          <label htmlFor={`${id}-reason`} className="mb-1.5 block text-[13px] font-medium text-ink">
             {c.reason}
           </label>
           <textarea
@@ -130,14 +130,14 @@ export function ReasonDialog({
             aria-invalid={!!error}
             aria-describedby={cn(hintId, error && errorId)}
             placeholder={c.reasonPlaceholder}
-            className="w-full resize-y rounded-[var(--radius)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] aria-[invalid=true]:border-[var(--accent-rose)]"
+            className="w-full resize-y rounded-lg border border-line-strong bg-card px-4 py-2 text-[15px] text-ink placeholder:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus aria-[invalid=true]:border-danger"
           />
-          <div className="mt-1 flex justify-between gap-3 text-[12px] text-[var(--text-muted)]">
+          <div className="mt-1 flex justify-between gap-3 text-[12px] text-ink-muted">
             <span id={hintId}>{required ? c.reasonHint(minLength) : c.reasonOptionalHint}</span>
             {left < 100 && <span aria-live="polite">{c.charsLeft(left)}</span>}
           </div>
           {error && (
-            <p id={errorId} role="alert" className="mt-2 text-[13px] font-medium text-[var(--accent-rose)]">
+            <p id={errorId} role="alert" className="mt-2 text-[13px] font-medium text-danger-text">
               {error}
             </p>
           )}

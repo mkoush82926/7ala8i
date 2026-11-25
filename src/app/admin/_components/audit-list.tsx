@@ -28,22 +28,22 @@ export function auditTargetHref(row: Pick<AuditRow, "target_type" | "target_id" 
 export function AuditList({ rows, empty, compact = false }: { rows: AuditRow[]; empty: string; compact?: boolean }) {
   const c = ADMIN_COPY.audit;
   if (!rows.length) {
-    return <p className="py-6 text-center text-[14px] text-[var(--text-secondary)]">{empty}</p>;
+    return <p className="py-6 text-center text-[14px] text-ink-soft">{empty}</p>;
   }
   return (
-    <ol className="divide-y divide-[var(--border-subtle)]">
+    <ol className="divide-y divide-line">
       {rows.map((row) => {
         const href = auditTargetHref(row);
         const changes = compact ? [] : summarizeDiff(row.diff ?? null);
         const who = row.actor_name ?? ADMIN_COPY.common.system;
         return (
-          <li key={row.id} className="py-3 first:pt-0 last:pb-0">
+          <li key={row.id} className="py-3.5 first:pt-0 last:pb-0">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <p className="text-[14px] font-medium text-[var(--text-primary)]">
+              <p className="text-[14px] font-medium text-ink">
                 {href ? (
                   <Link
                     href={href}
-                    className="rounded underline-offset-2 hover:underline focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+                    className="rounded underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   >
                     {auditActionLabel(row.action)}
                   </Link>
@@ -54,31 +54,31 @@ export function AuditList({ rows, empty, compact = false }: { rows: AuditRow[]; 
               <time
                 dateTime={row.created_at}
                 title={formatDateTime(row.created_at)}
-                className="text-[12px] tabular-nums text-[var(--text-muted)]"
+                className="text-[12px] tabular-nums text-ink-muted"
               >
                 {compact ? formatRelative(row.created_at) : formatDateTime(row.created_at)}
               </time>
             </div>
-            <p className="mt-0.5 text-[13px] text-[var(--text-secondary)]">
+            <p className="mt-0.5 text-[13px] text-ink-soft">
               {ADMIN_COPY.common.by} {who}
               {row.actor_role ? ` · ${ADMIN_COPY.shell.roles[row.actor_role] ?? row.actor_role}` : ""}
               {row.target_type ? ` · ${c.targetTypes[row.target_type] ?? row.target_type}` : ""}
               {row.impersonation_id ? ` · ${c.viaSupport}` : ""}
             </p>
-            {row.reason && <p className="mt-1 text-[13px] text-[var(--text-primary)]">“{row.reason}”</p>}
+            {row.reason && <p className="mt-1.5 border-s-2 border-line ps-3 text-[13px] text-ink">“{row.reason}”</p>}
             {changes.length > 0 && (
               <details className="mt-2 group">
-                <summary className="cursor-pointer select-none rounded text-[12px] font-medium text-[var(--accent-text)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]">
+                <summary className="cursor-pointer select-none rounded text-[12px] font-medium text-brand-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                   {c.showDetails}
                 </summary>
-                <dl className="mt-2 grid gap-1 rounded-[var(--radius)] bg-[var(--bg-secondary)] p-3 text-[12px]">
+                <dl className="mt-2 grid gap-1 rounded-lg bg-sunken p-3 text-[12px]">
                   {changes.map((ch) => (
                     <div key={ch.field} className="grid grid-cols-[minmax(0,9rem)_1fr] gap-2">
-                      <dt className="truncate font-medium text-[var(--text-secondary)]">{ch.field}</dt>
-                      <dd className="break-all text-[var(--text-primary)]">
+                      <dt className="truncate font-medium text-ink-soft">{ch.field}</dt>
+                      <dd className="break-all font-mono text-ink">
                         {ch.before ? (
                           <>
-                            <span className="text-[var(--text-muted)] line-through">{ch.before}</span>
+                            <span className="text-ink-muted line-through">{ch.before}</span>
                             <span aria-hidden className="mx-1">
                               →
                             </span>

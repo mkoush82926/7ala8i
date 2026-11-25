@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 import { MAX_SEGMENTS, segmentRange, type Segment } from "./schedule-logic";
 
 export const timeInputClass =
-  "h-11 w-full min-w-0 rounded-[var(--radius-inputs)] border border-[var(--border-primary)] bg-[var(--bg-primary)] px-2 text-center text-sm text-[var(--text-primary)] outline-none focus-visible:border-[var(--accent-brass)] sm:w-28 disabled:opacity-50";
+  "h-11 w-full min-w-0 rounded-lg border border-line-strong bg-card px-2 text-center text-sm text-ink outline-none focus-visible:border-brand sm:w-28 disabled:opacity-50";
 
-export const sectionCard = "rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 sm:p-5";
-export const sectionTitleClass = "m-0 text-base font-bold text-[var(--text-primary)]";
+export const sectionCard = "rounded-xl border border-line bg-card p-4 sm:p-5";
+export const sectionTitleClass = "text-h3 m-0 text-ink";
 
 /**
  * Edits a list of working segments ("09:00–13:00", "16:00–22:00"). An empty
@@ -44,7 +44,7 @@ export function SegmentsEditor({
   return (
     <fieldset className="flex flex-col gap-2" disabled={disabled}>
       <legend className="sr-only">{label}</legend>
-      {value.length === 0 && <p className="m-0 text-sm text-[var(--text-muted)]">{emptyLabel}</p>}
+      {value.length === 0 && <p className="m-0 text-sm text-ink-muted">{emptyLabel}</p>}
       {value.map((seg, i) => {
         const overnight = segmentRange(seg)[1] > 1440;
         return (
@@ -56,7 +56,7 @@ export function SegmentsEditor({
               onChange={(e) => e.target.value && update(i, { start: e.target.value })}
               className={timeInputClass}
             />
-            <span aria-hidden="true" className="text-[var(--text-muted)]">–</span>
+            <span aria-hidden="true" className="text-ink-muted">–</span>
             <input
               type="time"
               value={seg.end === "24:00" ? "00:00" : seg.end}
@@ -65,7 +65,7 @@ export function SegmentsEditor({
               className={timeInputClass}
             />
             {overnight && (
-              <span className="rounded-full bg-[var(--bg-secondary)] px-2 py-0.5 text-[12px] font-medium text-[var(--text-secondary)]">
+              <span className="rounded-full bg-sunken px-2 py-0.5 text-[12px] font-medium text-ink-soft">
                 {t.shifts.overnight}
               </span>
             )}
@@ -73,7 +73,7 @@ export function SegmentsEditor({
               type="button"
               onClick={() => onChange(value.filter((_, n) => n !== i))}
               aria-label={`${t.shifts.removeSegment} ${i + 1}`}
-              className="focus-ring inline-flex size-11 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--accent-rose)]"
+              className="focus-ring inline-flex size-11 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-sunken hover:text-danger-text"
             >
               <X size={16} aria-hidden="true" />
             </button>
@@ -85,7 +85,7 @@ export function SegmentsEditor({
           type="button"
           onClick={add}
           className={cn(
-            "focus-ring inline-flex min-h-11 w-fit items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]",
+            "focus-ring inline-flex min-h-11 w-fit items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-ink-soft transition-colors hover:text-ink",
           )}
         >
           <Plus size={16} aria-hidden="true" />

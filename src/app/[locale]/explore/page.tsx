@@ -7,7 +7,7 @@ import en from "@/i18n/en";
 import ar from "@/i18n/ar";
 import { SiteHeader } from "@/components/search/site-header";
 import { SearchResults } from "@/components/search/search-results";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ShopCardSkeleton, Skeleton } from "@/components/ui/skeleton";
 import { loadSearchShell } from "@/lib/search/server";
 import { exploreRobots } from "./explore-utils";
 
@@ -40,13 +40,18 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
 function ResultsFallback() {
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-4 pt-4" aria-hidden="true">
-      <Skeleton className="h-[60px] w-full rounded-2xl" />
-      <Skeleton className="mt-3 h-9 w-3/4 rounded-full" />
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-[320px] w-full rounded-[16px]" />
-        ))}
+    <div aria-hidden="true">
+      <div className="border-b border-line bg-page px-4 py-3 sm:px-6 lg:px-8">
+        <Skeleton className="h-14 w-full rounded-2xl md:h-[60px] md:rounded-full" />
+        <div className="mt-3 flex gap-2 overflow-hidden">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} variant="pill" className="h-9 w-24 shrink-0 rounded-full" />
+          ))}
+        </div>
+      </div>
+      <div className="px-4 pt-5 sm:px-6 lg:w-[53%] lg:px-8 lg:pt-6">
+        <Skeleton className="mb-5 h-10 w-56 rounded-full" />
+        <ShopCardSkeleton count={4} className="sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2" />
       </div>
     </div>
   );
@@ -55,9 +60,9 @@ function ResultsFallback() {
 export default async function ExplorePage() {
   const { cities, categories } = await loadSearchShell();
   return (
-    <div className="min-h-dvh bg-[var(--bg-primary)] text-[var(--text-primary)]">
+    <div className="min-h-dvh bg-page text-ink">
       <SiteHeader />
-      <main id="main-content" className="pb-24">
+      <main id="main-content">
         <Suspense fallback={<ResultsFallback />}>
           <SearchResults cities={cities} categories={categories} initial={null} />
         </Suspense>

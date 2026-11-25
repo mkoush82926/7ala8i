@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import type { CalendarAppointment } from "@/hooks/use-appointments";
 import type { BlockedTimeRow } from "@/lib/queries/appointments";
-import { UNASSIGNED_KEY, bucketByLaneDay, fromIsoDay, isMovable, isoDay, moveBy, type MoveTarget } from "./calendar-model";
+import { UNASSIGNED_KEY, bucketByLaneDay, fromIsoDay, isMovable, isoDay, moveBy, tint, type MoveTarget } from "./calendar-model";
 import { LaneAvatar, type GridLane, type SlotRequest } from "./time-grid";
 import { StatusIcon } from "./status-pill";
 
@@ -117,24 +117,26 @@ export function WeekMatrix({
   const laneKeyOf = (lane: GridLane) => lane.barberId ?? UNASSIGNED_KEY;
 
   return (
-    <div className="overflow-x-auto overscroll-x-contain rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[var(--bg-primary)]">
-      <table className="w-full min-w-[840px] table-fixed border-collapse">
+    <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-line bg-card">
+      <table className="w-full min-w-[880px] table-fixed border-collapse">
         <caption className="sr-only">{t.calendar.weekGridCaption}</caption>
         <thead>
-          <tr className="border-b border-[var(--border-subtle)]">
-            <th scope="col" className="sticky start-0 z-10 w-36 bg-[var(--bg-primary)] p-2 text-start text-[12px] font-medium text-[var(--text-muted)]">
+          <tr className="border-b border-line bg-sunken/60">
+            <th scope="col" className="sticky start-0 z-10 w-40 bg-sunken px-3 py-2 text-start text-xs font-semibold text-ink-muted">
               {t.calendar.barber}
             </th>
             {days.map((day) => (
-              <th key={day} scope="col" className="border-s border-[var(--border-subtle)] p-0">
+              <th key={day} scope="col" className="border-s border-line p-0">
                 <button
                   type="button"
                   onClick={() => onOpenDay(day)}
+                  aria-current={day === today ? "date" : undefined}
                   className={cn(
-                    "w-full px-2 py-2 text-center text-[12px] font-medium hover:bg-[var(--bg-secondary)]",
-                    day === today ? "text-[var(--accent-text)]" : "text-[var(--text-secondary)]",
+                    "flex h-10 w-full items-center justify-center gap-1.5 px-2 text-center text-xs font-semibold tabular-nums transition-colors duration-150 hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus motion-reduce:transition-none",
+                    day === today ? "text-brand-text" : "text-ink-soft",
                   )}
                 >
+                  {day === today && <span aria-hidden="true" className="size-1.5 rounded-full bg-brand" />}
                   {formatDate(fromIsoDay(day), "weekdayDay")}
                 </button>
               </th>
@@ -143,11 +145,11 @@ export function WeekMatrix({
         </thead>
         <tbody>
           {lanes.map((lane) => (
-            <tr key={lane.key} className="border-b border-[var(--border-subtle)] last:border-b-0">
-              <th scope="row" className="sticky start-0 z-10 bg-[var(--bg-primary)] p-2 text-start align-top">
-                <span className="flex items-center gap-2">
-                  <LaneAvatar lane={lane} size={26} />
-                  <span className="truncate text-[13px] font-normal text-[var(--text-secondary)]">{lane.name}</span>
+            <tr key={lane.key} className="border-b border-line last:border-b-0">
+              <th scope="row" className="sticky start-0 z-10 bg-card px-3 py-2.5 text-start align-top">
+                <span className="flex items-center gap-2.5">
+                  <LaneAvatar lane={lane} size={28} />
+                  <span className="truncate text-[13px] font-semibold text-ink">{lane.name}</span>
                 </span>
               </th>
               {days.map((day) => {
@@ -161,9 +163,9 @@ export function WeekMatrix({
                     key={day}
                     data-cell={key}
                     className={cn(
-                      "h-[112px] border-s border-[var(--border-subtle)] p-1 align-top",
-                      !working && "bg-[var(--bg-secondary)]/70",
-                      isTarget && "bg-[var(--accent-blue-muted)] outline outline-2 -outline-offset-2 outline-[var(--accent-brass)]",
+                      "h-[116px] border-s border-line p-1.5 align-top transition-colors duration-150 motion-reduce:transition-none",
+                      !working && "bg-sunken/70",
+                      isTarget && "bg-brand-soft/60 outline outline-2 -outline-offset-2 outline-brand",
                     )}
                     onClick={(e) => {
                       if (e.target !== e.currentTarget) return;
@@ -195,15 +197,20 @@ export function WeekMatrix({
                             }}
                             aria-haspopup="dialog"
                             className={cn(
-                              "flex w-full min-w-0 select-none items-center gap-1 rounded-[4px] px-1.5 py-1 text-start text-[11px] leading-tight",
-                              a.status === "cancelled" && "line-through opacity-60",
+                              "flex min-h-7 w-full min-w-0 select-none items-center gap-1 rounded-xs px-1.5 py-1 text-start text-[11px] leading-tight text-ink shadow-xs transition-shadow duration-150 hover:shadow-card focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus motion-reduce:transition-none",
+                              (a.status === "pending" || a.status === "awaiting_deposit") && "outline-1 outline-dashed -outline-offset-1",
+                              a.status === "cancelled" && "bg-sunken text-ink-muted line-through shadow-none",
                               drag?.active && drag.id === a.id && "opacity-40",
                             )}
-                            style={{ background: `${colorFor(a)}24`, borderInlineStart: `3px solid ${colorFor(a)}` }}
+                            style={{
+                              background: a.status === "cancelled" ? undefined : tint(colorFor(a), 14, "var(--color-card)"),
+                              borderInlineStart: `3px solid ${a.status === "cancelled" ? "var(--color-line-strong)" : colorFor(a)}`,
+                              outlineColor: a.status === "pending" || a.status === "awaiting_deposit" ? colorFor(a) : undefined,
+                            }}
                           >
-                            <StatusIcon status={a.status} size={10} />
-                            <span className="shrink-0 tabular-nums text-[var(--text-muted)]">{formatTime(a.startTime)}</span>
-                            <span className="truncate text-[var(--text-primary)]">{a.clientName || t.calendar.walkIn}</span>
+                            <StatusIcon status={a.status} size={11} />
+                            <span className="shrink-0 font-medium tabular-nums opacity-80">{formatTime(a.startTime)}</span>
+                            <span className="truncate font-semibold">{a.clientName || t.calendar.walkIn}</span>
                           </button>
                         </li>
                       ))}
@@ -212,7 +219,7 @@ export function WeekMatrix({
                       <button
                         type="button"
                         onClick={() => onOpenDay(day)}
-                        className="mt-1 w-full rounded px-1 text-start text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                        className="mt-1 flex min-h-7 w-full items-center rounded-xs px-1.5 text-start text-[11px] font-semibold text-ink-muted transition-colors hover:bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-focus"
                       >
                         {items.length > MAX_CHIPS
                           ? interpolate(t.calendar.moreCount, { count: formatNumber(items.length - MAX_CHIPS) })

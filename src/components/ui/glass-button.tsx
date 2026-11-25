@@ -1,9 +1,16 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { buttonClasses, spinnerClasses, type ButtonVariant } from "./recipes";
 
+/**
+ * Legacy button API kept for compatibility; renders the v2 <Button/> recipe.
+ * New code: import { Button } from "@/components/ui/button".
+ * Variant map: primary → primary · secondary → secondary · ghost → ghost
+ * · danger → destructive-soft. (The old framer hover scale is replaced by
+ * the shared press feedback.)
+ */
 interface GlassButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
@@ -11,21 +18,11 @@ interface GlassButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
   loading?: boolean;
 }
 
-const variants = {
-  primary:
-    "bg-[var(--accent-mint)] text-[var(--on-accent)] hover:bg-[var(--accent-mint)]/90",
-  secondary:
-    "bg-[var(--bg-surface)] border border-[var(--border-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)] hover:border-[var(--border-hover)]",
-  ghost:
-    "bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]",
-  danger:
-    "bg-[var(--accent-rose-muted)] text-[var(--accent-rose)] border border-[var(--accent-rose)]/20 hover:bg-[var(--accent-rose)]/20",
-};
-
-const sizes = {
-  sm: "h-9 px-3 text-xs gap-1.5 rounded-[var(--radius-buttons)]",
-  md: "h-11 px-4 text-sm gap-2 rounded-[var(--radius-buttons)]",
-  lg: "h-11 px-6 text-sm gap-2.5 rounded-[var(--radius-buttons)]",
+const VARIANT_MAP: Record<NonNullable<GlassButtonProps["variant"]>, ButtonVariant> = {
+  primary: "primary",
+  secondary: "secondary",
+  ghost: "ghost",
+  danger: "destructive-soft",
 };
 
 export function GlassButton({
@@ -36,35 +33,19 @@ export function GlassButton({
   icon,
   loading,
   disabled,
+  type = "button",
   ...props
 }: GlassButtonProps) {
   return (
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      className={cn(
-        "inline-flex items-center justify-center font-medium transition-all duration-[var(--transition-fast)] cursor-pointer",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-        "disabled:opacity-40 disabled:pointer-events-none",
-        variants[variant],
-        sizes[size],
-        className,
-      )}
+    <button
+      type={type}
+      className={cn(buttonClasses({ variant: VARIANT_MAP[variant], size }), className)}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      {...(props as React.ComponentProps<typeof motion.button>)}
+      {...props}
     >
-      {loading ? (
-        <motion.div
-          aria-hidden="true"
-          className="w-4 h-4 border-2 border-current border-t-transparent rounded-full"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-        />
-      ) : (
-        icon
-      )}
+      {loading ? <span aria-hidden="true" className={spinnerClasses} /> : icon}
       {children}
-    </motion.button>
+    </button>
   );
 }

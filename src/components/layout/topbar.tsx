@@ -1,30 +1,37 @@
 "use client";
 
-import React, { useCallback, useEffect, useId, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Globe, ChevronDown, Menu, Users, Sun, Moon, Settings, LogOut, Search, Loader2, Check, Bell, Compass } from "lucide-react";
+import { Globe, ChevronDown, Users, Sun, Moon, Settings, LogOut, Search, Loader2, Check, Bell, Compass, CalendarPlus } from "lucide-react";
 import { format } from "date-fns";
 import { useThemeStore } from "@/store/theme-store";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { cn, getInitials } from "@/lib/utils";
-import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { createClient } from "@/lib/supabase/client";
 import { searchWorkspace, type WorkspaceSearchResult } from "@/lib/queries/search";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useShellRole, useSignOut } from "@/components/layout/sidebar";
 import { findNavItem, navLabel, stripLocale } from "@/components/layout/nav-config";
+import { ButtonLink } from "@/components/ui/button";
+import { focusRing } from "@/components/ui/recipes";
 
 const EMPTY_SEARCH_RESULT: WorkspaceSearchResult = { clients: [], leads: [], appointments: [] };
 
-const iconBtn =
-  "relative grid size-11 shrink-0 place-items-center rounded-lg text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]";
+const iconBtn = cn(
+  "relative grid size-11 shrink-0 place-items-center rounded-full text-ink-soft transition-colors duration-150 motion-reduce:transition-none hover:bg-sunken hover:text-ink [&_svg]:size-5",
+  focusRing,
+);
 
 const menuPanel =
-  "absolute top-[calc(100%+8px)] z-50 min-w-[200px] rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-1.5 shadow-xl";
+  "absolute top-[calc(100%+8px)] z-50 min-w-[220px] rounded-2xl border border-line bg-card p-2 shadow-float";
 
-const menuItem =
-  "flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-start text-[13px] font-semibold text-[var(--text-secondary)] no-underline transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]";
+const menuItem = cn(
+  "flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-start text-sm font-medium text-ink-soft no-underline transition-colors duration-150 motion-reduce:transition-none hover:bg-sunken hover:text-ink [&_svg]:size-[18px] [&_svg]:shrink-0 [&_svg]:text-ink-muted",
+  focusRing,
+  "focus-visible:-outline-offset-2",
+);
 
 /** Close a popover on Escape (returning focus to its trigger) and on outside clicks. */
 function useDismiss(
@@ -53,6 +60,13 @@ function useDismiss(
   }, [open, close, rootRef, triggerRef]);
 }
 
+/* ── Search shortcut hint: platform-specific, client only (null on the server) ── */
+const noopSubscribe = () => () => {};
+const shortcutLabel = () => (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘K" : "Ctrl K");
+function useShortcutLabel(): string | null {
+  return useSyncExternalStore(noopSubscribe, shortcutLabel, () => null);
+}
+
 /* ── Workspace search (combobox + grouped listbox) ── */
 interface SearchOption {
   id: string;
@@ -65,9 +79,11 @@ interface SearchOption {
 function SearchBox({ variant }: { variant: "inline" | "icon" }) {
   const shopId = useWorkspaceStore((s) => s.shopId);
   const isAdmin = useWorkspaceStore((s) => s.role) === "shop_admin";
-  const { t, isRTL, href, formatDate, formatTime } = useTranslation();
+  const { t, href, formatDate, formatTime } = useTranslation();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const shortcut = useShortcutLabel();
   const [inputValue, setInputValue] = useState("");
   const [term, setTerm] = useState("");
   const [rawResults, setRawResults] = useState<WorkspaceSearchResult>(EMPTY_SEARCH_RESULT);
@@ -107,6 +123,22 @@ function SearchBox({ variant }: { variant: "inline" | "icon" }) {
     setActive(-1);
   }, []);
   useDismiss(open, close, rootRef, variant === "icon" ? triggerRef : undefined);
+
+  // ⌘K / Ctrl K focuses the inline search (md+).
+  useEffect(() => {
+    if (variant !== "inline") return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        const el = inputRef.current;
+        if (!el || el.offsetParent === null) return; // hidden below md
+        e.preventDefault();
+        el.focus();
+        el.select();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [variant]);
 
   const results = shopId && term && fetchedFor === term ? rawResults : EMPTY_SEARCH_RESULT;
   const options: SearchOption[] = [
@@ -161,15 +193,15 @@ function SearchBox({ variant }: { variant: "inline" | "icon" }) {
   const groupTitle = { clients: t.sidebar.clients, leads: t.sidebar.leads, appointments: t.topbar.appointments };
 
   const resultsBody = isBusy ? (
-    <div className="flex justify-center py-5" role="status" aria-label={t.common.loading}>
-      <Loader2 size={18} className="animate-spin text-[var(--text-muted)]" aria-hidden="true" />
+    <div className="flex justify-center py-6" role="status" aria-label={t.common.loading}>
+      <Loader2 size={18} className="animate-spin text-ink-muted motion-reduce:animate-none" aria-hidden="true" />
     </div>
   ) : failedFor === term ? (
-    <p role="alert" className="m-0 px-3 py-4 text-center text-[13px] text-[var(--accent-rose)]">
+    <p role="alert" className="m-0 px-3 py-5 text-center text-sm text-danger-text">
       {t.topbar.searchFailed}
     </p>
   ) : options.length === 0 ? (
-    <p role="status" className="m-0 px-3 py-4 text-center text-[13px] text-[var(--text-muted)]">
+    <p role="status" className="m-0 px-3 py-5 text-center text-sm text-ink-muted">
       {interpolate(t.topbar.noResults, { term })}
     </p>
   ) : (
@@ -177,13 +209,7 @@ function SearchBox({ variant }: { variant: "inline" | "icon" }) {
       {options.map((opt, i) => (
         <React.Fragment key={`${opt.group}-${opt.id}`}>
           {(i === 0 || options[i - 1].group !== opt.group) && (
-            <li
-              role="presentation"
-              className={cn(
-                "mx-3 mb-0.5 mt-2 text-[11px] font-bold text-[var(--text-muted)]",
-                !isRTL && "uppercase tracking-[0.1em]",
-              )}
-            >
+            <li role="presentation" className="mx-3 mb-1 mt-3 text-xs font-semibold text-ink-muted first:mt-1">
               {groupTitle[opt.group]}
             </li>
           )}
@@ -195,13 +221,13 @@ function SearchBox({ variant }: { variant: "inline" | "icon" }) {
             onClick={() => goTo(opt)}
             onMouseEnter={() => setActive(i)}
             className={cn(
-              "flex cursor-pointer flex-col rounded-lg px-3 py-2",
-              active === i ? "bg-[var(--bg-secondary)]" : "hover:bg-[var(--bg-secondary)]",
+              "flex cursor-pointer flex-col rounded-lg px-3 py-2.5 transition-colors duration-150 motion-reduce:transition-none",
+              active === i ? "bg-brand-soft" : "hover:bg-sunken",
             )}
           >
-            <span className="text-[13px] font-bold text-[var(--text-primary)]">{opt.primary}</span>
+            <span className="text-sm font-semibold text-ink">{opt.primary}</span>
             {opt.secondary && (
-              <span dir="auto" className="mt-px text-[12px] text-[var(--text-muted)]">
+              <span dir="auto" className="mt-0.5 text-[13px] text-ink-muted">
                 {opt.secondary}
               </span>
             )}
@@ -213,6 +239,7 @@ function SearchBox({ variant }: { variant: "inline" | "icon" }) {
 
   const input = (
     <input
+      ref={inputRef}
       type="search"
       role="combobox"
       aria-expanded={showResults}
@@ -220,6 +247,7 @@ function SearchBox({ variant }: { variant: "inline" | "icon" }) {
       aria-autocomplete="list"
       aria-activedescendant={showResults && active >= 0 ? optionId(active) : undefined}
       aria-label={searchLabel}
+      aria-keyshortcuts={variant === "inline" ? "Meta+K Control+K" : undefined}
       autoFocus={variant === "icon"}
       value={inputValue}
       onChange={(e) => {
@@ -231,15 +259,15 @@ function SearchBox({ variant }: { variant: "inline" | "icon" }) {
       onKeyDown={onKeyDown}
       placeholder={isAdmin ? t.topbar.searchPlaceholder : t.topbar.searchPlaceholderStaff}
       className={cn(
-        "h-10 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-secondary)] text-[16px] text-[var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[var(--text-muted)] focus:border-[var(--border-hover)] focus:shadow-[var(--shadow-focus)] sm:text-[13px]",
-        variant === "inline" ? "ps-9 pe-3" : "px-3",
+        "w-full border border-line bg-card text-base text-ink transition-[border-color,box-shadow] duration-150 placeholder:text-ink-muted hover:border-line-strong focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15 motion-reduce:transition-none md:text-sm",
+        variant === "inline" ? "h-10 rounded-full ps-10 pe-16" : "h-12 rounded-lg ps-11 pe-4",
       )}
     />
   );
 
   if (variant === "icon") {
     return (
-      <div ref={rootRef} className="lg:hidden">
+      <div ref={rootRef} className="md:hidden">
         <button
           ref={triggerRef}
           type="button"
@@ -248,11 +276,18 @@ function SearchBox({ variant }: { variant: "inline" | "icon" }) {
           aria-expanded={open}
           className={iconBtn}
         >
-          <Search size={17} aria-hidden="true" />
+          <Search aria-hidden="true" />
         </button>
         {open && (
-          <div className="fixed inset-x-4 top-[72px] z-50 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-2.5 shadow-xl">
-            {input}
+          <div className="fixed inset-x-4 top-[72px] z-50 rounded-2xl border border-line bg-card p-2 shadow-float">
+            <div className="relative">
+              <Search
+                size={20}
+                aria-hidden="true"
+                className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-ink-muted"
+              />
+              {input}
+            </div>
             {query.length > 0 && <div className="mt-2 max-h-[60vh] overflow-y-auto">{resultsBody}</div>}
           </div>
         )}
@@ -261,17 +296,26 @@ function SearchBox({ variant }: { variant: "inline" | "icon" }) {
   }
 
   return (
-    <div ref={rootRef} className="relative hidden lg:block">
-      <div className="relative w-60 xl:w-72">
+    <div ref={rootRef} className="relative hidden md:block">
+      <div className="relative w-56 lg:w-64 xl:w-72">
         <Search
-          size={15}
+          size={16}
           aria-hidden="true"
-          className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+          className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-ink-muted"
         />
         {input}
+        {shortcut && !inputValue && (
+          <kbd
+            aria-hidden="true"
+            dir="ltr"
+            className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 rounded-sm border border-line bg-sunken px-1.5 py-0.5 font-sans text-[11px] font-semibold text-ink-muted"
+          >
+            {shortcut}
+          </kbd>
+        )}
       </div>
       {showResults && (
-        <div className={cn(menuPanel, "end-0 max-h-[360px] w-[320px] overflow-y-auto")}>{resultsBody}</div>
+        <div className={cn(menuPanel, "end-0 max-h-[400px] w-[360px] overflow-y-auto")}>{resultsBody}</div>
       )}
     </div>
   );
@@ -279,7 +323,7 @@ function SearchBox({ variant }: { variant: "inline" | "icon" }) {
 
 /* ── Master / per-barber view switcher (shop admins) ── */
 function ViewSwitcher() {
-  const { t, isRTL } = useTranslation();
+  const { t } = useTranslation();
   const currentView = useWorkspaceStore((s) => s.currentView);
   const barbers = useWorkspaceStore((s) => s.barbers);
   const setCurrentView = useWorkspaceStore((s) => s.setCurrentView);
@@ -305,13 +349,12 @@ function ViewSwitcher() {
         aria-label={`${t.topbar.switchView}: ${currentLabel}`}
         className={cn(
           iconBtn,
-          "lg:flex lg:h-11 lg:w-auto lg:items-center lg:gap-1.5 lg:border lg:border-[var(--border-subtle)] lg:bg-[var(--bg-secondary)] lg:px-4 lg:text-[12px] lg:font-bold",
-          !isRTL && "lg:uppercase lg:tracking-[0.08em]",
+          "lg:flex lg:h-10 lg:w-auto lg:items-center lg:gap-2 lg:border lg:border-line lg:bg-card lg:pe-3 lg:ps-4 lg:text-sm lg:font-semibold lg:text-ink lg:hover:border-line-strong lg:hover:bg-card lg:[&_svg]:size-4",
         )}
       >
-        <Users size={17} aria-hidden="true" className="lg:hidden" />
+        <Users aria-hidden="true" className="lg:text-ink-muted" />
         <span className="hidden max-w-[160px] truncate lg:inline">{currentLabel}</span>
-        <ChevronDown size={12} aria-hidden="true" className="hidden lg:block" />
+        <ChevronDown aria-hidden="true" className="hidden text-ink-muted lg:block" />
       </button>
       {open && (
         <div role="menu" aria-label={t.topbar.switchView} className={cn(menuPanel, "end-0 lg:end-auto lg:start-0")}>
@@ -319,7 +362,7 @@ function ViewSwitcher() {
             const selected = currentView === c.id;
             return (
               <React.Fragment key={c.id}>
-                {i === 1 && <div role="separator" className="mx-1.5 my-1 h-px bg-[var(--border-subtle)]" />}
+                {i === 1 && <div role="separator" className="mx-2 my-1.5 h-px bg-line" />}
                 <button
                   type="button"
                   role="menuitemradio"
@@ -329,10 +372,10 @@ function ViewSwitcher() {
                     close();
                     triggerRef.current?.focus();
                   }}
-                  className={cn(menuItem, selected && "bg-[var(--bg-secondary)] text-[var(--text-primary)]")}
+                  className={cn(menuItem, selected && "bg-brand-soft font-semibold text-brand-pressed hover:bg-brand-soft hover:text-brand-pressed")}
                 >
-                  <span className="flex-1">{c.name}</span>
-                  {selected && <Check size={14} aria-hidden="true" />}
+                  <span className="flex-1 truncate">{c.name}</span>
+                  {selected && <Check aria-hidden="true" className="!text-brand-text" />}
                 </button>
               </React.Fragment>
             );
@@ -347,10 +390,8 @@ export function Topbar() {
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const shopName = useWorkspaceStore((s) => s.shopName);
-  const isMobileSidebarOpen = useWorkspaceStore((s) => s.isMobileSidebarOpen);
-  const toggleMobileSidebar = useWorkspaceStore((s) => s.toggleMobileSidebar);
   const role = useShellRole();
-  const { t, locale, isRTL, href, switchLocale } = useTranslation();
+  const { t, locale, href, switchLocale } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -374,51 +415,23 @@ export function Topbar() {
   const themeLabel = isDark ? t.topbar.switchToLight : t.topbar.switchToDark;
 
   return (
-    <header className="topbar-wrapper">
-      {/* Start: menu, title, view switcher, search */}
-      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-        <button
-          type="button"
-          onClick={toggleMobileSidebar}
-          aria-label={t.topbar.openMenu}
-          aria-expanded={isMobileSidebarOpen}
-          className={cn(iconBtn, "-ms-2 lg:hidden")}
-        >
-          <Menu size={18} aria-hidden="true" />
-        </button>
-
-        <div className="flex min-w-0 items-center gap-2">
-          <span
-            className={cn(
-              "hidden text-[11px] font-bold text-[var(--text-muted)] md:inline",
-              !isRTL && "uppercase tracking-[0.12em]",
-            )}
-          >
-            {displayName}
-          </span>
-          <span aria-hidden="true" className="hidden text-[14px] leading-none text-[var(--border-primary)] md:inline">
-            /
-          </span>
-          <span
-            className="truncate text-[14px] font-bold text-[var(--text-primary)] md:text-[13px]"
-            style={{ letterSpacing: headingTracking(isRTL, "0.01em") }}
-            aria-current="page"
-          >
-            {pageTitle}
-          </span>
-        </div>
-
+    <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center gap-2 border-b border-line bg-page/90 px-4 backdrop-blur-md transition-[inset] duration-200 ease-standard supports-[backdrop-filter]:bg-page/80 motion-reduce:transition-none sm:gap-3 lg:start-[var(--sidebar-width)] lg:px-8">
+      {/* Start: page title (+ the master/barber view on desktop) */}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="text-h3 min-w-0 truncate text-ink" aria-current="page">
+          {pageTitle}
+        </span>
         {role === "shop_admin" && (
-          <div className="hidden lg:block">
+          <div className="hidden shrink-0 lg:block">
             <ViewSwitcher />
           </div>
         )}
-
-        <SearchBox variant="inline" />
       </div>
 
-      {/* End: actions and account */}
-      <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+      {/* End: search, new booking, notifications, account */}
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+        <SearchBox variant="inline" />
+
         {role === "shop_admin" && (
           <div className="lg:hidden">
             <ViewSwitcher />
@@ -426,6 +439,17 @@ export function Topbar() {
         )}
 
         <SearchBox variant="icon" />
+
+        {role && (
+          <ButtonLink
+            href={href("/calendar")}
+            size="sm"
+            icon={<CalendarPlus aria-hidden="true" />}
+            className="hidden px-3 sm:inline-flex sm:px-3.5"
+          >
+            <span className="sr-only lg:not-sr-only">{t.calendar.newBooking}</span>
+          </ButtonLink>
+        )}
 
         <NotificationBell />
 
@@ -437,21 +461,8 @@ export function Topbar() {
           lang={nextLocale}
           className={cn(iconBtn, "hidden sm:grid")}
         >
-          <Globe size={17} aria-hidden="true" />
+          <Globe aria-hidden="true" />
         </button>
-
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label={themeLabel}
-          aria-pressed={isDark}
-          title={themeLabel}
-          className={cn(iconBtn, "hidden sm:grid")}
-        >
-          {isDark ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
-        </button>
-
-        <div aria-hidden="true" className="mx-2 hidden h-8 w-px bg-[var(--border-subtle)] sm:block" />
 
         <div ref={userRootRef} className="relative">
           <button
@@ -461,49 +472,56 @@ export function Topbar() {
             aria-haspopup="menu"
             aria-expanded={userMenuOpen}
             aria-label={`${t.topbar.accountMenu}: ${displayName}`}
-            className="flex items-center gap-2.5 rounded-xl p-1 transition-colors hover:bg-[var(--bg-secondary)] sm:pe-2"
+            className={cn(
+              "flex items-center gap-2.5 rounded-full p-1 transition-colors duration-150 hover:bg-sunken motion-reduce:transition-none 2xl:pe-3",
+              focusRing,
+            )}
           >
-            <span className="hidden text-end sm:block">
-              <span className="block max-w-[160px] truncate text-[13px] font-bold leading-tight text-[var(--text-primary)]">
-                {displayName}
-              </span>
-              {roleLabel && (
-                <span className="block text-[11px] font-semibold leading-snug text-[var(--text-muted)]">{roleLabel}</span>
-              )}
-            </span>
             <span
               aria-hidden="true"
-              className="grid size-10 shrink-0 place-items-center rounded-lg border-2 border-[var(--border-subtle)] bg-[var(--brand-primary)] text-[11px] font-extrabold text-[var(--brand-on-primary)]"
+              className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-bold text-brand-pressed ring-2 ring-card"
             >
-              {getInitials(displayName)}
+              {getInitials(displayName) || "H"}
+            </span>
+            <span className="hidden min-w-0 text-start 2xl:block">
+              <span className="block max-w-[160px] truncate text-sm font-semibold leading-tight text-ink">{displayName}</span>
+              {roleLabel && <span className="block text-xs leading-snug text-ink-muted">{roleLabel}</span>}
             </span>
           </button>
 
           {userMenuOpen && (
-            <div role="menu" aria-label={t.topbar.accountMenu} className={cn(menuPanel, "end-0 w-[min(240px,calc(100vw-2rem))]")}>
-              <div className="mb-1.5 border-b border-[var(--border-subtle)] px-3 pb-3 pt-2">
-                <p className="m-0 truncate text-[13px] font-bold text-[var(--text-primary)]">{displayName}</p>
-                {roleLabel && <p className="m-0 mt-0.5 text-[12px] text-[var(--text-muted)]">{roleLabel}</p>}
+            <div role="menu" aria-label={t.topbar.accountMenu} className={cn(menuPanel, "end-0 w-[min(256px,calc(100vw-2rem))]")}>
+              <div className="mb-1 flex items-center gap-3 border-b border-line px-3 pb-3 pt-2">
+                <span
+                  aria-hidden="true"
+                  className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-bold text-brand-pressed"
+                >
+                  {getInitials(displayName) || "H"}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-ink">{displayName}</span>
+                  {roleLabel && <span className="block text-[13px] text-ink-muted">{roleLabel}</span>}
+                </span>
               </div>
 
               {role === "shop_admin" && (
                 <Link role="menuitem" href={href("/settings")} onClick={closeUserMenu} className={menuItem}>
-                  <Settings size={15} aria-hidden="true" />
+                  <Settings aria-hidden="true" />
                   {t.sidebar.settings}
                 </Link>
               )}
               {(role === "shop_admin" || role === "barber") && (
                 <Link role="menuitem" href={href("/settings/notifications")} onClick={closeUserMenu} className={menuItem}>
-                  <Bell size={15} aria-hidden="true" />
+                  <Bell aria-hidden="true" />
                   {t.notificationSettings.title}
                 </Link>
               )}
               <Link role="menuitem" href={href("/explore")} onClick={closeUserMenu} className={menuItem}>
-                <Compass size={15} aria-hidden="true" />
+                <Compass aria-hidden="true" />
                 {t.search.exploreCta}
               </Link>
 
-              {/* Phones: language and theme live in the menu to keep the bar from overflowing */}
+              {/* Phones: language lives here; below lg the theme does too (the sidebar footer has it on desktop) */}
               <button
                 type="button"
                 role="menuitem"
@@ -513,7 +531,7 @@ export function Topbar() {
                 }}
                 className={cn(menuItem, "sm:hidden")}
               >
-                <Globe size={15} aria-hidden="true" />
+                <Globe aria-hidden="true" />
                 <span lang={nextLocale}>{t.topbar.language}</span>
               </button>
               <button
@@ -521,13 +539,13 @@ export function Topbar() {
                 role="menuitemcheckbox"
                 aria-checked={isDark}
                 onClick={toggleTheme}
-                className={cn(menuItem, "sm:hidden")}
+                className={cn(menuItem, "lg:hidden")}
               >
-                {isDark ? <Sun size={15} aria-hidden="true" /> : <Moon size={15} aria-hidden="true" />}
+                {isDark ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
                 {themeLabel}
               </button>
 
-              <div role="separator" className="mx-2 my-1.5 h-px bg-[var(--border-subtle)]" />
+              <div role="separator" className="mx-2 my-1.5 h-px bg-line" />
 
               <button
                 type="button"
@@ -535,9 +553,16 @@ export function Topbar() {
                 onClick={signOut}
                 disabled={signingOut}
                 aria-busy={signingOut || undefined}
-                className={cn(menuItem, "text-[var(--accent-rose)] hover:bg-[var(--accent-rose-muted)] hover:text-[var(--accent-rose)] disabled:opacity-60")}
+                className={cn(
+                  menuItem,
+                  "text-danger-text hover:bg-danger-soft hover:text-danger-text disabled:opacity-45 [&_svg]:text-danger-text",
+                )}
               >
-                {signingOut ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <LogOut size={15} aria-hidden="true" />}
+                {signingOut ? (
+                  <Loader2 aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
+                ) : (
+                  <LogOut aria-hidden="true" className="rtl:-scale-x-100" />
+                )}
                 {t.sidebar.signOut}
               </button>
             </div>

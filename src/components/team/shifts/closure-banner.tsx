@@ -96,25 +96,25 @@ export function ClosureBanner({ shopId, timezone = "Asia/Amman", days = 21 }: { 
   const range = (n: ClosureNotice) => (n.start === n.end ? day(n.start) : `${day(n.start)} – ${day(n.end)}`);
 
   return (
-    <aside aria-label={t.shifts.bannerLabel} className="flex flex-col gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-3">
+    <aside aria-label={t.shifts.bannerLabel} className="flex flex-col gap-2 rounded-xl border border-warning/30 bg-warning-soft p-3">
       {notices.slice(0, 3).map((n, i) => (
-        <p key={i} className="m-0 flex items-start gap-2 text-sm text-[var(--text-primary)]">
+        <p key={i} className="m-0 flex items-start gap-2 text-sm text-ink">
           {n.kind === "closed" ? (
-            <CalendarX2 size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--accent-rose)]" />
+            <CalendarX2 size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-danger-text" />
           ) : (
-            <Clock size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--text-secondary)]" />
+            <Clock size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-soft" />
           )}
           <span>
             <strong className="font-semibold">
               {n.kind === "closed" ? interpolate(t.shifts.bannerClosed, { range: range(n) }) : interpolate(t.shifts.bannerSpecial, { range: range(n) })}
             </strong>
             {n.kind === "special" && n.segments.length > 0 && (
-              <span dir="ltr" className="ms-1 text-[var(--text-secondary)]">
+              <span dir="ltr" className="ms-1 text-ink-soft">
                 {n.segments.map((s) => `${s.start}–${s.end}`).join(" · ")}
               </span>
             )}
-            {n.note && <span className="ms-1 text-[var(--text-secondary)]">· {n.note}</span>}
-            <span className="ms-1 text-[12px] text-[var(--text-muted)]">({formatHijri(n.start, locale, { withYear: false })})</span>
+            {n.note && <span className="ms-1 text-ink-soft">· {n.note}</span>}
+            <span className="ms-1 text-[12px] text-ink-soft">({formatHijri(n.start, locale, { withYear: false })})</span>
           </span>
         </p>
       ))}

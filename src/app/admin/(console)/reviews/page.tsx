@@ -21,7 +21,7 @@ function Stars({ rating }: { rating: number }) {
           key={i}
           size={14}
           aria-hidden
-          className={i <= rating ? "fill-[var(--accent-brass)] text-[var(--accent-brass)]" : "text-[var(--border-primary)]"}
+          className={i <= rating ? "fill-accent text-accent" : "fill-sunken-2 text-sunken-2"}
         />
       ))}
     </span>
@@ -71,10 +71,10 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
               return (
                 <li
                   key={r.id}
-                  className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4"
+                  className="rounded-xl border border-line bg-card p-4 transition-shadow duration-200 hover:shadow-card"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <Pill tone={r.status === "open" ? "brass" : r.status === "upheld" ? "danger" : "neutral"} size="sm">
+                    <Pill tone={r.status === "open" ? "warning" : r.status === "upheld" ? "danger" : "neutral"} size="sm">
                       {c.statuses[r.status]}
                     </Pill>
                     <Pill tone="ink" size="sm">
@@ -82,42 +82,42 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
                     </Pill>
                     <Link
                       href={`/admin/shops/${r.shop.id}`}
-                      className="rounded text-[13px] font-medium text-[var(--text-primary)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+                      className="rounded text-[13px] font-medium text-ink underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                     >
                       {r.shop.name}
                     </Link>
                     <time
                       dateTime={r.created_at}
                       title={formatDateTime(r.created_at)}
-                      className="ms-auto text-[12px] text-[var(--text-muted)]"
+                      className="ms-auto text-[12px] text-ink-muted"
                     >
                       {formatRelative(r.created_at)}
                     </time>
                   </div>
 
-                  <blockquote className="mt-3 rounded-[var(--radius)] bg-[var(--bg-secondary)] p-3">
+                  <blockquote className="mt-3 rounded-lg bg-sunken p-3">
                     <div className="flex flex-wrap items-center gap-2 text-[13px]">
                       <Stars rating={num(r.review.rating)} />
                       <span className="font-medium">{r.review.reviewer_name ?? ADMIN_COPY.common.dash}</span>
-                      <span className="text-[var(--text-muted)]">{formatDateTime(r.review.created_at)}</span>
+                      <span className="text-ink-muted">{formatDateTime(r.review.created_at)}</span>
                       {r.review.hidden_at && (
                         <Pill tone="danger" size="sm">
                           {c.hiddenSince(formatRelative(r.review.hidden_at))}
                         </Pill>
                       )}
                     </div>
-                    <p className="mt-2 whitespace-pre-line break-words text-[14px] text-[var(--text-primary)]">
-                      {r.review.comment?.trim() ? r.review.comment : <span className="italic text-[var(--text-muted)]">{c.noComment}</span>}
+                    <p className="mt-2 whitespace-pre-line break-words text-[14px] text-ink">
+                      {r.review.comment?.trim() ? r.review.comment : <span className="italic text-ink-muted">{c.noComment}</span>}
                     </p>
                   </blockquote>
 
-                  <p className="mt-3 text-[13px] text-[var(--text-secondary)]">{c.reportedBy(reporter, kind)}</p>
+                  <p className="mt-3 text-[13px] text-ink-soft">{c.reportedBy(reporter, kind)}</p>
                   {r.details && <p className="mt-1 whitespace-pre-line break-words text-[14px]">“{r.details}”</p>}
                   {r.status === "open" && others > 1 && (
-                    <p className="mt-1 text-[12px] font-medium text-[var(--accent-text)]">{c.otherReports(others)}</p>
+                    <p className="mt-1 text-[12px] font-medium text-brand-text">{c.otherReports(others)}</p>
                   )}
                   {r.resolution_note && (
-                    <p className="mt-1 text-[13px] text-[var(--text-secondary)]">{c.resolution(r.resolution_note)}</p>
+                    <p className="mt-1 text-[13px] text-ink-soft">{c.resolution(r.resolution_note)}</p>
                   )}
 
                   <div className="mt-3">

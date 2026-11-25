@@ -1,53 +1,27 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { CalendarDays, Wallet, TrendingUp, Target, AlertTriangle, RefreshCw } from "lucide-react";
 import { Confetti } from "@/components/ui/confetti";
 import { MetricCardsSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import {
-  CalendarDays,
-  Wallet,
-  TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
-  AlertTriangle,
-  RefreshCw,
-} from "lucide-react";
-import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { StatCard, type StatCardProps } from "@/components/ui/card";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { useDashboardMetrics } from "@/hooks/use-dashboard-data";
 import { cn } from "@/lib/utils";
 
-interface StatCard {
-  id: string;
-  label: string;
-  value: string;
-  change: number;
-  comparison: string;
-  icon: React.ReactNode;
-}
+/** Long currency values shrink a step on two-up phone grids instead of overflowing. */
+const compactValue = "h-full max-sm:[&_.text-stat]:text-[22px] max-sm:[&_.text-stat]:leading-7";
 
-function ChangeBadge({ change, comparison }: { change: number; comparison: string }) {
-  const { formatNumber } = useTranslation();
-  const up = change >= 0;
-  const Icon = up ? ArrowUpRight : ArrowDownRight;
-  const pct = `${up ? "+" : "−"}${formatNumber(Math.abs(change), { maximumFractionDigits: 1 })}%`;
-  return (
-    <p className="m-0 mt-2.5 flex flex-wrap items-center gap-1 text-[12px] font-bold">
-      <span
-        className={cn("inline-flex items-center gap-0.5", up ? "text-[var(--accent-text)]" : "text-[var(--accent-rose)]")}
-      >
-        <Icon size={13} aria-hidden="true" className="rtl:-scale-x-100" />
-        <span dir="ltr">{pct}</span>
-      </span>
-      <span className="font-semibold text-[var(--text-muted)]">{comparison}</span>
-    </p>
-  );
-}
-
+/**
+ * Overview KPI row (v2 §5.4 stat cards): bookings, sales, weekly revenue and
+ * the daily goal. Values are never coloured; only the delta row is.
+ */
 export function MetricCards() {
-  const { t, isRTL, FFD, formatCurrency, formatNumber } = useTranslation();
+  const { t, formatCurrency, formatNumber } = useTranslation();
   const { metrics: m, loading, error, refetch } = useDashboardMetrics();
+  const reduceMotion = useReducedMotion();
 
   const goalPct = m.dailyGoal > 0 ? Math.min((m.dailyProgress / m.dailyGoal) * 100, 100) : 0;
   const goalMet = m.dailyGoal > 0 && m.dailyProgress >= m.dailyGoal;
@@ -76,107 +50,92 @@ export function MetricCards() {
   }
 
   const money = (n: number) => formatCurrency(n, m.currency, { maximumFractionDigits: 2, trimZeros: true });
+  const delta = (change: number, caption: string): StatCardProps["delta"] => ({
+    value: `${change > 0 ? "+" : change < 0 ? "−" : ""}${formatNumber(Math.abs(change), { maximumFractionDigits: 1 })}%`,
+    direction: change > 0 ? "up" : change < 0 ? "down" : "flat",
+    caption,
+  });
 
-  const cards: StatCard[] = [
+  const cards: (StatCardProps & { id: string })[] = [
     {
       id: "bookings",
-      label: t.dashboard.todaysBookings,
+      label: t.dashboard.kpiBookingsToday,
       value: formatNumber(m.todayBookings),
-      change: m.todayBookingsChange,
-      comparison: t.dashboard.vsYesterday,
-      icon: <CalendarDays size={22} aria-hidden="true" />,
+      icon: <CalendarDays />,
+      delta: delta(m.todayBookingsChange, t.dashboard.vsYesterday),
     },
     {
       id: "sales",
-      label: t.dashboard.todaysSales,
+      label: t.dashboard.kpiSalesToday,
       value: money(m.todaySales),
-      change: m.todaySalesChange,
-      comparison: t.dashboard.vsYesterday,
-      icon: <Wallet size={22} aria-hidden="true" />,
+      icon: <Wallet />,
+      delta: delta(m.todaySalesChange, t.dashboard.vsYesterday),
     },
     {
       id: "weekly",
-      label: t.dashboard.weeklyRevenue,
+      label: t.dashboard.kpiWeeklyRevenue,
       value: money(m.weeklyTrajectory),
-      change: m.weeklyTrajectoryChange,
-      comparison: t.dashboard.vsLastWeek,
-      icon: <TrendingUp size={22} aria-hidden="true" />,
+      icon: <TrendingUp />,
+      delta: delta(m.weeklyTrajectoryChange, t.dashboard.vsLastWeek),
     },
   ];
 
-  const labelCls = cn("text-[11px] font-bold leading-normal", !isRTL && "uppercase tracking-[0.14em]");
+  const enter = (index: number) =>
+    reduceMotion
+      ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.12 } }
+      : {
+          initial: { opacity: 0, y: 8 },
+          animate: { opacity: 1, y: 0 },
+          transition: { delay: Math.min(index, 3) * 0.04, duration: 0.28, ease: [0.05, 0.7, 0.1, 1] as const },
+        };
 
   return (
-    <div className="card-grid-4">
-      {cards.map((card, index) => (
-        <motion.section
-          key={card.id}
-          aria-label={card.label}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.06, type: "spring", stiffness: 300, damping: 25 }}
-          className="relative flex min-h-[152px] flex-col justify-between overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-6 sm:p-7"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <h2 className={cn(labelCls, "m-0 text-[var(--text-secondary)]")}>{card.label}</h2>
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-[var(--border-subtle)] text-[var(--text-primary)]">
-              {card.icon}
-            </span>
-          </div>
-          <div className="mt-6">
-            <p
-              className="m-0 text-[30px] font-extrabold leading-none tabular-nums text-[var(--text-primary)] sm:text-[34px]"
-              style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.012em") }}
-            >
-              {card.value}
-            </p>
-            <ChangeBadge change={card.change} comparison={card.comparison} />
-          </div>
-        </motion.section>
+    <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:gap-4 lg:grid-cols-4">
+      {cards.map(({ id, ...card }, index) => (
+        <motion.li key={id} {...enter(index)} className="min-w-0">
+          <StatCard {...card} className={compactValue} />
+        </motion.li>
       ))}
 
-      {/* Daily goal — inverted brand card */}
-      <motion.section
-        aria-label={t.dashboard.dailyGoal}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: cards.length * 0.06, type: "spring", stiffness: 300, damping: 25 }}
-        className="relative flex min-h-[152px] flex-col justify-between overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--brand-primary)] p-6 text-[var(--brand-on-primary)] sm:p-7"
-      >
-        <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
-        <div className="flex items-start justify-between gap-3">
-          <h2 className={cn(labelCls, "m-0 opacity-75")}>{t.dashboard.dailyGoal}</h2>
-          <span className="text-[15px] font-extrabold tabular-nums">
-            {formatNumber(Math.round(goalPct))}%
-          </span>
-        </div>
-        <div className="mt-8">
-          <div
-            role="progressbar"
-            aria-label={t.dashboard.dailyGoal}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(goalPct)}
-            className="mb-4 h-1 w-full overflow-hidden rounded-full"
-            style={{ background: "color-mix(in srgb, var(--brand-on-primary) 18%, transparent)" }}
-          >
-            <motion.div
-              className="h-full rounded-full bg-[var(--brand-on-primary)]"
-              initial={{ width: 0 }}
-              animate={{ width: `${goalPct}%` }}
-              transition={{ delay: 0.3, duration: 1, ease: [0.25, 1, 0.5, 1] }}
-            />
-          </div>
-          <p className="m-0 text-[12px] font-semibold opacity-80">
-            {goalMet
-              ? t.dashboard.goalReached
-              : interpolate(t.dashboard.goalProgress, {
-                  current: money(m.dailyProgress),
-                  goal: money(m.dailyGoal),
-                })}
-          </p>
-        </div>
-      </motion.section>
-    </div>
+      {/* Daily goal: same card grammar, with a teal progress bar */}
+      <motion.li {...enter(cards.length)} className="min-w-0">
+        <StatCard
+          label={t.dashboard.kpiDailyGoal}
+          value={`${formatNumber(Math.round(goalPct))}%`}
+          icon={<Target />}
+          className={cn(compactValue, "relative overflow-hidden")}
+          footer={
+            <div className="mt-auto flex flex-col gap-2 pt-1">
+              <Confetti trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
+              <div
+                role="progressbar"
+                aria-label={t.dashboard.kpiDailyGoal}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(goalPct)}
+                className="h-1.5 w-full overflow-hidden rounded-full bg-sunken"
+              >
+                <motion.div
+                  className={cn("h-full rounded-full", goalMet ? "bg-success" : "bg-brand")}
+                  initial={reduceMotion ? false : { width: 0 }}
+                  animate={{ width: `${goalPct}%` }}
+                  transition={reduceMotion ? { duration: 0 } : { delay: 0.2, duration: 0.5, ease: [0.05, 0.7, 0.1, 1] }}
+                />
+              </div>
+              <p className={cn("m-0 text-xs font-semibold", goalMet ? "text-success-text" : "text-ink-muted")}>
+                <bdi>
+                  {goalMet
+                    ? t.dashboard.goalReached
+                    : interpolate(t.dashboard.goalProgress, {
+                        current: money(m.dailyProgress),
+                        goal: money(m.dailyGoal),
+                      })}
+                </bdi>
+              </p>
+            </div>
+          }
+        />
+      </motion.li>
+    </ul>
   );
 }

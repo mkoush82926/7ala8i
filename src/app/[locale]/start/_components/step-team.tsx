@@ -1,14 +1,17 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { Camera, Plus, Trash2, UserRound } from "lucide-react";
+import { AlertCircle, Camera, Plus, Trash2, UserRound } from "lucide-react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
+import { buttonClasses, errorTextClasses, focusRing, inputClasses } from "@/components/ui/recipes";
+import { cn } from "@/lib/utils";
 import { MAX_BARBERS } from "@/lib/templates/barbershop";
 import { rowId, type WizardBarber } from "../_lib/wizard";
 import { AvatarError, fileToAvatar } from "../_lib/image";
 import type { StepProps } from "./step-shop";
-import { StepHeader, Switch, cardClass, cardStyle } from "./ui";
+import { StepHeader, Switch, cardClass } from "./ui";
 
 export function StepTeam({ draft, update, errors, ownerName }: StepProps & { ownerName: string | null }) {
   const { t } = useTranslation();
@@ -51,7 +54,7 @@ export function StepTeam({ draft, update, errors, ownerName }: StepProps & { own
   return (
     <div>
       <StepHeader title={s.team.title} subtitle={s.team.subtitle} />
-      <div className={`${cardClass} p-4`} style={cardStyle}>
+      <div className={cn(cardClass, "p-4 shadow-xs sm:p-5")}>
         <Switch
           checked={draft.team.ownerIsBarber}
           onChange={(v) => update((d) => ({ ...d, team: { ...d.team, ownerIsBarber: v } }))}
@@ -60,20 +63,19 @@ export function StepTeam({ draft, update, errors, ownerName }: StepProps & { own
         />
       </div>
 
-      <h2 className="mb-2 mt-6 text-[15px] font-semibold" style={{ color: "var(--text-primary)" }}>
-        {s.team.barbersTitle}
-      </h2>
+      <h2 className="text-h3 mb-3 mt-8 text-ink">{s.team.barbersTitle}</h2>
       {teamError && (
-        <p className="field-error mb-3" role="alert">
-          {teamError}
+        <p className={cn(errorTextClasses, "mb-3 mt-0")} role="alert">
+          <AlertCircle aria-hidden="true" />
+          <span>{teamError}</span>
         </p>
       )}
       {barbers.length === 0 ? (
-        <p className="mb-2 text-[14px]" style={{ color: "var(--text-muted)" }}>
+        <p className="mb-2 rounded-xl border border-dashed border-line bg-card px-4 py-5 text-center text-sm text-ink-muted">
           {s.team.empty}
         </p>
       ) : (
-        <ul ref={listRef} className="flex flex-col gap-2.5">
+        <ul ref={listRef} className="flex flex-col gap-3">
           {barbers.map((b) => (
             <BarberRow
               key={b.id}
@@ -85,18 +87,17 @@ export function StepTeam({ draft, update, errors, ownerName }: StepProps & { own
           ))}
         </ul>
       )}
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        fullWidth
         onClick={add}
-        className="btn btn-secondary mt-4 w-full"
+        className="mt-4 border-dashed"
         disabled={barbers.length >= MAX_BARBERS}
+        icon={<Plus aria-hidden />}
       >
-        <Plus size={18} aria-hidden />
         {s.team.add}
-      </button>
-      <p className="mt-3 text-[13px]" style={{ color: "var(--text-muted)" }}>
-        {s.team.inviteLater}
-      </p>
+      </Button>
+      <p className="mt-3 text-[13px] text-ink-muted">{s.team.inviteLater}</p>
     </div>
   );
 }
@@ -134,25 +135,28 @@ function BarberRow({
   }
 
   return (
-    <li className={`${cardClass} flex items-center gap-3 p-3`} style={{ ...cardStyle, borderColor: error ? "var(--accent-rose)" : cardStyle.borderColor }}>
+    <li className={cn(cardClass, "flex items-center gap-3 p-3", error && "border-danger")}>
       <button
         type="button"
         onClick={() => fileRef.current?.click()}
         aria-label={interpolate(row.avatarUrl ? s.team.changePhoto : s.team.addPhoto, { name })}
         aria-busy={busy || undefined}
-        className="relative inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border focus-visible:outline-none focus-visible:ring-2"
-        style={{ borderColor: "var(--border-subtle)", background: "var(--bg-secondary)", color: "var(--text-muted)" }}
-      >
-        {row.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- local data URL preview
-          <img src={row.avatarUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <UserRound size={24} aria-hidden />
+        className={cn(
+          "relative grid size-14 shrink-0 cursor-pointer place-items-center rounded-full bg-brand-soft text-brand-text ring-1 ring-line",
+          focusRing,
         )}
+      >
+        <span className="absolute inset-0 grid place-items-center overflow-hidden rounded-full">
+          {row.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- local data URL preview
+            <img src={row.avatarUrl} alt="" className="size-full object-cover" />
+          ) : (
+            <UserRound size={24} aria-hidden />
+          )}
+        </span>
         <span
           aria-hidden
-          className="absolute bottom-0 end-0 inline-flex h-5 w-5 items-center justify-center rounded-full"
-          style={{ background: "var(--cta-bg)", color: "var(--cta-fg)" }}
+          className="absolute -bottom-0.5 -end-0.5 grid size-6 place-items-center rounded-full bg-brand text-on-brand ring-2 ring-card"
         >
           <Camera size={12} />
         </span>
@@ -165,7 +169,7 @@ function BarberRow({
         <input
           id={`${uid}-name`}
           data-barber={row.id}
-          className="field-input"
+          className={inputClasses()}
           placeholder={s.team.namePlaceholder}
           autoComplete="off"
           maxLength={100}
@@ -175,8 +179,9 @@ function BarberRow({
           onChange={(e) => onChange({ fullName: e.target.value })}
         />
         {error && (
-          <p id={`${uid}-err`} className="field-error" role="alert">
-            {error}
+          <p id={`${uid}-err`} className={errorTextClasses} role="alert">
+            <AlertCircle aria-hidden="true" />
+            <span>{error}</span>
           </p>
         )}
       </div>
@@ -184,9 +189,9 @@ function BarberRow({
         type="button"
         onClick={onRemove}
         aria-label={interpolate(s.team.remove, { name })}
-        className="btn btn-ghost !min-h-[44px] !w-11 !px-0"
+        className={buttonClasses({ variant: "ghost", size: "icon", className: "hover:bg-danger-soft hover:text-danger-text" })}
       >
-        <Trash2 size={18} aria-hidden />
+        <Trash2 aria-hidden />
       </button>
     </li>
   );

@@ -5,7 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Lock, Mail, MailCheck, Phone, Store, User, Users, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/toast";
-import { useTranslation, headingTracking } from "@/hooks/use-translation";
+import { useTranslation } from "@/hooks/use-translation";
+import { Pill } from "@/components/ui/pill";
+import { buttonClasses, focusRing } from "@/components/ui/recipes";
+import { cn } from "@/lib/utils";
 import {
   authErrorKey,
   isValidEmail,
@@ -35,7 +38,7 @@ type FieldName = "fullName" | "shopName" | "phone" | "email" | "password" | "con
 const RESEND_COOLDOWN_SECONDS = 60;
 
 function SignupContent() {
-  const { t, locale, href, isRTL, FFD } = useTranslation();
+  const { t, locale, href } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = safeNextPath(searchParams.get("next"), "");
@@ -207,7 +210,7 @@ function SignupContent() {
             subtitle={
               <>
                 {before}
-                <strong dir="ltr" style={{ color: "var(--text-primary)", wordBreak: "break-all" }}>
+                <strong dir="ltr" className="break-all font-semibold text-ink">
                   {sentTo}
                 </strong>
                 {after}
@@ -215,17 +218,16 @@ function SignupContent() {
             }
           />
           {fromInvite && <AuthAlert tone="info">{t.auth.checkEmailInvite}</AuthAlert>}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 20 }}>
-            <a href={loginHref} className="btn btn-primary" style={{ width: "100%", minHeight: 52 }}>
+          <div className="mt-5 flex flex-col gap-3">
+            <a href={loginHref} className={buttonClasses({ variant: "primary", size: "xl", fullWidth: true })}>
               {t.auth.backToSignIn}
             </a>
             <button
               type="button"
-              className="btn btn-secondary"
+              className={buttonClasses({ variant: "secondary", size: "lg", fullWidth: true })}
               onClick={handleResend}
               disabled={resending || cooldown > 0}
               aria-busy={resending || undefined}
-              style={{ width: "100%", minHeight: 48 }}
             >
               {resending
                 ? t.auth.resending
@@ -234,9 +236,7 @@ function SignupContent() {
                   : t.auth.resendEmail}
             </button>
           </div>
-          <p style={{ marginTop: 16, fontSize: 13, textAlign: "center", color: "var(--text-muted)" }}>
-            {t.auth.checkSpam}
-          </p>
+          <p className="mt-4 text-center text-[13px] text-ink-muted">{t.auth.checkSpam}</p>
         </AuthCard>
       </AuthShell>
     );
@@ -250,23 +250,12 @@ function SignupContent() {
     ];
     return (
       <AuthShell navLink={{ href: loginHref, label: t.auth.signInBtn }} width="md">
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <h1
-            style={{
-              fontFamily: FFD,
-              fontSize: "clamp(28px, 7vw, 40px)",
-              fontWeight: 800,
-              lineHeight: 1.15,
-              letterSpacing: headingTracking(isRTL, "0.012em"),
-              margin: "0 0 12px",
-            }}
-          >
-            {t.auth.howWillYouUse}
-          </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: 16, margin: 0 }}>{t.auth.chooseRoleSubtitle}</p>
+        <div className="mb-8 text-start">
+          <h1 className="text-h1 mb-2 text-ink">{t.auth.howWillYouUse}</h1>
+          <p className="text-body m-0 text-ink-muted">{t.auth.chooseRoleSubtitle}</p>
         </div>
 
-        <ul role="list" style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 16 }}>
+        <ul role="list" className="m-0 grid list-none gap-3 p-0">
           {roleCards.map(({ id, icon: Icon, title, desc }) => (
             <li key={id}>
               <button
@@ -275,54 +264,40 @@ function SignupContent() {
                   setRole(id);
                   setStep("form");
                 }}
-                className="focus-ring"
                 aria-describedby={`role-${id}-desc`}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 16,
-                  padding: "20px",
-                  textAlign: "start",
-                  border: "1px solid var(--border-subtle)",
-                  borderRadius: 12,
-                  background: "var(--bg-primary)",
-                  color: "var(--text-primary)",
-                  cursor: "pointer",
-                  transition: "border-color 0.2s ease, transform 0.2s ease",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--accent-brass)")}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-subtle)")}
+                className={cn(
+                  "group flex w-full cursor-pointer items-center gap-4 rounded-2xl border border-line bg-card p-5 text-start text-ink shadow-xs",
+                  "transition-[border-color,box-shadow,transform] duration-150 ease-standard hover:border-ink-soft hover:shadow-raised active:scale-[0.99]",
+                  "motion-reduce:transition-none motion-reduce:active:scale-100",
+                  focusRing,
+                )}
               >
                 <span
                   aria-hidden="true"
-                  style={{
-                    width: 48,
-                    height: 48,
-                    flexShrink: 0,
-                    borderRadius: 12,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "var(--bg-secondary)",
-                    color: "var(--accent-text)",
-                  }}
+                  className="bg-hatch-ink grid size-12 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand-text"
                 >
                   <Icon size={22} />
                 </span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 17, fontWeight: 700, marginBottom: 4 }}>{title}</span>
-                  <span id={`role-${id}-desc`} style={{ display: "block", fontSize: 14, lineHeight: 1.6, color: "var(--text-secondary)" }}>
+                <span className="min-w-0 flex-1">
+                  <span className="text-title mb-1 block">{title}</span>
+                  <span id={`role-${id}-desc`} className="block text-sm leading-[22px] text-ink-muted">
                     {desc}
                   </span>
                 </span>
-                <ArrowRight size={18} aria-hidden="true" className="rtl:-scale-x-100" style={{ flexShrink: 0, color: "var(--text-muted)" }} />
+                <ArrowRight
+                  size={18}
+                  aria-hidden="true"
+                  className="shrink-0 text-ink-muted transition-transform duration-150 group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5 motion-reduce:transition-none"
+                />
               </button>
             </li>
           ))}
         </ul>
 
-        <p style={{ marginTop: 20, textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>{t.auth.barberViaInvite}</p>
+        <p className="mt-5 flex items-start gap-2 rounded-xl bg-sunken p-4 text-[13px] leading-5 text-ink-soft">
+          <Users size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-ink-muted" />
+          <span>{t.auth.barberViaInvite}</span>
+        </p>
         <AuthFootnote text={t.auth.haveAccount} linkLabel={t.auth.signInBtn} linkHref={loginHref} />
       </AuthShell>
     );
@@ -339,21 +314,7 @@ function SignupContent() {
               setStep("role");
               setErrorKey(null);
             }}
-            className="focus-ring"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              minHeight: 40,
-              padding: "0 4px",
-              marginBottom: 16,
-              background: "none",
-              border: "none",
-              color: "var(--text-secondary)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
+            className={buttonClasses({ variant: "ghost", size: "sm", className: "-ms-3 mb-4" })}
           >
             <ArrowLeft size={16} aria-hidden="true" className="rtl:-scale-x-100" />
             {t.common.back}
@@ -362,34 +323,25 @@ function SignupContent() {
 
         <div ref={headingRef}>
           {!fromInvite && (
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "4px 12px",
-                borderRadius: 9999,
-                background: "var(--bg-secondary)",
-                color: "var(--accent-text)",
-                fontSize: 13,
-                fontWeight: 600,
-                marginBottom: 14,
-              }}
+            <Pill
+              tone="brand"
+              size="md"
+              className="mb-4"
+              icon={role === "shop_admin" ? <Store aria-hidden="true" /> : <User aria-hidden="true" />}
             >
-              {role === "shop_admin" ? <Store size={14} aria-hidden="true" /> : <User size={14} aria-hidden="true" />}
               {role === "shop_admin" ? t.auth.roleOwnerTitle : t.auth.roleCustomerTitle}
-            </span>
+            </Pill>
           )}
           <AuthHeader
-            title={<span tabIndex={-1} style={{ outline: "none" }}>{t.auth.createYourAccount}</span>}
+            title={<span tabIndex={-1} className="outline-none">{t.auth.createYourAccount}</span>}
             subtitle={fromInvite ? t.auth.inviteSignUpNotice : t.auth.joinHalaqy}
           />
         </div>
 
         {fromInvite && (
-          <div style={{ marginBottom: 18 }}>
+          <div className="mb-5">
             <AuthAlert tone="info">
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <span className="inline-flex items-center gap-1.5">
                 <Users size={14} aria-hidden="true" />
                 {t.auth.inviteBanner}
               </span>
@@ -397,7 +349,7 @@ function SignupContent() {
           </div>
         )}
 
-        <form ref={formRef} onSubmit={handleSignup} noValidate style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <form ref={formRef} onSubmit={handleSignup} noValidate className="flex flex-col gap-5">
           <AuthField
             id="fullName"
             label={t.auth.fullName}
@@ -428,7 +380,7 @@ function SignupContent() {
               label={
                 <>
                   {t.booking.phoneNumber}{" "}
-                  <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({t.common.optional})</span>
+                  <span className="font-normal text-ink-muted">({t.common.optional})</span>
                 </>
               }
               icon={Phone}
@@ -484,7 +436,7 @@ function SignupContent() {
 
           {errorKey && <AuthAlert>{t.auth.errors[errorKey]}</AuthAlert>}
 
-          <SubmitButton loading={loading} loadingLabel={t.auth.signingUp} style={{ marginTop: 4 }}>
+          <SubmitButton loading={loading} loadingLabel={t.auth.signingUp} className="mt-1">
             {t.auth.createAccount}
           </SubmitButton>
         </form>

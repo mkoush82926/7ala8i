@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { ButtonLink } from "@/components/ui/button";
 import { Home, Search, SearchX } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 
@@ -18,38 +18,30 @@ export default function LocaleNotFound() {
       id="main"
       dir={dir}
       aria-labelledby="not-found-title"
-      className="min-h-[100dvh] flex items-center justify-center px-4 py-12 bg-[var(--bg-primary)]"
+      className="flex min-h-[100dvh] items-center justify-center bg-page px-4 py-12"
     >
-      <div className="w-full max-w-md text-center fade-slide-up">
-        <p
-          aria-hidden="true"
-          dir="ltr"
-          className="mb-4 text-[56px] font-extrabold leading-none tracking-tight text-[var(--border-subtle)] select-none"
-        >
-          404
-        </p>
+      <div className="fade-slide-up w-full max-w-md rounded-2xl border border-line bg-card px-6 py-10 text-center shadow-card sm:px-10">
         <div
           aria-hidden="true"
-          className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bg-secondary)]"
+          className="bg-hatch-ink mx-auto mb-5 grid size-16 place-items-center rounded-2xl bg-brand-soft text-brand-text"
         >
-          <SearchX size={28} className="text-[var(--accent-brass)]" />
+          <SearchX size={28} />
         </div>
-        <h1 id="not-found-title" className="mb-2 text-[22px] font-bold text-[var(--text-primary)]">
+        <p aria-hidden="true" dir="ltr" className="mb-2 select-none text-sm font-semibold tabular-nums text-ink-muted">
+          404
+        </p>
+        <h1 id="not-found-title" className="text-h2 mb-2 text-ink">
           {t.error.notFoundTitle}
         </h1>
-        <p className="mb-8 text-[15px] leading-relaxed text-[var(--text-secondary)]">
-          {t.error.notFoundMessage}
-        </p>
+        <p className="text-body mx-auto mb-8 max-w-sm text-ink-soft">{t.error.notFoundMessage}</p>
 
-        <div className="flex flex-col-reverse items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-          <Link href={href("/explore")} className="btn btn-secondary">
-            <Search size={16} aria-hidden="true" />
+        <div className="flex flex-col gap-3 sm:flex-row-reverse">
+          <ButtonLink href={href("/explore")} size="lg" className="flex-1" icon={<Search aria-hidden="true" />}>
             {t.error.browseBarbers}
-          </Link>
-          <Link href={href("/")} className="btn btn-primary">
-            <Home size={16} aria-hidden="true" />
+          </ButtonLink>
+          <ButtonLink href={href("/")} variant="secondary" size="lg" className="flex-1" icon={<Home aria-hidden="true" />}>
             {t.error.goHome}
-          </Link>
+          </ButtonLink>
         </div>
       </div>
     </main>

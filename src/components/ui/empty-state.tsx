@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { Inbox } from "lucide-react";
+import { buttonClasses } from "./recipes";
 
 export interface EmptyStateAction {
   label: string;
@@ -52,7 +53,7 @@ function ActionControl({ action, primary }: { action: EmptyStateAction; primary:
       <span>{action.label}</span>
     </>
   );
-  const className = cn("btn text-[14px]", primary ? "btn-primary" : "btn-ghost");
+  const className = buttonClasses({ variant: primary ? "primary" : "secondary", size: "md" });
   if (action.href) {
     return (
       <Link href={action.href} className={className}>
@@ -68,11 +69,16 @@ function ActionControl({ action, primary }: { action: EmptyStateAction; primary:
 }
 
 const sizeStyles = {
-  sm: { wrap: "py-10 px-6", icon: "w-12 h-12 mb-4", iconSize: 22, title: "text-[15px]" },
-  md: { wrap: "py-16 px-6 sm:px-10", icon: "w-16 h-16 mb-6", iconSize: 28, title: "text-[17px]" },
-  lg: { wrap: "py-24 px-6 sm:py-32 sm:px-12", icon: "w-20 h-20 mb-8", iconSize: 32, title: "text-[18px]" },
+  sm: { wrap: "py-8 px-6 gap-3", icon: "size-12 rounded-xl", iconSize: 22, title: "text-title" },
+  md: { wrap: "py-12 px-6 sm:px-10 gap-3", icon: "size-16 rounded-2xl", iconSize: 28, title: "text-h3" },
+  lg: { wrap: "py-20 px-6 sm:py-24 sm:px-12 gap-4", icon: "size-20 rounded-2xl", iconSize: 32, title: "text-h2" },
 } as const;
 
+/**
+ * Empty state (§5.13): always offers a next step. Art is an icon in a
+ * brand-soft tile with the sand-stripe hatch (no illustrations).
+ * `bare` = inline variant for use inside a panel (no border/background).
+ */
 export function EmptyState({
   icon = Inbox,
   title,
@@ -88,42 +94,34 @@ export function EmptyState({
 }: EmptyStateProps) {
   const s = sizeStyles[size];
   const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
-  const iconNode = isComponent(icon) ? (
-    React.createElement(icon, {
-      size: s.iconSize,
-      "aria-hidden": true,
-      className: tone === "error" ? "text-[var(--accent-rose)]" : "text-[var(--text-muted)]",
-    })
-  ) : (
-    icon
-  );
+  const iconNode = isComponent(icon)
+    ? React.createElement(icon, { size: s.iconSize, "aria-hidden": true })
+    : icon;
 
   return (
     <div
       className={cn(
         "fade-slide-up flex flex-col items-center justify-center text-center",
         s.wrap,
-        !bare && "rounded-[var(--radius-lg)] border border-dashed border-[var(--border-subtle)] bg-[var(--bg-surface)]",
+        !bare && "rounded-xl border border-dashed border-line bg-card",
         className,
       )}
     >
       <div
         aria-hidden="true"
         className={cn(
-          "flex items-center justify-center rounded-full",
+          "bg-hatch-ink mb-1 grid shrink-0 place-items-center",
           s.icon,
-          tone === "error" ? "bg-[var(--accent-rose-muted)]" : "bg-[var(--bg-secondary)]",
+          tone === "error" ? "bg-danger-soft text-danger-text" : "bg-brand-soft text-brand-text",
         )}
       >
         {iconNode}
       </div>
-      <Heading className={cn(s.title, "font-semibold tracking-tight text-[var(--text-primary)]")}>{title}</Heading>
-      {description && (
-        <div className="mt-2 max-w-sm text-[14px] leading-relaxed text-[var(--text-secondary)]">{description}</div>
-      )}
-      {children && <div className="mt-6 w-full max-w-sm">{children}</div>}
+      <Heading className={cn(s.title, "text-ink")}>{title}</Heading>
+      {description && <div className="max-w-sm text-sm leading-6 text-ink-muted">{description}</div>}
+      {children && <div className="mt-3 w-full max-w-sm">{children}</div>}
       {(action || secondaryAction) && (
-        <div className="mt-7 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center">
+        <div className="mt-3 flex w-full flex-col-reverse items-stretch justify-center gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
           {secondaryAction && <ActionControl action={secondaryAction} primary={false} />}
           {action && <ActionControl action={action} primary />}
         </div>

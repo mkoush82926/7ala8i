@@ -167,32 +167,32 @@ export function MoveConfirmDialog({ request, appointments, blocks, barberName, b
     >
       {a && target && (
         <div className="space-y-4 text-[14px]">
-          <div className="flex flex-wrap items-center gap-2 rounded-[var(--radius-sm)] bg-[var(--bg-secondary)] p-3">
-            <span className="text-[var(--text-secondary)]">
+          <div className="flex flex-wrap items-center gap-2 rounded-lg bg-sunken p-3">
+            <span className="text-ink-soft">
               {formatDate(a.startTime, "weekdayDay")} {formatTime(a.startTime)}–{formatTime(a.endTime)}
               <span className="block text-[12px]">{barberName(a.barberId)}</span>
             </span>
-            <ArrowRight size={16} className="shrink-0 text-[var(--text-muted)] rtl:-scale-x-100" aria-hidden="true" />
-            <span className="font-medium text-[var(--text-primary)]">
+            <ArrowRight size={16} className="shrink-0 text-ink-muted rtl:-scale-x-100" aria-hidden="true" />
+            <span className="font-medium text-ink">
               {formatDate(target.startIso, "weekdayDay")} {formatTime(target.startIso)}–{formatTime(target.endIso)}
               <span className="block text-[12px] font-normal">{barberName(target.barberId)}</span>
             </span>
           </div>
 
           {checking && (
-            <p className="flex items-center gap-2 text-[13px] text-[var(--text-muted)]" role="status">
+            <p className="flex items-center gap-2 text-[13px] text-ink-muted" role="status">
               <Loader2 size={14} className="animate-spin" aria-hidden="true" />
               {t.calendar.checkingSlot}
             </p>
           )}
 
           {clashes.length > 0 && (
-            <div role="alert" className="rounded-[var(--radius-sm)] border border-[var(--accent-rose)]/40 bg-[var(--accent-rose-muted)] p-3">
-              <p className="flex items-center gap-2 font-medium text-[var(--accent-rose)]">
+            <div role="alert" className="rounded-lg border border-danger/30 bg-danger-soft p-3">
+              <p className="flex items-center gap-2 font-medium text-danger-text">
                 <AlertTriangle size={16} aria-hidden="true" />
                 {t.calendar.conflictsTitle}
               </p>
-              <ul className="mt-1 list-disc space-y-0.5 ps-6 text-[13px] text-[var(--text-secondary)]">
+              <ul className="mt-1 list-disc space-y-0.5 ps-6 text-[13px] text-ink-soft">
                 {clashes.map((c, i) => (
                   <li key={i}>{c}</li>
                 ))}
@@ -201,8 +201,8 @@ export function MoveConfirmDialog({ request, appointments, blocks, barberName, b
           )}
 
           {timeChanged && autoMessaging === true && (
-            <p className="flex items-center gap-3 text-[13px] text-[var(--text-secondary)]">
-              <MessageCircle size={16} aria-hidden="true" className="shrink-0 text-[var(--text-muted)]" />
+            <p className="flex items-center gap-3 text-[13px] text-ink-soft">
+              <MessageCircle size={16} aria-hidden="true" className="shrink-0 text-ink-muted" />
               <span>{phone ? t.calendar.notifyAutomatic : t.calendar.notifyNoPhone}</span>
             </p>
           )}
@@ -212,15 +212,15 @@ export function MoveConfirmDialog({ request, appointments, blocks, barberName, b
               <input
                 id={notifyId}
                 type="checkbox"
-                className="h-5 w-5 accent-[var(--accent-brass)]"
+                className="h-5 w-5 rounded-[6px] border-line-strong text-brand focus:ring-2 focus:ring-brand/30 focus:ring-offset-0"
                 checked={notify && !!phone}
                 disabled={!phone}
                 onChange={(e) => setNotify(e.target.checked)}
               />
-              <MessageCircle size={16} aria-hidden="true" className="text-[var(--text-muted)]" />
+              <MessageCircle size={16} aria-hidden="true" className="text-ink-muted" />
               <span>
                 {t.calendar.notifyWhatsapp}
-                {!phone && <span className="block text-[12px] text-[var(--text-muted)]">{t.calendar.notifyNoPhone}</span>}
+                {!phone && <span className="block text-[12px] text-ink-muted">{t.calendar.notifyNoPhone}</span>}
               </span>
             </label>
           )}

@@ -16,7 +16,6 @@ import {
   Receipt,
   Wallet,
   Link2,
-  Loader2,
   Plus,
   Printer,
   RefreshCw,
@@ -37,7 +36,9 @@ import { toast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ListSkeleton } from "@/components/ui/skeleton";
-import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
+import { Button } from "@/components/ui/button";
+import { buttonClasses, cardClasses, focusRing } from "@/components/ui/recipes";
 import { cn } from "@/lib/utils";
 import { shopPath } from "@/components/shop/lib/slug";
 import {
@@ -67,18 +68,24 @@ import {
 /** Weekday order: Saturday-first in Arabic (Jordan), Monday-first in English. */
 const DAY_ORDER: Record<"ar" | "en", number[]> = { ar: [6, 0, 1, 2, 3, 4, 5], en: [1, 2, 3, 4, 5, 6, 0] };
 
-const card = "rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)]";
-const iconBtn =
-  "inline-flex size-11 lg:size-9 shrink-0 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50";
+const card = "rounded-xl border border-line bg-card";
+/** Form section surface (§6.18 panel): white card, 16px radius, roomy on desktop. */
+const sectionCard = cn(card, "p-4 sm:p-6 lg:p-8");
+const iconBtn = cn(
+  "inline-flex size-11 lg:size-9 shrink-0 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-sunken hover:text-ink cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
+  focusRing,
+);
 
 // Print-kit colours: the poster is always printed on white paper, so these
 // are fixed ink values rather than theme tokens.
-const PRINT = { ink: "#1c1611", mid: "#5a5147", rule: "#ede3cd", panel: "#f7f1e4", brass: "#7c5a26", paper: "#ffffff" };
+// Deep Teal & Sand light hexes (DESIGN_SYSTEM_V2 §2.2): ink, ink-soft, line,
+// sand page, brand teal, white card.
+const PRINT = { ink: "#0F172A", mid: "#334155", rule: "#E5E2DA", panel: "#F8F7F4", brand: "#0F766E", paper: "#FFFFFF" };
 
 const noopSubscribe = () => () => {};
 
 export function SettingsPage() {
-  const { t, locale, isRTL, FF, FFD, href, formatDate } = useTranslation();
+  const { t, locale, isRTL, href, formatDate } = useTranslation();
   const st = t.settings;
   const router = useRouter();
   const pathname = usePathname();
@@ -399,7 +406,7 @@ export function SettingsPage() {
     ctx.drawImage(qrSource, boxX + (box - qr) / 2, boxY + (box - qr) / 2, qr, qr);
 
     ctx.direction = "ltr";
-    ctx.fillStyle = PRINT.brass;
+    ctx.fillStyle = PRINT.brand;
     ctx.font = `600 ${fit(bookingLink, 600, 500, 16, 11)}px sans-serif`;
     ctx.fillText(bookingLink, W / 2, 710);
     ctx.direction = isRTL ? "rtl" : "ltr";
@@ -419,23 +426,29 @@ export function SettingsPage() {
   }
 
   // ── Labels ──
-  const tabs: { id: SettingsTab; label: string; description: string; icon: typeof Store }[] = [
-    { id: "general", label: st.general, description: st.generalDesc, icon: Store },
-    { id: "policy", label: st.policy, description: st.policyDesc, icon: CalendarClock },
-    { id: "hours", label: st.hours, description: st.hoursDesc, icon: Clock },
-    { id: "booking", label: st.bookingLink, description: st.bookingLinkHubDesc, icon: Link2 },
-    { id: "team", label: st.team, description: st.teamDesc, icon: Users },
+  type HubGroup = "shop" | "booking" | "team";
+  const tabs: { id: SettingsTab; label: string; description: string; icon: typeof Store; group: HubGroup }[] = [
+    { id: "general", label: st.general, description: st.generalDesc, icon: Store, group: "shop" },
+    { id: "policy", label: st.policy, description: st.policyDesc, icon: CalendarClock, group: "booking" },
+    { id: "hours", label: st.hours, description: st.hoursDesc, icon: Clock, group: "team" },
+    { id: "booking", label: st.bookingLink, description: st.bookingLinkHubDesc, icon: Link2, group: "shop" },
+    { id: "team", label: st.team, description: st.teamDesc, icon: Users, group: "team" },
   ];
   const activeTab = tabs.find((tb) => tb.id === view) ?? null;
   // Dedicated pages (WS-1A public profile, WS-1F business settings).
-  const pageLinks: { href: string; label: string; description: string; icon: typeof Store }[] = [
-    { href: href("/settings/profile"), label: t.publicProfile.pageTitle, description: t.publicProfile.pageDesc, icon: Globe },
-    { href: href("/settings/hours"), label: t.settingsPages.hours, description: t.shifts.hoursPageSubtitle, icon: CalendarClock },
-    { href: href("/settings/payments"), label: t.settingsPages.payments, description: t.paymentSettings.pageSubtitle, icon: Wallet },
-    { href: href("/settings/tax"), label: t.settingsPages.tax, description: t.taxSettings.pageSubtitle, icon: Receipt },
-    { href: href("/settings/links"), label: t.links.settings.pageTitle, description: t.links.settings.pageSubtitle, icon: QrCode },
-    { href: href("/settings/messaging"), label: t.messaging.navLabel, description: t.messaging.navHint, icon: MessageCircle },
-    { href: href("/settings/notifications"), label: t.notificationSettings.title, description: t.notificationSettings.subtitle, icon: Bell },
+  const pageLinks: { href: string; label: string; description: string; icon: typeof Store; group: HubGroup }[] = [
+    { href: href("/settings/profile"), label: t.publicProfile.pageTitle, description: t.publicProfile.pageDesc, icon: Globe, group: "shop" },
+    { href: href("/settings/hours"), label: t.settingsPages.hours, description: t.shifts.hoursPageSubtitle, icon: CalendarClock, group: "booking" },
+    { href: href("/settings/payments"), label: t.settingsPages.payments, description: t.paymentSettings.pageSubtitle, icon: Wallet, group: "booking" },
+    { href: href("/settings/tax"), label: t.settingsPages.tax, description: t.taxSettings.pageSubtitle, icon: Receipt, group: "booking" },
+    { href: href("/settings/links"), label: t.links.settings.pageTitle, description: t.links.settings.pageSubtitle, icon: QrCode, group: "shop" },
+    { href: href("/settings/messaging"), label: t.messaging.navLabel, description: t.messaging.navHint, icon: MessageCircle, group: "team" },
+    { href: href("/settings/notifications"), label: t.notificationSettings.title, description: t.notificationSettings.subtitle, icon: Bell, group: "team" },
+  ];
+  const hubGroups: { id: HubGroup; label: string }[] = [
+    { id: "shop", label: st.groupShop },
+    { id: "booking", label: st.groupBooking },
+    { id: "team", label: st.groupTeam },
   ];
 
   const errorText = (field: ShopField, code: FieldError | undefined) => {
@@ -486,7 +499,7 @@ export function SettingsPage() {
   }
 
   const readOnly = !isAdmin;
-  const sectionTitle = "m-0 text-base font-bold text-[var(--text-primary)]";
+  const sectionTitle = "text-h3 m-0 text-ink";
 
   const shopBody = (children: React.ReactNode) =>
     shopStatus === "loading" || !hydrated ? (
@@ -508,7 +521,7 @@ export function SettingsPage() {
         className="flex flex-col gap-6"
       >
         {readOnly && (
-          <p role="note" className="rounded-lg bg-[var(--bg-secondary)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+          <p role="note" className="rounded-xl bg-sunken px-4 py-3 text-sm text-ink-soft">
             {st.readOnlyNotice}
           </p>
         )}
@@ -521,84 +534,94 @@ export function SettingsPage() {
     );
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 lg:gap-6">
       {/* ── Header ── */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
           {activeTab && (
             <button
               type="button"
               onClick={() => goTo(null)}
               aria-label={st.backToSettings}
-              className="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-secondary)]"
+              className={buttonClasses({ variant: "secondary", size: "icon", className: "mt-0.5" })}
             >
-              <ArrowLeft size={16} aria-hidden className="rtl:-scale-x-100" />
+              <ArrowLeft aria-hidden className="rtl:-scale-x-100" />
             </button>
           )}
           <div className="min-w-0">
-            <h2
-              className="m-0 text-[24px] font-extrabold text-[var(--text-primary)] sm:text-[28px]"
-              style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "0.014em") }}
-            >
-              {activeTab ? activeTab.label : st.title}
-            </h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">{activeTab ? activeTab.description : st.subtitle}</p>
+            <h1 className="text-h2 text-ink">{activeTab ? activeTab.label : st.title}</h1>
+            <p className="mt-1 text-[15px] text-ink-muted">{activeTab ? activeTab.description : st.subtitle}</p>
           </div>
         </div>
         {currentForm && (isAdmin || currentForm === "hours") && (
-          <button
-            type="button"
-            className="btn btn-primary hidden min-h-11 px-5 sm:inline-flex"
+          <Button
+            className="hidden sm:inline-flex"
             onClick={() => void save()}
-            disabled={saving || !dirty}
-            aria-busy={saving || undefined}
+            disabled={!dirty}
+            loading={saving}
           >
-            {saving ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
             {st.saveChanges}
-          </button>
+          </Button>
         )}
-      </div>
+      </header>
 
-      {/* ── Hub ── */}
+      {/* ── Hub: grouped cards ── */}
       {!activeTab && (
-        <nav aria-label={st.title} className={cn(card, "overflow-hidden")}>
-          <ul role="list" className="m-0 list-none p-0">
-            {tabs.map((tab) => (
-              <li key={tab.id} className="border-b border-[var(--border-subtle)] last:border-b-0">
-                <button
-                  type="button"
-                  onClick={() => goTo(tab.id)}
-                  className="flex w-full cursor-pointer items-center gap-4 bg-transparent px-4 py-4 text-start transition-colors hover:bg-[var(--bg-secondary)] focus-visible:bg-[var(--bg-secondary)] sm:px-6"
-                >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
-                    <tab.icon size={18} aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-[var(--text-primary)]">{tab.label}</span>
-                    <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">{tab.description}</span>
-                  </span>
-                  <ChevronRight size={18} aria-hidden className="shrink-0 text-[var(--text-muted)] rtl:-scale-x-100" />
-                </button>
-              </li>
-            ))}
-            {pageLinks.map((link) => (
-              <li key={link.href} className="border-b border-[var(--border-subtle)] last:border-b-0">
-                <Link
-                  href={link.href}
-                  className="flex w-full items-center gap-4 px-4 py-4 text-start no-underline transition-colors hover:bg-[var(--bg-secondary)] focus-visible:bg-[var(--bg-secondary)] sm:px-6"
-                >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
-                    <link.icon size={18} aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-[var(--text-primary)]">{link.label}</span>
-                    <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">{link.description}</span>
-                  </span>
-                  <ChevronRight size={18} aria-hidden className="shrink-0 text-[var(--text-muted)] rtl:-scale-x-100" />
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <nav aria-label={st.title} className="flex flex-col gap-8">
+          {hubGroups.map((group) => {
+            const groupTabs = tabs.filter((tb) => tb.group === group.id);
+            const groupLinks = pageLinks.filter((l) => l.group === group.id);
+            const tile = (Icon: typeof Store) => (
+              <span aria-hidden className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand-text">
+                <Icon size={20} aria-hidden />
+              </span>
+            );
+            const itemClass = cardClasses({
+              interactive: true,
+              className: cn(
+                "group flex h-full w-full cursor-pointer items-start gap-4 p-4 text-start no-underline hover:border-ink-soft/40 lg:p-5",
+                focusRing,
+              ),
+            });
+            const body = (label: string, description: string) => (
+              <>
+                <span className="min-w-0 flex-1">
+                  <span className="text-title block text-ink">{label}</span>
+                  <span className="mt-1 block text-sm leading-5 text-ink-muted">{description}</span>
+                </span>
+                <ChevronRight
+                  size={18}
+                  aria-hidden
+                  className="mt-0.5 shrink-0 text-ink-muted transition-transform duration-150 group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5 motion-reduce:transform-none"
+                />
+              </>
+            );
+            return (
+              <section key={group.id} aria-labelledby={fieldId(`hub-${group.id}`)} className="flex flex-col gap-3">
+                <h2 id={fieldId(`hub-${group.id}`)} className="text-micro text-ink-muted">
+                  {group.label}
+                </h2>
+                <ul role="list" className="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3">
+                  {groupTabs.map((tab) => (
+                    <li key={tab.id}>
+                      <button type="button" onClick={() => goTo(tab.id)} className={itemClass}>
+                        {tile(tab.icon)}
+                        {body(tab.label, tab.description)}
+                      </button>
+                    </li>
+                  ))}
+                  {groupLinks.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className={itemClass}>
+                        {tile(link.icon)}
+                        {body(link.label, link.description)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
         </nav>
       )}
 
@@ -606,8 +629,8 @@ export function SettingsPage() {
       {view === "general" &&
         shopBody(
           <>
-            <section className={cn(card, "p-5 sm:p-8")} aria-labelledby={fieldId("sec-info")}>
-              <h3 id={fieldId("sec-info")} className={cn(sectionTitle, "mb-5")} style={{ fontFamily: FF }}>
+            <section className={sectionCard} aria-labelledby={fieldId("sec-info")}>
+              <h3 id={fieldId("sec-info")} className={cn(sectionTitle, "mb-5")}>
                 {st.shopInfo}
               </h3>
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
@@ -635,8 +658,8 @@ export function SettingsPage() {
               </div>
             </section>
 
-            <section className={cn(card, "p-5 sm:p-8")} aria-labelledby={fieldId("sec-contact")}>
-              <h3 id={fieldId("sec-contact")} className={cn(sectionTitle, "mb-5")} style={{ fontFamily: FF }}>
+            <section className={sectionCard} aria-labelledby={fieldId("sec-contact")}>
+              <h3 id={fieldId("sec-contact")} className={cn(sectionTitle, "mb-5")}>
                 {st.contactSection}
               </h3>
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
@@ -655,8 +678,8 @@ export function SettingsPage() {
               </div>
             </section>
 
-            <section className={cn(card, "p-5 sm:p-8")} aria-labelledby={fieldId("sec-region")}>
-              <h3 id={fieldId("sec-region")} className={cn(sectionTitle, "mb-5")} style={{ fontFamily: FF }}>
+            <section className={sectionCard} aria-labelledby={fieldId("sec-region")}>
+              <h3 id={fieldId("sec-region")} className={cn(sectionTitle, "mb-5")}>
                 {st.regionSection}
               </h3>
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
@@ -705,8 +728,8 @@ export function SettingsPage() {
       {view === "policy" &&
         shopBody(
           <>
-            <section className={cn(card, "p-5 sm:p-8")} aria-labelledby={fieldId("sec-cancel")}>
-              <h3 id={fieldId("sec-cancel")} className={cn(sectionTitle, "mb-5")} style={{ fontFamily: FF }}>
+            <section className={sectionCard} aria-labelledby={fieldId("sec-cancel")}>
+              <h3 id={fieldId("sec-cancel")} className={cn(sectionTitle, "mb-5")}>
                 {st.cancellationSection}
               </h3>
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
@@ -719,13 +742,13 @@ export function SettingsPage() {
               </div>
             </section>
 
-            <section className={cn(card, "p-5 sm:p-8")} aria-labelledby={fieldId("sec-deposit")}>
+            <section className={sectionCard} aria-labelledby={fieldId("sec-deposit")}>
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
-                  <h3 id={fieldId("sec-deposit")} className={sectionTitle} style={{ fontFamily: FF }}>
+                  <h3 id={fieldId("sec-deposit")} className={sectionTitle}>
                     {st.requireDeposit}
                   </h3>
-                  <p id={fieldId("deposit-hint")} className="mt-1 text-xs text-[var(--text-muted)]">
+                  <p id={fieldId("deposit-hint")} className="mt-1 text-sm text-ink-muted">
                     {st.requireDepositHint}
                   </p>
                 </div>
@@ -745,10 +768,10 @@ export function SettingsPage() {
                         <label
                           key={dt}
                           className={cn(
-                            "flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--focus-ring)]",
+                            "flex min-h-11 cursor-pointer items-center gap-2.5 rounded-full border px-4 text-sm font-semibold transition-colors duration-150 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus",
                             shopForm.deposit_type === dt
-                              ? "border-[var(--accent-brass)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
-                              : "border-[var(--border-subtle)] text-[var(--text-secondary)]",
+                              ? "border-brand bg-brand-soft text-brand-pressed ring-1 ring-brand"
+                              : "border-line-strong bg-card text-ink hover:border-ink",
                           )}
                         >
                           <input
@@ -757,7 +780,7 @@ export function SettingsPage() {
                             value={dt}
                             checked={shopForm.deposit_type === dt}
                             onChange={() => setShopField("deposit_type", dt)}
-                            className="accent-[var(--accent-brass)]"
+                            className="size-4 accent-brand"
                           />
                           {dt === "percentage" ? st.depositPercentage : st.depositFixed}
                         </label>
@@ -778,9 +801,9 @@ export function SettingsPage() {
 
       {/* ── Working hours ── */}
       {view === "hours" && (
-        <section className={cn(card, "p-4 sm:p-8")} aria-labelledby={fieldId("sec-hours")}>
+        <section className={sectionCard} aria-labelledby={fieldId("sec-hours")}>
           <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-            <h3 id={fieldId("sec-hours")} className={sectionTitle} style={{ fontFamily: FF }}>
+            <h3 id={fieldId("sec-hours")} className={sectionTitle}>
               {st.hours}
             </h3>
             {isAdmin && staffOptions.length > 1 && (
@@ -840,12 +863,12 @@ export function SettingsPage() {
                     return (
                       <li
                         key={wd}
-                        className="flex flex-col gap-3 border-b border-[var(--border-subtle)] py-4 first:pt-0 last:border-b-0 last:pb-0 lg:flex-row lg:items-start lg:gap-6"
+                        className="flex flex-col gap-3 border-b border-line py-4 first:pt-0 last:border-b-0 last:pb-0 lg:flex-row lg:items-start lg:gap-6"
                       >
                         <div className="flex items-center justify-between gap-3 lg:w-48 lg:shrink-0 lg:pt-2">
-                          <span className="text-sm font-bold text-[var(--text-primary)]">{name}</span>
+                          <span className="text-title text-ink">{name}</span>
                           <span className="flex items-center gap-2">
-                            <span className="text-xs text-[var(--text-muted)]" aria-hidden>
+                            <span className={cn("text-[13px]", d.isWorking ? "font-medium text-success-text" : "text-ink-muted")} aria-hidden>
                               {d.isWorking ? st.open : st.dayOff}
                             </span>
                             <Switch
@@ -906,7 +929,7 @@ export function SettingsPage() {
                                 />
                                 <button
                                   type="button"
-                                  className={cn(iconBtn, "hover:text-[var(--accent-rose)]")}
+                                  className={cn(iconBtn, "hover:text-danger-text")}
                                   onClick={() => updateDay(wd, { hasBreak: false })}
                                   aria-label={`${st.removeBreak}: ${name}`}
                                   title={st.removeBreak}
@@ -917,7 +940,7 @@ export function SettingsPage() {
                             ) : (
                               <button
                                 type="button"
-                                className="inline-flex min-h-11 w-fit cursor-pointer items-center gap-1.5 rounded-lg px-2 text-[13px] font-semibold text-[var(--accent-text)] hover:bg-[var(--bg-secondary)] lg:min-h-9"
+                                className={cn("inline-flex min-h-11 w-fit cursor-pointer items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-brand-text transition-colors hover:bg-brand-soft lg:min-h-9", focusRing)}
                                 onClick={() => updateDay(wd, { hasBreak: true })}
                                 aria-label={`${st.addBreak}: ${name}`}
                               >
@@ -947,29 +970,34 @@ export function SettingsPage() {
       {view === "booking" && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
           <section
-            className="flex min-h-[240px] min-w-0 flex-col justify-between gap-6 rounded-xl bg-[var(--text-primary)] p-6 text-[var(--bg-primary)] sm:p-10"
+            className="relative isolate flex min-h-[240px] min-w-0 flex-col justify-between gap-6 overflow-hidden rounded-2xl bg-inverse p-6 text-on-inverse sm:p-10"
             aria-labelledby={fieldId("sec-link")}
           >
             <div className="min-w-0">
-              <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-[color-mix(in_srgb,var(--bg-primary)_12%,transparent)] px-3 py-1 text-[11px] font-bold">
-                <span className="size-1.5 rounded-full bg-[var(--accent-brass)]" aria-hidden />
+              <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-on-inverse/10 px-3 py-1 text-xs font-semibold">
+                <span className="size-1.5 rounded-full bg-on-inverse-brand" aria-hidden />
                 <span id={fieldId("sec-link")}>{st.onlineBookingLink}</span>
               </span>
-              <p className="m-0 break-all text-lg font-extrabold sm:text-2xl" dir="ltr" style={{ fontFamily: "var(--font-intervar), sans-serif" }}>
+              <p className="m-0 break-all text-lg font-bold tracking-tight sm:text-2xl" dir="ltr">
                 {bookingLink}
               </p>
               <p className="mt-3 text-sm opacity-80">{st.bookingLinkDesc}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <button type="button" onClick={() => void handleCopy()} className="btn btn-secondary min-h-11" disabled={!shopId}>
-                {copied ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}
+              <Button
+                variant="secondary"
+                onClick={() => void handleCopy()}
+                disabled={!shopId}
+                icon={copied ? <Check aria-hidden /> : <Copy aria-hidden />}
+                className="border-transparent"
+              >
                 {copied ? st.linkCopied : st.copyLink}
-              </button>
+              </Button>
               <a
                 href={bookingLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold underline-offset-4 opacity-90 hover:underline"
+                className={cn("inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-on-inverse-brand underline-offset-4 hover:underline", focusRing)}
               >
                 {st.viewPage}
                 <ExternalLink size={14} aria-hidden className="rtl:-scale-x-100" />
@@ -978,29 +1006,28 @@ export function SettingsPage() {
           </section>
 
           <section className={cn(card, "flex flex-col items-center justify-center p-6 text-center sm:p-8")} aria-labelledby={fieldId("sec-qr")}>
-            <div className="mb-5 rounded-xl bg-white p-4">
+            <div className="mb-5 rounded-2xl border border-line bg-white p-4 shadow-raised">
               <QRCodeCanvas ref={qrCanvasRef} value={bookingLink} size={128} role="img" aria-label={st.qrAlt} />
             </div>
             <div className="hidden" aria-hidden>
               <QRCodeCanvas ref={posterQrCanvasRef} value={bookingLink} size={480} />
             </div>
-            <h3 id={fieldId("sec-qr")} className="m-0 text-sm font-bold text-[var(--text-primary)]">
+            <h3 id={fieldId("sec-qr")} className="text-title m-0 text-ink">
               {st.qrTitle}
             </h3>
-            <p className="mb-4 mt-1 text-xs text-[var(--text-secondary)]">{st.qrHint}</p>
+            <p className="mb-5 mt-1 text-sm text-ink-muted">{st.qrHint}</p>
             <div className="flex w-full flex-col gap-2">
-              <button
-                type="button"
-                className="btn btn-secondary min-h-11 w-full"
+              <Button
+                variant="secondary"
+                fullWidth
+                icon={<Download aria-hidden />}
                 onClick={() => qrCanvasRef.current && downloadCanvas(qrCanvasRef.current, "booking-qr-code.png")}
               >
-                <Download size={15} aria-hidden />
                 {st.downloadQr}
-              </button>
-              <button type="button" className="btn btn-secondary min-h-11 w-full" onClick={handleDownloadPoster}>
-                <Printer size={15} aria-hidden />
+              </Button>
+              <Button variant="secondary" fullWidth icon={<Printer aria-hidden />} onClick={handleDownloadPoster}>
                 {st.downloadPoster}
-              </button>
+              </Button>
             </div>
           </section>
         </div>
@@ -1009,15 +1036,15 @@ export function SettingsPage() {
       {/* ── Team (managed on the Team page) ── */}
       {view === "team" && (
         <section className={cn(card, "overflow-hidden")} aria-labelledby={fieldId("sec-team")}>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-4 py-4 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-4 lg:px-6">
             <div>
-              <h3 id={fieldId("sec-team")} className={sectionTitle} style={{ fontFamily: FF }}>
+              <h3 id={fieldId("sec-team")} className={sectionTitle}>
                 {st.teamMembers}
               </h3>
-              <p className="mt-1 text-xs text-[var(--text-muted)]">{st.teamManageHint}</p>
+              <p className="mt-1 text-sm text-ink-muted">{st.teamManageHint}</p>
             </div>
-            <Link href={href("/team")} className="btn btn-primary min-h-11">
-              <Users size={15} aria-hidden />
+            <Link href={href("/team")} className={buttonClasses({ variant: "primary" })}>
+              <Users aria-hidden />
               {st.manageTeam}
             </Link>
           </div>
@@ -1028,19 +1055,19 @@ export function SettingsPage() {
               {barbers.map((member) => (
                 <li
                   key={member.id}
-                  className="flex items-center gap-4 border-b border-[var(--border-subtle)] px-4 py-4 last:border-b-0 sm:px-6"
+                  className="flex items-center gap-4 border-b border-line px-4 py-3.5 last:border-b-0 lg:px-6"
                 >
                   <span
                     aria-hidden
-                    className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--bg-secondary)] text-sm font-bold text-[var(--text-secondary)]"
+                    className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand-pressed"
                   >
                     {(member.name || "?").trim().slice(0, 2).toUpperCase()}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold text-[var(--text-primary)]">
+                    <span className="block truncate text-[15px] font-semibold text-ink">
                       {member.name || roleLabel(member.role)}
                     </span>
-                    <span className="block text-xs text-[var(--text-secondary)]">{roleLabel(member.role)}</span>
+                    <span className="block text-[13px] text-ink-muted">{roleLabel(member.role)}</span>
                   </span>
                 </li>
               ))}
@@ -1054,25 +1081,19 @@ export function SettingsPage() {
         <div
           role="region"
           aria-label={st.unsavedChanges}
-          className="sticky bottom-0 z-20 -mx-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] bg-[var(--bg-primary)] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-16px_rgba(0,0,0,0.25)] sm:mx-0 sm:rounded-xl sm:border sm:px-5"
+          className="sticky bottom-0 z-20 -mx-4 flex flex-wrap items-center justify-between gap-3 border-t border-line bg-card/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-bar backdrop-blur supports-[backdrop-filter]:bg-card/85 sm:mx-0 sm:rounded-2xl sm:border sm:px-5 motion-safe:animate-[page-enter_0.2s_var(--ease-enter)]"
         >
-          <p className="m-0 text-sm font-semibold text-[var(--text-primary)]" aria-live="polite">
+          <p className="m-0 flex items-center gap-2 text-sm font-semibold text-ink" aria-live="polite">
+            <span aria-hidden className="size-2 rounded-full bg-warning" />
             {st.unsavedChanges}
           </p>
           <div className="flex w-full gap-2 sm:w-auto">
-            <button type="button" className="btn btn-secondary min-h-11 flex-1 sm:flex-none" onClick={discard} disabled={saving}>
+            <Button variant="ghost" className="flex-1 sm:flex-none" onClick={discard} disabled={saving}>
               {st.discard}
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary min-h-11 flex-1 sm:flex-none"
-              onClick={() => void save()}
-              disabled={saving}
-              aria-busy={saving || undefined}
-            >
-              {saving ? <Loader2 size={15} className="animate-spin" aria-hidden /> : null}
+            </Button>
+            <Button className="flex-1 sm:flex-none" onClick={() => void save()} loading={saving}>
               {saving ? t.common.processing : st.saveChanges}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1126,7 +1147,7 @@ function Field({
       </label>
       {children({ id, "aria-invalid": err ? true : undefined, "aria-describedby": describedBy })}
       {hint && !err && (
-        <p id={`${id}-hint`} className="mt-1.5 text-xs text-[var(--text-muted)]">
+        <p id={`${id}-hint`} className="field-helper">
           {hint}
         </p>
       )}
@@ -1155,18 +1176,18 @@ function Switch({
       aria-label={label}
       aria-describedby={describedBy}
       onClick={() => onChange(!checked)}
-      className="inline-flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-50"
+      className={cn("inline-flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-full disabled:cursor-not-allowed disabled:opacity-45", focusRing)}
     >
       <span
         aria-hidden
         className={cn(
-          "relative inline-block h-6 w-11 rounded-full transition-colors",
-          checked ? "bg-[var(--accent-mint)]" : "bg-[var(--border-primary)]",
+          "relative inline-block h-6 w-11 rounded-full transition-colors duration-150 motion-reduce:transition-none",
+          checked ? "bg-brand" : "bg-line-strong",
         )}
       >
         <span
           className={cn(
-            "absolute top-0.5 size-5 rounded-full bg-[var(--bg-primary)] shadow transition-all",
+            "absolute top-0.5 size-5 rounded-full bg-white shadow-xs transition-[inset-inline-start] duration-150 motion-reduce:transition-none",
             checked ? "start-[22px]" : "start-0.5",
           )}
         />

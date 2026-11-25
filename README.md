@@ -1,4 +1,4 @@
-# Halaqy (حلقي)
+# Halaqy (حلاقي)
 
 Halaqy is a multi-tenant booking and shop-management platform for barbershops,
 built for the Jordanian market. It is bilingual (English and Arabic, with full

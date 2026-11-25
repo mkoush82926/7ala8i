@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import { buttonClasses } from "@/components/ui/recipes";
 import { ArrowDown, ArrowUp, ImagePlus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
@@ -177,7 +178,7 @@ export function PhotosManager({
       />
       <button
         type="button"
-        className="btn btn-secondary"
+        className={buttonClasses({ variant: "secondary" })}
         disabled={!!uploading || remaining === 0}
         onClick={() => inputRef.current?.click()}
       >
@@ -210,12 +211,12 @@ export function PhotosManager({
           {photos.map((photo, i) => {
             const alt = localizedText(locale, photo.alt_en, photo.alt_ar, interpolate(pp.photoNumber, { n: formatNumber(i + 1) }));
             return (
-              <li key={photo.id} className="overflow-hidden rounded-[10px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)]">
+              <li key={photo.id} className="overflow-hidden rounded-lg border border-line bg-sunken">
                 <div className="relative aspect-video">
                   <ShopImage src={photo.url} blurData={photo.blur_data} alt={alt} fill sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw" className="object-cover" />
                   {i === 0 && (
                     <span className="absolute top-2 start-2">
-                      <Pill tone="brass" size="sm">
+                      <Pill tone="brand" size="sm">
                         {pp.coverBadge}
                       </Pill>
                     </span>
@@ -227,7 +228,7 @@ export function PhotosManager({
                   )}
                 </div>
                 <div className="flex items-center gap-1 p-2">
-                  <p className="min-w-0 flex-1 truncate text-xs text-[var(--text-secondary)]" title={alt}>
+                  <p className="min-w-0 flex-1 truncate text-xs text-ink-muted" title={alt}>
                     {photo.alt_en || photo.alt_ar ? alt : pp.noAltText}
                   </p>
                   {canEdit && (
@@ -261,10 +262,10 @@ export function PhotosManager({
         size="sm"
         footer={
           <DialogFooter>
-            <button type="button" className="btn btn-secondary" onClick={() => setEditing(null)}>
+            <button type="button" className={buttonClasses({ variant: "secondary" })} onClick={() => setEditing(null)}>
               {t.common.cancel}
             </button>
-            <button type="button" className="btn btn-primary" disabled={savingAlt} onClick={() => void saveAlt()}>
+            <button type="button" className={buttonClasses({ variant: "primary" })} disabled={savingAlt} onClick={() => void saveAlt()}>
               {savingAlt && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
               {t.common.save}
             </button>
@@ -311,10 +312,10 @@ export function IconButton({
       disabled={disabled}
       onClick={onClick}
       className={
-        "focus-ring inline-grid h-10 w-10 shrink-0 place-items-center rounded-[8px] transition-colors disabled:opacity-40 " +
+        "focus-ring inline-grid h-10 w-10 shrink-0 place-items-center rounded-lg transition-colors disabled:opacity-40 " +
         (danger
-          ? "text-[var(--accent-rose)] hover:bg-[var(--bg-primary)]"
-          : "text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]")
+          ? "text-danger-text hover:bg-card"
+          : "text-ink-muted hover:bg-card hover:text-ink")
       }
     >
       {children}

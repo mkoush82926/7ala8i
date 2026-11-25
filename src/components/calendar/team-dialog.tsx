@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { ArrowDown, ArrowUp, Check, GripVertical, Loader2 } from "lucide-react";
 import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { checkboxClasses } from "@/components/ui/recipes";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/use-translation";
 import { useSupabase } from "@/hooks/use-supabase";
@@ -99,29 +101,19 @@ function TeamForm({ onClose, members, mode, custom, isAdmin, onApply, onSavedSha
 
   return (
     <div className="space-y-4">
-      <div role="radiogroup" aria-label={t.calendar.teamShow} className="grid grid-cols-3 gap-1 rounded-[8px] border border-[var(--border-subtle)] bg-[var(--bg-secondary)] p-1">
-        {MODES.map((m) => (
-          <button
-            key={m}
-            type="button"
-            role="radio"
-            aria-checked={teamMode === m}
-            onClick={() => setTeamMode(m)}
-            className={cn(
-              "min-h-[40px] rounded-[6px] px-2 text-[13px] transition-colors",
-              teamMode === m ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-            )}
-          >
-            {modeLabel[m]}
-          </button>
-        ))}
-      </div>
-      <p className="text-[12px] text-[var(--text-muted)]">{t.calendar.teamOrderHint}</p>
+      <SegmentedControl
+        ariaLabel={t.calendar.teamShow}
+        value={teamMode}
+        onChange={setTeamMode}
+        options={MODES.map((m) => ({ value: m, label: modeLabel[m] }))}
+        fullWidth
+      />
+      <p className="text-meta text-ink-muted">{t.calendar.teamOrderHint}</p>
       <p className="sr-only" aria-live="polite">
         {announce}
       </p>
 
-      <ul className="space-y-1.5">
+      <ul className="overflow-hidden rounded-xl border border-line">
         {list.map((m, i) => (
           <li
             key={m.id}
@@ -138,31 +130,31 @@ function TeamForm({ onClose, members, mode, custom, isAdmin, onApply, onSavedSha
             }}
             onDragEnd={() => setDragId(null)}
             className={cn(
-              "flex items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-2",
-              dragId === m.id && "opacity-50",
+              "flex items-center gap-2.5 border-b border-line bg-card px-3 py-2 transition-colors duration-150 last:border-b-0 hover:bg-sunken/60 motion-reduce:transition-none",
+              dragId === m.id && "bg-brand-soft/50 opacity-60",
             )}
           >
-            <GripVertical size={16} aria-hidden="true" className="shrink-0 cursor-grab text-[var(--text-muted)]" />
+            <GripVertical size={16} aria-hidden="true" className="shrink-0 cursor-grab text-ink-disabled" />
             {teamMode === "custom" && (
               <input
                 type="checkbox"
                 aria-label={m.name}
-                className="h-5 w-5 shrink-0 accent-[var(--accent-brass)]"
+                className={cn(checkboxClasses, "shrink-0")}
                 checked={picked.includes(m.id)}
                 onChange={(e) => setPicked((prev) => (e.target.checked ? [...prev, m.id] : prev.filter((x) => x !== m.id)))}
               />
             )}
             <LaneAvatar lane={{ key: m.id, barberId: m.id, name: m.name, avatar: m.avatar, color: colors[m.id] ?? m.color }} size={28} />
-            <span className="min-w-0 flex-1 truncate text-[14px] text-[var(--text-primary)]">{m.name}</span>
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{m.name}</span>
             {isAdmin && (
               <details className="relative">
                 <summary
-                  className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full"
+                  className="flex size-9 cursor-pointer list-none items-center justify-center rounded-full hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden"
                   aria-label={t.calendar.teamColor}
                 >
-                  <span className="h-5 w-5 rounded-full border border-[var(--border-primary)]" style={{ background: colors[m.id] ?? m.color }} />
+                  <span className="size-5 rounded-full ring-2 ring-card" style={{ background: colors[m.id] ?? m.color, boxShadow: `0 0 0 3px ${colors[m.id] ?? m.color}` }} />
                 </summary>
-                <div className="absolute end-0 z-10 mt-1 grid grid-cols-4 gap-1.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-2 shadow-lg">
+                <div className="absolute end-0 z-10 mt-2 grid grid-cols-4 gap-2 rounded-2xl border border-line bg-card p-2.5 shadow-float">
                   {BARBER_PALETTE.map((c) => (
                     <button
                       key={c}
@@ -170,7 +162,7 @@ function TeamForm({ onClose, members, mode, custom, isAdmin, onApply, onSavedSha
                       aria-label={c}
                       aria-pressed={(colors[m.id] ?? m.color) === c}
                       onClick={() => setColors((prev) => ({ ...prev, [m.id]: c }))}
-                      className="flex h-8 w-8 items-center justify-center rounded-full"
+                      className="flex size-9 items-center justify-center rounded-full transition-transform duration-150 hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus aria-pressed:ring-2 aria-pressed:ring-ink aria-pressed:ring-offset-2 aria-pressed:ring-offset-card motion-reduce:transition-none motion-reduce:hover:scale-100"
                       style={{ background: c }}
                     >
                       {(colors[m.id] ?? m.color) === c && <Check size={14} className="text-white" aria-hidden="true" />}

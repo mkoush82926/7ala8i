@@ -8,6 +8,8 @@ import { login } from '@/app/[locale]/auth/actions'
 import { useTranslation } from '@/hooks/use-translation'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/ui/toast'
+import { focusRing } from '@/components/ui/recipes'
+import { cn } from '@/lib/utils'
 import { authErrorKey, isAuthErrorKey, isValidEmail, type AuthErrorKey } from '../auth-errors'
 import { isInviteNext, safeNextPath } from '../safe-next'
 import {
@@ -106,14 +108,14 @@ function LoginForm() {
       <AuthCard>
         <AuthHeader title={t.auth.welcomeBack} subtitle={fromInvite ? t.auth.inviteSignInNotice : t.auth.signInToManage} />
 
-        <form action={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <form action={handleSubmit} noValidate className="flex flex-col gap-5">
           <input type="hidden" name="next" value={next} />
           <input type="hidden" name="locale" value={locale} />
 
           {callbackFailed && !errorKey && <AuthAlert>{t.auth.callbackError}</AuthAlert>}
           {fromInvite && !errorKey && !callbackFailed && (
             <AuthAlert tone="info">
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span className="inline-flex items-center gap-1.5">
                 <Users size={14} aria-hidden="true" />
                 {t.auth.inviteBanner}
               </span>
@@ -157,7 +159,7 @@ function LoginForm() {
             labelAside={
               <Link
                 href={href('/auth/forgot-password')}
-                style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', textDecoration: 'underline', textUnderlineOffset: 3 }}
+                className={cn('rounded-sm text-[13px] font-semibold text-brand-text underline-offset-4 hover:underline', focusRing)}
               >
                 {t.auth.forgotPassword}
               </Link>
@@ -174,7 +176,7 @@ function LoginForm() {
                     type="button"
                     onClick={handleResend}
                     disabled={resending}
-                    style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+                    className={cn('cursor-pointer rounded-sm border-0 bg-transparent p-0 font-bold text-inherit underline underline-offset-2 disabled:opacity-60', focusRing)}
                   >
                     {resending ? t.auth.resending : t.auth.resendEmail}
                   </button>
@@ -183,7 +185,7 @@ function LoginForm() {
             </AuthAlert>
           )}
 
-          <SubmitButton loading={loading} loadingLabel={t.auth.signingIn} style={{ marginTop: 4 }}>
+          <SubmitButton loading={loading} loadingLabel={t.auth.signingIn} className="mt-1">
             {t.auth.signInBtn}
           </SubmitButton>
         </form>

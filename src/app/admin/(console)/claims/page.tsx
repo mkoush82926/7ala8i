@@ -69,28 +69,28 @@ export default async function AdminClaimsPage({ searchParams }: { searchParams: 
             {data.rows.map((d) => (
               <li
                 key={d.id}
-                className="rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4"
+                className="rounded-xl border border-line bg-card p-4 transition-shadow duration-200 hover:shadow-card"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <Pill tone={d.status === "open" ? "brass" : d.status === "upheld" ? "success" : "neutral"} size="sm">
+                  <Pill tone={d.status === "open" ? "warning" : d.status === "upheld" ? "success" : "neutral"} size="sm">
                     {c.statuses[d.status]}
                   </Pill>
                   <Link
                     href={`/admin/shops/${d.shop.id}`}
-                    className="rounded text-[14px] font-semibold text-[var(--text-primary)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+                    className="rounded text-[14px] font-semibold text-ink underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                   >
                     {d.shop.name}
                   </Link>
                   <time
                     dateTime={d.created_at}
                     title={formatDateTime(d.created_at)}
-                    className="ms-auto text-[12px] text-[var(--text-muted)]"
+                    className="ms-auto text-[12px] text-ink-muted"
                   >
                     {formatRelative(d.created_at)}
                   </time>
                 </div>
-                <p className="mt-2 text-[13px] text-[var(--text-secondary)]">
-                  {c.claimant}: <span className="font-medium text-[var(--text-primary)]">{d.claimant_name}</span>
+                <p className="mt-2 text-[13px] text-ink-soft">
+                  {c.claimant}: <span className="font-medium text-ink">{d.claimant_name}</span>
                   {d.claimant_phone_masked ? (
                     <>
                       {" · "}
@@ -100,7 +100,7 @@ export default async function AdminClaimsPage({ searchParams }: { searchParams: 
                 </p>
                 <p className="mt-1 whitespace-pre-line break-words text-[14px]">{d.details}</p>
                 {d.resolution_note && (
-                  <p className="mt-2 text-[13px] text-[var(--text-secondary)]">
+                  <p className="mt-2 text-[13px] text-ink-soft">
                     {ADMIN_COPY.reviews.resolution(d.resolution_note)}
                   </p>
                 )}

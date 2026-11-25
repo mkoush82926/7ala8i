@@ -110,7 +110,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   colorScheme: "light",
-  themeColor: [{ color: "#ffffff" }],
+  themeColor: [{ color: "#F8F7F4" }],
 };
 
 export default async function RootLayout(props: {
@@ -123,14 +123,19 @@ export default async function RootLayout(props: {
   const { children } = props;
 
   return (
-    <html lang={locale} dir={dir} data-lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir={dir}
+      data-lang={locale}
+      // next/font variables live on <html> so the :root font tokens (--font-body,
+      // --font-sans, the [lang="ar"] Cairo switch) can resolve them.
+      className={`${cairo.variable} ${bdoGrotesk.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body
-        className={`${cairo.variable} ${bdoGrotesk.variable} antialiased`}
-        suppressHydrationWarning
-      >
+      <body className="antialiased" suppressHydrationWarning>
         <ThemeProvider>{children}</ThemeProvider>
         <SpeedInsights />
       </body>

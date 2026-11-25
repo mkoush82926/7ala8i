@@ -6,7 +6,7 @@ import { useTranslation } from "@/hooks/use-translation";
 import { toast } from "@/components/ui/toast";
 import { metaTemplateDrafts } from "@/lib/messaging/templates";
 
-const card = "flex flex-col gap-3 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] p-4 sm:p-5";
+const card = "flex flex-col gap-4 rounded-xl border border-line bg-card p-4 sm:p-6";
 
 /**
  * Day-1 deliverable of WS-1C: the Arabic/English WhatsApp utility templates
@@ -33,12 +33,12 @@ export function TemplateDrafts() {
     <section aria-labelledby="msg-templates" className={card}>
       <details className="group">
         <summary className="focus-ring flex min-h-11 cursor-pointer list-none items-center gap-3 rounded-lg">
-          <FileText size={18} aria-hidden="true" className="shrink-0 text-[var(--text-secondary)]" />
+          <FileText size={18} aria-hidden="true" className="shrink-0 text-ink-soft" />
           <span className="min-w-0 flex-1">
-            <span id="msg-templates" className="block text-base font-bold text-[var(--text-primary)]">
+            <span id="msg-templates" className="block text-base font-bold text-ink">
               {tm.templatesTitle}
             </span>
-            <span className="block text-sm text-[var(--text-secondary)]">{tm.templatesHelp}</span>
+            <span className="block text-sm text-ink-soft">{tm.templatesHelp}</span>
           </span>
         </summary>
         <ul role="list" className="m-0 mt-4 flex list-none flex-col gap-3 p-0">
@@ -54,21 +54,21 @@ export function TemplateDrafts() {
               ...d.buttons.map((b) => `${tm.draftButton}: ${b.text}${b.type === "URL" ? ` → ${b.url}` : ""}`),
             ].join("\n");
             return (
-              <li key={`${d.name}-${d.language}`} className="rounded-xl bg-[var(--bg-secondary)] p-3">
+              <li key={`${d.name}-${d.language}`} className="rounded-xl bg-sunken p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <code className="truncate text-xs font-semibold text-[var(--text-primary)]" dir="ltr">
+                  <code className="truncate text-xs font-semibold text-ink" dir="ltr">
                     {d.name} · {d.language}
                   </code>
                   <button
                     type="button"
                     onClick={() => copy(text)}
-                    className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]"
+                    className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-card hover:text-ink"
                     aria-label={`${t.common.copy} ${d.name} ${d.language}`}
                   >
                     <Copy size={16} aria-hidden="true" />
                   </button>
                 </div>
-                <p className="m-0 mt-1 whitespace-pre-line text-sm text-[var(--text-secondary)]" dir={d.language === "ar" ? "rtl" : "ltr"}>
+                <p className="m-0 mt-1 whitespace-pre-line text-sm text-ink-soft" dir={d.language === "ar" ? "rtl" : "ltr"}>
                   {d.body}
                 </p>
               </li>

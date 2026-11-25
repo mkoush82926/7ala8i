@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import { buttonClasses } from "@/components/ui/recipes";
 import Link from "next/link";
 import { Camera, EyeOff, ExternalLink, Loader2, Pencil, Users } from "lucide-react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
@@ -44,7 +45,7 @@ function initials(name: string): string {
 export function Avatar({ name, url, size = 48 }: { name: string; url: string | null; size?: number }) {
   return (
     <span
-      className="relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--bg-secondary)] text-sm font-bold text-[var(--text-secondary)]"
+      className="relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full bg-sunken text-sm font-bold text-ink-muted"
       style={{ width: size, height: size }}
     >
       {url ? <ShopImage src={url} alt="" fill sizes={`${size}px`} className="object-cover" /> : <span aria-hidden="true">{initials(name)}</span>}
@@ -83,12 +84,12 @@ export function TeamProfiles({
       {team.length === 0 ? (
         <EmptyState icon={Users} size="sm" title={pp.teamEmptyTitle} description={pp.teamEmptyDesc} action={{ label: pp.teamEmptyAction, href: `/${locale}/team` }} />
       ) : (
-        <ul className="divide-y divide-[var(--border-subtle)]">
+        <ul className="divide-y divide-line">
           {team.map((m) => (
             <li key={m.id} className="flex items-center gap-3 py-3">
               <Avatar name={m.full_name} url={m.avatar_url} />
               <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+                <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-ink">
                   <span className="truncate">{m.full_name || pp.unnamed}</span>
                   {!m.is_public && (
                     <Pill tone="neutral" size="sm" icon={<EyeOff size={12} aria-hidden="true" />}>
@@ -96,10 +97,10 @@ export function TeamProfiles({
                     </Pill>
                   )}
                 </p>
-                <p className="truncate text-xs text-[var(--text-secondary)]">
+                <p className="truncate text-xs text-ink-muted">
                   {roleTitle(m)}
                   {m.handle && (
-                    <span dir="ltr" className="ms-2 text-[var(--text-muted)]">
+                    <span dir="ltr" className="ms-2 text-ink-muted">
                       @{m.handle}
                     </span>
                   )}
@@ -109,7 +110,7 @@ export function TeamProfiles({
                 <Link
                   href={barberPath(m.handle, locale)}
                   target="_blank"
-                  className="focus-ring hidden sm:inline-grid h-10 w-10 place-items-center rounded-[8px] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
+                  className="focus-ring hidden sm:inline-grid h-10 w-10 place-items-center rounded-lg text-ink-muted hover:bg-sunken"
                   aria-label={interpolate(pp.viewBarberPage, { name: m.full_name })}
                   title={interpolate(pp.viewBarberPage, { name: m.full_name })}
                 >
@@ -117,7 +118,7 @@ export function TeamProfiles({
                 </Link>
               )}
               {canEdit(m) && (
-                <button type="button" className="btn btn-secondary" onClick={() => setEditing(m)} aria-label={interpolate(pp.editBarber, { name: m.full_name })}>
+                <button type="button" className={buttonClasses({ variant: "secondary" })} onClick={() => setEditing(m)} aria-label={interpolate(pp.editBarber, { name: m.full_name })}>
                   <Pencil size={14} aria-hidden="true" />
                   <span className="hidden sm:inline">{pp.edit}</span>
                 </button>
@@ -253,10 +254,10 @@ function BarberEditor({
       size="lg"
       footer={
         <DialogFooter>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <button type="button" className={buttonClasses({ variant: "secondary" })} onClick={onClose}>
             {t.common.cancel}
           </button>
-          <button type="button" className="btn btn-primary" disabled={!dirty || saving || Object.keys(errors).length > 0} onClick={() => void save()}>
+          <button type="button" className={buttonClasses({ variant: "primary" })} disabled={!dirty || saving || Object.keys(errors).length > 0} onClick={() => void save()}>
             {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
             {t.common.save}
           </button>
@@ -276,11 +277,11 @@ function BarberEditor({
               aria-hidden="true"
               onChange={(e) => void onAvatarFile(e.target.files?.[0])}
             />
-            <button type="button" className="btn btn-secondary" disabled={uploading} onClick={() => fileRef.current?.click()}>
+            <button type="button" className={buttonClasses({ variant: "secondary" })} disabled={uploading} onClick={() => fileRef.current?.click()}>
               {uploading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Camera size={16} aria-hidden="true" />}
               {current.avatar_url ? pp.changePhoto : pp.addPhoto}
             </button>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">{pp.avatarHint}</p>
+            <p className="mt-1 text-xs text-ink-muted">{pp.avatarHint}</p>
           </div>
         </div>
 
@@ -328,8 +329,8 @@ function BarberEditor({
                   className={cn(
                     "focus-ring min-h-[36px] rounded-full border px-3 text-sm font-semibold transition-colors",
                     on
-                      ? "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)]"
-                      : "border-[var(--border-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]",
+                      ? "border-inverse bg-inverse text-on-inverse"
+                      : "border-line-strong text-ink hover:bg-sunken",
                   )}
                 >
                   {langName(code)}

@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useTranslation } from "@/hooks/use-translation";
 import { cn } from "@/lib/utils";
 import { formatJOD, formatLocalizedNumber, META_SEPARATOR, type DigitPreference } from "@/lib/format";
+import { buttonClasses } from "./recipes";
+import { StickyBar } from "./sticky-bar";
 
 /**
  * The one booking entry point (§2.2). Every "Book" on the marketplace goes
  * through this component so attribution (?entry= / ?src=) is always written
- * and the brass primary action looks the same everywhere.
+ * and the teal primary action looks the same everywhere.
  *
  *   <BookingCta shop={shop.slug ?? shop.id} entry="service_row" services={[s.id]} variant="inline" />
  *   <BookingCta shop={shop.id} entry="profile_card" />                      // desktop sticky card
@@ -92,12 +94,11 @@ export interface BookingCtaProps extends Omit<BookingHrefInput, "locale"> {
   className?: string;
 }
 
-const BASE =
-  "focus-ring inline-flex items-center justify-center gap-2 rounded-full font-bold whitespace-nowrap transition-opacity hover:opacity-90 active:opacity-80 select-none";
-// Brass primary: #7c5a26 + white in light (6.3:1); light brass + ink in dark.
-const PRIMARY = "bg-[var(--cta-bg)] text-[var(--cta-fg)]";
-const SECONDARY =
-  "border border-[var(--border-primary)] bg-transparent text-[var(--text-primary)] hover:border-[var(--accent-brass)]";
+// Teal primary (v2 §5.1): white on #0F766E (5.47:1) in light; #042F2E on
+// #2DD4BF (7.77:1) in dark. The inline "Book" is the soft variant.
+const PRIMARY = buttonClasses({ variant: "primary", size: "lg" });
+const BAR_PRIMARY = buttonClasses({ variant: "primary", size: "xl", className: "flex-1 max-w-[220px]" });
+const INLINE = buttonClasses({ variant: "soft", size: "sm", className: "min-w-[4.5rem] px-4" });
 
 export function BookingCta({
   variant = "button",
@@ -121,7 +122,7 @@ export function BookingCta({
         onClick={onClick}
         aria-label={ariaLabel}
         data-entry={hrefInput.entry}
-        className={cn(BASE, SECONDARY, "h-9 min-w-[4.5rem] px-4 text-sm", className)}
+        className={cn(INLINE, "relative z-10", className)}
       >
         {label ?? t.primitives.book}
       </Link>
@@ -135,7 +136,11 @@ export function BookingCta({
       onClick={onClick}
       aria-label={ariaLabel}
       data-entry={hrefInput.entry}
-      className={cn(BASE, PRIMARY, "h-12 px-6 text-base", fullWidth && "w-full", variant === "button" && className)}
+      className={cn(
+        variant === "bar" ? BAR_PRIMARY : PRIMARY,
+        fullWidth && "w-full max-w-none",
+        variant === "button" && className,
+      )}
     >
       {label ?? t.primitives.bookNow}
     </Link>
@@ -155,31 +160,27 @@ export function BookingCta({
   }
 
   return (
-    <div
-      role="region"
-      aria-label={t.primitives.bookingSummaryLabel}
-      className={cn(
-        "fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]/95 backdrop-blur lg:hidden",
-        "pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3",
-        className,
-      )}
-    >
-      <div className="mx-auto flex max-w-screen-sm items-center gap-3 px-4">
-        <p className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--text-primary)]">
-          {parts.map((part, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && (
-                <span aria-hidden="true" className="mx-1.5 text-[var(--text-muted)]">
-                  {META_SEPARATOR}
-                </span>
-              )}
-              <bdi>{part}</bdi>
-            </React.Fragment>
-          ))}
-        </p>
-        {button}
-      </div>
-    </div>
+    <StickyBar
+      label={t.primitives.bookingSummaryLabel}
+      className={className}
+      action={button}
+      title={
+        parts.length > 0 ? (
+          <>
+            {parts.map((part, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && (
+                  <span aria-hidden="true" className="mx-1.5 text-ink-disabled">
+                    {META_SEPARATOR}
+                  </span>
+                )}
+                <bdi>{part}</bdi>
+              </React.Fragment>
+            ))}
+          </>
+        ) : undefined
+      }
+    />
   );
 }
 

@@ -4,15 +4,18 @@
 // Every field has a permissive default, the state lives in the URL, and the
 // same bar sits in the home hero and (sticky, pre-filled) on results.
 //
-// On phones it starts collapsed to a one-line summary button; tapping it
-// opens the three fields inline. From 768px the fields are always visible.
+// v2 (§5.3): one big white pill with What / Where / When segments and a teal
+// submit from 768px; on phones the fields stack in a rounded card. When
+// `collapsible`, phones first see a one-line summary pill that expands the
+// card inline. Presentation only — state and URL params are unchanged.
 
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock, LocateFixed, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
+import { CalendarDays, Clock, LocateFixed, MapPin, Search, X } from "lucide-react";
 import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { cn } from "@/lib/utils";
-import { MetaLine } from "@/components/ui/meta-line";
+import { buttonClasses, focusRing } from "@/components/ui/recipes";
+import { SearchBarShell, SearchDivider, SearchPill, SearchSegment } from "@/components/ui/search-bar-shell";
 import {
   addDays,
   DEFAULT_SEARCH_STATE,
@@ -61,15 +64,7 @@ function parsePlace(value: string): Pick<SearchState, "near" | "city" | "area"> 
   return { near: false, city: "", area: "" };
 }
 
-export function SearchBar({
-  initial,
-  cities,
-  categories = [],
-  variant = "hero",
-  collapsible = true,
-  onSearch,
-  className,
-}: SearchBarProps) {
+export function SearchBar({ initial, cities, categories = [], variant = "hero", collapsible = true, onSearch, className }: SearchBarProps) {
   const { t, locale, isRTL } = useTranslation();
   const S = t.search;
   const router = useRouter();
@@ -96,7 +91,6 @@ export function SearchBar({
 
   // Follow URL changes (back/forward, chips) on the results page.
   useEffect(() => {
-     
     setQ(base.q);
     setPlace(placeValue(base));
     setWhen(base.when && isIsoDate(base.when) ? "pick" : (base.when as WhenChoice));
@@ -151,61 +145,57 @@ export function SearchBar({
   }
 
   const hero = variant === "hero";
-  const fieldShell =
-    "group relative flex min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-md,12px)] px-3 focus-within:ring-2 focus-within:ring-[var(--accent-brass)]";
-  const labelCls = "block text-[11px] font-semibold text-[var(--text-secondary)]";
+  // The whole segment shows focus (ring), so the bare controls inside drop
+  // the forms-plugin border/padding/ring and sit flush under the label.
+  const segmentCls = cn(
+    "rounded-xl px-4 md:rounded-full md:px-5 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus",
+    hero ? "min-h-16 md:min-h-[60px]" : "min-h-14 md:min-h-12 md:py-1.5",
+  );
   const controlCls =
-    "w-full min-w-0 bg-transparent text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none";
+    "block h-6 w-full min-w-0 truncate border-0 bg-transparent p-0 text-[15px] leading-6 text-ink shadow-none outline-none placeholder:text-ink-muted focus:border-0 focus:shadow-none focus:outline-none focus:ring-0 md:text-sm";
+  const selectCls = cn(controlCls, "cursor-pointer appearance-none bg-none pe-1");
+  const labelCls = "block cursor-pointer";
 
   return (
     <div className={cn("w-full", className)}>
-      {/* Phones: the collapsed summary */}
+      {/* Phones: the collapsed summary pill */}
       {collapsible && (
-        <button
-          type="button"
+        <SearchPill
+          compact={!hero}
+          ariaLabel={S.editSearch}
+          summary={[q.trim() || S.allServices, placeLabel, whenLabel]}
           onClick={() => {
             setExpanded((v) => !v);
             if (!expanded) requestAnimationFrame(() => qRef.current?.focus());
           }}
           aria-expanded={expanded}
           aria-controls={ids.form}
-          className={cn(
-            "focus-ring flex w-full items-center gap-3 rounded-full border border-[var(--border-primary)] bg-[var(--bg-primary)] ps-4 pe-2 text-start shadow-[0_8px_24px_-12px_rgba(28,22,17,0.25)] md:hidden",
-            hero ? "min-h-[56px]" : "min-h-[48px]",
-          )}
-        >
-          <Search size={18} aria-hidden="true" className="shrink-0 text-[var(--text-primary)]" />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15px] font-semibold text-[var(--text-primary)]">{q.trim() || S.allServices}</span>
-            <MetaLine as="span" truncate className="text-xs" items={[placeLabel, whenLabel]} />
-          </span>
-          <span className="sr-only">{S.editSearch}</span>
-          <span
-            aria-hidden="true"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--bg-secondary)] text-[var(--text-primary)]"
-          >
-            {expanded ? <X size={16} /> : <SlidersHorizontal size={16} />}
-          </span>
-        </button>
+          className="md:hidden"
+        />
       )}
 
-      <form
+      <SearchBarShell
         id={ids.form}
-        role="search"
-        aria-label={S.searchLabel}
+        ariaLabel={S.searchLabel}
         onSubmit={submit}
         className={cn(
-          "flex-col gap-2 rounded-[20px] border border-[var(--border-primary)] bg-[var(--bg-primary)] p-2 shadow-[0_18px_48px_-24px_rgba(28,22,17,0.35)] md:flex md:flex-row md:items-stretch md:rounded-full",
-          collapsible ? (expanded ? "mt-2 flex md:mt-0" : "hidden") : "flex",
+          "max-w-none flex-col gap-1 rounded-2xl p-2 md:flex-row md:items-stretch md:gap-0 md:rounded-full md:p-1.5",
+          hero ? "md:max-w-4xl" : "shadow-xs md:max-w-none",
+          collapsible ? (expanded ? "mt-2 flex md:mt-0" : "hidden md:flex") : "flex",
         )}
       >
         {/* What */}
-        <div className={cn(fieldShell, hero ? "min-h-[56px]" : "min-h-[48px]")}>
-          <Search size={18} aria-hidden="true" className="shrink-0 text-[var(--text-muted)]" />
-          <div className="min-w-0 flex-1">
+        <SearchSegment
+          asContainer
+          className={cn(segmentCls, "md:flex-[1.15]")}
+          icon={<Search />}
+          label={
             <label htmlFor={ids.q} className={labelCls}>
               {S.whatLabel}
             </label>
+          }
+        >
+          <span className="flex items-center gap-1">
             <input
               ref={qRef}
               id={ids.q}
@@ -218,70 +208,77 @@ export function SearchBar({
               autoComplete="off"
               enterKeyHint="search"
               maxLength={120}
-              className={controlCls}
+              className={cn(controlCls, "[&::-webkit-search-cancel-button]:hidden")}
             />
-            {categories.length > 0 && (
-              <datalist id={ids.list}>
-                {categories.map((c) => (
-                  <option key={c.id} value={locale === "ar" ? c.nameAr : c.nameEn} />
-                ))}
-              </datalist>
+            {q && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQ("");
+                  qRef.current?.focus();
+                }}
+                aria-label={S.clearQuery}
+                className={cn(
+                  "grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-ink-muted hover:bg-card hover:text-ink",
+                  focusRing,
+                )}
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
             )}
-          </div>
-          {q && (
-            <button
-              type="button"
-              onClick={() => {
-                setQ("");
-                qRef.current?.focus();
-              }}
-              aria-label={S.clearQuery}
-              className="focus-ring flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--bg-secondary)]"
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
+          </span>
+          {categories.length > 0 && (
+            <datalist id={ids.list}>
+              {categories.map((c) => (
+                <option key={c.id} value={locale === "ar" ? c.nameAr : c.nameEn} />
+              ))}
+            </datalist>
           )}
-        </div>
+        </SearchSegment>
 
-        <span aria-hidden="true" className="hidden w-px self-stretch bg-[var(--border-subtle)] md:block" />
+        <SearchDivider className="hidden md:block" />
 
         {/* Where */}
-        <div className={cn(fieldShell, hero ? "min-h-[56px]" : "min-h-[48px]")}>
-          {place === "near" ? (
-            <LocateFixed size={18} aria-hidden="true" className="shrink-0 text-[var(--text-muted)]" />
-          ) : (
-            <MapPin size={18} aria-hidden="true" className="shrink-0 text-[var(--text-muted)]" />
-          )}
-          <div className="min-w-0 flex-1">
+        <SearchSegment
+          asContainer
+          className={segmentCls}
+          icon={place === "near" ? <LocateFixed /> : <MapPin />}
+          label={
             <label htmlFor={ids.place} className={labelCls}>
               {S.whereLabel}
             </label>
-            <select id={ids.place} value={place} onChange={(e) => setPlace(e.target.value)} className={cn(controlCls, "cursor-pointer appearance-none")}>
-              <option value="">{S.anywhere}</option>
-              <option value="near">{S.nearMe}</option>
-              {cities.map((c) => (
-                <optgroup key={c.id} label={cityName(c)}>
-                  <option value={`city:${c.slug}`}>{interpolate(S.allOfCity, { city: cityName(c) })}</option>
-                  {c.areas.map((a) => (
-                    <option key={a.id} value={`area:${c.slug}:${a.slug}`}>
-                      {locale === "ar" ? a.nameAr : a.nameEn}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-        </div>
+          }
+        >
+          <select id={ids.place} value={place} onChange={(e) => setPlace(e.target.value)} className={selectCls}>
+            <option value="">{S.anywhere}</option>
+            <option value="near">{S.nearMe}</option>
+            {cities.map((c) => (
+              <optgroup key={c.id} label={cityName(c)}>
+                <option value={`city:${c.slug}`}>{interpolate(S.allOfCity, { city: cityName(c) })}</option>
+                {c.areas.map((a) => (
+                  <option key={a.id} value={`area:${c.slug}:${a.slug}`}>
+                    {locale === "ar" ? a.nameAr : a.nameEn}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </SearchSegment>
 
-        <span aria-hidden="true" className="hidden w-px self-stretch bg-[var(--border-subtle)] md:block" />
+        <SearchDivider className="hidden md:block" />
 
         {/* When */}
-        <div className={cn(fieldShell, "flex-wrap", hero ? "min-h-[56px]" : "min-h-[48px]")}>
-          <CalendarDays size={18} aria-hidden="true" className="shrink-0 text-[var(--text-muted)]" />
-          <div className="min-w-0 flex-1">
+        <SearchSegment
+          asContainer
+          className={cn(segmentCls, "md:flex-[1.45]")}
+          icon={<CalendarDays />}
+          label={
             <label htmlFor={ids.when} className={labelCls}>
               {S.whenLabel}
             </label>
+          }
+        >
+          <span className="flex min-w-0 items-center gap-2">
             <select
               id={ids.when}
               value={when}
@@ -290,7 +287,7 @@ export function SearchBar({
                 setWhen(v);
                 if (v === "pick" && !date) setDate(today);
               }}
-              className={cn(controlCls, "cursor-pointer appearance-none")}
+              className={cn(selectCls, "flex-1")}
             >
               <option value="">{S.anyTime}</option>
               <option value="now">{S.now}</option>
@@ -298,58 +295,62 @@ export function SearchBar({
               <option value="tomorrow">{S.tomorrow}</option>
               <option value="pick">{S.pickDate}</option>
             </select>
-          </div>
-          {when === "pick" && (
-            <div className="min-w-[8.5rem]">
-              <label htmlFor={ids.date} className="sr-only">
-                {S.pickDate}
-              </label>
-              <input
-                id={ids.date}
-                type="date"
-                value={date}
-                min={today}
-                max={maxDate}
-                onChange={(e) => setDate(e.target.value)}
-                className={cn(controlCls, "text-[14px]")}
-                dir="ltr"
-              />
-            </div>
-          )}
-          {when !== "now" && (
-            <div className="flex min-w-[7.5rem] items-center gap-1.5">
-              <Clock size={14} aria-hidden="true" className="shrink-0 text-[var(--text-muted)]" />
-              <label htmlFor={ids.time} className="sr-only">
-                {S.timeLabel}
-              </label>
-              <select
-                id={ids.time}
-                value={time}
-                onChange={(e) => setTime(e.target.value as TimeWindow | "")}
-                className={cn(controlCls, "cursor-pointer appearance-none text-[14px]")}
-              >
-                <option value="">{S.anyHour}</option>
-                {TIME_WINDOWS.map((w) => (
-                  <option key={w} value={w}>
-                    {S[w]}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
+            {when === "pick" && (
+              <>
+                <label htmlFor={ids.date} className="sr-only">
+                  {S.pickDate}
+                </label>
+                <input
+                  id={ids.date}
+                  type="date"
+                  value={date}
+                  min={today}
+                  max={maxDate}
+                  onChange={(e) => setDate(e.target.value)}
+                  className={cn(controlCls, "w-auto max-w-[9.5rem] shrink-0 tabular-nums")}
+                  dir="ltr"
+                />
+              </>
+            )}
+            {when !== "now" && (
+              <span className="flex shrink-0 items-center gap-1 border-s border-line ps-2">
+                <Clock size={14} aria-hidden="true" className="shrink-0 text-ink-muted" />
+                <label htmlFor={ids.time} className="sr-only">
+                  {S.timeLabel}
+                </label>
+                <select
+                  id={ids.time}
+                  value={time}
+                  onChange={(e) => setTime(e.target.value as TimeWindow | "")}
+                  className={cn(selectCls, "w-auto max-w-[7.5rem]")}
+                >
+                  <option value="">{S.anyHour}</option>
+                  {TIME_WINDOWS.map((w) => (
+                    <option key={w} value={w}>
+                      {S[w]}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            )}
+          </span>
+        </SearchSegment>
 
         <button
           type="submit"
-          className={cn(
-            "focus-ring inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--cta-bg)] px-6 font-bold text-[var(--cta-fg)] transition-opacity hover:opacity-90",
-            hero ? "min-h-[52px] text-[16px]" : "min-h-[44px] text-[15px]",
-          )}
+          className={buttonClasses({
+            variant: "primary",
+            size: "lg",
+            className: cn(
+              "mt-1 w-full md:mt-0 md:px-0 lg:w-auto lg:px-7",
+              hero ? "h-14 md:size-14 lg:w-auto" : "h-12 md:size-12 lg:w-auto",
+            ),
+          })}
         >
-          <Search size={18} aria-hidden="true" className={isRTL ? "-scale-x-100" : undefined} />
-          <span>{S.submit}</span>
+          <Search aria-hidden="true" className={isRTL ? "-scale-x-100" : undefined} />
+          <span className="md:sr-only lg:not-sr-only">{S.submit}</span>
         </button>
-      </form>
+      </SearchBarShell>
     </div>
   );
 }

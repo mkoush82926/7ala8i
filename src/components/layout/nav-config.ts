@@ -14,8 +14,8 @@ import {
 import type { TranslationKeys } from "@/i18n/en";
 
 /**
- * Single source of truth for the dashboard navigation: the desktop rail, the
- * mobile drawer, the topbar page title and the (dashboard) layout role guard
+ * Single source of truth for the dashboard navigation: the desktop sidebar,
+ * the mobile tab bar and "More" sheet, the topbar page title and the (dashboard) layout role guard
  * all read from here, so a page can never be visible in one place and
  * forbidden in another.
  *
@@ -64,29 +64,32 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { id: "settings", icon: Settings, href: "/settings", roles: ADMIN },
 ];
 
-/** Desktop rail grouping: related pages share one icon with a flyout. */
-export interface RailGroup {
-  id: string;
-  icon: LucideIcon;
-  /** Labelled by this nav item's label. */
-  labelId: NavId;
-  items: readonly NavItem[];
-}
-
 /** Sub-pages of an admin-only item that every staff role may open. */
 export const STAFF_PATHS: readonly string[] = ["/settings/profile", "/settings/notifications"];
 
-const byId = (id: NavId) => NAV_ITEMS.find((i) => i.id === id)!;
+/**
+ * Labelled desktop sidebar sections (v2 §5.10). `label: null` renders the
+ * items without a group heading. Order and membership only — routes and
+ * role rules stay on NAV_ITEMS.
+ */
+export type NavSectionLabel = "schedule" | "business";
+export interface NavSection {
+  id: string;
+  label: NavSectionLabel | null;
+  items: readonly NavId[];
+}
 
-export const RAIL_GROUPS: readonly RailGroup[] = [
-  { id: "dashboard", icon: LayoutDashboard, labelId: "dashboard", items: [byId("dashboard")] },
-  { id: "calendar", icon: Calendar, labelId: "calendar", items: [byId("my-day"), byId("calendar"), byId("queue")] },
-  { id: "clients", icon: Users, labelId: "clients", items: [byId("clients"), byId("leads")] },
-  { id: "services", icon: Scissors, labelId: "services", items: [byId("services")] },
-  { id: "team", icon: IdCard, labelId: "team", items: [byId("team")] },
-  { id: "analytics", icon: BarChart3, labelId: "analytics", items: [byId("analytics")] },
-  { id: "settings", icon: Settings, labelId: "settings", items: [byId("settings")] },
+export const NAV_SECTIONS: readonly NavSection[] = [
+  { id: "home", label: null, items: ["dashboard"] },
+  { id: "schedule", label: "schedule", items: ["my-day", "calendar", "queue"] },
+  { id: "business", label: "business", items: ["clients", "leads", "services", "team", "analytics", "settings"] },
 ];
+
+/**
+ * Mobile bottom tab bar (< lg): the role's home ("Today"), then these, then
+ * "More" (a sheet with every visible item).
+ */
+export const MOBILE_TAB_IDS: readonly NavId[] = ["calendar", "queue", "clients"];
 
 export function navLabel(t: TranslationKeys, id: NavId): string {
   if (id === "my-day") return t.sidebar.myDay;

@@ -3,21 +3,26 @@
 import React, { useCallback, useId, useMemo, useRef, useState } from "react";
 import {
   UserPlus, Search, Settings2, Phone, ShieldCheck, Scissors, X, Copy, Check,
-  UserMinus, MessageCircle, Share2, Link2, Loader2, AlertCircle, Users, Clock,
+  UserMinus, MessageCircle, Share2, Link2, AlertCircle, Users, Clock,
 } from "lucide-react";
-import { useTranslation, headingTracking, interpolate } from "@/hooks/use-translation";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
 import { useWorkspaceStore } from "@/store/workspace-store";
 import { useSupabase } from "@/hooks/use-supabase";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { normalizeSearchTerm } from "@/lib/queries/search";
 import { STAFF_ROLES, type StaffRole } from "@/lib/types";
-import { cn, getInitials } from "@/lib/utils";
-import { ListSkeleton, Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "@/components/ui/toast";
 import { ShiftsPanel } from "@/components/team/shifts";
+import { Button } from "@/components/ui/button";
+import { Pill } from "@/components/ui/pill";
+import { PhotoFrame } from "@/components/ui/photo-frame";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { buttonClasses, checkboxClasses, fieldIconClasses, inputClasses } from "@/components/ui/recipes";
 
 interface TeamMember {
   id: string;
@@ -37,11 +42,13 @@ interface ServiceOption {
 
 type T = ReturnType<typeof useTranslation>["t"];
 
-const AVATAR_TONES = [
-  "bg-[var(--bg-secondary)] text-[var(--text-primary)]",
-  "bg-[var(--border-subtle)] text-[var(--text-primary)]",
-  "bg-[var(--text-primary)] text-[var(--bg-primary)]",
-] as const;
+/** Selectable option card (role pickers, service checklist). */
+const choiceCard = (on: boolean, extra?: string | false) =>
+  cn(
+    "focus-ring-within flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors duration-150",
+    on ? "border-brand bg-brand-soft/50 ring-1 ring-brand" : "border-line bg-card hover:border-ink-soft",
+    extra,
+  );
 
 /** t.error.codes[code] ?? fallback — tolerant of the codes map not being present. */
 function codeMessage(t: T, code: string | undefined | null, fallback: string): string {
@@ -66,7 +73,7 @@ function roleLabel(t: T, role: string | null | undefined) {
 }
 
 export default function TeamPage() {
-  const { t, isRTL, FF, formatDate } = useTranslation();
+  const { t, formatDate, formatNumber } = useTranslation();
   const shopId = useWorkspaceStore((s) => s.shopId);
   const hydrated = useWorkspaceStore((s) => s.hydrated);
   const currentUserId = useWorkspaceStore((s) => s.userId);
@@ -168,22 +175,24 @@ export default function TeamPage() {
   const showSkeleton = !hydrated || (!!shopId && team.initialLoading);
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8 fade-slide-up">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="flex flex-col gap-5 lg:gap-6 fade-slide-up">
+      {/* ── Page header ── */}
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <h2
-            className="m-0 text-[24px] sm:text-[28px] font-extrabold text-[var(--text-primary)]"
-            style={{ fontFamily: FF, letterSpacing: headingTracking(isRTL, "0.016em") }}
-          >
-            {t.team.title}
-          </h2>
-          <p className="mt-1.5 text-sm text-[var(--text-secondary)]">{t.team.subtitle}</p>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-h2 text-ink">{t.team.title}</h1>
+            {!showSkeleton && members.length > 0 && (
+              <Pill tone="neutral" className="tabular-nums">{formatNumber(members.length)}</Pill>
+            )}
+          </div>
+          <p className="mt-1 text-[15px] text-ink-muted">{t.team.subtitle}</p>
         </div>
 
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
-          <div className="relative w-full sm:w-[280px]" role="search">
-            <Search size={18} className="field-icon" aria-hidden="true" />
+        <div className="flex w-full items-center gap-2 lg:w-auto">
+          <div className="relative min-w-0 flex-1 lg:w-72 lg:flex-none" role="search">
+            <span aria-hidden="true" className={fieldIconClasses}>
+              <Search />
+            </span>
             <input
               type="search"
               autoComplete="off"
@@ -197,7 +206,7 @@ export default function TeamPage() {
                   setSearchTerm("");
                 }
               }}
-              className="field-input has-icon has-action !min-h-[44px] [&::-webkit-search-cancel-button]:hidden"
+              className={inputClasses({ withIcon: true, className: "h-11 rounded-full pe-12 [&::-webkit-search-cancel-button]:hidden" })}
             />
             {searchTerm && (
               <button
@@ -211,24 +220,38 @@ export default function TeamPage() {
             )}
           </div>
           {isAdmin && (
-            <button
-              type="button"
-              className="btn btn-primary shrink-0"
+            <Button
+              icon={<UserPlus aria-hidden="true" />}
+              aria-label={t.team.invite}
+              className="max-sm:w-11 max-sm:px-0"
               onClick={() => {
                 setInviteNonce((n) => n + 1);
                 setInviteOpen(true);
               }}
             >
-              <UserPlus size={16} aria-hidden="true" />
-              {t.team.invite}
-            </button>
+              <span className="hidden sm:inline">{t.team.invite}</span>
+            </Button>
           )}
         </div>
-      </div>
+      </header>
 
-      {/* ── Team list ── */}
+      {/* ── Team grid ── */}
       {showSkeleton ? (
-        <ListSkeleton rows={4} />
+        <ul aria-hidden="true" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <li key={i} className="rounded-xl border border-line bg-card p-4 lg:p-5">
+              <div className="flex items-center gap-4">
+                <Skeleton variant="circle" className="size-14" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+              </div>
+              <Skeleton className="mt-5 h-3 w-1/2" />
+              <Skeleton className="mt-4 h-9 w-full rounded-full" />
+            </li>
+          ))}
+        </ul>
       ) : team.error && members.length === 0 ? (
         <EmptyState
           tone="error"
@@ -259,98 +282,106 @@ export default function TeamPage() {
           aria-label={t.team.title}
           aria-busy={team.refreshing || undefined}
           className={cn(
-            "divide-y divide-[var(--border-subtle)] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-primary)] transition-opacity",
+            "grid gap-4 transition-opacity duration-200 sm:grid-cols-2 xl:grid-cols-3",
             team.refreshing && "opacity-60",
           )}
         >
-          {filtered.map((member, i) => {
+          {filtered.map((member) => {
             const name = member.full_name || t.team.unnamed;
             const isSelf = member.id === currentUserId;
             const serviceCount = member.barber_services?.length ?? 0;
+            const isAdminRole = member.role === "shop_admin";
             return (
               <li
                 key={member.id}
-                className="group flex flex-wrap items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--bg-secondary)] focus-within:bg-[var(--bg-secondary)] sm:flex-nowrap sm:gap-4 sm:px-6"
+                className="group flex flex-col rounded-xl border border-line bg-card p-4 transition-shadow duration-200 hover:shadow-card focus-within:shadow-card lg:p-5"
               >
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                    AVATAR_TONES[i % AVATAR_TONES.length],
-                  )}
-                >
-                  {getInitials(member.full_name ?? "") || "?"}
-                </span>
+                <div className="flex items-start gap-4">
+                  <PhotoFrame
+                    src={member.avatar_url}
+                    alt=""
+                    ratio="none"
+                    rounded="full"
+                    sizes="56px"
+                    fallbackName={member.full_name || "?"}
+                    seed={member.id}
+                    className="size-14 shrink-0"
+                    initialsClassName="text-lg md:text-lg"
+                  />
 
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-2 truncate text-[15px] font-bold text-[var(--text-primary)]">
-                    <span className="truncate">{name}</span>
-                    {isSelf && (
-                      <span className="shrink-0 rounded-full bg-[var(--bg-secondary)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
-                        {t.team.you}
-                      </span>
-                    )}
-                  </p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-[var(--text-secondary)]">
-                    <span className="inline-flex items-center gap-1">
-                      <ShieldCheck size={12} aria-hidden="true" />
-                      {roleLabel(t, member.role)}
-                    </span>
-                    <span aria-hidden="true" className="text-[var(--text-muted)]">·</span>
-                    <span className="inline-flex items-center gap-1">
-                      <Scissors size={12} aria-hidden="true" />
-                      {serviceCount > 0
-                        ? interpolate(t.team.servicesCount, { count: serviceCount })
-                        : t.team.noServicesAssigned}
-                    </span>
-                    {member.created_at && (
-                      <span className="hidden items-center gap-1 text-[var(--text-muted)] md:inline-flex">
-                        <span aria-hidden="true">·</span>
-                        {interpolate(t.team.joined, { date: formatDate(member.created_at, "medium") })}
-                      </span>
-                    )}
-                  </p>
-                </div>
+                  <div className="min-w-0 flex-1 pt-0.5">
+                    <p className="flex min-w-0 items-center gap-2">
+                      <span className="text-title truncate text-ink">{name}</span>
+                      {isSelf && <Pill tone="neutral" size="sm">{t.team.you}</Pill>}
+                    </p>
+                    <div className="mt-1.5">
+                      <Pill
+                        tone={isAdminRole ? "ink" : "brand"}
+                        size="sm"
+                        icon={isAdminRole ? <ShieldCheck /> : <Scissors />}
+                      >
+                        {roleLabel(t, member.role)}
+                      </Pill>
+                    </div>
+                  </div>
 
-                <div className="ms-auto flex shrink-0 items-center gap-1">
                   {member.phone && (
                     <a
                       href={`tel:${member.phone.replace(/[^\d+]/g, "")}`}
                       aria-label={interpolate(t.team.call, { name })}
                       title={interpolate(t.team.call, { name })}
-                      className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] lg:h-9 lg:w-9"
+                      className={buttonClasses({ variant: "secondary", size: "icon-sm", className: "-me-1 max-lg:size-11" })}
                     >
-                      <Phone size={16} aria-hidden="true" />
+                      <Phone aria-hidden="true" />
                     </a>
                   )}
-                  {isAdmin && (
-                    <div className="flex items-center gap-1 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
-                      <button
-                        type="button"
-                        onClick={() => setEditing(member)}
-                        className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] lg:h-9 lg:w-9"
-                        aria-label={interpolate(t.team.manage, { name })}
-                        title={interpolate(t.team.manage, { name })}
-                      >
-                        <Settings2 size={16} aria-hidden="true" />
-                      </button>
-                      {!isSelf && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setUnassignUpcoming(true);
-                            setRemoving(member);
-                          }}
-                          className="focus-ring inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-primary)] hover:text-[var(--accent-rose)] lg:h-9 lg:w-9"
-                          aria-label={interpolate(t.team.remove, { name })}
-                          title={interpolate(t.team.remove, { name })}
-                        >
-                          <UserMinus size={16} aria-hidden="true" />
-                        </button>
-                      )}
-                    </div>
-                  )}
                 </div>
+
+                <p className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13px] text-ink-muted">
+                  <span className={cn("inline-flex items-center gap-1", serviceCount === 0 && "text-warning-text")}>
+                    <Scissors size={13} aria-hidden="true" />
+                    {serviceCount > 0
+                      ? interpolate(t.team.servicesCount, { count: serviceCount })
+                      : t.team.noServicesAssigned}
+                  </span>
+                  {member.created_at && (
+                    <>
+                      <span aria-hidden="true" className="text-ink-disabled">·</span>
+                      <span>{interpolate(t.team.joined, { date: formatDate(member.created_at, "medium") })}</span>
+                    </>
+                  )}
+                </p>
+
+                {isAdmin && (
+                  <div className="mt-4 flex items-center gap-2 border-t border-line pt-4">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      fullWidth
+                      className="max-lg:h-11"
+                      icon={<Settings2 aria-hidden="true" />}
+                      onClick={() => setEditing(member)}
+                      aria-label={interpolate(t.team.manage, { name })}
+                    >
+                      {t.team.manageShort}
+                    </Button>
+                    {!isSelf && (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="shrink-0 hover:bg-danger-soft hover:text-danger-text max-lg:size-11"
+                        onClick={() => {
+                          setUnassignUpcoming(true);
+                          setRemoving(member);
+                        }}
+                        aria-label={interpolate(t.team.remove, { name })}
+                        title={interpolate(t.team.remove, { name })}
+                      >
+                        <UserMinus aria-hidden="true" />
+                      </Button>
+                    )}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -386,12 +417,12 @@ export default function TeamPage() {
         confirmLabel={t.team.removeConfirm}
         destructive
       >
-        <label className="mt-2 flex cursor-pointer items-start gap-3 text-sm text-[var(--text-secondary)]">
+        <label className="mt-2 flex cursor-pointer items-start gap-3 rounded-xl bg-sunken p-3 text-sm text-ink-soft">
           <input
             type="checkbox"
             checked={unassignUpcoming}
             onChange={(e) => setUnassignUpcoming(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent-mint)]"
+            className={cn(checkboxClasses, "mt-0.5 shrink-0 accent-brand")}
           />
           <span>{t.team.unassignUpcoming}</span>
         </label>
@@ -467,51 +498,42 @@ function InviteDialog({ open, onClose }: { open: boolean; onClose: () => void })
         <DialogFooter>
           {invite ? (
             <>
-              <button type="button" className="btn btn-secondary" onClick={() => { setInvite(null); setCopied(false); }}>
+              <Button variant="secondary" onClick={() => { setInvite(null); setCopied(false); }}>
                 {t.team.newLink}
-              </button>
-              <button type="button" className="btn btn-primary" onClick={onClose}>
+              </Button>
+              <Button onClick={onClose}>
                 {t.common.close}
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={creating}>
+              <Button variant="secondary" onClick={onClose} disabled={creating}>
                 {t.common.cancel}
-              </button>
-              <button type="button" className="btn btn-primary" onClick={createInvite} disabled={creating} aria-busy={creating || undefined}>
-                {creating ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Link2 size={16} aria-hidden="true" />}
+              </Button>
+              <Button onClick={createInvite} loading={creating} icon={<Link2 aria-hidden="true" />}>
                 {creating ? t.common.processing : t.team.createLink}
-              </button>
+              </Button>
             </>
           )}
         </DialogFooter>
       }
     >
       {!invite ? (
-        <fieldset className="flex flex-col gap-2" disabled={creating}>
+        <fieldset className="flex flex-col gap-2.5" disabled={creating}>
           <legend className="field-label">{t.team.inviteRoleLabel}</legend>
           {roles.map((r) => (
-            <label
-              key={r.value}
-              className={cn(
-                "flex cursor-pointer items-start gap-3 rounded-[var(--radius-inputs)] border p-3 transition-colors focus-ring-within",
-                role === r.value
-                  ? "border-[var(--accent-brass)] bg-[var(--bg-secondary)]"
-                  : "border-[var(--border-subtle)] hover:border-[var(--border-primary)]",
-              )}
-            >
+            <label key={r.value} className={choiceCard(role === r.value)}>
               <input
                 type="radio"
                 name={roleName}
                 value={r.value}
                 checked={role === r.value}
                 onChange={() => setRole(r.value)}
-                className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent-mint)]"
+                className={cn(checkboxClasses, "mt-0.5 shrink-0 rounded-full accent-brand")}
               />
               <span>
-                <span className="block text-sm font-semibold text-[var(--text-primary)]">{r.label}</span>
-                <span className="block text-[13px] text-[var(--text-secondary)]">{r.hint}</span>
+                <span className="block text-sm font-semibold text-ink">{r.label}</span>
+                <span className="mt-0.5 block text-[13px] text-ink-muted">{r.hint}</span>
               </span>
             </label>
           ))}
@@ -531,20 +553,20 @@ function InviteDialog({ open, onClose }: { open: boolean; onClose: () => void })
                 dir="ltr"
                 value={invite.url}
                 onFocus={(e) => e.target.select()}
-                className="field-input min-w-0 flex-1 text-start !text-sm"
+                className="field-input min-w-0 flex-1 bg-sunken text-start !text-sm tabular-nums"
               />
-              <button
-                type="button"
+              <Button
+                variant={copied ? "soft" : "secondary"}
                 onClick={handleCopy}
-                className="btn btn-secondary shrink-0 !px-4"
+                className="max-sm:w-11 max-sm:px-0"
                 aria-label={t.common.copy}
+                icon={copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
               >
-                {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
                 <span className="hidden sm:inline">{t.common.copy}</span>
-              </button>
+              </Button>
             </div>
             {invite.expiresAt && (
-              <p className="mt-1.5 inline-flex items-center gap-1 text-[13px] text-[var(--text-muted)]">
+              <p className="mt-1.5 inline-flex items-center gap-1 text-[13px] text-ink-muted">
                 <Clock size={12} aria-hidden="true" />
                 {interpolate(t.team.inviteExpires, { date: formatDate(invite.expiresAt, "medium") })}
               </p>
@@ -555,22 +577,21 @@ function InviteDialog({ open, onClose }: { open: boolean; onClose: () => void })
               href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-secondary"
+              className={buttonClasses({ variant: "secondary" })}
             >
-              <MessageCircle size={16} aria-hidden="true" />
+              <MessageCircle size={18} aria-hidden="true" />
               {t.team.shareWhatsapp}
             </a>
             {canNativeShare && (
-              <button
-                type="button"
-                className="btn btn-secondary"
+              <Button
+                variant="secondary"
+                icon={<Share2 aria-hidden="true" />}
                 onClick={() => {
                   navigator.share({ text: shareText, url: invite.url }).catch(() => undefined);
                 }}
               >
-                <Share2 size={16} aria-hidden="true" />
                 {t.common.share}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -594,7 +615,7 @@ function MemberSettingsDialog({
   onClose: () => void;
   onChanged: () => void;
 }) {
-  const { t, isRTL } = useTranslation();
+  const { t } = useTranslation();
   const [tab, setTab] = useState<SettingsTab>("services");
   const [busy, setBusy] = useState(false);
   const baseId = useId();
@@ -603,22 +624,6 @@ function MemberSettingsDialog({
     { id: "hours", label: t.team.tabHours },
     { id: "role", label: t.team.tabRole },
   ];
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-
-  const onTabKey = (e: React.KeyboardEvent, index: number) => {
-    const forward = isRTL ? "ArrowLeft" : "ArrowRight";
-    const backward = isRTL ? "ArrowRight" : "ArrowLeft";
-    let next = -1;
-    if (e.key === forward) next = (index + 1) % tabs.length;
-    else if (e.key === backward) next = (index - 1 + tabs.length) % tabs.length;
-    else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = tabs.length - 1;
-    if (next < 0) return;
-    e.preventDefault();
-    setTab(tabs[next].id);
-    tabRefs.current[next]?.focus();
-  };
-
   const name = member?.full_name || t.team.unnamed;
 
   return (
@@ -632,33 +637,17 @@ function MemberSettingsDialog({
     >
       {member && (
         <>
-          <div
-            role="tablist"
-            aria-label={interpolate(t.team.settingsTitle, { name })}
-            className="sticky top-0 z-10 -mx-6 mb-4 flex overflow-x-auto border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4"
-          >
-            {tabs.map((tb, i) => (
-              <button
-                key={tb.id}
-                ref={(el) => { tabRefs.current[i] = el; }}
-                id={`${baseId}-tab-${tb.id}`}
-                role="tab"
-                type="button"
-                aria-selected={tab === tb.id}
-                aria-controls={`${baseId}-panel-${tb.id}`}
-                tabIndex={tab === tb.id ? 0 : -1}
-                onClick={() => setTab(tb.id)}
-                onKeyDown={(e) => onTabKey(e, i)}
-                className={cn(
-                  "focus-ring-inset min-h-[44px] shrink-0 border-b-2 px-4 text-sm font-medium transition-colors",
-                  tab === tb.id
-                    ? "border-[var(--text-primary)] text-[var(--text-primary)]"
-                    : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]",
-                )}
-              >
-                {tb.label}
-              </button>
-            ))}
+          <div className="sticky top-0 z-10 -mx-6 mb-5 bg-card px-6">
+            <SegmentedControl<SettingsTab>
+              variant="underline"
+              semantics="tabs"
+              idPrefix={baseId}
+              ariaLabel={interpolate(t.team.settingsTitle, { name })}
+              options={tabs.map((tb) => ({ value: tb.id, label: tb.label }))}
+              value={tab}
+              onChange={setTab}
+              className="w-full"
+            />
           </div>
 
           <div
@@ -706,20 +695,13 @@ function PanelActions({
 }) {
   const { t } = useTranslation();
   return (
-    <DialogFooter className="mt-6 border-t border-[var(--border-subtle)] pt-4">
-      <button type="button" onClick={onCancel} className="btn btn-secondary" disabled={saving}>
+    <DialogFooter className="mt-6 border-t border-line pt-4">
+      <Button variant="secondary" onClick={onCancel} disabled={saving}>
         {t.common.cancel}
-      </button>
-      <button
-        type="button"
-        onClick={onSave}
-        disabled={saving || disabled}
-        aria-busy={saving || undefined}
-        className="btn btn-primary"
-      >
-        {saving && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+      </Button>
+      <Button onClick={onSave} disabled={disabled} loading={saving}>
         {saving ? t.common.processing : saveLabel}
-      </button>
+      </Button>
     </DialogFooter>
   );
 }
@@ -800,10 +782,10 @@ function ServicesPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-[var(--text-secondary)]">{t.team.servicesHint}</p>
+      <p className="text-sm text-ink-muted">{t.team.servicesHint}</p>
 
       {services.length === 0 ? (
-        <p className="rounded-[var(--radius-inputs)] border border-dashed border-[var(--border-subtle)] p-4 text-center text-sm text-[var(--text-muted)]">
+        <p className="rounded-xl border border-dashed border-line p-5 text-center text-sm text-ink-muted">
           {t.team.noActiveServices}
         </p>
       ) : (
@@ -812,22 +794,14 @@ function ServicesPanel({
           {services.map((s) => {
             const checked = selectedIds.includes(s.id);
             return (
-              <label
-                key={s.id}
-                className={cn(
-                  "focus-ring-within flex min-h-[48px] cursor-pointer items-center gap-3 rounded-[var(--radius-inputs)] border p-3 transition-colors",
-                  checked
-                    ? "border-[var(--accent-brass)] bg-[var(--bg-secondary)]"
-                    : "border-[var(--border-subtle)] hover:border-[var(--border-primary)]",
-                )}
-              >
+              <label key={s.id} className={choiceCard(checked, "min-h-12 items-center py-3")}>
                 <input
                   type="checkbox"
                   checked={checked}
                   onChange={() => toggle(s.id)}
-                  className="h-4 w-4 shrink-0 accent-[var(--accent-mint)]"
+                  className={cn(checkboxClasses, "shrink-0 accent-brand")}
                 />
-                <span className="text-sm font-medium text-[var(--text-primary)]">
+                <span className="text-sm font-medium text-ink">
                   {isRTL && s.name_ar ? s.name_ar : s.name}
                 </span>
               </label>
@@ -896,34 +870,25 @@ function RolePanel({
   return (
     <div className="flex flex-col gap-3">
       {isSelf && (
-        <p className="rounded-[var(--radius-inputs)] bg-[var(--bg-secondary)] p-3 text-sm text-[var(--text-secondary)]">
+        <p className="rounded-xl bg-sunken p-4 text-sm text-ink-soft">
           {t.team.ownRoleLocked}
         </p>
       )}
       <fieldset className="flex flex-col gap-2" disabled={saving || isSelf}>
         <legend className="field-label">{t.team.inviteRoleLabel}</legend>
         {options.map((o) => (
-          <label
-            key={o.value}
-            className={cn(
-              "focus-ring-within flex cursor-pointer items-start gap-3 rounded-[var(--radius-inputs)] border p-3 transition-colors",
-              role === o.value
-                ? "border-[var(--accent-brass)] bg-[var(--bg-secondary)]"
-                : "border-[var(--border-subtle)] hover:border-[var(--border-primary)]",
-              isSelf && "cursor-not-allowed opacity-70",
-            )}
-          >
+          <label key={o.value} className={choiceCard(role === o.value, isSelf && "cursor-not-allowed opacity-70")}>
             <input
               type="radio"
               name={groupName}
               value={o.value}
               checked={role === o.value}
               onChange={() => setRole(o.value)}
-              className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent-mint)]"
+              className={cn(checkboxClasses, "mt-0.5 shrink-0 rounded-full accent-brand")}
             />
             <span>
-              <span className="block text-sm font-semibold text-[var(--text-primary)]">{o.label}</span>
-              <span className="block text-[13px] text-[var(--text-secondary)]">{o.hint}</span>
+              <span className="block text-sm font-semibold text-ink">{o.label}</span>
+              <span className="mt-0.5 block text-[13px] text-ink-muted">{o.hint}</span>
             </span>
           </label>
         ))}

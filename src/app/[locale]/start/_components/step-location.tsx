@@ -2,18 +2,21 @@
 
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { LocateFixed, MapPin } from "lucide-react";
+import { AlertCircle, LocateFixed, MapPin } from "lucide-react";
 import { useTranslation } from "@/hooks/use-translation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
+import { Button } from "@/components/ui/button";
+import { errorTextClasses, helperClasses, labelClasses } from "@/components/ui/recipes";
+import { cn } from "@/lib/utils";
 import { inJordan } from "../_lib/wizard";
 import type { AreaOption, CityOption } from "./start-wizard";
 import type { StepProps } from "./step-shop";
-import { Notice, SelectField, StepHeader, TextField } from "./ui";
+import { SelectField, StepHeader, TextField } from "./ui";
 
 const LocationMap = dynamic(() => import("./location-map"), {
   ssr: false,
-  loading: () => <Skeleton variant="card" className="h-[260px] w-full sm:h-[320px]" />,
+  loading: () => <Skeleton variant="card" className="aspect-[4/3] w-full rounded-2xl sm:aspect-[16/10]" />,
 });
 
 const AMMAN = { lat: 31.9539, lng: 35.9106, zoom: 12 };
@@ -101,7 +104,7 @@ export function StepLocation({
   return (
     <div>
       <StepHeader title={s.location.title} subtitle={s.location.subtitle} />
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SelectField
             label={s.location.cityLabel}
@@ -133,25 +136,24 @@ export function StepLocation({
 
         <div>
           <div className="mb-2 flex items-center justify-between gap-3">
-            <span className="field-label !mb-0">{s.location.pinTitle}</span>
-            <button
-              type="button"
+            <span className={cn(labelClasses, "mb-0")}>{s.location.pinTitle}</span>
+            <Button
+              variant="soft"
+              size="sm"
               onClick={locateMe}
-              disabled={locating}
-              aria-busy={locating || undefined}
-              className="btn btn-ghost !min-h-[40px] !px-3 text-[14px]"
+              loading={locating}
+              icon={<LocateFixed aria-hidden />}
             >
-              <LocateFixed size={16} aria-hidden />
               {locating ? s.location.locating : s.location.useMyLocation}
-            </button>
+            </Button>
           </div>
           {mapDown ? (
-            <Notice>
-              <span className="inline-flex items-start gap-2">
-                <MapPin size={16} aria-hidden className="mt-0.5 shrink-0" />
-                {s.location.mapUnavailable}
+            <div role="status" className="bg-hatch-ink flex aspect-[4/3] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-line bg-sunken px-6 text-center sm:aspect-[16/10]">
+              <span aria-hidden="true" className="grid size-12 place-items-center rounded-xl bg-brand-soft text-brand-text">
+                <MapPin size={22} />
               </span>
-            </Notice>
+              <p className="m-0 max-w-sm text-sm text-ink-soft">{s.location.mapUnavailable}</p>
+            </div>
           ) : (
             <>
               <LocationMap
@@ -161,14 +163,13 @@ export function StepLocation({
                 onChange={(lat, lng) => setLoc({ lat, lng })}
                 onUnavailable={() => setMapDown(true)}
               />
-              <p className="mt-1.5 text-[13px]" style={{ color: "var(--text-muted)" }}>
-                {s.location.pinHint}
-              </p>
+              <p className={helperClasses}>{s.location.pinHint}</p>
             </>
           )}
           {err("pin") && (
-            <p className="field-error" role="alert">
-              {err("pin")}
+            <p className={errorTextClasses} role="alert">
+              <AlertCircle aria-hidden="true" />
+              <span>{err("pin")}</span>
             </p>
           )}
         </div>

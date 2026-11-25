@@ -52,7 +52,7 @@ export default async function AdminOverviewPage() {
             actions={
               <Link
                 href="/admin/audit"
-                className="rounded text-[13px] font-medium text-[var(--accent-text)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+                className="rounded text-[13px] font-medium text-brand-text underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
               >
                 {c.seeAll}
               </Link>

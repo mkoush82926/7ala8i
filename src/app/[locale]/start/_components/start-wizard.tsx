@@ -16,7 +16,9 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/ui/toast";
 import { EmptyState } from "@/components/ui/empty-state";
-import { useTranslation, interpolate, headingTracking } from "@/hooks/use-translation";
+import { useTranslation, interpolate } from "@/hooks/use-translation";
+import { Button } from "@/components/ui/button";
+import { buttonClasses, focusRing } from "@/components/ui/recipes";
 import { logout } from "../../auth/actions";
 import {
   WIZARD_STEPS,
@@ -91,28 +93,32 @@ function Frame({
   saveStatus?: React.ReactNode;
   footer?: React.ReactNode;
 }) {
-  const { t, dir, FF, href, isRTL, FFD } = useTranslation();
+  const { t, dir, FF, href } = useTranslation();
   const s = t.start;
   return (
-    <div dir={dir} className="flex min-h-[100dvh] flex-col" style={{ background: "var(--bg-primary)", fontFamily: FF }}>
-      <header className="sticky top-0 z-20 border-b" style={{ background: "var(--bg-primary)", borderColor: "var(--border-subtle)" }}>
-        <div className="mx-auto flex h-14 w-full max-w-xl items-center justify-between gap-3 px-4">
+    <div dir={dir} className="flex min-h-[100dvh] flex-col bg-page text-ink" style={{ fontFamily: FF }}>
+      <a href="#main-content" className="skip-link">
+        {t.common.skipToContent}
+      </a>
+      <header className="sticky top-0 z-30 border-b border-line bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/75">
+        <div className="mx-auto flex h-16 w-full max-w-xl items-center justify-between gap-3 px-4 sm:px-6">
           <Link
             href={href("/for-business")}
-            className="text-[18px] font-extrabold"
-            style={{ fontFamily: FFD, letterSpacing: headingTracking(isRTL, "-0.01em"), color: "var(--text-primary)" }}
+            className={cn("rounded-md text-xl font-extrabold tracking-tight text-ink no-underline rtl:tracking-normal", focusRing)}
           >
             {s.brand}
           </Link>
-          <div className="text-[13px]" style={{ color: "var(--text-muted)" }} aria-live="polite">
+          <div className="text-[13px] text-ink-muted" aria-live="polite">
             {saveStatus}
           </div>
         </div>
         {progress && (
-          <div className="mx-auto w-full max-w-xl px-4 pb-3">
-            <div className="mb-1.5 flex justify-between text-[12px]" style={{ color: "var(--text-muted)" }}>
-              <span>{progress.label}</span>
-              <span>{interpolate(s.stepOf, { current: progress.index + 1, total: progress.total })}</span>
+          <div className="mx-auto w-full max-w-xl px-4 pb-3 sm:px-6">
+            <div className="mb-2 flex justify-between gap-3 text-xs font-semibold">
+              <span className="truncate text-ink">{progress.label}</span>
+              <span className="shrink-0 tabular-nums text-ink-muted">
+                {interpolate(s.stepOf, { current: progress.index + 1, total: progress.total })}
+              </span>
             </div>
             <div
               role="progressbar"
@@ -120,26 +126,37 @@ function Frame({
               aria-valuemax={progress.total}
               aria-valuenow={progress.index + 1}
               aria-label={s.progressLabel}
-              className="h-1.5 w-full overflow-hidden rounded-full"
-              style={{ background: "var(--border-subtle)" }}
+              className="h-1 w-full overflow-hidden rounded-full bg-sunken"
             >
               <div
-                className="h-full rounded-full transition-[width] duration-300"
-                style={{ width: `${((progress.index + 1) / progress.total) * 100}%`, background: "var(--accent-brass)" }}
+                className="h-full rounded-full bg-brand transition-[width] duration-500 ease-enter motion-reduce:transition-none"
+                style={{ width: `${((progress.index + 1) / progress.total) * 100}%` }}
               />
             </div>
           </div>
         )}
       </header>
-      <main id="main-content" className="mx-auto w-full max-w-xl flex-1 px-4 pb-32 pt-6">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className={cn(
+          "mx-auto w-full max-w-xl flex-1 px-4 pt-8 outline-none sm:px-6 lg:pt-12",
+          footer ? "pb-32 md:pb-6" : "pb-16",
+        )}
+      >
         {children}
       </main>
       {footer && (
         <div
-          className="fixed inset-x-0 bottom-0 z-20 border-t"
-          style={{ background: "var(--bg-primary)", borderColor: "var(--border-subtle)", paddingBottom: "env(safe-area-inset-bottom)" }}
+          className={cn(
+            "fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card/95 shadow-bar backdrop-blur supports-[backdrop-filter]:bg-card/85",
+            "pb-[env(safe-area-inset-bottom)]",
+            "md:static md:border-0 md:bg-transparent md:pb-16 md:shadow-none md:backdrop-blur-none",
+          )}
         >
-          <div className="mx-auto flex w-full max-w-xl items-center gap-3 px-4 py-3">{footer}</div>
+          <div className="mx-auto flex w-full max-w-xl items-center gap-3 px-4 py-3 sm:px-6 md:border-t md:border-line md:pt-6">
+            {footer}
+          </div>
         </div>
       )}
     </div>
@@ -195,11 +212,11 @@ export function StartWizard({ signedIn, initialState, loadError, cities, areas, 
         />
         <form action={logout} className="mt-2 flex flex-col items-center gap-3">
           <input type="hidden" name="locale" value={locale} />
-          <button type="submit" className="btn btn-primary">
-            <LogOut size={18} aria-hidden />
+          <button type="submit" className={buttonClasses({ variant: "primary" })}>
+            <LogOut aria-hidden />
             {s.notOwner.signOut}
           </button>
-          <Link href={href(state?.role === "barber" ? "/my-day" : "/customer")} className="btn btn-ghost">
+          <Link href={href(state?.role === "barber" ? "/my-day" : "/customer")} className={buttonClasses({ variant: "ghost" })}>
             {s.notOwner.back}
           </Link>
         </form>
@@ -429,11 +446,11 @@ function Wizard({
   const saveStatus =
     save === "saving" ? (
       <span className="inline-flex items-center gap-1.5">
-        <Loader2 size={14} className="animate-spin" aria-hidden />
+        <Loader2 size={14} className="animate-spin motion-reduce:animate-none" aria-hidden />
         {s.saving}
       </span>
     ) : save === "saved" ? (
-      <span className="inline-flex items-center gap-1.5">
+      <span className="inline-flex items-center gap-1.5 text-success-text">
         <Check size={14} aria-hidden />
         {s.saved}
       </span>
@@ -441,8 +458,7 @@ function Wizard({
       <button
         type="button"
         onClick={() => void persist(step, draft)}
-        className="inline-flex items-center gap-1.5 underline underline-offset-2"
-        style={{ color: "var(--accent-rose)" }}
+        className={cn("inline-flex cursor-pointer items-center gap-1.5 rounded-sm font-semibold text-danger-text underline underline-offset-2", focusRing)}
       >
         <RefreshCw size={14} aria-hidden />
         {s.saveFailed}
@@ -458,32 +474,19 @@ function Wizard({
       footer={
         <>
           {prevStep(step) && (
-            <button type="button" onClick={back} className="btn btn-ghost !px-3" disabled={publishing}>
-              <ArrowLeft size={18} aria-hidden className="rtl:rotate-180" />
+            <Button variant="ghost" size="lg" onClick={back} disabled={publishing} className="-ms-2 px-3" icon={<ArrowLeft aria-hidden className="rtl:rotate-180" />}>
               {s.back}
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
+          <Button
+            size="lg"
             onClick={isLast ? publish : next}
-            disabled={publishing}
-            aria-busy={publishing || undefined}
-            className={cn("btn btn-primary ms-auto min-w-[150px] flex-1 sm:flex-none")}
+            loading={publishing}
+            className="ms-auto min-w-[150px] flex-1 sm:flex-none"
+            iconEnd={!publishing && !isLast ? <ArrowRight aria-hidden className="rtl:rotate-180" /> : undefined}
           >
-            {publishing ? (
-              <>
-                <Loader2 size={18} className="animate-spin" aria-hidden />
-                {s.publish.publishing}
-              </>
-            ) : isLast ? (
-              s.publish.cta
-            ) : (
-              <>
-                {s.continue}
-                <ArrowRight size={18} aria-hidden className="rtl:rotate-180" />
-              </>
-            )}
-          </button>
+            {publishing ? s.publish.publishing : isLast ? s.publish.cta : s.continue}
+          </Button>
         </>
       }
     >

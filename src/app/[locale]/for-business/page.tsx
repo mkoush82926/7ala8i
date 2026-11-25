@@ -1,8 +1,8 @@
-// For-business (shop-owner) landing page, moved from /landing by WS-1B — a Server Component. All copy is rendered on the
-// server from the locale dictionary (SEO, no copy shipped as JS); only the
-// nav, scroll container and background videos are client islands.
+// For-business (shop-owner) landing page (§6.10), moved from /landing by
+// WS-1B — a Server Component. All copy is rendered on the server from the
+// locale dictionary (SEO, no copy shipped as JS); only the nav, reveal
+// wrapper, photos and background video are client islands.
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,13 +14,19 @@ import {
   MonitorSmartphone,
   Search,
   ShieldCheck,
+  Star,
   TrendingUp,
   Workflow,
   type LucideIcon,
 } from "lucide-react";
 import en, { type TranslationKeys } from "@/i18n/en";
 import ar from "@/i18n/ar";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
+import { formatLocalizedNumber } from "@/lib/format";
+import { ButtonLink } from "@/components/ui/button";
+import { BrandedPlaceholder, PhotoFrame } from "@/components/ui/photo-frame";
+import { cardClasses, containerClasses } from "@/components/ui/recipes";
+import { SiteFooter } from "@/components/search/site-footer";
 import { BackgroundVideo, LandingNav, LandingShell } from "./landing-client";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -48,22 +54,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // ─── Presentational helpers (server) ────────────────────────────────────────
 
-const headingTracking = (isRTL: boolean, latin: string) => (isRTL ? "normal" : latin);
-
 function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
   return (
-    <div className={`reveal ${className}`} style={delay ? { transitionDelay: `${delay}s` } : undefined}>
+    <div className={cn("reveal", className)} style={delay ? { transitionDelay: `${delay}s` } : undefined}>
       {children}
     </div>
-  );
-}
-
-function Eyebrow({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
-  // .eyebrow = AA brass (#7c5a26 on light); the dark variant sits on ink.
-  return (
-    <p className="eyebrow" style={{ marginBottom: 16, ...(dark ? { color: "#d8b88a" } : {}) }}>
-      {children}
-    </p>
   );
 }
 
@@ -72,88 +67,129 @@ function SectionHeading({
   eyebrow,
   title,
   subtitle,
-  isRTL,
-  dark = false,
-  marginBottom = 64,
+  align = "center",
 }: {
   id: string;
   eyebrow: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
-  isRTL: boolean;
-  dark?: boolean;
-  marginBottom?: number;
+  align?: "center" | "start";
 }) {
   return (
     <Reveal>
-      <div style={{ textAlign: "center", maxWidth: 560, margin: `0 auto ${marginBottom}px` }}>
-        <Eyebrow dark={dark}>{eyebrow}</Eyebrow>
-        <h2
-          id={id}
-          style={{
-            fontWeight: 800,
-            fontSize: "clamp(1.8rem, 3.4vw, 2.6rem)",
-            letterSpacing: headingTracking(isRTL, "0.014em"),
-            color: dark ? "#ffffff" : "var(--text-primary)",
-            marginBottom: subtitle ? 16 : 0,
-          }}
-        >
+      <div className={cn("mb-10 max-w-2xl md:mb-14", align === "center" ? "mx-auto text-center" : "text-start")}>
+        <p className="eyebrow mb-3">{eyebrow}</p>
+        <h2 id={id} className="text-h1 text-balance text-ink">
           {title}
         </h2>
-        {subtitle && (
-          <p style={{ color: dark ? "rgba(255,255,255,0.75)" : "var(--text-secondary)", fontSize: 16, fontWeight: 300, lineHeight: 1.7 }}>
-            {subtitle}
-          </p>
-        )}
+        {subtitle && <p className="text-body-lg mt-4 text-ink-muted">{subtitle}</p>}
       </div>
     </Reveal>
   );
 }
 
-function Statement({
-  align,
-  eyebrow,
-  title,
-  body,
-  isRTL,
-}: {
-  align: "start" | "end";
-  eyebrow: string;
-  title: string;
-  body: string;
-  isRTL: boolean;
-}) {
-  return (
-    <Reveal>
-      <div className={`landing-statement${align === "end" ? " landing-statement--end" : ""}`}>
-        <Eyebrow>{eyebrow}</Eyebrow>
-        <h3
-          style={{
-            fontWeight: 800,
-            fontSize: "clamp(1.9rem, 3.4vw, 2.6rem)",
-            letterSpacing: headingTracking(isRTL, "0.014em"),
-            color: "var(--text-primary)",
-            marginBottom: 20,
-          }}
-        >
-          {title}
-        </h3>
-        <div className="landing-statement-rule" aria-hidden="true" style={{ width: 56, height: 2, background: "var(--accent-brass)", marginBottom: 20 }} />
-        <p style={{ color: "var(--text-secondary)", fontSize: 16, fontWeight: 300, lineHeight: 1.75 }}>{body}</p>
-      </div>
-    </Reveal>
-  );
-}
-
-/** Splits "The future of {accent} management" around the accent word. */
+/** Splits "The future of {accent} management" around the accent word (solid teal, no gradient). */
 function Headline({ template, accent }: { template: string; accent: string }) {
   const [before, after = ""] = template.split("{accent}");
   return (
     <>
       {before}
-      <span style={{ color: "var(--accent-text)" }}>{accent}</span>
+      <span className="text-brand-text">{accent}</span>
       {after}
     </>
+  );
+}
+
+/**
+ * Product preview built from tokens (no screenshots, no illustrations): a
+ * team-calendar card and a phone booking card, slightly overlapping, on a
+ * brand-soft backdrop. Decorative — the copy beside it says the same thing.
+ */
+function ProductPreview({ calendarLabel, bookLabel, locale }: { calendarLabel: string; bookLabel: string; locale: string }) {
+  const cols: { tone: string; top: number; h: number }[][] = [
+    [
+      { tone: "bg-brand-soft border-brand", top: 6, h: 22 },
+      { tone: "bg-success-soft border-success", top: 34, h: 16 },
+      { tone: "bg-brand text-on-brand border-brand-pressed", top: 58, h: 24 },
+    ],
+    [
+      { tone: "bg-warning-soft border-warning border-dashed", top: 14, h: 18 },
+      { tone: "bg-brand-soft border-brand", top: 40, h: 26 },
+    ],
+    [
+      { tone: "bg-brand-soft border-brand", top: 4, h: 16 },
+      { tone: "bg-sunken border-line-strong", top: 26, h: 20 },
+      { tone: "bg-brand-soft border-brand", top: 54, h: 20 },
+    ],
+  ];
+  const hours = [9, 10, 11, 12];
+  const slots = ["10:00", "10:30", "11:15", "12:00", "13:30", "16:45"];
+  return (
+    <div aria-hidden="true" className="relative">
+      <div className="relative overflow-hidden rounded-3xl bg-brand-soft p-5 sm:p-8 lg:p-10">
+        <div className="bg-hatch-ink absolute inset-0 opacity-60" />
+        {/* Calendar card */}
+        <div className="relative w-full rounded-2xl border border-line bg-card p-4 shadow-float sm:w-[88%]">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-sm font-semibold text-ink">{calendarLabel}</span>
+            <span className="flex gap-1">
+              <span className="size-2 rounded-full bg-line-strong" />
+              <span className="size-2 rounded-full bg-line" />
+              <span className="size-2 rounded-full bg-line" />
+            </span>
+          </div>
+          <div className="grid grid-cols-[28px_repeat(3,minmax(0,1fr))] gap-2">
+            <div className="flex flex-col justify-between py-1 text-[10px] tabular-nums text-ink-muted" dir="ltr">
+              {hours.map((h) => (
+                <span key={h}>{formatLocalizedNumber(h, locale)}</span>
+              ))}
+            </div>
+            {cols.map((col, i) => (
+              <div key={i} className="relative h-44 rounded-lg bg-sunken/60">
+                <span className="absolute inset-x-1 top-[32%] h-px bg-danger/60" />
+                {col.map((ev, j) => (
+                  <span
+                    key={j}
+                    className={cn("absolute inset-x-1 rounded-xs border-s-[3px] p-1.5 shadow-xs", ev.tone)}
+                    style={{ top: `${ev.top}%`, height: `${ev.h}%` }}
+                  >
+                    <span className="block h-1.5 w-3/4 rounded-full bg-current opacity-30" />
+                    <span className="mt-1 block h-1.5 w-1/2 rounded-full bg-current opacity-20" />
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Phone booking card */}
+        <div className="relative -mt-10 ms-auto w-[64%] max-w-[260px] rounded-[28px] border border-line bg-card p-3 shadow-float sm:-mt-24">
+          <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-2xl">
+            <BrandedPlaceholder name="Halaqy" fill="teal" />
+          </div>
+          <div className="mb-1 h-2.5 w-2/3 rounded-full bg-ink/80" />
+          <div className="mb-3 flex items-center gap-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} className="size-3 fill-accent text-accent" />
+            ))}
+            <span className="ms-1 h-1.5 w-10 rounded-full bg-line" />
+          </div>
+          <div className="mb-3 grid grid-cols-3 gap-1.5" dir="ltr">
+            {slots.map((slot, i) => (
+              <span
+                key={slot}
+                className={cn(
+                  "grid h-7 place-items-center rounded-full border text-[10px] font-semibold tabular-nums",
+                  i === 2 ? "border-brand bg-brand text-on-brand" : "border-line-strong text-ink",
+                )}
+              >
+                {slot}
+              </span>
+            ))}
+          </div>
+          <span className="grid h-9 place-items-center rounded-full bg-brand text-xs font-semibold text-on-brand">{bookLabel}</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -163,10 +199,10 @@ export default async function ForBusinessPage({ params }: Props) {
   const { locale, t, isRTL } = resolve((await params).locale);
   const L = t.landing;
   const Forward = isRTL ? ArrowLeft : ArrowRight;
-  const year = new Date().getFullYear();
   const href = (path: string) => (path === "/" ? `/${locale}` : `/${locale}${path}`);
   // Owners go straight to the shop setup wizard (WS-1G).
   const ownerSignup = href("/start");
+  const otherLocale = locale === "ar" ? "en" : "ar";
 
   const pillars: { icon: LucideIcon; title: string; desc: string }[] = [
     { icon: CalendarDays, title: L.pillarManage, desc: L.pillarManageDesc },
@@ -184,33 +220,14 @@ export default async function ForBusinessPage({ params }: Props) {
   ];
 
   const steps = [
-    { num: "01", title: L.stepSetupTitle, desc: L.stepSetupDesc },
-    { num: "02", title: L.stepShareTitle, desc: L.stepShareDesc },
-    { num: "03", title: L.pillarGrow, desc: L.stepGrowDesc },
+    { title: L.stepSetupTitle, desc: L.stepSetupDesc },
+    { title: L.stepShareTitle, desc: L.stepShareDesc },
+    { title: L.pillarGrow, desc: L.stepGrowDesc },
   ];
 
-  const planFeatures = [
-    L.pricingFeature1,
-    L.pricingFeature2,
-    L.pricingFeature3,
-    L.pricingFeature4,
-    L.planFeatureTeam,
-    L.featAnyDevice,
-  ];
+  const planFeatures = [L.pricingFeature1, L.pricingFeature2, L.pricingFeature3, L.pricingFeature4, L.planFeatureTeam, L.featAnyDevice];
 
-  const footerLinks = [
-    { href: href("/explore"), label: L.navFindBarber },
-    { href: "#features", label: L.navFeatures },
-    { href: "#pricing", label: L.navPricing },
-    { href: href("/auth/login"), label: L.navLogin },
-  ];
-  const legalLinks = [
-    { href: href("/privacy"), label: L.privacy },
-    { href: href("/terms"), label: L.terms },
-    { href: href("/policy"), label: L.cancellationPolicy },
-  ];
-
-  const pillCta = { minHeight: 56, padding: "0 32px", borderRadius: 9999, fontSize: 15, fontWeight: 700 } as const;
+  const trust = [L.trustNoContract, L.trustBilingual, L.trustSetup];
 
   return (
     <LandingShell>
@@ -219,103 +236,63 @@ export default async function ForBusinessPage({ params }: Props) {
       </a>
       <LandingNav />
 
-      <main id="main" tabIndex={-1} style={{ outline: "none" }}>
+      <main id="main" tabIndex={-1} className="outline-none">
         {/* ═══ HERO — two clear paths: shop owners and customers ═══ */}
-        <section
-          aria-labelledby="hero-title"
-          className="landing-snap-page"
-          style={{
-            position: "relative",
-            overflow: "hidden",
-            alignItems: "center",
-            background: "linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%)",
-            padding: "128px 16px 112px",
-          }}
-        >
-          <div className="fade-slide-up" style={{ position: "relative", zIndex: 1, maxWidth: 760, textAlign: "center" }}>
-            <Eyebrow>{L.heroEyebrow}</Eyebrow>
+        <section aria-labelledby="hero-title" className="relative isolate">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px] bg-[radial-gradient(55%_50%_at_10%_0%,var(--color-brand-soft),transparent)] rtl:bg-[radial-gradient(55%_50%_at_90%_0%,var(--color-brand-soft),transparent)]"
+          />
+          <div className={cn(containerClasses, "grid items-center gap-12 py-12 md:py-16 lg:grid-cols-2 lg:gap-16 lg:py-24")}>
+            <div className="fade-slide-up text-center lg:text-start">
+              <p className="eyebrow mb-4">{L.heroEyebrow}</p>
+              <h1 id="hero-title" className="text-display text-balance text-ink">
+                <Headline template={L.heroHeadline} accent={L.heroHeadlineAccent} />
+              </h1>
+              <p className="text-body-lg mx-auto mt-5 max-w-xl text-ink-soft lg:mx-0">{L.heroLead}</p>
 
-            <h1
-              id="hero-title"
-              style={{
-                fontWeight: 800,
-                fontSize: "clamp(2.4rem, 6.5vw, 4.6rem)",
-                lineHeight: 1.08,
-                letterSpacing: headingTracking(isRTL, "0.014em"),
-                color: "var(--text-primary)",
-                marginBottom: 24,
-              }}
-            >
-              <Headline template={L.heroHeadline} accent={L.heroHeadlineAccent} />
-            </h1>
+              <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center lg:justify-start">
+                <ButtonLink href={ownerSignup} size="xl" iconEnd={<Forward />}>
+                  {L.heroOwnerCta}
+                </ButtonLink>
+                <ButtonLink href={href("/explore")} variant="secondary" size="xl" icon={<Search />}>
+                  {L.heroCustomerCta}
+                </ButtonLink>
+              </div>
 
-            <p style={{ fontSize: 18, color: "var(--text-secondary)", fontWeight: 300, lineHeight: 1.7, maxWidth: 540, margin: "0 auto 40px" }}>
-              {L.heroLead}
-            </p>
-
-            <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <Link href={ownerSignup} className="btn btn-primary" style={pillCta}>
-                {L.heroOwnerCta}
-                <Forward size={18} aria-hidden="true" />
-              </Link>
-              <Link href={href("/explore")} className="btn btn-secondary" style={pillCta}>
-                <Search size={18} aria-hidden="true" />
-                {L.heroCustomerCta}
-              </Link>
+              <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-medium text-ink-soft lg:justify-start">
+                {trust.map((item, i) => (
+                  <li key={i} className="inline-flex items-center gap-1.5">
+                    <Check aria-hidden="true" className="size-4 text-brand-text" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-meta text-ink-muted">{L.heroAudienceNote}</p>
             </div>
-            <p style={{ marginTop: 20, fontSize: 14, color: "var(--text-muted)" }}>{L.heroAudienceNote}</p>
-          </div>
 
-          <a
-            href="#why"
-            className="hidden md:block"
-            style={{
-              position: "absolute",
-              bottom: 32,
-              insetInline: 0,
-              width: "fit-content",
-              margin: "0 auto",
-              zIndex: 1,
-              fontSize: 12,
-              fontWeight: 600,
-              color: "var(--text-muted)",
-              borderBottom: "1px solid var(--text-muted)",
-              paddingBottom: 4,
-              textDecoration: "none",
-            }}
-          >
-            {L.scrollHint}
-          </a>
+            <div className="fade-slide-up fade-slide-up-delay-2 mx-auto w-full max-w-xl lg:max-w-none">
+              <ProductPreview calendarLabel={L.featureCalendar} bookLabel={t.primitives.bookNow} locale={locale} />
+            </div>
+          </div>
         </section>
 
         {/* ═══ VALUE PILLARS ═══ */}
-        <section id="why" aria-labelledby="why-title" className="landing-snap-page" style={{ background: "var(--bg-primary)", padding: "96px 16px" }}>
-          <div style={{ maxWidth: 1000, margin: "0 auto", width: "100%" }}>
-            <SectionHeading id="why-title" isRTL={isRTL} eyebrow={L.whyEyebrow} title={L.whyTitle} marginBottom={64} />
-            <ul className="card-grid-3">
+        <section id="why" aria-labelledby="why-title" className="scroll-mt-20 py-16 md:py-24">
+          <div className={containerClasses}>
+            <SectionHeading id="why-title" eyebrow={L.whyEyebrow} title={L.whyTitle} />
+            <ul className="grid gap-4 md:grid-cols-3 md:gap-6">
               {pillars.map((p, i) => {
                 const Icon = p.icon;
                 return (
                   <li key={p.title}>
-                    <Reveal delay={i * 0.08}>
-                      <div style={{ textAlign: "center" }}>
-                        <div
-                          aria-hidden="true"
-                          style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: 9999,
-                            background: "var(--bg-secondary)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            margin: "0 auto 24px",
-                          }}
-                        >
-                          <Icon size={24} className="text-[var(--accent-brass)]" />
-                        </div>
-                        <h3 style={{ fontWeight: 700, fontSize: 18, color: "var(--text-primary)", marginBottom: 10 }}>{p.title}</h3>
-                        <p style={{ color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.7, fontWeight: 300 }}>{p.desc}</p>
+                    <Reveal delay={i * 0.04} className="h-full">
+                      <div className={cardClasses({ elevation: "card", className: "flex h-full flex-col gap-3 p-6 md:p-8" })}>
+                        <span aria-hidden="true" className="grid size-12 place-items-center rounded-2xl bg-brand-soft text-brand-text">
+                          <Icon size={22} />
+                        </span>
+                        <h3 className="text-h3 mt-2 text-ink">{p.title}</h3>
+                        <p className="text-body text-ink-muted">{p.desc}</p>
                       </div>
                     </Reveal>
                   </li>
@@ -326,56 +303,82 @@ export default async function ForBusinessPage({ params }: Props) {
         </section>
 
         {/* ═══ FEATURES ═══ */}
-        <section id="features" aria-labelledby="features-title" className="landing-snap-page" style={{ background: "var(--bg-secondary)", padding: "96px 16px" }}>
-          <div style={{ maxWidth: 1100, margin: "0 auto", width: "100%" }}>
-            <SectionHeading id="features-title" isRTL={isRTL} eyebrow={L.navFeatures} title={L.featuresHeading} subtitle={L.featuresLead} />
-            <div
-              style={{
-                borderRadius: 20,
-                overflow: "hidden",
-                border: "1px solid var(--border-subtle)",
-                background: "var(--border-subtle)",
-                boxShadow: "0 32px 70px -32px rgba(28,22,17,0.12)",
-              }}
-            >
-              <ul className="landing-feature-grid">
-                {features.map((f, i) => {
-                  const Icon = f.icon;
-                  return (
-                    <li key={f.title} className="h-full">
-                      <Reveal delay={i * 0.05} className="h-full">
-                        <div className="landing-feature-cell group">
-                          <div className="landing-feature-icon" aria-hidden="true">
-                            <Icon size={20} className="text-[var(--accent-brass)] transition-colors group-hover:text-[var(--on-accent)]" />
-                          </div>
-                          <h3 style={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary)", marginBottom: 10 }}>{f.title}</h3>
-                          <p style={{ color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.7, fontWeight: 300 }}>{f.desc}</p>
-                        </div>
-                      </Reveal>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+        <section id="features" aria-labelledby="features-title" className="scroll-mt-20 border-y border-line bg-card py-16 md:py-24">
+          <div className={containerClasses}>
+            <SectionHeading id="features-title" eyebrow={L.navFeatures} title={L.featuresHeading} subtitle={L.featuresLead} />
+            <ul className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+              {features.map((f, i) => {
+                const Icon = f.icon;
+                return (
+                  <li key={f.title}>
+                    <Reveal delay={Math.min(i, 3) * 0.04} className="flex gap-4">
+                      <span
+                        aria-hidden="true"
+                        className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand-text"
+                      >
+                        <Icon size={20} />
+                      </span>
+                      <div className="min-w-0">
+                        <h3 className="text-title text-ink">{f.title}</h3>
+                        <p className="mt-1.5 text-[15px] leading-6 text-ink-muted">{f.desc}</p>
+                      </div>
+                    </Reveal>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
+
+        {/* ═══ MISSION / APPROACH — alternating photo ↔ copy rows ═══ */}
+        <section aria-labelledby="mission-title" className="py-16 md:py-24">
+          <h2 id="mission-title" className="sr-only">
+            {L.missionEyebrow}
+          </h2>
+          <div className={cn(containerClasses, "flex flex-col gap-16 md:gap-24")}>
+            {[
+              { eyebrow: L.missionEyebrow, title: L.missionTitle, body: L.missionBody, src: "/videos/1-poster.jpg" },
+              { eyebrow: L.approachEyebrow, title: L.approachTitle, body: L.approachBody, src: "/videos/2-poster.jpg" },
+            ].map((row, i) => (
+              <Reveal key={row.title}>
+                <div className="grid items-center gap-8 md:grid-cols-2 md:gap-16">
+                  <PhotoFrame
+                    src={row.src}
+                    alt=""
+                    ratio="4/3"
+                    rounded="2xl"
+                    sizes="(min-width: 768px) 600px, 100vw"
+                    fallbackName="Halaqy"
+                    className={cn("shadow-raised", i % 2 === 1 && "md:order-2")}
+                  />
+                  <div>
+                    <p className="eyebrow mb-3">{row.eyebrow}</p>
+                    <h3 className="text-h1 text-balance text-ink">{row.title}</h3>
+                    <p className="text-body-lg mt-4 text-ink-muted">{row.body}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
           </div>
         </section>
 
         {/* ═══ HOW IT WORKS ═══ */}
-        <section aria-labelledby="how-title" className="landing-snap-page" style={{ background: "var(--bg-primary)", padding: "96px 16px" }}>
-          <div style={{ maxWidth: 720, margin: "0 auto", width: "100%" }}>
-            <SectionHeading id="how-title" isRTL={isRTL} eyebrow={L.howEyebrow} title={L.howHeading} subtitle={L.howLead} marginBottom={56} />
-            <ol style={{ display: "flex", flexDirection: "column", gap: 40 }}>
+        <section aria-labelledby="how-title" className="border-y border-line bg-card py-16 md:py-24">
+          <div className={containerClasses}>
+            <SectionHeading id="how-title" eyebrow={L.howEyebrow} title={L.howHeading} subtitle={L.howLead} />
+            <ol className="grid gap-4 md:grid-cols-3 md:gap-6">
               {steps.map((step, i) => (
-                <li key={step.num}>
-                  <Reveal delay={i * 0.08}>
-                    <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-                      <span aria-hidden="true" dir="ltr" style={{ fontSize: 14, fontWeight: 700, color: "var(--accent-text)", flexShrink: 0, paddingTop: 3 }}>
-                        {step.num}
+                <li key={step.title}>
+                  <Reveal delay={i * 0.04} className="h-full">
+                    <div className="flex h-full flex-col gap-3 rounded-xl border border-line bg-page p-6">
+                      <span
+                        aria-hidden="true"
+                        className="grid size-10 place-items-center rounded-full bg-brand-soft font-bold tabular-nums text-brand-text"
+                      >
+                        {formatLocalizedNumber(i + 1, locale)}
                       </span>
-                      <div>
-                        <h3 style={{ fontWeight: 700, fontSize: 17, color: "var(--text-primary)", marginBottom: 8 }}>{step.title}</h3>
-                        <p style={{ color: "var(--text-secondary)", fontWeight: 300, lineHeight: 1.7, fontSize: 15 }}>{step.desc}</p>
-                      </div>
+                      <h3 className="text-h3 mt-1 text-ink">{step.title}</h3>
+                      <p className="text-body text-ink-muted">{step.desc}</p>
                     </div>
                   </Reveal>
                 </li>
@@ -384,171 +387,90 @@ export default async function ForBusinessPage({ params }: Props) {
           </div>
         </section>
 
-        {/* ═══ MISSION / APPROACH ═══ */}
-        <section aria-labelledby="mission-title" className="landing-snap-page" style={{ position: "relative", overflow: "hidden", padding: "112px 16px" }}>
-          <BackgroundVideo
-            src="/videos/1.mp4"
-            poster="/videos/1-poster.jpg"
-            overlay="linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(247,241,228,0.93) 50%, rgba(255,255,255,0.95) 100%)"
-          />
-          <h2 id="mission-title" className="sr-only">
-            {L.missionEyebrow}
-          </h2>
-          <div style={{ position: "relative", zIndex: 1, maxWidth: 1000, margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: 88 }}>
-            <Statement align="start" isRTL={isRTL} eyebrow={L.missionEyebrow} title={L.missionTitle} body={L.missionBody} />
-            <Statement align="end" isRTL={isRTL} eyebrow={L.approachEyebrow} title={L.approachTitle} body={L.approachBody} />
-          </div>
-        </section>
-
         {/* ═══ PRICING ═══ */}
-        <section id="pricing" aria-labelledby="pricing-title" className="landing-snap-page" style={{ background: "var(--bg-secondary)", padding: "96px 16px" }}>
-          <div style={{ maxWidth: 640, margin: "0 auto", width: "100%" }}>
-            <SectionHeading id="pricing-title" isRTL={isRTL} eyebrow={L.navPricing} title={L.pricingHeading} subtitle={L.pricingLead} />
+        <section id="pricing" aria-labelledby="pricing-title" className="scroll-mt-20 py-16 md:py-24">
+          <div className={containerClasses}>
+            <SectionHeading id="pricing-title" eyebrow={L.navPricing} title={L.pricingHeading} subtitle={L.pricingLead} />
 
-            <Reveal delay={0.1}>
-              <div
-                className="p-6 sm:p-12"
-                style={{
-                  borderRadius: 24,
-                  background: "var(--bg-primary)",
-                  border: "1px solid var(--border-subtle)",
-                  boxShadow: "0 32px 70px -32px rgba(28,22,17,0.22)",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-end",
-                    flexWrap: "wrap",
-                    gap: 24,
-                    marginBottom: 32,
-                    paddingBottom: 32,
-                    borderBottom: "1px solid var(--border-subtle)",
-                  }}
-                >
+            <Reveal delay={0.04}>
+              <div className="mx-auto max-w-2xl rounded-2xl border border-line bg-card p-6 shadow-raised sm:p-10">
+                <div className="flex flex-wrap items-end justify-between gap-6 border-b border-line pb-8">
                   <div>
-                    <h3 style={{ fontWeight: 700, fontSize: 22, color: "var(--text-primary)", marginBottom: 6 }}>{L.planName}</h3>
-                    <p style={{ color: "var(--text-secondary)", fontWeight: 300, fontSize: 15 }}>{L.planTagline}</p>
+                    <h3 className="text-h2 text-ink">{L.planName}</h3>
+                    <p className="mt-1 text-[15px] text-ink-muted">{L.planTagline}</p>
                   </div>
-                  <div style={{ textAlign: "end" }}>
-                    <p style={{ fontWeight: 800, fontSize: 40, color: "var(--text-primary)", lineHeight: 1, fontVariantNumeric: "tabular-nums lining-nums" }}>
+                  <div className="text-start sm:text-end">
+                    <p className="text-[40px] font-bold leading-none tabular-nums text-ink">
                       {formatCurrency(PRICE_PER_BARBER, locale, "JOD", { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
                     </p>
-                    <p style={{ fontWeight: 500, fontSize: 13, color: "var(--text-secondary)", marginTop: 6 }}>{L.pricingPerBarber}</p>
+                    <p className="mt-2 text-sm font-medium text-ink-muted">{L.pricingPerBarber}</p>
                   </div>
                 </div>
 
-                <ul className="card-grid-2" style={{ marginBottom: 36, gap: 16 }}>
+                <ul className="my-8 grid gap-4 sm:grid-cols-2">
                   {planFeatures.map((feat) => (
-                    <li key={feat} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <Check size={18} aria-hidden="true" className="shrink-0 text-[var(--accent-brass)]" />
-                      <span style={{ fontSize: 15, fontWeight: 500, color: "var(--text-primary)" }}>{feat}</span>
+                    <li key={feat} className="flex items-center gap-3">
+                      <span
+                        aria-hidden="true"
+                        className="grid size-6 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-text"
+                      >
+                        <Check size={14} strokeWidth={2.5} />
+                      </span>
+                      <span className="text-[15px] font-medium text-ink">{feat}</span>
                     </li>
                   ))}
                 </ul>
 
-                <Link href={ownerSignup} className="btn btn-primary" style={{ width: "100%", minHeight: 52, borderRadius: 9999, fontSize: 15, fontWeight: 700 }}>
+                <ButtonLink href={ownerSignup} size="xl" fullWidth iconEnd={<Forward />}>
                   {L.heroOwnerCta}
-                </Link>
-                <p style={{ textAlign: "center", marginTop: 16, fontSize: 14, color: "var(--text-muted)" }}>{L.planNote}</p>
+                </ButtonLink>
+                <p className="mt-4 text-center text-sm text-ink-muted">{L.planNote}</p>
               </div>
             </Reveal>
           </div>
         </section>
 
-        {/* ═══ CONTACT + FOOTER — the final "page" ═══ */}
-        <section
-          aria-labelledby="contact-title"
-          className="landing-snap-page"
-          style={{ position: "relative", overflow: "hidden", background: "#1c1611", color: "#ffffff", padding: "96px 16px 32px" }}
-        >
-          <BackgroundVideo
-            src="/videos/2.mp4"
-            poster="/videos/2-poster.jpg"
-            overlay="linear-gradient(180deg, rgba(28,22,17,0.78) 0%, rgba(28,22,17,0.86) 55%, rgba(28,22,17,0.92) 100%)"
-          />
-
+        {/* ═══ FINAL CTA band (photo-backed; photos don't theme, so the band is always dark) ═══ */}
+        <section aria-labelledby="contact-title" className={cn(containerClasses, "pb-4")}>
           <Reveal>
-            <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: 620, margin: "0 auto" }}>
-              <Eyebrow dark>{L.contactEyebrow}</Eyebrow>
-              <h2
-                id="contact-title"
-                style={{ fontWeight: 800, fontSize: "clamp(1.8rem, 3.4vw, 2.6rem)", letterSpacing: headingTracking(isRTL, "0.014em"), marginBottom: 16, color: "#ffffff" }}
-              >
-                {L.contactHeading}
-              </h2>
-              <p style={{ color: "rgba(255,255,255,0.78)", fontSize: 16, fontWeight: 300, lineHeight: 1.7, marginBottom: 36 }}>{L.contactLead}</p>
-              <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-                <Link
-                  href={ownerSignup}
-                  className="btn"
-                  style={{ ...pillCta, minHeight: 52, background: "#ffffff", color: "#1c1611" }}
-                >
-                  {L.heroOwnerCta}
-                </Link>
-                <Link
-                  href={href("/explore")}
-                  className="btn"
-                  style={{ ...pillCta, minHeight: 52, background: "transparent", color: "#ffffff", border: "1px solid rgba(255,255,255,0.4)" }}
-                >
-                  <Search size={18} aria-hidden="true" />
-                  {L.heroCustomerCta}
-                </Link>
+            <div className="relative isolate overflow-hidden rounded-3xl bg-[#0B1514] px-6 py-14 text-center text-white sm:px-10 md:py-20">
+              <BackgroundVideo
+                src="/videos/2.mp4"
+                poster="/videos/2-poster.jpg"
+                overlay="linear-gradient(180deg, rgba(11,21,20,0.80) 0%, rgba(11,21,20,0.86) 55%, rgba(11,21,20,0.92) 100%)"
+              />
+              <div className="relative z-[1] mx-auto max-w-2xl">
+                <p className="mb-3 text-sm font-semibold text-[#5EEAD4]">{L.contactEyebrow}</p>
+                <h2 id="contact-title" className="text-h1 text-balance">
+                  {L.contactHeading}
+                </h2>
+                <p className="text-body-lg mx-auto mt-4 max-w-xl text-white/80">{L.contactLead}</p>
+                <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+                  <ButtonLink
+                    href={ownerSignup}
+                    size="xl"
+                    iconEnd={<Forward />}
+                    className="bg-white text-[#0F172A] hover:bg-[#F1EFEA] active:bg-[#E7E4DD]"
+                  >
+                    {L.heroOwnerCta}
+                  </ButtonLink>
+                  <ButtonLink
+                    href={href("/explore")}
+                    variant="ghost"
+                    size="xl"
+                    icon={<Search />}
+                    className="border border-white/40 text-white hover:bg-white/10 hover:text-white"
+                  >
+                    {L.heroCustomerCta}
+                  </ButtonLink>
+                </div>
               </div>
             </div>
           </Reveal>
-
-          <footer
-            style={{
-              position: "relative",
-              zIndex: 1,
-              maxWidth: 1100,
-              margin: "80px auto 0",
-              width: "100%",
-              borderTop: "1px solid rgba(255,255,255,0.14)",
-              paddingTop: 32,
-              display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: 24,
-            }}
-          >
-            <span dir="ltr" style={{ fontFamily: "var(--font-bdo-grotesk), system-ui, sans-serif", fontSize: 17, fontWeight: 700, color: "#ffffff" }}>
-              Halaqy<span style={{ color: "#d8b88a" }}>.</span>
-            </span>
-
-            <nav aria-label={L.product}>
-              <ul style={{ display: "flex", flexWrap: "wrap", gap: "12px 28px" }}>
-                {footerLinks.map((link) => (
-                  <li key={link.href}>
-                    <a href={link.href} className="hover:underline underline-offset-4" style={{ fontSize: 14, color: "rgba(255,255,255,0.78)" }}>
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <nav aria-label={L.legal}>
-              <ul style={{ display: "flex", flexWrap: "wrap", gap: "12px 28px" }}>
-                {legalLinks.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className="hover:underline underline-offset-4" style={{ fontSize: 14, color: "rgba(255,255,255,0.78)" }}>
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0, flexBasis: "100%" }}>
-              <span dir="ltr">© {year} Halaqy.</span> {L.allRightsReserved}
-            </p>
-          </footer>
         </section>
       </main>
+
+      <SiteFooter locale={locale} t={t} languageHref={`/${otherLocale}/for-business`} />
     </LandingShell>
   );
 }

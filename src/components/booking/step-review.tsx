@@ -105,8 +105,8 @@ export function StepReview(p: ReviewProps) {
     <form onSubmit={submit} noValidate className="bk-two-col" aria-busy={p.submitting}>
       <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
         {/* Services with per-service notes */}
-        <section className="bk-card" style={{ padding: 16 }} aria-labelledby="bk-lines-title">
-          <h2 id="bk-lines-title" style={{ fontSize: 15, fontWeight: 800, margin: "0 0 10px" }}>{t.booking.services}</h2>
+        <section className="bk-card" style={{ padding: 20 }} aria-labelledby="bk-lines-title">
+          <h2 id="bk-lines-title" className="text-h3" style={{ margin: "0 0 8px" }}>{t.booking.services}</h2>
           <ul className="bk-list">
             {p.lines.map((l) => {
               const s = p.servicesById.get(l.serviceId);
@@ -117,22 +117,22 @@ export function StepReview(p: ReviewProps) {
               const noteOpen = openNote === s.id || !!l.note;
               const noteInputId = `${notesId}-${s.id}`;
               return (
-                <li key={s.id} style={{ borderBottom: "1px solid var(--border-subtle)", paddingBottom: 10 }}>
+                <li key={s.id} style={{ borderBottom: "1px solid var(--color-line)", padding: "8px 0 14px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
                     <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: 14, fontWeight: 800, margin: 0, overflowWrap: "anywhere" }}>
+                      <p className="text-title" style={{ margin: 0, overflowWrap: "anywhere" }}>
                         {isRTL && s.name_ar ? s.name_ar : s.name}
                       </p>
-                      <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "2px 0 0" }}>
+                      <p className="text-meta" style={{ color: "var(--color-ink-muted)", margin: "2px 0 0" }}>
                         {joinMeta([formatDuration(q.duration), v ? (isRTL && v.name_ar ? v.name_ar : v.name_en) : null])}
                       </p>
                     </div>
-                    <span style={{ fontSize: 14, fontWeight: 800, whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                       {s.price_type === "free" ? f.free : q.isFrom ? interpolate(f.fromPrice, { price: money(q.price, p.currency, locale) }) : money(q.price, p.currency, locale)}
                     </span>
                   </div>
                   {shopNote && (
-                    <p style={{ display: "flex", gap: 6, fontSize: 12, color: "var(--text-secondary)", margin: "8px 0 0", lineHeight: 1.5 }}>
+                    <p style={{ display: "flex", gap: 6, fontSize: 12, color: "var(--color-ink-muted)", margin: "8px 0 0", lineHeight: 1.5 }}>
                       <Info size={14} aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }} /> {shopNote}
                     </p>
                   )}
@@ -172,8 +172,8 @@ export function StepReview(p: ReviewProps) {
 
         {/* Details */}
         {!p.rescheduling && (
-          <fieldset className="bk-card" style={{ padding: 16, margin: 0 }} disabled={p.submitting}>
-            <legend style={{ fontSize: 15, fontWeight: 800, padding: "0 6px", marginInlineStart: -6 }}>{t.booking.yourDetails}</legend>
+          <fieldset className="bk-card" style={{ padding: 20, margin: 0 }} disabled={p.submitting}>
+            <legend className="text-h3" style={{ padding: "0 6px", marginInlineStart: -6 }}>{t.booking.yourDetails}</legend>
             <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 6 }}>
               <div>
                 <label htmlFor={nameId} className="field-label">{t.booking.yourName}</label>
@@ -195,12 +195,12 @@ export function StepReview(p: ReviewProps) {
                   aria-describedby={`${phoneId}-help${phoneShowsError ? ` ${phoneId}-err` : ""}`}
                   style={{ textAlign: isRTL ? "right" : "left" }}
                 />
-                <p id={`${phoneId}-help`} style={{ fontSize: 12, color: "var(--text-secondary)", margin: "6px 0 0" }}>{t.booking.phoneHelp}</p>
+                <p id={`${phoneId}-help`} style={{ fontSize: 12, color: "var(--color-ink-muted)", margin: "6px 0 0" }}>{t.booking.phoneHelp}</p>
                 {phoneShowsError && <p id={`${phoneId}-err`} className="field-error">{t.booking.invalidPhone}</p>}
               </div>
               <div>
                 <label htmlFor={notesId} className="field-label">
-                  {t.booking.notes} <span style={{ fontWeight: 500, color: "var(--text-muted)" }}>({t.common.optional})</span>
+                  {t.booking.notes} <span style={{ fontWeight: 500, color: "var(--color-ink-muted)" }}>({t.common.optional})</span>
                 </label>
                 <textarea
                   id={notesId} name="notes" className="field-input" rows={2} maxLength={500}
@@ -221,25 +221,25 @@ export function StepReview(p: ReviewProps) {
 
         {/* Policy, in plain language with the exact deadline */}
         <div className="bk-policy">
-          <CalendarClock size={20} aria-hidden="true" style={{ color: "var(--accent-text)", flexShrink: 0, marginTop: 2 }} />
+          <CalendarClock size={20} aria-hidden="true" style={{ color: "var(--color-ink-soft)", flexShrink: 0, marginTop: 2 }} />
           <div>
-            <p style={{ fontWeight: 800, margin: "0 0 2px" }}>{f.policyTitle}</p>
-            <p style={{ margin: 0, color: "var(--text-secondary)" }}>{policyText}</p>
+            <p style={{ fontWeight: 600, margin: "0 0 2px" }}>{f.policyTitle}</p>
+            <p style={{ margin: 0, color: "var(--color-ink-muted)" }}>{policyText}</p>
           </div>
         </div>
         <div className="bk-policy">
-          <Wallet size={20} aria-hidden="true" style={{ color: "var(--accent-text)", flexShrink: 0, marginTop: 2 }} />
+          <Wallet size={20} aria-hidden="true" style={{ color: "var(--color-ink-soft)", flexShrink: 0, marginTop: 2 }} />
           <div>
-            <p style={{ fontWeight: 800, margin: "0 0 2px" }}>{t.booking.noPaymentToday}</p>
-            <p style={{ margin: 0, color: "var(--text-secondary)" }}>{interpolate(t.booking.payInShopNotice, { amount })}</p>
+            <p style={{ fontWeight: 600, margin: "0 0 2px" }}>{t.booking.noPaymentToday}</p>
+            <p style={{ margin: 0, color: "var(--color-ink-muted)" }}>{interpolate(t.booking.payInShopNotice, { amount })}</p>
           </div>
         </div>
         {p.importantInfo && (
           <div className="bk-policy">
-            <Info size={20} aria-hidden="true" style={{ color: "var(--accent-text)", flexShrink: 0, marginTop: 2 }} />
+            <Info size={20} aria-hidden="true" style={{ color: "var(--color-ink-soft)", flexShrink: 0, marginTop: 2 }} />
             <div>
-              <p style={{ fontWeight: 800, margin: "0 0 2px" }}>{f.importantInfo}</p>
-              <p style={{ margin: 0, color: "var(--text-secondary)", whiteSpace: "pre-line" }}>{p.importantInfo}</p>
+              <p style={{ fontWeight: 600, margin: "0 0 2px" }}>{f.importantInfo}</p>
+              <p style={{ margin: 0, color: "var(--color-ink-muted)", whiteSpace: "pre-line" }}>{p.importantInfo}</p>
             </div>
           </div>
         )}
@@ -247,8 +247,8 @@ export function StepReview(p: ReviewProps) {
 
       {/* Summary + confirm */}
       <aside className="bk-summary" aria-labelledby="bk-summary-title">
-        <h2 id="bk-summary-title" style={{ fontSize: 16, fontWeight: 900, margin: "0 0 14px" }}>{t.booking.summary}</h2>
-        <dl style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "0 0 14px", borderBottom: "1px solid var(--border-subtle)", margin: "0 0 14px" }}>
+        <h2 id="bk-summary-title" className="text-h3" style={{ margin: "0 0 16px" }}>{t.booking.summary}</h2>
+        <dl style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "0 0 14px", borderBottom: "1px solid var(--color-line)", margin: "0 0 14px" }}>
           {[
             { label: t.booking.barber, value: p.barberLabel },
             { label: t.booking.dateLabel, value: formatDate(start, { weekday: "short", day: "numeric", month: "short", timeZone: p.timeZone }) },
@@ -256,14 +256,14 @@ export function StepReview(p: ReviewProps) {
             { label: t.booking.duration, value: formatDuration(p.total.duration) },
           ].map((r) => (
             <div key={r.label} style={{ minWidth: 0 }}>
-              <dt style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", margin: "0 0 3px" }}>{r.label}</dt>
-              <dd style={{ fontSize: 13, fontWeight: 700, margin: 0, overflowWrap: "anywhere" }}>{r.value}</dd>
+              <dt className="text-meta" style={{ color: "var(--color-ink-muted)", margin: "0 0 2px" }}>{r.label}</dt>
+              <dd style={{ fontSize: 15, fontWeight: 600, margin: 0, overflowWrap: "anywhere", fontVariantNumeric: "tabular-nums" }}>{r.value}</dd>
             </div>
           ))}
         </dl>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14, gap: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)" }}>{t.booking.total}</span>
-          <span style={{ fontSize: 24, fontWeight: 900, whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: "var(--color-ink)" }}>{t.booking.total}</span>
+          <span style={{ fontSize: 22, fontWeight: 700, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
             {p.total.isFrom ? interpolate(f.fromPrice, { price: amount }) : amount}
           </span>
         </div>
@@ -278,7 +278,7 @@ export function StepReview(p: ReviewProps) {
         {p.error && <div style={{ marginBottom: 12 }}><InlineAlert>{p.error}</InlineAlert></div>}
 
         <button
-          type="submit" className="bk-cta" style={{ width: "100%", height: 52 }}
+          type="submit" className="bk-cta" style={{ width: "100%" }}
           disabled={!canConfirm} aria-busy={p.submitting} aria-describedby={ctaHint ? ctaHintId : undefined}
         >
           {p.submitting
@@ -286,10 +286,10 @@ export function StepReview(p: ReviewProps) {
             : <><Check size={18} aria-hidden="true" /> {p.rescheduling ? f.confirmNewTime : t.booking.confirmBtn}</>}
         </button>
         {ctaHint && !p.submitting && (
-          <p id={ctaHintId} style={{ fontSize: 12, color: "var(--text-secondary)", textAlign: "center", margin: "8px 0 0" }}>{ctaHint}</p>
+          <p id={ctaHintId} style={{ fontSize: 12, color: "var(--color-ink-muted)", textAlign: "center", margin: "8px 0 0" }}>{ctaHint}</p>
         )}
         {!p.rescheduling && (
-          <p style={{ fontSize: 12, color: "var(--text-secondary)", textAlign: "center", margin: "10px 0 0", lineHeight: 1.5 }}>
+          <p style={{ fontSize: 12, color: "var(--color-ink-muted)", textAlign: "center", margin: "10px 0 0", lineHeight: 1.5 }}>
             {renderTemplate(t.booking.consent, {
               terms: <Link href={href("/terms")} target="_blank" className="bk-link">{t.auth.terms}</Link>,
               privacy: <Link href={href("/privacy")} target="_blank" className="bk-link">{t.auth.privacyText}</Link>,
