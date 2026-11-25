@@ -35,7 +35,7 @@ BACKUP_DIR="$(cd "$BACKUP_DIR" && pwd)"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-DB_CONTAINER="$(docker ps --format '{{.Names}}' | grep supabase_db | head -n1 || true)"
+DB_CONTAINER="${DB_CONTAINER:-$(docker ps --format '{{.Names}}' | grep supabase_db | head -n1 || true)}"
 if [[ -z "$DB_CONTAINER" ]]; then
   echo "No running local supabase_db container. Run 'npx supabase start' first." >&2
   exit 1
